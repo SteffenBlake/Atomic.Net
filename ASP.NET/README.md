@@ -60,3 +60,19 @@ The only exception to this is when you depend on external 3rd party APIs of some
 
 The rare case where your codebase is tightly coupled to some 3rd party library that doesnt expose the ability to do this is the rare case where I would consider Mocking to still be applicable, leveraging Decorator Pattern
 
+# Trying it out for yourself
+
+## Atomic.Net.Asp.Application
+1. Make sure you have an existing empty Postgres database setup
+2. Set the environment variable `ATOMIC_ASPNET__ConnectionStrings_DefaultConnection` to be the connection string to aformentioned Postgres DB
+3. `dotnet run` the Atomic.Net.Asp.Application project
+4. `curl localhost:5066/foos/1` (the port may be different for you)
+
+## Atomic.Net.Asp.UnitTests
+1. `dotnet test` this project should be all that is required
+
+## Atomic.Net.Asp.IntegrationTests
+1. Make sure you have an existing empty Postgres database setup (You will want one different from the one you may have used for the Application)
+2. Set the environment variable `ATOMIC_ASPNET_TEST_ConnectionStrings_DefaultConnection` to be the connection string to aformentioned Postgres DB (**NOTE: This Env var has a slightly different name from the application one above!**)
+3. `dotnet test` the Atomic.Net.Asp.IntegrationTests project
+4. Note the database after doesnt get any data added to its tables, as all individual tests are executed inside of transactions that get cancelled after the test finishes, rolling back any changes
