@@ -1,12 +1,12 @@
-using Atomic.Net.Asp.Domain;
-using Atomic.Net.Asp.Domain.Foos;
+using Atomic.Net.Asp.Domain.Foos.Get;
+using Atomic.Net.Asp.Domain.Foos.Delete;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Atomic.Net.Asp.Application.Controllers;
 
 public static class FooController
 {
-    public static async Task<ApiResult<GetFooResponse>> GetFooAsync(
+    public static async Task<string> GetFooAsync(
         HttpContext httpContext,
         [FromServices] WebContext<GetFooQuery> webContext,
         [AsParameters] GetFooQuery request
@@ -17,7 +17,7 @@ public static class FooController
         );
     }
 
-    public static async Task<ApiResult<Unit>> DeleteFooAsync(
+    public static async Task<string> DeleteFooAsync(
         HttpContext httpContext,
         [FromServices] WebContext<DeleteFooCommand> webContext,
         [AsParameters] DeleteFooCommand cmd

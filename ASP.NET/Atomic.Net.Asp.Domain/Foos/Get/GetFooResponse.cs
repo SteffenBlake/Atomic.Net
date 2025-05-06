@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace Atomic.Net.Asp.Domain.Foos;
+namespace Atomic.Net.Asp.Domain.Foos.Get;
 
 public class GetFooResponse
 {

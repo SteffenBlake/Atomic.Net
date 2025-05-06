@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "cs",
+            "name": "netcoredbg",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "program": "CLogger.Tui.dll",
+            "cwd": "${workspaceFolder}/Atomic.Net.Asp.Application/bin/Debug/net9.0/"
+        }
+    ]
+}

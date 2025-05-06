@@ -1,5 +1,5 @@
-using System.Net;
-using Atomic.Net.Asp.Domain.Foos;
+using Atomic.Net.Asp.Domain;
+using Atomic.Net.Asp.Domain.Foos.Get;
 
 namespace Atomic.Net.Asp.IntegrationTests.Foos;
 
@@ -24,9 +24,7 @@ public class GetFooCommandTests(TestDatabaseFixture fixture) :
         var result = await GetFooQueryHandler.HandleAsync(ctx, query);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotFound, result.Code);
-        Assert.Null(result.Value);
-
+        Assert.True(result.TryMatch(out NotFound _));
 
         await txn.RollbackAsync();
     }
@@ -58,12 +56,12 @@ public class GetFooCommandTests(TestDatabaseFixture fixture) :
         var result = await GetFooQueryHandler.HandleAsync(ctx, query);
 
         // Assert
-        Assert.Equal(HttpStatusCode.OK, result.Code);
-        Assert.NotNull(result.Value);
+        Assert.True(result.TryMatch(out GetFooResponse? success));
+        Assert.NotNull(success);
 
-        Assert.Equal(1, result.Value.Id);
-        Assert.Equal("FIRSTNAME LASTNAME", result.Value.FullName);
-        Assert.Equal("S****E", result.Value.SensitiveData);
+        Assert.Equal(1, success.Id);
+        Assert.Equal("FIRSTNAME LASTNAME", success.FullName);
+        Assert.Equal("S****E", success.SensitiveData);
 
         await txn.RollbackAsync();
     }

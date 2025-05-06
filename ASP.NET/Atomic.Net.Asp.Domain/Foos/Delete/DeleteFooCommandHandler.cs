@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace Atomic.Net.Asp.Domain.Foos;
+namespace Atomic.Net.Asp.Domain.Foos.Delete;
 
 public static class DeleteFooCommandHandler
 {
-    public static async Task<IResult<Unit>> HandleAsync(
+    public static async Task<Result<Unit>> HandleAsync(
         CommandContext<DeleteFooCommand> ctx,
         DeleteFooCommand cmd
     )
@@ -15,9 +15,9 @@ public static class DeleteFooCommandHandler
 
         if (deletions < 1)
         {
-            return Result.NotFound<Unit>(nameof(FooEntity), nameof(cmd.FooId));
+            return new NotFound(nameof(FooEntity), cmd.FooId);
         }
 
-        return Result.Success(Unit.Default);
+        return Unit.Default;
     }
 }

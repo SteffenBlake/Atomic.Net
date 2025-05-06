@@ -1,11 +1,11 @@
 using Atomic.Net.Asp.Domain.Extensions;
 using Microsoft.EntityFrameworkCore;
 
-namespace Atomic.Net.Asp.Domain.Foos;
+namespace Atomic.Net.Asp.Domain.Foos.Get;
 
 public static class GetFooQueryHandler
 {
-    public static async Task<IResult<GetFooResponse>> HandleAsync(
+    public static async Task<Result<GetFooResponse>> HandleAsync(
         CommandContext<GetFooQuery> ctx,
         GetFooQuery query
     )
@@ -17,7 +17,7 @@ public static class GetFooQueryHandler
 
         if (result == null)
         {
-            return Result.NotFound<GetFooResponse>(nameof(FooEntity), nameof(query.FooId));
+            return new NotFound(nameof(FooEntity), query.FooId);
         }
 
         // Normally you'd just do this in the DB Query itself
@@ -26,6 +26,6 @@ public static class GetFooQueryHandler
 
         result.SensitiveData = result.SensitiveData.Sanitize();
 
-        return Result.Success(result);
+        return result;
     }
 }
