@@ -41,13 +41,16 @@ Throwing exceptions should only be used for truly exceptional circumstances when
 
 All other scenarios where you actually expect an error to occur due to invalid input or etc, should return a `Result` from your method which can "smoothly fail"
 
-For the case of this project we utilize the `IResult` interface semaphore, which lets us return either a Success or Fail result, with a matching "why" status code, message, and id field for what caused the failure.
+For the case of this project we utilize the [dotvariant](https://github.com/mknejp/dotvariant) source gen library, which lets us return a Discriminated Union "result" type, which has extremely high performance for branching across a variety of logical branches.
 
 There are many reasons why this is a far cleaner solution. Primarily it boils down to these though:
 
 1. Throwing Exceptions is incredibly expensive, and it really messes up CPU and compiler optimization capability
 2. Throwing Exceptions brutalizes your performance, the act of snagging a stack trace (which usually gets discarded) is very expensive, and the disruption of the stack obliterates cycles
 3. It will clog up your logs for really no good reason, making it much harder to notice REAL exceptions getting thrown from your "fake" exceptions you keep throwing around.
+
+## Source Gen Validation
+Libraries like [Validly](https://github.com/Hookyns/validly) provide extremely performant ways to do validation on Queries / Commands, letting us utilize Attribute based Validation, while reducing overall performance hits they normally would incur.
 
 ## Avoiding Mocking
 You may notice not a single "mock" is used in any of the Unit or Integration tests. The reason for this is the core principle of Atomic Programming: If you organize your code dependancies well, there is no need to mock anything.
