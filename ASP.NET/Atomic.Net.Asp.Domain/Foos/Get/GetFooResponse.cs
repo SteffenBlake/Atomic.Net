@@ -2,7 +2,7 @@ using System.Linq.Expressions;
 
 namespace Atomic.Net.Asp.Domain.Foos.Get;
 
-public class GetFooResponse
+public class GetFooResponse : IDomainResult<GetFooResponse>
 {
     public required int Id { get; set; }
 

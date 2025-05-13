@@ -3,9 +3,11 @@
 This solution shows an example of Atomic Coding Principles applied to a template for a production formatted ASP.NET application
 
 # Projects
+* Atomic.Net.Asp.AppHost - Core .Net Aspire Orchestration project
+* Atomic.Net.Asp.DataService - Database Migrations and optional Data Seeding Worker Service
 * Atomic.Net.Asp.Application - This is the Web App layer, which houses Asp.Net specific logic (Routing, DI, etc)
 * Atomic.Net.Asp.Domain - This is where the vast majority of the applications logic should go, but is designed to be agnostic to any Application specific implementation details. This project should have no concept of Asp.Net or whatever is consuming it
-* Atomic.Net.Asp.IntegrationTests - xUnit project setup to run end-to-end Integration Tests against a full functional Postgresql database
+* Atomic.Net.Asp.IntegrationTests - xUnit project setup to run end-to-end Integration Tests against a full functional app stack 
 * Atomic.Net.Asp.UnitTests - xUnity project setup for Unit Testing Atomic Code pure functions
 
 # Architecture 
@@ -19,7 +21,7 @@ All logic flows are branched into being either:
 * Queries (which do not require full ACID transactional database behavior, and are expected to be ReadOnly Idemptotent)
 * Commands (Which do require full ACID transactions and are expected to perform database mutations)
 
-We do **NOT** use unneccessary abstraction tools like Mediatr, a project would need to be **extremely** complicated and have a very intricate pipeline to justify mediator pattern
+We do **NOT** use unnecessary abstraction tools like Mediatr, a project would need to be **extremely** complicated and have a very intricate pipeline to justify mediator pattern
 
 Instead, we simply just... call our methods directly.
 
@@ -28,7 +30,7 @@ For all intents and purposes, logic flows as such:
 1. Entry level `Program.cs`, where application is bootstrapped
 2. Route binding occurs in Routing.cs where a route is bound up to a controller method
 3. Controllers (which are just static classes) inject the necessary stateful / object pooled objects (like DB Connections, HttpClients, Loggers, HttpContext, etc)
-4. And then hand off work directly to the Command/Query handler via the helper method "HandleCommand" / "HandleQuery"
+4. And then hand off work directly to the Command/Query handler via the helper method "HandleCommandAsync" / "HandleQueryAsync"
 
 The only difference between HandleCommand vs HandleQuery is simply whether a wrapping Database Transaction gets opened or not.
 
@@ -41,7 +43,7 @@ Throwing exceptions should only be used for truly exceptional circumstances when
 
 All other scenarios where you actually expect an error to occur due to invalid input or etc, should return a `Result` from your method which can "smoothly fail"
 
-For the case of this project we utilize the [dotvariant](https://github.com/mknejp/dotvariant) source gen library, which lets us return a Discriminated Union "result" type, which has extremely high performance for branching across a variety of logical branches.
+For the case of this project we utilize the `IDomainResult` interface semaphore, which lets us return either a Success or Fail result, with a matching "why" status code, message, and id field for what caused the failure.
 
 There are many reasons why this is a far cleaner solution. Primarily it boils down to these though:
 
@@ -65,17 +67,23 @@ The rare case where your codebase is tightly coupled to some 3rd party library t
 
 # Trying it out for yourself
 
-## Atomic.Net.Asp.Application
-1. Make sure you have an existing empty Postgres database setup
-2. Set the environment variable `ATOMIC_ASPNET__ConnectionStrings_DefaultConnection` to be the connection string to aformentioned Postgres DB
-3. `dotnet run` the Atomic.Net.Asp.Application project
-4. `curl localhost:5066/foos/1` (the port may be different for you)
+## Atomic.Net.Asp.AppHost (Running the app)
+1. `dotnet run` the Atomic.Net.Asp.AppHost project
+2. You'll see something in the console akin to:
+
+```
+Login to the dashboard at https://0.0.0.0:17131/login?t=<some token>
+```
+
+Open this url in your browser to check out the .Net Aspire dashboard
+3. You should see a url for the WebApi, likely `http://localhost:5066`
+4. `curl localhost:5066/foos/1` to see an example success result
+5. `curl localhost:5066/foos/1000` to see an example NotFound result
+6. `curl localhost:5066/foos/100000` to see an example Validation Error result
 
 ## Atomic.Net.Asp.UnitTests
 1. `dotnet test` this project should be all that is required
 
 ## Atomic.Net.Asp.IntegrationTests
-1. Make sure you have an existing empty Postgres database setup (You will want one different from the one you may have used for the Application)
-2. Set the environment variable `ATOMIC_ASPNET_TEST_ConnectionStrings_DefaultConnection` to be the connection string to aformentioned Postgres DB (**NOTE: This Env var has a slightly different name from the application one above!**)
-3. `dotnet test` the Atomic.Net.Asp.IntegrationTests project
-4. Note the database after doesnt get any data added to its tables, as all individual tests are executed inside of transactions that get cancelled after the test finishes, rolling back any changes
+1. `dotnet test` this project should be all that is required
+2. Note that via .Net Aspire, this project still stands up a database and runs against it, but the database runs in docker and gets scaffolded then torn down automatically.

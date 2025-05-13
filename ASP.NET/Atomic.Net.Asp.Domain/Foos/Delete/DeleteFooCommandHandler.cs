@@ -4,7 +4,7 @@ namespace Atomic.Net.Asp.Domain.Foos.Delete;
 
 public static class DeleteFooCommandHandler
 {
-    public static async Task<Result<Unit>> HandleAsync(
+    public static async Task<IDomainResult<Unit>> HandleAsync(
         CommandContext<DeleteFooCommand> ctx,
         DeleteFooCommand cmd
     )
@@ -15,7 +15,7 @@ public static class DeleteFooCommandHandler
 
         if (deletions < 1)
         {
-            return new NotFound(nameof(FooEntity), cmd.FooId);
+            return new NotFound<Unit>(nameof(FooEntity), cmd.FooId);
         }
 
         return Unit.Default;

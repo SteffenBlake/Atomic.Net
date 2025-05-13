@@ -7,9 +7,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Atomic.Net.Asp.Application"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Atomic.Net.Asp.Domain", "Atomic.Net.Asp.Domain\Atomic.Net.Asp.Domain.csproj", "{0A007934-E592-4473-9198-3FA5728D008E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Atomic.Net.Asp.IntegrationTests", "Atomic.Net.Asp.IntegrationTests\Atomic.Net.Asp.IntegrationTests.csproj", "{4CCF00F5-D7E7-45DF-8CBA-172D037FC61F}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Atomic.Net.Asp.UnitTests", "Atomic.Net.Asp.UnitTests\Atomic.Net.Asp.UnitTests.csproj", "{02EB15BB-0721-4C03-8043-39D3347A9DDF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Atomic.Net.Asp.AppHost", "Atomic.Net.Asp.AppHost\Atomic.Net.Asp.AppHost.csproj", "{135E2B7A-C177-40DF-B9E0-9D7AFC5B9E81}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Atomic.Net.Asp.ServiceDefaults", "Atomic.Net.Asp.ServiceDefaults\Atomic.Net.Asp.ServiceDefaults.csproj", "{653D05EA-4463-429D-87FF-8A55EF727D82}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Atomic.Net.Asp.DataService", "Atomic.Net.Asp.DataService\Atomic.Net.Asp.DataService.csproj", "{544373A2-7888-4675-84F3-4196E2585C6E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -28,13 +32,21 @@ Global
 		{0A007934-E592-4473-9198-3FA5728D008E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0A007934-E592-4473-9198-3FA5728D008E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0A007934-E592-4473-9198-3FA5728D008E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4CCF00F5-D7E7-45DF-8CBA-172D037FC61F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4CCF00F5-D7E7-45DF-8CBA-172D037FC61F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4CCF00F5-D7E7-45DF-8CBA-172D037FC61F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4CCF00F5-D7E7-45DF-8CBA-172D037FC61F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{02EB15BB-0721-4C03-8043-39D3347A9DDF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{02EB15BB-0721-4C03-8043-39D3347A9DDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{02EB15BB-0721-4C03-8043-39D3347A9DDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{02EB15BB-0721-4C03-8043-39D3347A9DDF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{135E2B7A-C177-40DF-B9E0-9D7AFC5B9E81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{135E2B7A-C177-40DF-B9E0-9D7AFC5B9E81}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{135E2B7A-C177-40DF-B9E0-9D7AFC5B9E81}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{135E2B7A-C177-40DF-B9E0-9D7AFC5B9E81}.Release|Any CPU.Build.0 = Release|Any CPU
+		{653D05EA-4463-429D-87FF-8A55EF727D82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{653D05EA-4463-429D-87FF-8A55EF727D82}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{653D05EA-4463-429D-87FF-8A55EF727D82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{653D05EA-4463-429D-87FF-8A55EF727D82}.Release|Any CPU.Build.0 = Release|Any CPU
+		{544373A2-7888-4675-84F3-4196E2585C6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{544373A2-7888-4675-84F3-4196E2585C6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{544373A2-7888-4675-84F3-4196E2585C6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{544373A2-7888-4675-84F3-4196E2585C6E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

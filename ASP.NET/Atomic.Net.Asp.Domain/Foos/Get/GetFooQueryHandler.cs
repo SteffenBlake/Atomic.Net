@@ -5,7 +5,7 @@ namespace Atomic.Net.Asp.Domain.Foos.Get;
 
 public static class GetFooQueryHandler
 {
-    public static async Task<Result<GetFooResponse>> HandleAsync(
+    public static async Task<IDomainResult<GetFooResponse>> HandleAsync(
         CommandContext<GetFooQuery> ctx,
         GetFooQuery query
     )
@@ -17,7 +17,7 @@ public static class GetFooQueryHandler
 
         if (result == null)
         {
-            return new NotFound(nameof(FooEntity), query.FooId);
+            return new NotFound<GetFooResponse>(nameof(FooEntity), query.FooId);
         }
 
         // Normally you'd just do this in the DB Query itself

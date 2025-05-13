@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-Atomic.Net.Asp.DataService-4d87566b-62e3-443b-ab5f-2d5d0fbcf94d</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.2.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Atomic.Net.Asp.Domain\Atomic.Net.Asp.Domain.csproj" />
+    <ProjectReference Include="..\Atomic.Net.Asp.ServiceDefaults\Atomic.Net.Asp.ServiceDefaults.csproj" />
+  </ItemGroup>
+</Project>
