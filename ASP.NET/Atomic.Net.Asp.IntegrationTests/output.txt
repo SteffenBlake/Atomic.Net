@@ -1,0 +1,1249 @@
+  Determining projects to restore...
+/Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.Domain/Atomic.Net.Asp.Domain.csproj : warning NU1608: Detected package version outside of dependency constraint: Microsoft.CodeAnalysis 4.3.1 requires Microsoft.CodeAnalysis.CSharp.Workspaces (= 4.3.1) but version Microsoft.CodeAnalysis.CSharp.Workspaces 4.8.0 was resolved. [/Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.IntegrationTests/Atomic.Net.Asp.IntegrationTests.csproj]
+/Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.Domain/Atomic.Net.Asp.Domain.csproj : warning NU1608: Detected package version outside of dependency constraint: Microsoft.CodeAnalysis.VisualBasic.Workspaces 4.3.1 requires Microsoft.CodeAnalysis.Common (= 4.3.1) but version Microsoft.CodeAnalysis.Common 4.8.0 was resolved. [/Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.IntegrationTests/Atomic.Net.Asp.IntegrationTests.csproj]
+/Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.Domain/Atomic.Net.Asp.Domain.csproj : warning NU1608: Detected package version outside of dependency constraint: Microsoft.CodeAnalysis.VisualBasic.Workspaces 4.3.1 requires Microsoft.CodeAnalysis.Workspaces.Common (= 4.3.1) but version Microsoft.CodeAnalysis.Workspaces.Common 4.8.0 was resolved. [/Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.IntegrationTests/Atomic.Net.Asp.IntegrationTests.csproj]
+/Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.Domain/Atomic.Net.Asp.Domain.csproj : warning NU1608: Detected package version outside of dependency constraint: Microsoft.CodeAnalysis.VisualBasic 4.3.1 requires Microsoft.CodeAnalysis.Common (= 4.3.1) but version Microsoft.CodeAnalysis.Common 4.8.0 was resolved. [/Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.IntegrationTests/Atomic.Net.Asp.IntegrationTests.csproj]
+  All projects are up-to-date for restore.
+/Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.Domain/Atomic.Net.Asp.Domain.csproj : warning NU1608: Detected package version outside of dependency constraint: Microsoft.CodeAnalysis 4.3.1 requires Microsoft.CodeAnalysis.CSharp.Workspaces (= 4.3.1) but version Microsoft.CodeAnalysis.CSharp.Workspaces 4.8.0 was resolved.
+/Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.Domain/Atomic.Net.Asp.Domain.csproj : warning NU1608: Detected package version outside of dependency constraint: Microsoft.CodeAnalysis.VisualBasic.Workspaces 4.3.1 requires Microsoft.CodeAnalysis.Common (= 4.3.1) but version Microsoft.CodeAnalysis.Common 4.8.0 was resolved.
+/Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.Domain/Atomic.Net.Asp.Domain.csproj : warning NU1608: Detected package version outside of dependency constraint: Microsoft.CodeAnalysis.VisualBasic.Workspaces 4.3.1 requires Microsoft.CodeAnalysis.Workspaces.Common (= 4.3.1) but version Microsoft.CodeAnalysis.Workspaces.Common 4.8.0 was resolved.
+/Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.Domain/Atomic.Net.Asp.Domain.csproj : warning NU1608: Detected package version outside of dependency constraint: Microsoft.CodeAnalysis.VisualBasic 4.3.1 requires Microsoft.CodeAnalysis.Common (= 4.3.1) but version Microsoft.CodeAnalysis.Common 4.8.0 was resolved.
+  Atomic.Net.Asp.Domain -> /Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.Domain/bin/Debug/net9.0/Atomic.Net.Asp.Domain.dll
+  Atomic.Net.Asp.ServiceDefaults -> /Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.ServiceDefaults/bin/Debug/net9.0/Atomic.Net.Asp.ServiceDefaults.dll
+  Atomic.Net.Asp.DevProxy -> /Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.DevProxy/bin/Debug/net9.0/Atomic.Net.Asp.DevProxy.dll
+  Atomic.Net.Asp.DataService -> /Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.DataService/bin/Debug/net9.0/Atomic.Net.Asp.DataService.dll
+  Atomic.Net.Asp.Application -> /Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.Application/bin/Debug/net9.0/Atomic.Net.Asp.Application.dll
+  Atomic.Net.Asp.AppHost -> /Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.AppHost/bin/Debug/net9.0/Atomic.Net.Asp.AppHost.dll
+  Atomic.Net.Asp.IntegrationTests -> /Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.IntegrationTests/bin/Debug/net9.0/Atomic.Net.Asp.IntegrationTests.dll
+Test run for /Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.IntegrationTests/bin/Debug/net9.0/Atomic.Net.Asp.IntegrationTests.dll (.NETCoreApp,Version=v9.0)
+VSTest version 17.12.0 (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+/Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.IntegrationTests/bin/Debug/net9.0/Atomic.Net.Asp.IntegrationTests.dll
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.0.2+dd36e86129 (64-bit .NET 9.0.0)
+[xUnit.net 00:00:00.07]   Discovering: Atomic.Net.Asp.IntegrationTests
+[xUnit.net 00:00:00.10]   Discovered:  Atomic.Net.Asp.IntegrationTests
+[xUnit.net 00:00:00.12]   Starting:    Atomic.Net.Asp.IntegrationTests
+info: Aspire.Hosting.DistributedApplication[0]
+      Aspire version: 9.3.0+f76a033601ade4a17a422d5d1e4d004ab85e5179
+info: Aspire.Hosting.DistributedApplication[0]
+      Distributed application starting.
+info: Aspire.Hosting.DistributedApplication[0]
+      Application host directory is: /Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.AppHost
+dbug: Aspire.Hosting.Cli.BackchannelService[0]
+      Backchannel socket path was not specified.
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Resource POSTGRES/POSTGRES-kfarteda changed state: Starting
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Resource POSTGRESDB/POSTGRESDB changed state: Starting
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Resource POSTGRES-pgadmin/POSTGRES-pgadmin-tnwgpmtg changed state: Starting
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Resource DATASERVICE/DATASERVICE-zmhaewbm changed state: Starting
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Resource POSTGRES/POSTGRES-kfarteda changed state: Starting
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Resource POSTGRESDB/POSTGRESDB changed state: Starting
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Resource DATASERVICE/DATASERVICE-zmhaewbm changed state: Starting -> Waiting
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Resource POSTGRES-pgadmin/POSTGRES-pgadmin-tnwgpmtg changed state: Starting
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      1: 2025-05-30T01:05:20.5412543Z Waiting for resource 'POSTGRES' to enter the 'Running' state.
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      2: 2025-05-30T01:05:20.5486444Z Waiting for resource 'POSTGRESDB' to enter the 'Running' state.
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Waiting for resource 'DATASERVICE' to match predicate.
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Resource WEBAPI/WEBAPI-wvswjzwu changed state: Starting
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Resource WEBAPI/WEBAPI-wvswjzwu changed state: Starting -> Waiting
+info: Atomic.Net.Asp.AppHost.Resources.WEBAPI[0]
+      1: 2025-05-30T01:05:20.5538533Z Waiting for resource 'POSTGRES' to enter the 'Running' state.
+info: Atomic.Net.Asp.AppHost.Resources.WEBAPI[0]
+      2: 2025-05-30T01:05:20.5539509Z Waiting for resource 'POSTGRESDB' to enter the 'Running' state.
+info: Atomic.Net.Asp.AppHost.Resources.WEBAPI[0]
+      3: 2025-05-30T01:05:20.5548624Z Waiting for resource 'DATASERVICE' to complete.
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Waiting for resource 'WEBAPI' to match predicate.
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Resource DEVPROXY/DEVPROXY-uttjxcny changed state: Starting
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Resource SPWA/SPWA-rgppchvb changed state: Starting
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Resource SPWA/SPWA-rgppchvb changed state: Starting -> Waiting
+info: Atomic.Net.Asp.AppHost.Resources.SPWA[0]
+      1: 2025-05-30T01:05:20.5755694Z Waiting for resource 'WEBAPI' to enter the 'Running' state.
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Waiting for resource 'SPWA' to match predicate.
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Resource DEVPROXY/DEVPROXY-uttjxcny changed state: Running
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Starting health monitoring for resource 'DEVPROXY'.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Resource 'DEVPROXY' has no health checks to monitor.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Resource 'DEVPROXY' is ready.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Publishing ResourceReadyEvent for 'DEVPROXY'.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Waiting for ResourceReadyEvent for 'DEVPROXY'.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      ResourceReadyEvent for 'DEVPROXY' completed.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Publishing the result of ResourceReadyEvent for 'DEVPROXY'.
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      1: 2025-05-30T01:05:20.6070000Z 13f376a141c53c38b7310411626cf315c739a71edfae5e97f6ba0ff41f31e860
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES-pgadmin[0]
+      1: 2025-05-30T01:05:20.6660000Z 39f1d6ca7deeb2beaef4e833d0f5934ed7da2e839cac5b34da48c92681e2f174
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      1: 2025-05-30T01:05:21.3870000Z Using Config: {
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      2: 2025-05-30T01:05:21.3870000Z   "HostOverride": "localhost",
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      3: 2025-05-30T01:05:21.3870000Z   "Services": {
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      4: 2025-05-30T01:05:21.3870000Z     "DEVPROXY": {
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      5: 2025-05-30T01:05:21.3870000Z       "POSTGRES-pgadmin": [
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      6: 2025-05-30T01:05:21.3870000Z         "http://localhost:50003"
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      7: 2025-05-30T01:05:21.3870000Z       ],
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      8: 2025-05-30T01:05:21.3870000Z       "SPWA": [
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      9: 2025-05-30T01:05:21.3870000Z         "http://localhost:50002"
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      10: 2025-05-30T01:05:21.3870000Z       ],
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      11: 2025-05-30T01:05:21.3870000Z       "WEBAPI": [
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      12: 2025-05-30T01:05:21.3870000Z         "http://localhost:50001"
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      13: 2025-05-30T01:05:21.3870000Z       ]
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      14: 2025-05-30T01:05:21.3870000Z     },
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      15: 2025-05-30T01:05:21.3870000Z     "POSTGRES-pgadmin": {
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      16: 2025-05-30T01:05:21.3870000Z       "http": [
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      17: 2025-05-30T01:05:21.3870000Z         "http://localhost:44197"
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      18: 2025-05-30T01:05:21.3870000Z       ]
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      19: 2025-05-30T01:05:21.3870000Z     },
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      20: 2025-05-30T01:05:21.3870000Z     "SPWA": {
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      21: 2025-05-30T01:05:21.3870000Z       "http": [
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      22: 2025-05-30T01:05:21.3870000Z         "http://localhost:38759"
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      23: 2025-05-30T01:05:21.3870000Z       ]
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      24: 2025-05-30T01:05:21.3870000Z     },
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      25: 2025-05-30T01:05:21.3870000Z     "WEBAPI": {
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      26: 2025-05-30T01:05:21.3870000Z       "http": [
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      27: 2025-05-30T01:05:21.3870000Z         "http://localhost:40775"
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      28: 2025-05-30T01:05:21.3870000Z       ]
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      29: 2025-05-30T01:05:21.3870000Z     }
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      30: 2025-05-30T01:05:21.3870000Z   }
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      31: 2025-05-30T01:05:21.3870000Z }
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      32: 2025-05-30T01:05:21.3900000Z Proxying: localhost:50003 -> http://localhost:44197 (POSTGRES-pgadmin)
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      33: 2025-05-30T01:05:21.3900000Z Proxying: localhost:50002 -> http://localhost:38759 (SPWA)
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      34: 2025-05-30T01:05:21.3900000Z Proxying: localhost:50001 -> http://localhost:40775 (WEBAPI)
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      35: 2025-05-30T01:05:21.6810000Z [40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[14]
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      36: 2025-05-30T01:05:21.6810000Z       Now listening on: http://localhost:50003
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      37: 2025-05-30T01:05:21.6850000Z [40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[14]
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      38: 2025-05-30T01:05:21.6850000Z       Now listening on: http://localhost:50002
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      39: 2025-05-30T01:05:21.6850000Z [40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[14]
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      40: 2025-05-30T01:05:21.6850000Z       Now listening on: http://localhost:50001
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      41: 2025-05-30T01:05:21.6870000Z [40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      42: 2025-05-30T01:05:21.6870000Z       Application started. Press Ctrl+C to shut down.
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      43: 2025-05-30T01:05:21.6880000Z [40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      44: 2025-05-30T01:05:21.6880000Z       Hosting environment: Development
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      45: 2025-05-30T01:05:21.6880000Z [40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+info: Atomic.Net.Asp.AppHost.Resources.DEVPROXY[0]
+      46: 2025-05-30T01:05:21.6880000Z       Content root path: /Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.DevProxy
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Resource POSTGRES/POSTGRES-kfarteda changed state: Starting -> Running
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Starting health monitoring for resource 'POSTGRES'.
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Resource POSTGRESDB/POSTGRESDB changed state: Starting -> Running
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Starting health monitoring for resource 'POSTGRESDB'.
+info: Atomic.Net.Asp.AppHost.Resources.WEBAPI[0]
+      4: 2025-05-30T01:05:24.0377952Z Waiting for resource 'POSTGRES' to become healthy.
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      3: 2025-05-30T01:05:24.0377952Z Waiting for resource 'POSTGRESDB' to become healthy.
+info: Atomic.Net.Asp.AppHost.Resources.WEBAPI[0]
+      5: 2025-05-30T01:05:24.0377955Z Waiting for resource 'POSTGRESDB' to become healthy.
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      4: 2025-05-30T01:05:24.0377952Z Waiting for resource 'POSTGRES' to become healthy.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Resource 'POSTGRESDB' health checks to monitor: POSTGRESDB_check, POSTGRES_check
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Resource 'POSTGRES' health checks to monitor: POSTGRES_check
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      2: 2025-05-30T01:05:23.8485547Z The files belonging to this database system will be owned by user "postgres".
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      3: 2025-05-30T01:05:23.8485848Z This user must also own the server process.
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      4: 2025-05-30T01:05:23.8485881Z 
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      5: 2025-05-30T01:05:23.8485904Z The database cluster will be initialized with locale "en_US.utf8".
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      6: 2025-05-30T01:05:23.8485930Z The default database encoding has accordingly been set to "UTF8".
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      7: 2025-05-30T01:05:23.8485957Z The default text search configuration will be set to "english".
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      8: 2025-05-30T01:05:23.8485983Z 
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      9: 2025-05-30T01:05:23.8486005Z Data page checksums are disabled.
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      10: 2025-05-30T01:05:23.8486028Z 
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      11: 2025-05-30T01:05:23.8486051Z fixing permissions on existing directory /var/lib/postgresql/data ... ok
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      12: 2025-05-30T01:05:23.8488772Z creating subdirectories ... ok
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      13: 2025-05-30T01:05:23.8489266Z selecting dynamic shared memory implementation ... posix
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      14: 2025-05-30T01:05:23.8637765Z selecting default "max_connections" ... 100
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      15: 2025-05-30T01:05:23.8828720Z selecting default "shared_buffers" ... 128MB
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      16: 2025-05-30T01:05:23.8991162Z selecting default time zone ... Etc/UTC
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      17: 2025-05-30T01:05:23.8994395Z creating configuration files ... ok
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      18: 2025-05-30T01:05:24.0103064Z running bootstrap script ... ok
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      19: 2025-05-30T01:05:24.3281938Z performing post-bootstrap initialization ... ok
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      20: 2025-05-30T01:05:24.4184706Z syncing data to disk ... ok
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      21: 2025-05-30T01:05:24.4185140Z 
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      22: 2025-05-30T01:05:24.4185235Z Success. You can now start the database server using:
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      23: 2025-05-30T01:05:24.4185313Z 
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      24: 2025-05-30T01:05:24.4185388Z     pg_ctl -D /var/lib/postgresql/data -l logfile start
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      25: 2025-05-30T01:05:24.4185464Z 
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      26: 2025-05-30T01:05:24.4733911Z waiting for server to start....2025-05-30 01:05:24.473 UTC [48] LOG:  starting PostgreSQL 17.2 (Debian 17.2-1.pgdg120+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      27: 2025-05-30T01:05:24.4740998Z 2025-05-30 01:05:24.474 UTC [48] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      28: 2025-05-30T01:05:24.4771863Z 2025-05-30 01:05:24.476 UTC [51] LOG:  database system was shut down at 2025-05-30 01:05:24 UTC
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      29: 2025-05-30T01:05:24.4808642Z 2025-05-30 01:05:24.480 UTC [48] LOG:  database system is ready to accept connections
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      30: 2025-05-30T01:05:24.5508701Z  done
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      31: 2025-05-30T01:05:24.5508925Z server started
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      32: 2025-05-30T01:05:24.6022025Z 
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      33: 2025-05-30T01:05:24.6022312Z /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      34: 2025-05-30T01:05:24.6022378Z 
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      35: 2025-05-30T01:05:24.6037686Z 2025-05-30 01:05:24.603 UTC [48] LOG:  received fast shutdown request
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      36: 2025-05-30T01:05:24.6044393Z waiting for server to shut down....2025-05-30 01:05:24.604 UTC [48] LOG:  aborting any active transactions
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      37: 2025-05-30T01:05:24.6067701Z 2025-05-30 01:05:24.606 UTC [48] LOG:  background worker "logical replication launcher" (PID 54) exited with exit code 1
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      38: 2025-05-30T01:05:24.6068357Z 2025-05-30 01:05:24.606 UTC [49] LOG:  shutting down
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      39: 2025-05-30T01:05:24.6073051Z 2025-05-30 01:05:24.607 UTC [49] LOG:  checkpoint starting: shutdown immediate
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      40: 2025-05-30T01:05:24.6109825Z 2025-05-30 01:05:24.610 UTC [49] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.001 s, total=0.004 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB; lsn=0/14E4FA0, redo lsn=0/14E4FA0
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      41: 2025-05-30T01:05:24.6151860Z 2025-05-30 01:05:24.615 UTC [48] LOG:  database system is shut down
+fail: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      42: 2025-05-30T01:05:24.7472404Z 2025-05-30 01:05:24.747 UTC [1] LOG:  starting PostgreSQL 17.2 (Debian 17.2-1.pgdg120+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit
+fail: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      43: 2025-05-30T01:05:24.7473100Z 2025-05-30 01:05:24.747 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+fail: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      44: 2025-05-30T01:05:24.7473201Z 2025-05-30 01:05:24.747 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+fail: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      45: 2025-05-30T01:05:24.7485964Z 2025-05-30 01:05:24.748 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+fail: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      46: 2025-05-30T01:05:24.7513825Z 2025-05-30 01:05:24.751 UTC [62] LOG:  database system was shut down at 2025-05-30 01:05:24 UTC
+fail: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      47: 2025-05-30T01:05:24.7557626Z 2025-05-30 01:05:24.755 UTC [1] LOG:  database system is ready to accept connections
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      48: 2025-05-30T01:05:24.7042130Z  done
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      49: 2025-05-30T01:05:24.7042452Z server stopped
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      50: 2025-05-30T01:05:24.7056117Z 
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      51: 2025-05-30T01:05:24.7056428Z PostgreSQL init process complete; ready for start up.
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      52: 2025-05-30T01:05:24.7056525Z 
+fail: Atomic.Net.Asp.AppHost.Resources.POSTGRES[0]
+      53: 2025-05-30T01:05:25.1601708Z 2025-05-30 01:05:25.160 UTC [68] FATAL:  database "POSTGRESDB" does not exist
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Resource 'POSTGRES' is ready.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Publishing ResourceReadyEvent for 'POSTGRES'.
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      5: 2025-05-30T01:05:25.2458886Z Waiting for resource ready to execute for 'POSTGRES'.
+info: Atomic.Net.Asp.AppHost.Resources.WEBAPI[0]
+      6: 2025-05-30T01:05:25.2458904Z Waiting for resource ready to execute for 'POSTGRES'.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Waiting for ResourceReadyEvent for 'POSTGRES'.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      ResourceReadyEvent for 'POSTGRES' completed.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Publishing the result of ResourceReadyEvent for 'POSTGRES'.
+info: Atomic.Net.Asp.AppHost.Resources.WEBAPI[0]
+      7: 2025-05-30T01:05:25.3064085Z Finished waiting for resource 'POSTGRES'.
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      6: 2025-05-30T01:05:25.3064215Z Finished waiting for resource 'POSTGRES'.
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Resource POSTGRES-pgadmin/POSTGRES-pgadmin-tnwgpmtg changed state: Starting -> Running
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Starting health monitoring for resource 'POSTGRES-pgadmin'.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Resource 'POSTGRES-pgadmin' health checks to monitor: POSTGRES-pgadmin_http_/browser_200_check
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES-pgadmin[0]
+      2: 2025-05-30T01:05:26.2940471Z email config is {'CHECK_EMAIL_DELIVERABILITY': False, 'ALLOW_SPECIAL_EMAIL_DOMAINS': [], 'GLOBALLY_DELIVERABLE': True}
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Resource 'POSTGRESDB' is ready.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Publishing ResourceReadyEvent for 'POSTGRESDB'.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Waiting for ResourceReadyEvent for 'POSTGRESDB'.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      ResourceReadyEvent for 'POSTGRESDB' completed.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Publishing the result of ResourceReadyEvent for 'POSTGRESDB'.
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      7: 2025-05-30T01:05:27.2765940Z Waiting for resource ready to execute for 'POSTGRESDB'.
+info: Atomic.Net.Asp.AppHost.Resources.WEBAPI[0]
+      8: 2025-05-30T01:05:27.2765981Z Waiting for resource ready to execute for 'POSTGRESDB'.
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      8: 2025-05-30T01:05:27.2766450Z Finished waiting for resource 'POSTGRESDB'.
+info: Atomic.Net.Asp.AppHost.Resources.WEBAPI[0]
+      9: 2025-05-30T01:05:27.2766447Z Finished waiting for resource 'POSTGRESDB'.
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Resource DATASERVICE/DATASERVICE-zmhaewbm changed state: Running
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Starting health monitoring for resource 'DATASERVICE'.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Resource 'DATASERVICE' has no health checks to monitor.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Resource 'DATASERVICE' is ready.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Publishing ResourceReadyEvent for 'DATASERVICE'.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Waiting for ResourceReadyEvent for 'DATASERVICE'.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      ResourceReadyEvent for 'DATASERVICE' completed.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Publishing the result of ResourceReadyEvent for 'DATASERVICE'.
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      9: 2025-05-30T01:05:28.4700000Z [40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      10: 2025-05-30T01:05:28.4700000Z       Application started. Press Ctrl+C to shut down.
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      11: 2025-05-30T01:05:28.4750000Z [40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      12: 2025-05-30T01:05:28.4750000Z       Hosting environment: Development
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      13: 2025-05-30T01:05:28.4750000Z [40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      14: 2025-05-30T01:05:28.4750000Z       Content root path: /Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.DataService
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      15: 2025-05-30T01:05:28.6280000Z [40m[32minfo[39m[22m[49m: Microsoft.EntityFrameworkCore.Database.Command[20101]
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      16: 2025-05-30T01:05:28.6280000Z       Executed DbCommand (36ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      17: 2025-05-30T01:05:28.6280000Z       SELECT CASE WHEN COUNT(*) = 0 THEN FALSE ELSE TRUE END
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      18: 2025-05-30T01:05:28.6280000Z       FROM pg_class AS cls
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      19: 2025-05-30T01:05:28.6280000Z       JOIN pg_namespace AS ns ON ns.oid = cls.relnamespace
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      20: 2025-05-30T01:05:28.6280000Z       WHERE
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      21: 2025-05-30T01:05:28.6280000Z               cls.relkind IN ('r', 'v', 'm', 'f', 'p') AND
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      22: 2025-05-30T01:05:28.6280000Z               ns.nspname NOT IN ('pg_catalog', 'information_schema') AND
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      23: 2025-05-30T01:05:28.6280000Z               -- Exclude tables which are members of PG extensions
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      24: 2025-05-30T01:05:28.6280000Z               NOT EXISTS (
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      25: 2025-05-30T01:05:28.6280000Z                   SELECT 1 FROM pg_depend WHERE
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      26: 2025-05-30T01:05:28.6280000Z                       classid=(
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      27: 2025-05-30T01:05:28.6280000Z                           SELECT cls.oid
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      28: 2025-05-30T01:05:28.6280000Z                           FROM pg_class AS cls
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      29: 2025-05-30T01:05:28.6280000Z                                    JOIN pg_namespace AS ns ON ns.oid = cls.relnamespace
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      30: 2025-05-30T01:05:28.6280000Z                           WHERE relname='pg_class' AND ns.nspname='pg_catalog'
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      31: 2025-05-30T01:05:28.6280000Z                       ) AND
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      32: 2025-05-30T01:05:28.6280000Z                       objid=cls.oid AND
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      33: 2025-05-30T01:05:28.6280000Z                       deptype IN ('e', 'x')
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      34: 2025-05-30T01:05:28.6280000Z               )
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      35: 2025-05-30T01:05:28.7170000Z [40m[32minfo[39m[22m[49m: Microsoft.EntityFrameworkCore.Database.Command[20101]
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      36: 2025-05-30T01:05:28.7170000Z       Executed DbCommand (8ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      37: 2025-05-30T01:05:28.7170000Z       CREATE TABLE "Foos" (
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      38: 2025-05-30T01:05:28.7170000Z           "Id" integer GENERATED BY DEFAULT AS IDENTITY,
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      39: 2025-05-30T01:05:28.7170000Z           "SensitiveData" text NOT NULL,
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      40: 2025-05-30T01:05:28.7170000Z           "FirstName" text NOT NULL,
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      41: 2025-05-30T01:05:28.7170000Z           "LastName" text NOT NULL,
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      42: 2025-05-30T01:05:28.7170000Z           CONSTRAINT "PK_Foos" PRIMARY KEY ("Id")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      43: 2025-05-30T01:05:28.7170000Z       );
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      44: 2025-05-30T01:05:28.8870000Z [40m[32minfo[39m[22m[49m: Microsoft.EntityFrameworkCore.Database.Command[20101]
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      45: 2025-05-30T01:05:28.8870000Z       Executed DbCommand (4ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      46: 2025-05-30T01:05:28.8870000Z       SELECT EXISTS (
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      47: 2025-05-30T01:05:28.8870000Z           SELECT 1
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      48: 2025-05-30T01:05:28.8870000Z           FROM "Foos" AS f)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      49: 2025-05-30T01:05:29.0010000Z [40m[32minfo[39m[22m[49m: Microsoft.EntityFrameworkCore.Database.Command[20101]
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      50: 2025-05-30T01:05:29.0010000Z       Executed DbCommand (14ms) [Parameters=[@p0='?', @p1='?', @p2='?', @p3='?', @p4='?', @p5='?', @p6='?', @p7='?', @p8='?', @p9='?', @p10='?', @p11='?', @p12='?', @p13='?', @p14='?', @p15='?', @p16='?', @p17='?', @p18='?', @p19='?', @p20='?', @p21='?', @p22='?', @p23='?', @p24='?', @p25='?', @p26='?', @p27='?', @p28='?', @p29='?', @p30='?', @p31='?', @p32='?', @p33='?', @p34='?', @p35='?', @p36='?', @p37='?', @p38='?', @p39='?', @p40='?', @p41='?', @p42='?', @p43='?', @p44='?', @p45='?', @p46='?', @p47='?', @p48='?', @p49='?', @p50='?', @p51='?', @p52='?', @p53='?', @p54='?', @p55='?', @p56='?', @p57='?', @p58='?', @p59='?', @p60='?', @p61='?', @p62='?', @p63='?', @p64='?', @p65='?', @p66='?', @p67='?', @p68='?', @p69='?', @p70='?', @p71='?', @p72='?', @p73='?', @p74='?', @p75='?', @p76='?', @p77='?', @p78='?', @p79='?', @p80='?', @p81='?', @p82='?', @p83='?', @p84='?', @p85='?', @p86='?', @p87='?', @p88='?', @p89='?', @p90='?', @p91='?', @p92='?', @p93='?', @p94='?', @p95='?', @p96='?', @p97='?', @p98='?', @p99='?', @p100='?', @p101='?', @p102='?', @p103='?', @p104='?', @p105='?', @p106='?', @p107='?', @p108='?', @p109='?', @p110='?', @p111='?', @p112='?', @p113='?', @p114='?', @p115='?', @p116='?', @p117='?', @p118='?', @p119='?', @p120='?', @p121='?', @p122='?', @p123='?', @p124='?', @p125='?', @p126='?', @p127='?', @p128='?', @p129='?', @p130='?', @p131='?', @p132='?', @p133='?', @p134='?', @p135='?', @p136='?', @p137='?', @p138='?', @p139='?', @p140='?', @p141='?', @p142='?', @p143='?', @p144='?', @p145='?', @p146='?', @p147='?', @p148='?', @p149='?', @p150='?', @p151='?', @p152='?', @p153='?', @p154='?', @p155='?', @p156='?', @p157='?', @p158='?', @p159='?', @p160='?', @p161='?', @p162='?', @p163='?', @p164='?', @p165='?', @p166='?', @p167='?', @p168='?', @p169='?', @p170='?', @p171='?', @p172='?', @p173='?', @p174='?', @p175='?', @p176='?', @p177='?', @p178='?', @p179='?', @p180='?', @p181='?', @p182='?', @p183='?', @p184='?', @p185='?', @p186='?', @p187='?', @p188='?', @p189='?', @p190='?', @p191='?', @p192='?', @p193='?', @p194='?', @p195='?', @p196='?', @p197='?', @p198='?', @p199='?', @p200='?', @p201='?', @p202='?', @p203='?', @p204='?', @p205='?', @p206='?', @p207='?', @p208='?', @p209='?', @p210='?', @p211='?', @p212='?', @p213='?', @p214='?', @p215='?', @p216='?', @p217='?', @p218='?', @p219='?', @p220='?', @p221='?', @p222='?', @p223='?', @p224='?', @p225='?', @p226='?', @p227='?', @p228='?', @p229='?', @p230='?', @p231='?', @p232='?', @p233='?', @p234='?', @p235='?', @p236='?', @p237='?', @p238='?', @p239='?', @p240='?', @p241='?', @p242='?', @p243='?', @p244='?', @p245='?', @p246='?', @p247='?', @p248='?', @p249='?', @p250='?', @p251='?', @p252='?', @p253='?', @p254='?', @p255='?', @p256='?', @p257='?', @p258='?', @p259='?', @p260='?', @p261='?', @p262='?', @p263='?', @p264='?', @p265='?', @p266='?', @p267='?', @p268='?', @p269='?', @p270='?', @p271='?', @p272='?', @p273='?', @p274='?', @p275='?', @p276='?', @p277='?', @p278='?', @p279='?', @p280='?', @p281='?', @p282='?', @p283='?', @p284='?', @p285='?', @p286='?', @p287='?', @p288='?', @p289='?', @p290='?', @p291='?', @p292='?', @p293='?', @p294='?', @p295='?', @p296='?', @p297='?', @p298='?', @p299='?'], CommandType='Text', CommandTimeout='30']
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      51: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      52: 2025-05-30T01:05:29.0010000Z       VALUES (@p0, @p1, @p2)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      53: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      54: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      55: 2025-05-30T01:05:29.0010000Z       VALUES (@p3, @p4, @p5)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      56: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      57: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      58: 2025-05-30T01:05:29.0010000Z       VALUES (@p6, @p7, @p8)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      59: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      60: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      61: 2025-05-30T01:05:29.0010000Z       VALUES (@p9, @p10, @p11)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      62: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      63: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      64: 2025-05-30T01:05:29.0010000Z       VALUES (@p12, @p13, @p14)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      65: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      66: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      67: 2025-05-30T01:05:29.0010000Z       VALUES (@p15, @p16, @p17)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      68: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      69: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      70: 2025-05-30T01:05:29.0010000Z       VALUES (@p18, @p19, @p20)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      71: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      72: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      73: 2025-05-30T01:05:29.0010000Z       VALUES (@p21, @p22, @p23)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      74: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      75: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      76: 2025-05-30T01:05:29.0010000Z       VALUES (@p24, @p25, @p26)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      77: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      78: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      79: 2025-05-30T01:05:29.0010000Z       VALUES (@p27, @p28, @p29)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      80: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      81: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      82: 2025-05-30T01:05:29.0010000Z       VALUES (@p30, @p31, @p32)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      83: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      84: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      85: 2025-05-30T01:05:29.0010000Z       VALUES (@p33, @p34, @p35)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      86: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      87: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      88: 2025-05-30T01:05:29.0010000Z       VALUES (@p36, @p37, @p38)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      89: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      90: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      91: 2025-05-30T01:05:29.0010000Z       VALUES (@p39, @p40, @p41)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      92: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      93: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      94: 2025-05-30T01:05:29.0010000Z       VALUES (@p42, @p43, @p44)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      95: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      96: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      97: 2025-05-30T01:05:29.0010000Z       VALUES (@p45, @p46, @p47)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      98: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      99: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      100: 2025-05-30T01:05:29.0010000Z       VALUES (@p48, @p49, @p50)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      101: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      102: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      103: 2025-05-30T01:05:29.0010000Z       VALUES (@p51, @p52, @p53)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      104: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      105: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      106: 2025-05-30T01:05:29.0010000Z       VALUES (@p54, @p55, @p56)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      107: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      108: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      109: 2025-05-30T01:05:29.0010000Z       VALUES (@p57, @p58, @p59)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      110: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      111: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      112: 2025-05-30T01:05:29.0010000Z       VALUES (@p60, @p61, @p62)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      113: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      114: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      115: 2025-05-30T01:05:29.0010000Z       VALUES (@p63, @p64, @p65)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      116: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      117: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      118: 2025-05-30T01:05:29.0010000Z       VALUES (@p66, @p67, @p68)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      119: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      120: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      121: 2025-05-30T01:05:29.0010000Z       VALUES (@p69, @p70, @p71)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      122: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      123: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      124: 2025-05-30T01:05:29.0010000Z       VALUES (@p72, @p73, @p74)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      125: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      126: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      127: 2025-05-30T01:05:29.0010000Z       VALUES (@p75, @p76, @p77)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      128: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      129: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      130: 2025-05-30T01:05:29.0010000Z       VALUES (@p78, @p79, @p80)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      131: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      132: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      133: 2025-05-30T01:05:29.0010000Z       VALUES (@p81, @p82, @p83)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      134: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      135: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      136: 2025-05-30T01:05:29.0010000Z       VALUES (@p84, @p85, @p86)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      137: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      138: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      139: 2025-05-30T01:05:29.0010000Z       VALUES (@p87, @p88, @p89)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      140: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      141: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      142: 2025-05-30T01:05:29.0010000Z       VALUES (@p90, @p91, @p92)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      143: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      144: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      145: 2025-05-30T01:05:29.0010000Z       VALUES (@p93, @p94, @p95)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      146: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      147: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      148: 2025-05-30T01:05:29.0010000Z       VALUES (@p96, @p97, @p98)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      149: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      150: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      151: 2025-05-30T01:05:29.0010000Z       VALUES (@p99, @p100, @p101)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      152: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      153: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      154: 2025-05-30T01:05:29.0010000Z       VALUES (@p102, @p103, @p104)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      155: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      156: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      157: 2025-05-30T01:05:29.0010000Z       VALUES (@p105, @p106, @p107)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      158: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      159: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      160: 2025-05-30T01:05:29.0010000Z       VALUES (@p108, @p109, @p110)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      161: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      162: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      163: 2025-05-30T01:05:29.0010000Z       VALUES (@p111, @p112, @p113)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      164: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      165: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      166: 2025-05-30T01:05:29.0010000Z       VALUES (@p114, @p115, @p116)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      167: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      168: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      169: 2025-05-30T01:05:29.0010000Z       VALUES (@p117, @p118, @p119)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      170: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      171: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      172: 2025-05-30T01:05:29.0010000Z       VALUES (@p120, @p121, @p122)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      173: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      174: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      175: 2025-05-30T01:05:29.0010000Z       VALUES (@p123, @p124, @p125)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      176: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      177: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      178: 2025-05-30T01:05:29.0010000Z       VALUES (@p126, @p127, @p128)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      179: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      180: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      181: 2025-05-30T01:05:29.0010000Z       VALUES (@p129, @p130, @p131)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      182: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      183: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      184: 2025-05-30T01:05:29.0010000Z       VALUES (@p132, @p133, @p134)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      185: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      186: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      187: 2025-05-30T01:05:29.0010000Z       VALUES (@p135, @p136, @p137)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      188: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      189: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      190: 2025-05-30T01:05:29.0010000Z       VALUES (@p138, @p139, @p140)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      191: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      192: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      193: 2025-05-30T01:05:29.0010000Z       VALUES (@p141, @p142, @p143)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      194: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      195: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      196: 2025-05-30T01:05:29.0010000Z       VALUES (@p144, @p145, @p146)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      197: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      198: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      199: 2025-05-30T01:05:29.0010000Z       VALUES (@p147, @p148, @p149)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      200: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      201: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      202: 2025-05-30T01:05:29.0010000Z       VALUES (@p150, @p151, @p152)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      203: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      204: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      205: 2025-05-30T01:05:29.0010000Z       VALUES (@p153, @p154, @p155)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      206: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      207: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      208: 2025-05-30T01:05:29.0010000Z       VALUES (@p156, @p157, @p158)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      209: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      210: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      211: 2025-05-30T01:05:29.0010000Z       VALUES (@p159, @p160, @p161)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      212: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      213: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      214: 2025-05-30T01:05:29.0010000Z       VALUES (@p162, @p163, @p164)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      215: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      216: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      217: 2025-05-30T01:05:29.0010000Z       VALUES (@p165, @p166, @p167)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      218: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      219: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      220: 2025-05-30T01:05:29.0010000Z       VALUES (@p168, @p169, @p170)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      221: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      222: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      223: 2025-05-30T01:05:29.0010000Z       VALUES (@p171, @p172, @p173)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      224: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      225: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      226: 2025-05-30T01:05:29.0010000Z       VALUES (@p174, @p175, @p176)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      227: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      228: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      229: 2025-05-30T01:05:29.0010000Z       VALUES (@p177, @p178, @p179)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      230: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      231: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      232: 2025-05-30T01:05:29.0010000Z       VALUES (@p180, @p181, @p182)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      233: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      234: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      235: 2025-05-30T01:05:29.0010000Z       VALUES (@p183, @p184, @p185)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      236: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      237: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      238: 2025-05-30T01:05:29.0010000Z       VALUES (@p186, @p187, @p188)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      239: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      240: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      241: 2025-05-30T01:05:29.0010000Z       VALUES (@p189, @p190, @p191)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      242: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      243: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      244: 2025-05-30T01:05:29.0010000Z       VALUES (@p192, @p193, @p194)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      245: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      246: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      247: 2025-05-30T01:05:29.0010000Z       VALUES (@p195, @p196, @p197)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      248: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      249: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      250: 2025-05-30T01:05:29.0010000Z       VALUES (@p198, @p199, @p200)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      251: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      252: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      253: 2025-05-30T01:05:29.0010000Z       VALUES (@p201, @p202, @p203)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      254: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      255: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      256: 2025-05-30T01:05:29.0010000Z       VALUES (@p204, @p205, @p206)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      257: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      258: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      259: 2025-05-30T01:05:29.0010000Z       VALUES (@p207, @p208, @p209)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      260: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      261: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      262: 2025-05-30T01:05:29.0010000Z       VALUES (@p210, @p211, @p212)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      263: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      264: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      265: 2025-05-30T01:05:29.0010000Z       VALUES (@p213, @p214, @p215)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      266: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      267: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      268: 2025-05-30T01:05:29.0010000Z       VALUES (@p216, @p217, @p218)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      269: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      270: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      271: 2025-05-30T01:05:29.0010000Z       VALUES (@p219, @p220, @p221)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      272: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      273: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      274: 2025-05-30T01:05:29.0010000Z       VALUES (@p222, @p223, @p224)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      275: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      276: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      277: 2025-05-30T01:05:29.0010000Z       VALUES (@p225, @p226, @p227)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      278: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      279: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      280: 2025-05-30T01:05:29.0010000Z       VALUES (@p228, @p229, @p230)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      281: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      282: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      283: 2025-05-30T01:05:29.0010000Z       VALUES (@p231, @p232, @p233)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      284: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      285: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      286: 2025-05-30T01:05:29.0010000Z       VALUES (@p234, @p235, @p236)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      287: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      288: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      289: 2025-05-30T01:05:29.0010000Z       VALUES (@p237, @p238, @p239)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      290: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      291: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      292: 2025-05-30T01:05:29.0010000Z       VALUES (@p240, @p241, @p242)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      293: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      294: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      295: 2025-05-30T01:05:29.0010000Z       VALUES (@p243, @p244, @p245)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      296: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      297: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      298: 2025-05-30T01:05:29.0010000Z       VALUES (@p246, @p247, @p248)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      299: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      300: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      301: 2025-05-30T01:05:29.0010000Z       VALUES (@p249, @p250, @p251)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      302: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      303: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      304: 2025-05-30T01:05:29.0010000Z       VALUES (@p252, @p253, @p254)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      305: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      306: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      307: 2025-05-30T01:05:29.0010000Z       VALUES (@p255, @p256, @p257)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      308: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      309: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      310: 2025-05-30T01:05:29.0010000Z       VALUES (@p258, @p259, @p260)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      311: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      312: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      313: 2025-05-30T01:05:29.0010000Z       VALUES (@p261, @p262, @p263)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      314: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      315: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      316: 2025-05-30T01:05:29.0010000Z       VALUES (@p264, @p265, @p266)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      317: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      318: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      319: 2025-05-30T01:05:29.0010000Z       VALUES (@p267, @p268, @p269)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      320: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      321: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      322: 2025-05-30T01:05:29.0010000Z       VALUES (@p270, @p271, @p272)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      323: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      324: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      325: 2025-05-30T01:05:29.0010000Z       VALUES (@p273, @p274, @p275)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      326: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      327: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      328: 2025-05-30T01:05:29.0010000Z       VALUES (@p276, @p277, @p278)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      329: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      330: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      331: 2025-05-30T01:05:29.0010000Z       VALUES (@p279, @p280, @p281)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      332: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      333: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      334: 2025-05-30T01:05:29.0010000Z       VALUES (@p282, @p283, @p284)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      335: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      336: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      337: 2025-05-30T01:05:29.0010000Z       VALUES (@p285, @p286, @p287)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      338: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      339: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      340: 2025-05-30T01:05:29.0010000Z       VALUES (@p288, @p289, @p290)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      341: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      342: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      343: 2025-05-30T01:05:29.0010000Z       VALUES (@p291, @p292, @p293)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      344: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      345: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      346: 2025-05-30T01:05:29.0010000Z       VALUES (@p294, @p295, @p296)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      347: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      348: 2025-05-30T01:05:29.0010000Z       INSERT INTO "Foos" ("FirstName", "LastName", "SensitiveData")
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      349: 2025-05-30T01:05:29.0010000Z       VALUES (@p297, @p298, @p299)
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      350: 2025-05-30T01:05:29.0010000Z       RETURNING "Id";
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      351: 2025-05-30T01:05:29.0170000Z [40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+info: Atomic.Net.Asp.AppHost.Resources.DATASERVICE[0]
+      352: 2025-05-30T01:05:29.0170000Z       Application is shutting down...
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Resource DATASERVICE/DATASERVICE-zmhaewbm changed state: Running -> Finished
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Stopping health monitoring for resource 'DATASERVICE'.
+info: Atomic.Net.Asp.AppHost.Resources.WEBAPI[0]
+      10: 2025-05-30T01:05:29.6254861Z Finished waiting for resource 'DATASERVICE'.
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Resource WEBAPI/WEBAPI-wvswjzwu changed state: Running
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Starting health monitoring for resource 'WEBAPI'.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Resource 'WEBAPI' has no health checks to monitor.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Resource 'WEBAPI' is ready.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Publishing ResourceReadyEvent for 'WEBAPI'.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Waiting for ResourceReadyEvent for 'WEBAPI'.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      ResourceReadyEvent for 'WEBAPI' completed.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Publishing the result of ResourceReadyEvent for 'WEBAPI'.
+info: Atomic.Net.Asp.AppHost.Resources.SPWA[0]
+      2: 2025-05-30T01:05:29.6544377Z Waiting for resource ready to execute for 'WEBAPI'.
+info: Atomic.Net.Asp.AppHost.Resources.SPWA[0]
+      3: 2025-05-30T01:05:29.6545013Z Finished waiting for resource 'WEBAPI'.
+info: Aspire.Hosting.DistributedApplication[0]
+      Distributed application started. Press Ctrl+C to shut down.
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Resource SPWA/SPWA-rgppchvb changed state: Running
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Starting health monitoring for resource 'SPWA'.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Resource 'SPWA' has no health checks to monitor.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Resource 'SPWA' is ready.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Publishing ResourceReadyEvent for 'SPWA'.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Waiting for ResourceReadyEvent for 'SPWA'.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      ResourceReadyEvent for 'SPWA' completed.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Publishing the result of ResourceReadyEvent for 'SPWA'.
+info: Atomic.Net.Asp.AppHost.Resources.SPWA[0]
+      4: 2025-05-30T01:05:29.7650000Z 
+info: Atomic.Net.Asp.AppHost.Resources.SPWA[0]
+      5: 2025-05-30T01:05:29.7650000Z > vite-project@0.0.0 start
+info: Atomic.Net.Asp.AppHost.Resources.SPWA[0]
+      6: 2025-05-30T01:05:29.7650000Z > vite
+info: Atomic.Net.Asp.AppHost.Resources.SPWA[0]
+      7: 2025-05-30T01:05:29.7650000Z 
+info: Atomic.Net.Asp.AppHost.Resources.SPWA[0]
+      8: 2025-05-30T01:05:30.1600000Z Proxy target: http://localhost:50001
+info: Atomic.Net.Asp.AppHost.Resources.SPWA[0]
+      9: 2025-05-30T01:05:30.2010000Z 
+info: Atomic.Net.Asp.AppHost.Resources.SPWA[0]
+      10: 2025-05-30T01:05:30.2010000Z   VITE v6.3.5  ready in 407 ms
+info: Atomic.Net.Asp.AppHost.Resources.SPWA[0]
+      11: 2025-05-30T01:05:30.2010000Z 
+info: Atomic.Net.Asp.AppHost.Resources.SPWA[0]
+      12: 2025-05-30T01:05:30.2010000Z   ➜  Local:   http://localhost:39643/
+info: Atomic.Net.Asp.AppHost.Resources.SPWA[0]
+      13: 2025-05-30T01:05:30.2010000Z   ➜  Network: http://192.168.200.124:39643/
+info: Atomic.Net.Asp.AppHost.Resources.SPWA[0]
+      14: 2025-05-30T01:05:30.2010000Z   ➜  Network: http://172.20.0.1:39643/
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Waiting for resource 'SPWA' to enter the 'Healthy' state.
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Finished waiting for resource 'SPWA'.
+info: Atomic.Net.Asp.AppHost.Resources.WEBAPI[0]
+      11: 2025-05-30T01:05:30.6580000Z [40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[14]
+info: Atomic.Net.Asp.AppHost.Resources.WEBAPI[0]
+      12: 2025-05-30T01:05:30.6580000Z       Now listening on: http://localhost:41953
+info: Atomic.Net.Asp.AppHost.Resources.WEBAPI[0]
+      13: 2025-05-30T01:05:30.6630000Z [40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+info: Atomic.Net.Asp.AppHost.Resources.WEBAPI[0]
+      14: 2025-05-30T01:05:30.6630000Z       Application started. Press Ctrl+C to shut down.
+info: Atomic.Net.Asp.AppHost.Resources.WEBAPI[0]
+      15: 2025-05-30T01:05:30.6640000Z [40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+info: Atomic.Net.Asp.AppHost.Resources.WEBAPI[0]
+      16: 2025-05-30T01:05:30.6640000Z       Hosting environment: Development
+info: Atomic.Net.Asp.AppHost.Resources.WEBAPI[0]
+      17: 2025-05-30T01:05:30.6640000Z [40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+info: Atomic.Net.Asp.AppHost.Resources.WEBAPI[0]
+      18: 2025-05-30T01:05:30.6640000Z       Content root path: /Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.Application
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES-pgadmin[0]
+      3: 2025-05-30T01:05:34.9304231Z NOTE: Configuring authentication for DESKTOP mode.
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES-pgadmin[0]
+      4: 2025-05-30T01:05:34.9304776Z pgAdmin 4 - Application Initialisation
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES-pgadmin[0]
+      5: 2025-05-30T01:05:34.9304883Z ======================================
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES-pgadmin[0]
+      6: 2025-05-30T01:05:34.9304961Z 
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES-pgadmin[0]
+      7: 2025-05-30T01:05:40.1279160Z ----------
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES-pgadmin[0]
+      8: 2025-05-30T01:05:40.1280394Z Loading servers with:
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES-pgadmin[0]
+      9: 2025-05-30T01:05:40.1282427Z User: pgadmin4@pgadmin.org
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES-pgadmin[0]
+      10: 2025-05-30T01:05:40.1285228Z SQLite pgAdmin config: /var/lib/pgadmin/pgadmin4.db
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES-pgadmin[0]
+      11: 2025-05-30T01:05:40.1286817Z ----------
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES-pgadmin[0]
+      12: 2025-05-30T01:05:43.7539725Z Added 0 Server Group(s) and 1 Server(s).
+fail: Atomic.Net.Asp.AppHost.Resources.POSTGRES-pgadmin[0]
+      13: 2025-05-30T01:05:44.5602548Z postfix/postlog: starting the Postfix mail system
+fail: Atomic.Net.Asp.AppHost.Resources.POSTGRES-pgadmin[0]
+      14: 2025-05-30T01:05:48.8150334Z [2025-05-30 01:05:48 +0000] [1] [INFO] Starting gunicorn 22.0.0
+fail: Atomic.Net.Asp.AppHost.Resources.POSTGRES-pgadmin[0]
+      15: 2025-05-30T01:05:48.8150846Z [2025-05-30 01:05:48 +0000] [1] [INFO] Listening at: http://[::]:80 (1)
+fail: Atomic.Net.Asp.AppHost.Resources.POSTGRES-pgadmin[0]
+      16: 2025-05-30T01:05:48.8151299Z [2025-05-30 01:05:48 +0000] [1] [INFO] Using worker: gthread
+fail: Atomic.Net.Asp.AppHost.Resources.POSTGRES-pgadmin[0]
+      17: 2025-05-30T01:05:48.8179253Z [2025-05-30 01:05:48 +0000] [123] [INFO] Booting worker with pid: 123
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Resource 'POSTGRES-pgadmin' is ready.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Publishing ResourceReadyEvent for 'POSTGRES-pgadmin'.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Waiting for ResourceReadyEvent for 'POSTGRES-pgadmin'.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      ResourceReadyEvent for 'POSTGRES-pgadmin' completed.
+dbug: Aspire.Hosting.Health.ResourceHealthCheckService[0]
+      Publishing the result of ResourceReadyEvent for 'POSTGRES-pgadmin'.
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES-pgadmin[0]
+      18: 2025-05-30T01:05:56.1525054Z ::ffff:172.20.0.1 - - [30/May/2025:01:05:56 +0000] "GET /browser HTTP/1.1" 308 249 "-" "-"
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES-pgadmin[0]
+      19: 2025-05-30T01:05:56.1787012Z ::ffff:172.20.0.1 - - [30/May/2025:01:05:56 +0000] "GET /browser/ HTTP/1.1" 200 7398 "-" "-"
+[xUnit.net 00:00:42.88]       System.TimeoutException : Timeout 30000ms exceeded.
+[xUnit.net 00:00:42.88]       Call log:
+[xUnit.net 00:00:42.88]         - navigating to "http://localhost:41151/", waiting until "load"
+[xUnit.net 00:00:42.88]       Stack Trace:
+[xUnit.net 00:00:42.88]         /_/src/Playwright/Transport/Connection.cs(206,0): at Microsoft.Playwright.Transport.Connection.InnerSendMessageToServerAsync[T](ChannelOwner object, String method, Dictionary`2 dictionary, Boolean keepNulls)
+[xUnit.net 00:00:42.88]         /_/src/Playwright/Transport/Connection.cs(535,0): at Microsoft.Playwright.Transport.Connection.WrapApiCallAsync[T](Func`1 action, Boolean isInternal)
+[xUnit.net 00:00:42.88]         /_/src/Playwright/Core/Frame.cs(796,0): at Microsoft.Playwright.Core.Frame.GotoAsync(String url, FrameGotoOptions options)
+[xUnit.net 00:00:42.88]         /Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.IntegrationTests/Foos/FooTests.cs(97,0): at Atomic.Net.Asp.IntegrationTests.Foos.FooTests.SubmitFormAsync(Int32 fooId)
+[xUnit.net 00:00:42.88]         /Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.IntegrationTests/Foos/FooTests.cs(48,0): at Atomic.Net.Asp.IntegrationTests.Foos.FooTests.GetFoo_DoesntExist_ShowsNotFoundMessage()
+[xUnit.net 00:00:42.88]         --- End of stack trace from previous location ---
+  Failed Atomic.Net.Asp.IntegrationTests.Foos.FooTests.GetFoo_DoesntExist_ShowsNotFoundMessage [30 s]
+  Error Message:
+   System.TimeoutException : Timeout 30000ms exceeded.
+Call log:
+  - navigating to "http://localhost:41151/", waiting until "load"
+  Stack Trace:
+     at Microsoft.Playwright.Transport.Connection.InnerSendMessageToServerAsync[T](ChannelOwner object, String method, Dictionary`2 dictionary, Boolean keepNulls) in /_/src/Playwright/Transport/Connection.cs:line 206
+   at Microsoft.Playwright.Transport.Connection.WrapApiCallAsync[T](Func`1 action, Boolean isInternal) in /_/src/Playwright/Transport/Connection.cs:line 535
+   at Microsoft.Playwright.Core.Frame.GotoAsync(String url, FrameGotoOptions options) in /_/src/Playwright/Core/Frame.cs:line 796
+   at Atomic.Net.Asp.IntegrationTests.Foos.FooTests.SubmitFormAsync(Int32 fooId) in /Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.IntegrationTests/Foos/FooTests.cs:line 97
+   at Atomic.Net.Asp.IntegrationTests.Foos.FooTests.GetFoo_DoesntExist_ShowsNotFoundMessage() in /Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.IntegrationTests/Foos/FooTests.cs:line 48
+--- End of stack trace from previous location ---
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Waiting for resource 'SPWA' to enter the 'Healthy' state.
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Finished waiting for resource 'SPWA'.
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES-pgadmin[0]
+      20: 2025-05-30T01:06:26.1884736Z ::ffff:172.20.0.1 - - [30/May/2025:01:06:26 +0000] "GET /browser HTTP/1.1" 308 249 "-" "-"
+info: Atomic.Net.Asp.AppHost.Resources.POSTGRES-pgadmin[0]
+      21: 2025-05-30T01:06:26.1974999Z ::ffff:172.20.0.1 - - [30/May/2025:01:06:26 +0000] "GET /browser/ HTTP/1.1" 200 7398 "-" "-"
+[xUnit.net 00:01:13.16]       System.TimeoutException : Timeout 30000ms exceeded.
+[xUnit.net 00:01:13.16]       Call log:
+[xUnit.net 00:01:13.16]         - navigating to "http://localhost:41151/", waiting until "load"
+[xUnit.net 00:01:13.16]       Stack Trace:
+[xUnit.net 00:01:13.16]         /_/src/Playwright/Transport/Connection.cs(206,0): at Microsoft.Playwright.Transport.Connection.InnerSendMessageToServerAsync[T](ChannelOwner object, String method, Dictionary`2 dictionary, Boolean keepNulls)
+[xUnit.net 00:01:13.16]         /_/src/Playwright/Transport/Connection.cs(535,0): at Microsoft.Playwright.Transport.Connection.WrapApiCallAsync[T](Func`1 action, Boolean isInternal)
+[xUnit.net 00:01:13.16]         /_/src/Playwright/Core/Frame.cs(796,0): at Microsoft.Playwright.Core.Frame.GotoAsync(String url, FrameGotoOptions options)
+[xUnit.net 00:01:13.16]         /Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.IntegrationTests/Foos/FooTests.cs(97,0): at Atomic.Net.Asp.IntegrationTests.Foos.FooTests.SubmitFormAsync(Int32 fooId)
+[xUnit.net 00:01:13.16]         /Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.IntegrationTests/Foos/FooTests.cs(72,0): at Atomic.Net.Asp.IntegrationTests.Foos.FooTests.GetFoo_IdOutOfRange_ShowsProblemDetails()
+[xUnit.net 00:01:13.16]         --- End of stack trace from previous location ---
+  Failed Atomic.Net.Asp.IntegrationTests.Foos.FooTests.GetFoo_IdOutOfRange_ShowsProblemDetails [30 s]
+  Error Message:
+   System.TimeoutException : Timeout 30000ms exceeded.
+Call log:
+  - navigating to "http://localhost:41151/", waiting until "load"
+  Stack Trace:
+     at Microsoft.Playwright.Transport.Connection.InnerSendMessageToServerAsync[T](ChannelOwner object, String method, Dictionary`2 dictionary, Boolean keepNulls) in /_/src/Playwright/Transport/Connection.cs:line 206
+   at Microsoft.Playwright.Transport.Connection.WrapApiCallAsync[T](Func`1 action, Boolean isInternal) in /_/src/Playwright/Transport/Connection.cs:line 535
+   at Microsoft.Playwright.Core.Frame.GotoAsync(String url, FrameGotoOptions options) in /_/src/Playwright/Core/Frame.cs:line 796
+   at Atomic.Net.Asp.IntegrationTests.Foos.FooTests.SubmitFormAsync(Int32 fooId) in /Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.IntegrationTests/Foos/FooTests.cs:line 97
+   at Atomic.Net.Asp.IntegrationTests.Foos.FooTests.GetFoo_IdOutOfRange_ShowsProblemDetails() in /Projects/csharp/Atomic.Net/ASP.NET/Atomic.Net.Asp.IntegrationTests/Foos/FooTests.cs:line 72
+--- End of stack trace from previous location ---
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Waiting for resource 'SPWA' to enter the 'Healthy' state.
+dbug: Aspire.Hosting.ApplicationModel.ResourceNotificationService[0]
+      Finished waiting for resource 'SPWA'.

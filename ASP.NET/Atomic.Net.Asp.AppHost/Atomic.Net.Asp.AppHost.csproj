@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.AppHost" Version="9.2.1" />
+    <PackageReference Include="Aspire.Hosting.NodeJs" Version="9.3.0" />
     <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="9.2.1" />
   </ItemGroup>
 
@@ -19,6 +20,16 @@
     <ProjectReference Include="..\Atomic.Net.Asp.Application\Atomic.Net.Asp.Application.csproj" />
     <ProjectReference Include="..\Atomic.Net.Asp.ServiceDefaults\Atomic.Net.Asp.ServiceDefaults.csproj" IsAspireProjectResource="false" />
     <ProjectReference Include="..\Atomic.Net.Asp.DataService\Atomic.Net.Asp.DataService.csproj" />
+    <ProjectReference Include="..\Atomic.Net.Asp.DevProxy\Atomic.Net.Asp.DevProxy.csproj" />
   </ItemGroup>
+    
+  <Target Name="RestoreNpm" BeforeTargets="Build" Condition=" '$(DesignTimeBuild)' != 'true' ">
+    <ItemGroup>
+      <PackageJsons Include="..\*\package.json" />
+    </ItemGroup>
 
+    <!-- Install npm packages if node_modules is missing -->
+    <Message Importance="Normal" Text="Installing npm packages for %(PackageJsons.RelativeDir)" Condition="!Exists('%(PackageJsons.RootDir)%(PackageJsons.Directory)/node_modules')" />
+    <Exec Command="npm install" WorkingDirectory="%(PackageJsons.RootDir)%(PackageJsons.Directory)" Condition="!Exists('%(PackageJsons.RootDir)%(PackageJsons.Directory)/node_modules')" />
+  </Target>
 </Project>

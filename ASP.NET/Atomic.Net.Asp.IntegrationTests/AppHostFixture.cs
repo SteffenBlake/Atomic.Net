@@ -10,7 +10,7 @@ public class AppHostFixture : IAsyncLifetime
     
     public DistributedApplication App { get; private set; }= default!;
 
-    public HttpClient AppHttpClient { get; private set; } =  default!;
+    public string SpwaUrl { get; private set; } = default!;
 
     public async Task InitializeAsync()
     {
@@ -18,7 +18,10 @@ public class AppHostFixture : IAsyncLifetime
             .CreateAsync<Projects.Atomic_Net_Asp_AppHost>(
                 [
                     "UseVolumes=false",
-                    "SeedData=true"
+                    "SeedData=true",
+                    "Postgres:Port=5444",
+                    "Environment=Test",
+                    "HostOverride=localhost",
                 ]
             );
         appHost.Services.AddLogging(logging =>
@@ -28,26 +31,16 @@ public class AppHostFixture : IAsyncLifetime
             logging.AddFilter("Aspire.", LogLevel.Debug);
         });
 
-        appHost.Services.ConfigureHttpClientDefaults(clientBuilder =>
-        {
-            clientBuilder.AddStandardResilienceHandler();
-        });
+        App = await appHost.BuildAsync();
+        await App.StartAsync();
 
-        App = await appHost
-            .BuildAsync();
-        await App
-            .StartAsync();
-
-        AppHttpClient = App.CreateHttpClient(ServiceConstants.WEBAPI);
-        await App.ResourceNotifications.WaitForResourceHealthyAsync(
-            ServiceConstants.WEBAPI
-        );
+        SpwaUrl = App.GetEndpoint(
+            ServiceConstants.DEVPROXY, ServiceConstants.SPWA
+        ).AbsoluteUri;
     }
-
 
     public async Task DisposeAsync()
     {
-        AppHttpClient.Dispose();
         await App.DisposeAsync();
     }
 }

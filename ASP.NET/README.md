@@ -6,9 +6,11 @@ This solution shows an example of Atomic Coding Principles applied to a template
 * Atomic.Net.Asp.AppHost - Core .Net Aspire Orchestration project
 * Atomic.Net.Asp.DataService - Database Migrations and optional Data Seeding Worker Service
 * Atomic.Net.Asp.Application - This is the Web App layer, which houses Asp.Net specific logic (Routing, DI, etc)
+* Atomic.Net.Asp.SPWA - Svelte frontend application that connections to the above
 * Atomic.Net.Asp.Domain - This is where the vast majority of the applications logic should go, but is designed to be agnostic to any Application specific implementation details. This project should have no concept of Asp.Net or whatever is consuming it
-* Atomic.Net.Asp.IntegrationTests - xUnit project setup to run end-to-end Integration Tests against a full functional app stack 
+* Atomic.Net.Asp.IntegrationTests - xUnit project setup to run end-to-end Integration Tests against a full functional app stack, using Microsoft.Playwright to perform automated UI tests against the svelte frontend, all the way to the backing database. True end to end!
 * Atomic.Net.Asp.UnitTests - xUnity project setup for Unit Testing Atomic Code pure functions
+* Atomic.Net.Asp.DevProxy - A small dev only YARP reverse proxy app that enables reverse proxying of the web stack, to work around aspire's localhost only limitation
 
 # Architecture 
 The overal architecture uses the following principles:
@@ -76,8 +78,8 @@ Login to the dashboard at https://0.0.0.0:17131/login?t=<some token>
 ```
 
 Open this url in your browser to check out the .Net Aspire dashboard
-3. You should see a url for the WebApi, likely `http://localhost:5066`
-4. `curl localhost:5066/foos/1` to see an example success result
+3. You should see a url for the DevProxy, likely `http://localhost:50001`
+4. `curl localhost:5000/foos/1` to see an example success result
 5. `curl localhost:5066/foos/1000` to see an example NotFound result
 6. `curl localhost:5066/foos/100000` to see an example Validation Error result
 
@@ -87,3 +89,12 @@ Open this url in your browser to check out the .Net Aspire dashboard
 ## Atomic.Net.Asp.IntegrationTests
 1. `dotnet test` this project should be all that is required
 2. Note that via .Net Aspire, this project still stands up a database and runs against it, but the database runs in docker and gets scaffolded then torn down automatically.
+
+# Using a custom Hostname (IE testing from a mobile phone instead of localhost)
+
+1. `cd` to the AppHost project
+2. `dotnet user-secrets set HostOverride "$(hostname)"`
+
+This will override the hostnames used for the entire app stack, as well as enable the YARP dev proxy project, which will automatically reverse proxy all of aspire's load balanced apps to your hostname, with new ports for each proxy.
+
+To access the apps, use the URLs displayed under the DEVPROXY resource, instead of the original un-proxied URLs displayed on the apps themselves.
