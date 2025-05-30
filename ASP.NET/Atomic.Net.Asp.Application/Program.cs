@@ -1,7 +1,7 @@
-using Atomic.Net.Asp.Application;
 using Atomic.Net.Asp.Domain;
 using Microsoft.EntityFrameworkCore;
 using Atomic.Net.Asp.ServiceDefaults;
+using Atomic.Net.Asp.Application.CQRS;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -13,7 +13,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     );
 });
 
-builder.AddCQRS();
+builder.Services.AddCQRS();
 
 var app = builder.Build();
 
@@ -24,6 +24,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.AddRoutes();
+app.MapRoutes();
 
 app.Run();

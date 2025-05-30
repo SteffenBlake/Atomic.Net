@@ -11,4 +11,5 @@ public partial class GetFooQuery : IDomainValidatable
     [Required]
     [Between(1, 9999)]
     public required int FooId { get; set; }
+
 }

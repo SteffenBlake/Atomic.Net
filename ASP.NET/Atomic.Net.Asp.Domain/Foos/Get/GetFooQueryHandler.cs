@@ -3,17 +3,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Atomic.Net.Asp.Domain.Foos.Get;
 
-public class GetFooQueryHandler(
-) : IRequestHandler<GetFooQuery, GetFooResponse>
+public static class GetFooQueryHandler
 {
-    public async Task<IDomainResult<GetFooResponse>> HandleAsync(
-        CommandContext ctx, 
-        GetFooQuery query
-    )
+    public static readonly RequestHandler<GetFooResponse, Unit, GetFooQuery> Run =
+        async (ctx, query) => 
     {
         var result = await ctx.DB.Foos
             .Where(f => f.Id == query.FooId)
-            .Select(GetFooResponse.FromEntity(ctx))
+            .Select(GetFooResponse.FromEntity(ctx.DB))
             .SingleOrDefaultAsync();
 
         if (result == null)
@@ -28,5 +25,5 @@ public class GetFooQueryHandler(
         result.SensitiveData = result.SensitiveData.Sanitize();
 
         return result;
-    }
+    };
 }

@@ -34,7 +34,7 @@ public readonly struct Conflict<TResult>(
 public readonly record struct Unauthorized<TResult>() : IDomainResult<TResult>;
 
 
-public readonly record struct Unit : IDomainResult<Unit>
+public class Unit : IDomainResult<Unit>
 {
     public static readonly Unit Default = new();
 }

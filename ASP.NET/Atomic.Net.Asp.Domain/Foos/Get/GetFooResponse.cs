@@ -11,7 +11,7 @@ public class GetFooResponse : IDomainResult<GetFooResponse>
     public required string SensitiveData { get; set; }
 
     public static Expression<Func<FooEntity, GetFooResponse>> FromEntity(
-        CommandContext _
+        AppDbContext _
     )
     {
         return m => new GetFooResponse()

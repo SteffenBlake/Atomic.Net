@@ -2,13 +2,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Atomic.Net.Asp.Domain.Foos.Delete;
 
-public class DeleteFooCommandHandler(
-): IRequestHandler<DeleteFooCommand, Unit>
+public static class DeleteFooCommandHandler
 {
-    public async Task<IDomainResult<Unit>> HandleAsync(
-        CommandContext ctx,
-        DeleteFooCommand cmd
-    )
+    public static readonly RequestHandler<Unit, Unit, DeleteFooCommand> Run = 
+        async (ctx, cmd ) =>
     {
         var deletions = await ctx.DB.Foos
             .Where(f => f.Id == cmd.FooId)
@@ -20,5 +17,5 @@ public class DeleteFooCommandHandler(
         }
 
         return Unit.Default;
-    }
+    };
 }
