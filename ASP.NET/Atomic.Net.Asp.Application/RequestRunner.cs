@@ -2,29 +2,27 @@ using System.Net;
 using Atomic.Net.Asp.Domain;
 using Atomic.Net.Asp.Domain.Validation;
 
-namespace Atomic.Net.Asp.Application.Controllers;
+namespace Atomic.Net.Asp.Application;
 
-public static class Handlers
+public class RequestRunner<TRequest, TResult>(
+    AppDbContext db, 
+    IRequestHandler<TRequest, TResult> handler
+)
+    where TRequest : class
 {
-    public static async Task<IDomainResult<TResult>> HandleCommandAsync<TRequest, TResult>(
-        HttpContext httpContext,
-        WebContext<TRequest> webContext,
-        TRequest request,
-        Func<CommandContext<TRequest>, TRequest, Task<IDomainResult<TResult>>> query
-    )
-        where TRequest : class
+    public async Task<IDomainResult<TResult>> HandleCommandAsync(HttpContext httpContext, TRequest request)
     {
-        using var txn = await webContext.DB.Database.BeginTransactionAsync();
+        using var txn = await db.Database.BeginTransactionAsync();
         try
         {
-            var result = await HandleQueryAsync(httpContext, webContext, request, query);
-            if (httpContext.Response.StatusCode >= 300)
+            var result = await HandleQueryAsync(httpContext, request);
+            if (result is TResult)
             {
-                await txn.RollbackAsync();
+                await txn.CommitAsync();
             }
             else
             {
-                await txn.CommitAsync();
+                await txn.RollbackAsync();
             }
             return result;
         }
@@ -35,12 +33,7 @@ public static class Handlers
         }
     }
 
-    public static async Task<IDomainResult<TResult>> HandleQueryAsync<TRequest, TResult>(
-        HttpContext httpContext,
-        WebContext<TRequest> webContext,
-        TRequest request,
-        Func<CommandContext<TRequest>, TRequest, Task<IDomainResult<TResult>>> action
-    )
+    public async Task<IDomainResult<TResult>> HandleQueryAsync(HttpContext httpContext, TRequest request)
     {
         if (request is IDomainValidatable validatable)
         {
@@ -56,7 +49,9 @@ public static class Handlers
             }
         }
 
-        var result = await action(webContext.Compile(httpContext), request);
+        var userId = httpContext.User.Identity?.Name;
+
+        var result = await handler.HandleAsync(new(db, userId), request);
 
         httpContext.Response.StatusCode = result switch
         {
@@ -64,7 +59,7 @@ public static class Handlers
             NotFound<TResult> => (int)HttpStatusCode.NotFound,
             Conflict<TResult> => (int)HttpStatusCode.Conflict,
             Unauthorized<TResult> => (int)HttpStatusCode.Unauthorized,
-            _ => throw new ArgumentOutOfRangeException(nameof(action))
+            _ => throw new ArgumentOutOfRangeException(nameof(result))
         };
 
         return result;

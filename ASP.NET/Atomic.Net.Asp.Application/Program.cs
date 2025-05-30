@@ -13,7 +13,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     );
 });
 
-builder.Services.AddScoped(typeof(WebContext<>));
+builder.AddCQRS();
 
 var app = builder.Build();
 

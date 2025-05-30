@@ -3,10 +3,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Atomic.Net.Asp.Domain.Foos.Get;
 
-public static class GetFooQueryHandler
+public class GetFooQueryHandler(
+) : IRequestHandler<GetFooQuery, GetFooResponse>
 {
-    public static async Task<IDomainResult<GetFooResponse>> HandleAsync(
-        CommandContext<GetFooQuery> ctx,
+    public async Task<IDomainResult<GetFooResponse>> HandleAsync(
+        CommandContext ctx, 
         GetFooQuery query
     )
     {
