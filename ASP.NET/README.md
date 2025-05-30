@@ -30,11 +30,12 @@ Instead, we simply just... call our methods directly.
 For all intents and purposes, logic flows as such:
 
 1. Entry level `Program.cs`, where application is bootstrapped
-2. Route binding occurs in Routing.cs where a route is bound up to a controller method
-3. Controllers (which are just static classes) inject the necessary stateful / object pooled objects (like DB Connections, HttpClients, Loggers, HttpContext, etc)
-4. And then hand off work directly to the Command/Query handler via the helper method "HandleCommandAsync" / "HandleQueryAsync"
-
-The only difference between HandleCommand vs HandleQuery is simply whether a wrapping Database Transaction gets opened or not.
+2. Route binding occurs in Routing.cs where a route is bound up to a Handler Delegate
+3. Inner logic that is written to be pure and stateless handles the process of all of:
+    a. TransactionHandler, which will wrap Commands (but not Queries) in a DB Transaction that auto rolls back if anything goes wrong
+    b. QueryHandler, which pulls metadata out of the HttpContext and composes the RequestContext, which holds any requested additional service injections as well (or just set it to a `Unit` if you want nothing)
+    c. ValidationHandler, which will automatically run any detected validation on the request (and short circuit out if validation fails
+4. At which point finally logic gets handed to the actual registered delegated handler you built, with a properly scoped DB, metadata, services all bundled in the RequestContext for you, as well as a DB Transaction already opened if needed, and validation completed. 
 
 ## 3. NOT using Exception throwing as logic switches
 A very common pattern observed in ASP.NET (especially by junior developers) is the naive approach of leveraging a `throw` and a custom `MyApplicationException` in order to communicate Non-Exceptional behaviors upwards to the Controller/HttpContext layer.
