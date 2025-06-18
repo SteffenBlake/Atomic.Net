@@ -5,10 +5,14 @@ namespace Atomic.Net.Asp.Domain.Foos.Get;
 
 public static class GetFooQueryHandler
 {
-    public static readonly RequestHandler<GetFooResponse, Unit, GetFooQuery> Run =
+    public record GetFooContext(
+        DomainScope AllowedFooIds
+    ) : IFooScoped;
+
+    public static readonly QueryHandler<GetFooContext, GetFooQuery, GetFooResponse> Run =
         async (ctx, query) => 
     {
-        var result = await ctx.DB.Foos
+        var result = await ctx.DB.FoosScoped(ctx.DomainContext)
             .Where(f => f.Id == query.FooId)
             .Select(GetFooResponse.FromEntity(ctx.DB))
             .SingleOrDefaultAsync();

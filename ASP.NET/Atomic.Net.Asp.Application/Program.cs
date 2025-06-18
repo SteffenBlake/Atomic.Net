@@ -2,6 +2,7 @@ using Atomic.Net.Asp.Domain;
 using Microsoft.EntityFrameworkCore;
 using Atomic.Net.Asp.ServiceDefaults;
 using Atomic.Net.Asp.Application.CQRS;
+using Atomic.Net.Asp.Domain.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -12,6 +13,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         builder.Configuration.GetConnectionString(ServiceConstants.POSTGRESDB)
     );
 });
+
+builder.Services.AddCommonDomainLayer();
 
 builder.Services.AddCQRS();
 

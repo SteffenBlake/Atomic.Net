@@ -1,40 +1,52 @@
 using Atomic.Net.Asp.Domain;
+using Atomic.Net.Asp.Domain.Transactions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Atomic.Net.Asp.Application.CQRS.Handlers;
 
 public static class CommandHandler
 {
-    public static async Task<IDomainResult<TResult>> HandleAsync<TResult, TServices, TRequest>(
+    public static async Task<IDomainResult<TResult>> HandleAsync<TDomainContext, TRequest, TResult>(
         HttpContext httpContext,
-        [FromServices] AppDbContext db,
-        [FromServices] TServices services,
-        [FromServices] RequestHandler<TResult, TServices, TRequest> handler,
+        [FromServices] ScopedDbContext db,
+        [FromServices] TDomainContext domainCtx,
+        [FromServices] CommandHandler<TDomainContext, TRequest, TResult> handler,
         [AsParameters] TRequest request
     )
-        where TServices : class
+        where TDomainContext : class
         where TRequest : class
     {
-        using var txn = await db.Database.BeginTransactionAsync();
-        try
+        // We declare it as a callback to delay opening of the txn
+        // Until after the other baseline Query handlers have run
+        // That way we ensure the more expensive operation of opening the transaction
+        // Only happens after the flight checks have passed
+        async Task<IDomainResult<TResult>> Curried(
+            RequestContext<TDomainContext> requestCtx,
+            TRequest _requestInner
+        )
         {
-            var result = await QueryHandler.HandleAsync(
-                httpContext, db, services, handler, request
-            );
-            if (result is TResult)
+            using var txn = await UnitOfWork.BeginWithDbTxnAsync(db);
+            try
             {
-                await txn.CommitAsync();
+                var result = await handler(txn, requestCtx, _requestInner);
+
+                if (result is TResult)
+                {
+                    await txn.CommitAsync();
+                }
+                else
+                {
+                    await txn.RollbackAsync();
+                }
+                return result;
             }
-            else
+            catch (Exception)
             {
                 await txn.RollbackAsync();
+                throw;
             }
-            return result;
         }
-        catch (Exception)
-        {
-            txn.Rollback();
-            throw;
-        }
+
+        return await QueryHandler.HandleAsync(httpContext, db, domainCtx, Curried, request);
     }
 }

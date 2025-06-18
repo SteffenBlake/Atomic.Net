@@ -6,20 +6,20 @@ namespace Atomic.Net.Asp.Application.CQRS.Handlers;
 
 public static class QueryHandler 
 {
-    public static async Task<IDomainResult<TResult>> HandleAsync<TResult, TServices, TRequest>(
+    public static async Task<IDomainResult<TResult>> HandleAsync<TDomainContext, TRequest, TResult>(
         HttpContext httpContext, 
-        [FromServices]AppDbContext db,
-        [FromServices] TServices services,
-        [FromServices] RequestHandler<TResult, TServices, TRequest> handler,
+        [FromServices]ScopedDbContext db,
+        [FromServices] TDomainContext domainCtx,
+        [FromServices] QueryHandler<TDomainContext, TRequest, TResult> handler,
         [AsParameters]TRequest request
     )
-        where TServices : class
+        where TDomainContext : class
         where TRequest : class
     {
         var userId = httpContext.User.Identity?.Name;
-        var ctx = new RequestContext<TServices>(services, userId, db);
+        var requestCtx = new RequestContext<TDomainContext>(domainCtx, userId, db);
 
-        var result = await ValidationHandler.HandleAsync(ctx, handler, request);
+        var result = await ValidationHandler.HandleAsync(requestCtx, handler, request);
 
         httpContext.Response.StatusCode = result switch
         {

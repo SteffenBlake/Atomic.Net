@@ -2,15 +2,15 @@ using Atomic.Net.Asp.Application.CQRS.Handlers;
 
 namespace Atomic.Net.Asp.Application.CQRS.Mappers;
 
-public class CQRSMapperPost<TResult, TServices, TRequest>(
+public class CQRSMapperPost<TDomainContext, TRequest, TResult>(
     string pattern
 ) : ICQRSMapper
-    where TServices : class
+    where TDomainContext : class
     where TRequest : class
 {
     public void Run(WebApplication app)
     {
-        app.MapPost(pattern, CommandHandler.HandleAsync<TResult, TServices, TRequest>);
+        app.MapPost(pattern, CommandHandler.HandleAsync<TDomainContext, TRequest, TResult>);
     }
 }
 

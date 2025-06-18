@@ -1,30 +1,27 @@
 using Atomic.Net.Asp.Domain;
+using Atomic.Net.Asp.Domain.Extensions;
 using Atomic.Net.Asp.Domain.Validation;
 
 namespace Atomic.Net.Asp.Application.CQRS.Handlers;
 
 public static class ValidationHandler 
 {
-    public static async Task<IDomainResult<TResult>> HandleAsync<TResult, TServices, TRequest>(
-        RequestContext<TServices> ctx,
-        RequestHandler<TResult, TServices, TRequest> handler,
+    public static async Task<IDomainResult<TResult>> HandleAsync<TDomainContext, TRequest, TResult>(
+        RequestContext<TDomainContext> ctx,
+        QueryHandler<TDomainContext, TRequest, TResult> handler,
         TRequest request
     )
-        where TServices : class
+        where TDomainContext : class
         where TRequest : class
     {
-        if (request is IDomainValidatable validatable)
+        if (
+            request is IDomainValidatable validatable && 
+            validatable.HasErrors<TResult>(out var result)
+        )
         {
-            var validationResult = validatable.Validate();
-            if (!validationResult.IsSuccess)
-            {
-                var problemDetails = validationResult.GetProblemDetails();
-                var validationDetails = ValidationDetails<TResult>
-                    .FromProblemDetails(problemDetails);
-                return validationDetails;
-            }
+            return result; 
         }
 
-        return await handler(ctx, request);
+        return await ScopeEnrichmentHandler.HandleAsync(ctx, handler, request);
     }
 }

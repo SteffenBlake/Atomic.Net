@@ -4,83 +4,83 @@ namespace Atomic.Net.Asp.Application.CQRS;
 
 public static class ServiceCollectionExtensions 
 {
-    public static IServiceCollection AddPutHandler<TResult, TServices, TRequest>(
+    public static IServiceCollection AddPutHandler<TDomainContext, TRequest, TResult>(
         this IServiceCollection services,
         string pattern,
-        RequestHandler<TResult, TServices, TRequest> handler
+        QueryHandler<TDomainContext, TRequest, TResult> handler
     )
-        where TServices : class
+        where TDomainContext : class
         where TRequest : class
     {
         return services
             .AddSingleton(handler)
-            .AddScoped<TServices>()
+            .AddScoped<TDomainContext>()
             .AddSingleton<ICQRSMapper>(
-                new CQRSMapperPut<TResult, TServices, TRequest>(pattern)
+                new CQRSMapperPut<TDomainContext, TRequest, TResult>(pattern)
             );
     }
 
-    public static IServiceCollection AddGetHandler<TResult, TServices, TRequest>(
+    public static IServiceCollection AddGetHandler<TDomainContext, TRequest, TResult>(
         this IServiceCollection services,
         string pattern,
-        RequestHandler<TResult, TServices, TRequest> handler
+        QueryHandler<TDomainContext, TRequest, TResult> handler
     )
-        where TServices : class
+        where TDomainContext : class
         where TRequest : class
     {
         return services
             .AddSingleton(handler)
-            .AddScoped<TServices>()
+            .AddScoped<TDomainContext>()
             .AddSingleton<ICQRSMapper>(
-                new CQRSMapperGet<TResult, TServices, TRequest>(pattern)
+                new CQRSMapperGet<TDomainContext, TRequest, TResult>(pattern)
             );
     }
 
-    public static IServiceCollection AddPostHandler<TResult, TServices, TRequest>(
+    public static IServiceCollection AddPostHandler<TDomainContext, TRequest, TResult>(
         this IServiceCollection services,
         string pattern,
-        RequestHandler<TResult, TServices, TRequest> handler
+        QueryHandler<TDomainContext, TRequest, TResult> handler
     )
-        where TServices : class
+        where TDomainContext : class
         where TRequest : class
     {
         return services
             .AddSingleton(handler)
-            .AddScoped<TServices>()
+            .AddScoped<TDomainContext>()
             .AddSingleton<ICQRSMapper>(
-                new CQRSMapperPost<TResult, TServices, TRequest>(pattern)
+                new CQRSMapperPost<TDomainContext, TRequest, TResult>(pattern)
             );
     }
 
-    public static IServiceCollection AddPatchHandler<TResult, TServices, TRequest>(
+    public static IServiceCollection AddPatchHandler<TDomainContext, TRequest, TResult>(
         this IServiceCollection services,
         string pattern,
-        RequestHandler<TResult, TServices, TRequest> handler
+        QueryHandler<TDomainContext, TRequest, TResult> handler
     )
-        where TServices : class
+        where TDomainContext : class
         where TRequest : class
     {
         return services
             .AddSingleton(handler)
-            .AddScoped<TServices>()
+            .AddScoped<TDomainContext>()
             .AddSingleton<ICQRSMapper>(
-                new CQRSMapperPatch<TResult, TServices, TRequest>(pattern)
+                new CQRSMapperPatch<TDomainContext, TRequest, TResult>(pattern)
             );
     }
 
-    public static IServiceCollection AddDeleteHandler<TResult, TServices, TRequest>(
+    public static IServiceCollection AddDeleteHandler<TDomainContext, TRequest, TResult>(
         this IServiceCollection services,
         string pattern,
-        RequestHandler<TResult, TServices, TRequest> handler
+        CommandHandler<TDomainContext, TRequest, TResult> handler
     )
-        where TServices : class
+        where TDomainContext : class
         where TRequest : class
     {
         return services
             .AddSingleton(handler)
-            .AddScoped<TServices>()
+            .AddScoped<TDomainContext>()
             .AddSingleton<ICQRSMapper>(
-                new CQRSMapperDelete<TResult, TServices, TRequest>(pattern)
+                new CQRSMapperDelete<TDomainContext, TRequest, TResult>(pattern)
             );
     }
 }

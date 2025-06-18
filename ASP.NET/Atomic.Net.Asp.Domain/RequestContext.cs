@@ -1,9 +1,9 @@
 namespace Atomic.Net.Asp.Domain;
 
-public record RequestContext<TServices>
+public record RequestContext<TDomainContext>
 (
-    TServices Services,
+    TDomainContext DomainContext,
     string? UserId,
-    AppDbContext DB
+    ScopedDbContext DB
 )
-where TServices : class;
+where TDomainContext : class;
