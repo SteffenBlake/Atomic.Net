@@ -1,3 +1,4 @@
+using Atomic.Net.Asp.Domain.ThirdParty;
 using Microsoft.EntityFrameworkCore;
 
 namespace Atomic.Net.Asp.Domain.Foos.Delete;
@@ -5,6 +6,7 @@ namespace Atomic.Net.Asp.Domain.Foos.Delete;
 public static class DeleteFooCommandHandler
 {
     public record DeleteFooContext(
+        ThirdPartyHttpClient ThirdPartyClient,
         DomainScope AllowedFooIds
     ) : IFooScoped;
 
@@ -19,6 +21,9 @@ public static class DeleteFooCommandHandler
         {
             return new NotFound<Unit>(nameof(FooEntity), cmd.FooId);
         }
+
+        await ctx.DomainContext.ThirdPartyClient
+            .ThirdPartyNotifyFooDeletedAsync(txn, cmd.FooId);
 
         return Unit.Default;
     };

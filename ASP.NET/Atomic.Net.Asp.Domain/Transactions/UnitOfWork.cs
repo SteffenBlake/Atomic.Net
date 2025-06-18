@@ -4,6 +4,14 @@ public sealed class UnitOfWork : IDomainTransaction
 {
     private readonly Stack<IDomainTransaction> _txns = [];
 
+    public void AppendCallback(
+        Func<Task>? commit = null,
+        Func<Task>? rollback = null
+    )
+    {
+        Append(new DelegateTransaction(commit, rollback));
+    }
+
     public void Append(IDomainTransaction txn) => _txns.Push(txn);
 
     public async Task CommitAsync()
