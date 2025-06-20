@@ -32,9 +32,10 @@ For all intents and purposes, logic flows as such:
 1. Entry level `Program.cs`, where application is bootstrapped
 2. Route binding occurs in Routing.cs where a route is bound up to a Handler Delegate
 3. Inner logic that is written to be pure and stateless handles the process of all of:
-    a. TransactionHandler, which will wrap Commands (but not Queries) in a DB Transaction that auto rolls back if anything goes wrong
-    b. QueryHandler, which pulls metadata out of the HttpContext and composes the RequestContext, which holds any requested additional service injections as well (or just set it to a `Unit` if you want nothing)
-    c. ValidationHandler, which will automatically run any detected validation on the request (and short circuit out if validation fails
+    - CommandHandler, which will wrap Commands (but not Queries) in a UnitOfWork Transaction that auto rolls back if anything goes wrong, see **Unit of Work Pattern** below
+    - QueryHandler, which pulls metadata out of the HttpContext and composes the RequestContext, which holds any requested additional service injections as well (or just set it to a `Unit` if you want nothing)
+    - ValidationHandler, which will automatically run any detected validation on the request (and short circuit out if validation fails
+    - ScopeEnrichmentHandler, which will automatically detect any requested Scopes for Authorization (See **Database Scoping** below)
 4. At which point finally logic gets handed to the actual registered delegated handler you built, with a properly scoped DB, metadata, services all bundled in the RequestContext for you, as well as a DB Transaction already opened if needed, and validation completed. 
 
 ## 3. NOT using Exception throwing as logic switches
@@ -46,7 +47,7 @@ Throwing exceptions should only be used for truly exceptional circumstances when
 
 All other scenarios where you actually expect an error to occur due to invalid input or etc, should return a `Result` from your method which can "smoothly fail"
 
-For the case of this project we utilize the `IDomainResult` interface semaphore, which lets us return either a Success or Fail result, with a matching "why" status code, message, and id field for what caused the failure.
+For the case of this project we utilize the `DomainResult` discriminated union semaphore, which lets us return either a Success or Fail result, with a matching "why" message, and id field for what caused the failure (if applicable)
 
 There are many reasons why this is a far cleaner solution. Primarily it boils down to these though:
 
@@ -54,10 +55,10 @@ There are many reasons why this is a far cleaner solution. Primarily it boils do
 2. Throwing Exceptions brutalizes your performance, the act of snagging a stack trace (which usually gets discarded) is very expensive, and the disruption of the stack obliterates cycles
 3. It will clog up your logs for really no good reason, making it much harder to notice REAL exceptions getting thrown from your "fake" exceptions you keep throwing around.
 
-## Source Gen Validation
+## 4. Source Gen Validation
 Libraries like [Validly](https://github.com/Hookyns/validly) provide extremely performant ways to do validation on Queries / Commands, letting us utilize Attribute based Validation, while reducing overall performance hits they normally would incur.
 
-## Avoiding Mocking
+## 5.Avoiding Mocking
 You may notice not a single "mock" is used in any of the Unit or Integration tests. The reason for this is the core principle of Atomic Programming: If you organize your code dependancies well, there is no need to mock anything.
 
 Unit testable code can be broken out to Pure Atomic functions, which have no dependancy on anything that requires mocking (see the example string "Sanitize" extension method in the Domain project)
@@ -67,6 +68,31 @@ Integration tested code simply runs against a real, actual database. There's no 
 The only exception to this is when you depend on external 3rd party APIs of some sort. In which case you still wont do a full on "Mock", but you will want to leverage the [HttpMessageHandler](https://learn.microsoft.com/en-us/dotnet/api/system.net.http.httpmessagehandler?view=net-9.0) class to simply override behavior of an HttpClient easily
 
 The rare case where your codebase is tightly coupled to some 3rd party library that doesnt expose the ability to do this is the rare case where I would consider Mocking to still be applicable, leveraging Decorator Pattern
+
+## 6. Unit of Work Pattern
+Sometimes things go wrong that are out of your control.
+
+Sometimes you're domain logic has egress write actions that *must* occur at certain steps, and don't have built in transactional behavior. (IE writing out to a file, or perhaps pushing data to a third party api)
+
+So, how do you handle the scenario where you do that, and something farther downstream throws an exception, or errors out?
+
+Enter Unit of Work pattern, where every "side effect" logic has some form of Transaction you define it as, with both a "do it" and "undo it" chunk of logic.
+
+The UnitOfWork class allows you to "bundle" up all these transactions together, and bulk commit or roll them back at once, making the API easy to staple multiple transactional behaviors together at once.
+
+To help with this, only CommandHandlers will get a UnitOfWork injected into them, so if you try and perform any transactional behaviors without the UnitOfWork on hand, it becomes kinda hard to even write meaningful code (signalling to you maybe this should be a Command and not a Query)
+
+# 7. Database Scoping
+
+It's extremely common to have some form of Tenant-esque behavior in applications, where any given logged in user doesn't necessarily have access to *everything*, and this can include simultaneously "can you" access a set, as well as "which" subset of that set you can access. For example perhaps a user can only access Foos with IDs 1 to 50, and thats it.
+
+There's plenty of middleware style solutions for fetching and embedding the list of which things the user can access, but, how do you guardrail developers so they actually **use** those scoped values?
+
+I've tried a few solutions out, and so far the one I've had the best success with is a Scoped Database "wrapper", which wraps around your DB and "filters" access to all your tables through a "Scoped" method, which requires passing in a "Scope" of what the request can access.
+
+This enforces developers to actually think about "what resources *can* this request access meaningfully here?", to substantially reduce the odds the developer accidently exposes a bunch of data to a user they shouldn't be able to access.
+
+Mind you, the developer absolutely still can blast right through these guard rails and grab the "core" database context anyways, but it would require them to do it purposefully and break away from the standards of the project, and hopefully it sticks out like a sore thumb in a code review.
 
 # Trying it out for yourself
 
