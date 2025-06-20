@@ -1,7 +1,7 @@
 using Atomic.Net.Asp.Domain.Foos.Delete;
 using Atomic.Net.Asp.Domain.Foos.Get;
 
-namespace Atomic.Net.Asp.Application.CQRS;
+namespace Atomic.Net.Asp.Application.CQRS; 
 
 public static class Routing
 {

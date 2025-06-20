@@ -1,12 +1,14 @@
 using System.Net;
 using Atomic.Net.Asp.Domain;
+using Atomic.Net.Asp.Domain.Results;
 using Microsoft.AspNetCore.Mvc;
+using Validly.Details;
 
 namespace Atomic.Net.Asp.Application.CQRS.Handlers;
 
 public static class QueryHandler 
 {
-    public static async Task<IDomainResult<TResult>> HandleAsync<TDomainContext, TRequest, TResult>(
+    public static async Task<DomainResult<TResult>> HandleAsync<TDomainContext, TRequest, TResult>(
         HttpContext httpContext, 
         [FromServices]ScopedDbContext db,
         [FromServices] TDomainContext domainCtx,
@@ -21,15 +23,26 @@ public static class QueryHandler
 
         var result = await ValidationHandler.HandleAsync(requestCtx, handler, request);
 
-        httpContext.Response.StatusCode = result switch
+        if (result.TryMatch(out TResult? _))
         {
-            TResult => (int)HttpStatusCode.OK,
-            ValidationDetails<TResult> => (int)HttpStatusCode.BadRequest,
-            NotFound<TResult> => (int)HttpStatusCode.NotFound,
-            Conflict<TResult> => (int)HttpStatusCode.Conflict,
-            Unauthorized<TResult> => (int)HttpStatusCode.Unauthorized,
-            _ => throw new ArgumentOutOfRangeException(nameof(result))
-        };
+            httpContext.Response.StatusCode = (int)HttpStatusCode.OK;
+        } 
+        else if (result.TryMatch(out NotFound _))
+        {
+            httpContext.Response.StatusCode = (int)HttpStatusCode.NotFound;
+        }
+        else if (result.TryMatch(out Conflict _))
+        {
+            httpContext.Response.StatusCode = (int)HttpStatusCode.Conflict;
+        }
+        else if (result.TryMatch(out Unauthorized _))
+        {
+            httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+        }
+        else if (result.TryMatch(out ValidationResultDetails? _))
+        {
+            httpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+        }
 
         return result;
     }

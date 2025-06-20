@@ -1,3 +1,4 @@
+using Atomic.Net.Asp.Domain.Results;
 using Atomic.Net.Asp.Domain.Transactions;
 using Microsoft.Extensions.Logging;
 
@@ -7,7 +8,7 @@ public class ThirdPartyHttpClient(
     ILogger<ThirdPartyHttpClient> logger
 )
 {
-    public async Task<IDomainResult<Unit>> ThirdPartyNotifyFooDeletedAsync(
+    public async Task<DomainResult<Unit>> ThirdPartyNotifyFooDeletedAsync(
         UnitOfWork txn, int fooId
     )
     {

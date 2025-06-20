@@ -1,4 +1,5 @@
 using Atomic.Net.Asp.Domain.Extensions;
+using Atomic.Net.Asp.Domain.Results;
 using Microsoft.EntityFrameworkCore;
 
 namespace Atomic.Net.Asp.Domain.Foos.Get;
@@ -19,7 +20,7 @@ public static class GetFooQueryHandler
 
         if (result == null)
         {
-            return new NotFound<GetFooResponse>(nameof(FooEntity), query.FooId);
+            return new NotFound(nameof(FooEntity), query.FooId);
         }
 
         // Normally you'd just do this in the DB Query itself

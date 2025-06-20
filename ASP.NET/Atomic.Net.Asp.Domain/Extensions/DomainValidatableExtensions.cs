@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Atomic.Net.Asp.Domain.Results;
 using Atomic.Net.Asp.Domain.Validation;
 
 namespace Atomic.Net.Asp.Domain.Extensions;
@@ -7,7 +8,7 @@ public static class DomainValidatableExtensions
 {
     public static bool HasErrors<TResult>(
         this IDomainValidatable validatable, 
-        [NotNullWhen(true)] out IDomainResult<TResult>? result
+        [NotNullWhen(true)] out DomainResult<TResult>? result
     )
     {
         var validationResult = validatable.Validate();
@@ -17,9 +18,7 @@ public static class DomainValidatableExtensions
             return false;
         }
 
-        var problemDetails = validationResult.GetProblemDetails();
-        result = ValidationDetails<TResult>.FromProblemDetails(problemDetails);
-
+        result = validationResult.GetProblemDetails();
         return true;
     }
 }

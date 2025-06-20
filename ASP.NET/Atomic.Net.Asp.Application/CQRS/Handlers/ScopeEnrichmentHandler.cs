@@ -1,11 +1,12 @@
 using Atomic.Net.Asp.Domain;
 using Atomic.Net.Asp.Domain.Foos;
+using Atomic.Net.Asp.Domain.Results;
 
 namespace Atomic.Net.Asp.Application.CQRS.Handlers;
 
 public static class ScopeEnrichmentHandler
 {
-    internal static async Task<IDomainResult<TResult>> HandleAsync<TDomainContext, TRequest, TResult>(
+    internal static async Task<DomainResult<TResult>> HandleAsync<TDomainContext, TRequest, TResult>(
         RequestContext<TDomainContext> ctx, 
         QueryHandler<TDomainContext, TRequest, TResult> handler, 
         TRequest request

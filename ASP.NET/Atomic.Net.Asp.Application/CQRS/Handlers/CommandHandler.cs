@@ -1,4 +1,5 @@
 using Atomic.Net.Asp.Domain;
+using Atomic.Net.Asp.Domain.Results;
 using Atomic.Net.Asp.Domain.Transactions;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,7 +7,7 @@ namespace Atomic.Net.Asp.Application.CQRS.Handlers;
 
 public static class CommandHandler
 {
-    public static async Task<IDomainResult<TResult>> HandleAsync<TDomainContext, TRequest, TResult>(
+    public static async Task<DomainResult<TResult>> HandleAsync<TDomainContext, TRequest, TResult>(
         HttpContext httpContext,
         [FromServices] ScopedDbContext db,
         [FromServices] TDomainContext domainCtx,
@@ -20,7 +21,7 @@ public static class CommandHandler
         // Until after the other baseline Query handlers have run
         // That way we ensure the more expensive operation of opening the transaction
         // Only happens after the flight checks have passed
-        async Task<IDomainResult<TResult>> Curried(
+        async Task<DomainResult<TResult>> Curried(
             RequestContext<TDomainContext> requestCtx,
             TRequest _requestInner
         )
@@ -30,7 +31,7 @@ public static class CommandHandler
             {
                 var result = await handler(txn, requestCtx, _requestInner);
 
-                if (result is TResult)
+                if (result.TryMatch(out TResult? _))
                 {
                     await txn.CommitAsync();
                 }

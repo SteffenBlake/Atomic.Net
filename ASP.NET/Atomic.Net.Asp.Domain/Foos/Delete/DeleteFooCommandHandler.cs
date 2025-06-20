@@ -1,3 +1,4 @@
+using Atomic.Net.Asp.Domain.Results;
 using Atomic.Net.Asp.Domain.ThirdParty;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,12 +20,10 @@ public static class DeleteFooCommandHandler
 
         if (deletions < 1)
         {
-            return new NotFound<Unit>(nameof(FooEntity), cmd.FooId);
+            return new NotFound(nameof(FooEntity), cmd.FooId);
         }
 
-        await ctx.DomainContext.ThirdPartyClient
+        return await ctx.DomainContext.ThirdPartyClient
             .ThirdPartyNotifyFooDeletedAsync(txn, cmd.FooId);
-
-        return Unit.Default;
     };
 }
