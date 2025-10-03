@@ -6,6 +6,8 @@ public static class ServiceConstants
     public const string SPWA = nameof(SPWA); 
     public const string POSTGRES = nameof(POSTGRES); 
     public const string POSTGRESDB = nameof(POSTGRESDB); 
+    public const string POSTGRESBACKUP = nameof(POSTGRESBACKUP); 
+    public const string POSTGRESRESTORE = nameof(POSTGRESRESTORE); 
     public const string DATASERVICE = nameof(DATASERVICE); 
     public const string DEVPROXY = nameof(DEVPROXY); 
 }

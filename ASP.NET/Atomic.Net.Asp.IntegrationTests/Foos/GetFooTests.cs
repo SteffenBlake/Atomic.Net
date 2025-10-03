@@ -1,12 +1,10 @@
 using Atomic.Net.Asp.ServiceDefaults;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Playwright;
 using Microsoft.Playwright.Xunit;
 
 namespace Atomic.Net.Asp.IntegrationTests.Foos;
 
-[Collection("Global Test Collection")]
-public class FooTests(AppHostFixture appHostFixture) : PageTest
+[Collection("AppHostCollection")]
+public class GetFooTests(AppHostFixture appHostFixture) : PageTest
 {
     private readonly AppHostFixture _appHostFixture = appHostFixture;
 
@@ -20,17 +18,17 @@ public class FooTests(AppHostFixture appHostFixture) : PageTest
         await SubmitFormAsync(1);
 
         await Page
-            .GetByTestId("foo-result-id")
+            .GetByTestId("get-foo-result-id")
             .WaitForAsync();
 
         var id = await Page
-            .GetByTestId("foo-result-id")
+            .GetByTestId("get-foo-result-id")
             .TextContentAsync();
         var fullName = await Page
-            .GetByTestId("foo-result-fullname")
+            .GetByTestId("get-foo-result-fullname")
             .TextContentAsync();
         var sensitive = await Page
-            .GetByTestId("foo-result-sensitive")
+            .GetByTestId("get-foo-result-sensitive")
             .TextContentAsync();
 
         Assert.Equal("1", id);
@@ -48,11 +46,11 @@ public class FooTests(AppHostFixture appHostFixture) : PageTest
         await SubmitFormAsync(500);
 
         await Page
-            .GetByTestId("server-errors")
+            .GetByTestId("get-foo-server-errors")
             .WaitForAsync();
 
         var errorMsg = await Page
-            .GetByTestId("server-errors")
+            .GetByTestId("get-foo-server-errors")
             .TextContentAsync();
 
         Assert.Equal(
@@ -71,17 +69,17 @@ public class FooTests(AppHostFixture appHostFixture) : PageTest
         await SubmitFormAsync(50000);
 
         await Page
-            .GetByTestId("validation-errors")
+            .GetByTestId("get-foo-validation-errors")
             .WaitForAsync();
 
         var titleSpan = Page
-            .GetByTestId("validation-errors")
+            .GetByTestId("get-foo-validation-errors")
             .Locator("span")
             .First;
         await titleSpan.WaitForAsync();
         var title = await titleSpan.TextContentAsync();
 
-        var errorDetailsSpan = Page.GetByTestId("validation-errors-details-0");
+        var errorDetailsSpan = Page.GetByTestId("get-foo-validation-errors-details-0");
         await errorDetailsSpan.WaitForAsync();
 
         var errorDetails = await errorDetailsSpan.TextContentAsync();
@@ -96,10 +94,10 @@ public class FooTests(AppHostFixture appHostFixture) : PageTest
         await Page.GotoAsync(url);
 
         await Page
-            .GetByTestId("foo-id-input")
+            .GetByTestId("get-foo-id-input")
             .FillAsync(fooId.ToString());
         await Page
-            .GetByTestId("submit-btn")
+            .GetByTestId("get-foo-submit-btn")
             .ClickAsync();
     }
 }

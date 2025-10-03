@@ -17,6 +17,34 @@ var postgres = builder.AddPostgres(
 
 var postgresDb = postgres.AddDatabase(ServiceConstants.POSTGRESDB);
 
+var postgresBackup = builder.AddContainer(ServiceConstants.POSTGRESBACKUP, "library/postgres", "17.6")
+    .WithEntrypoint("pg_dump")
+    .WithEnvironment(ctx => {
+        var endpoint = postgres.GetEndpoint("tcp");
+        ctx.EnvironmentVariables["PGHOST"] = endpoint.Property(EndpointProperty.Host);
+        ctx.EnvironmentVariables["PGPORT"] = endpoint.Property(EndpointProperty.Port);
+        ctx.EnvironmentVariables["PGUSER"] = "postgres";
+        ctx.EnvironmentVariables["PGPASSWORD"] = postgresPassword;
+        ctx.EnvironmentVariables["PGDATABASE"] = ServiceConstants.POSTGRESDB;
+    })
+    .WithArgs("-f", "/backup/db_snapshot.sql", "--clean")
+    .WithVolume(ServiceConstants.POSTGRESBACKUP, "/backup")
+    .WithExplicitStart();
+
+var postgresRestore = builder.AddContainer(ServiceConstants.POSTGRESRESTORE, "library/postgres", "17.6")
+    .WithEntrypoint("psql")
+    .WithEnvironment(ctx => {
+        var endpoint = postgres.GetEndpoint("tcp");
+        ctx.EnvironmentVariables["PGHOST"] = endpoint.Property(EndpointProperty.Host);
+        ctx.EnvironmentVariables["PGPORT"] = endpoint.Property(EndpointProperty.Port);
+        ctx.EnvironmentVariables["PGUSER"] = "postgres";
+        ctx.EnvironmentVariables["PGPASSWORD"] = postgresPassword;
+        ctx.EnvironmentVariables["PGDATABASE"] = ServiceConstants.POSTGRESDB;
+    })
+    .WithArgs("-f", "/backup/db_snapshot.sql")
+    .WithVolume(ServiceConstants.POSTGRESBACKUP, "/backup")
+    .WithExplicitStart();
+
 var dataService = builder.AddProject<Projects.Atomic_Net_Asp_DataService>(
         ServiceConstants.DATASERVICE
     )
@@ -45,8 +73,8 @@ if (useVolumes)
 if (!string.IsNullOrEmpty(hostOverride))
 {
     var devProxy = builder.AddProject<Projects.Atomic_Net_Asp_DevProxy>(
-        ServiceConstants.DEVPROXY
-    )
+            ServiceConstants.DEVPROXY
+        )
         .WithEnvironment("HostOverride", hostOverride)
         .ProxyTo(application, hostOverride, out var applicationProxiedUrl)
         .ProxyTo(spwa, hostOverride, out var spwaProxiedUrl)

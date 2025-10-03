@@ -2,16 +2,35 @@
     import * as formatMsg from "format-message";
     import { apiClient } from "./httpClient";
     import { isAxiosError } from "axios";
-    let fooId: number = 1;
+    let getFooId: number = 1;
     let getFoo: Promise<any>;
 
-    function submit() {
-        getFoo = fetchFoo(fooId);
+    function onGetFoo() {
+        getFoo = getFooCmd();
     }
 
-    async function fetchFoo(fooId: number): Promise<any> {
+    async function getFooCmd(): Promise<any> {
         try {
-            const res = await apiClient.get(`/api/foos/${fooId}`);
+            const res = await apiClient.get(`/api/foos/${getFooId}`);
+            return res.data;
+        } catch (error: unknown) {
+            if (isAxiosError(error)) {
+                throw error.response?.data ?? error;
+            }
+            throw error;
+        }
+    }
+    
+    let deleteFooId: number = 1;
+    let deleteFoo: Promise<any>;
+
+    function onDeleteFoo() {
+        deleteFoo = deleteFooCmd();
+    }
+
+    async function deleteFooCmd(): Promise<any> {
+        try {
+            const res = await apiClient.delete(`/api/foos/${deleteFooId}`);
             return res.data;
         } catch (error: unknown) {
             if (isAxiosError(error)) {
@@ -28,17 +47,17 @@
 </script>
 
 <main>
-    <form on:submit|preventDefault={submit} aria-label="Foo fetch form">
-        <label for="foo-id-input">
-            Foo ID:
+    <form on:submit|preventDefault={onGetFoo} aria-label="Get Foo form">
+        <label for="get-foo-id-input">
+            Get Foo ID:
             <input
-                data-testid="foo-id-input"
+                data-testid="get-foo-id-input"
                 type="number"
-                bind:value={fooId}
+                bind:value={getFooId}
                 min="1"
             />
         </label>
-        <button type="submit" data-testid="submit-btn">Submit</button>
+        <button type="submit" data-testid="get-foo-submit-btn">Submit</button>
     </form>
 
     {#if getFoo}
@@ -47,29 +66,29 @@
         {:then data}
             <div role="region" aria-label="Foo data">
                 <span
-                    >ID: <span data-testid="foo-result-id">{data.id}</span
+                    >ID: <span data-testid="get-foo-result-id">{data.id}</span
                     ></span
                 >
                 <br />
                 <span
-                    >Full Name: <span data-testid="foo-result-fullname"
+                    >Full Name: <span data-testid="get-foo-result-fullname"
                         >{data.fullName}</span
                     ></span
                 >
                 <br />
                 <span
-                    >Sensitive Data: <span data-testid="foo-result-sensitive"
+                    >Sensitive Data: <span data-testid="get-foo-result-sensitive"
                         >{data.sensitiveData}</span
                     ></span
                 >
             </div>
         {:catch error}
             {#if error.title}
-                <div data-testid="validation-errors">
+                <div data-testid="get-foo-validation-errors">
                     <span>{error.title}</span><br />
                     <div>
                         {#each error.errors as errorDetail, n}
-                            <span data-testid="validation-errors-details-{n}">
+                            <span data-testid="get-foo-validation-errors-details-{n}">
                                 {format(errorDetail)}
                             </span>
                         {/each}
@@ -77,7 +96,49 @@
                 </div>
             {:else if error.message}
                 <div role="alert">
-                    <span data-testid="server-errors">
+                    <span data-testid="get-foo-server-errors">
+                        {error.message}
+                    </span>
+                </div>
+            {/if}
+        {/await}
+    {/if}
+
+    <hr/>
+
+    <form on:submit|preventDefault={onDeleteFoo} aria-label="Foo delete form">
+        <label for="delete-foo-id-input">
+            Delete Foo ID:
+            <input
+                data-testid="delete-foo-id-input"
+                type="number"
+                bind:value={deleteFooId}
+                min="1"
+            />
+        </label>
+        <button type="submit" data-testid="delete-foo-submit-btn">Submit</button>
+    </form>
+    
+    {#if deleteFoo}
+        {#await deleteFoo}
+            <span role="status" aria-live="polite">Loading...</span>
+        {:then data}
+            <span data-testid="delete-foo-success">Success!</span>
+        {:catch error}
+            {#if error.title}
+                <div data-testid="delete-foo-validation-errors">
+                    <span>{error.title}</span><br />
+                    <div>
+                        {#each error.errors as errorDetail, n}
+                            <span data-testid="delete-foo-validation-errors-details-{n}">
+                                {format(errorDetail)}
+                            </span>
+                        {/each}
+                    </div>
+                </div>
+            {:else if error.message}
+                <div role="alert">
+                    <span data-testid="delete-foo-server-errors">
                         {error.message}
                     </span>
                 </div>

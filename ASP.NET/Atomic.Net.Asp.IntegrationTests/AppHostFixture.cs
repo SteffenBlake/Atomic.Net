@@ -7,10 +7,17 @@ namespace Atomic.Net.Asp.IntegrationTests;
 
 public class AppHostFixture : IAsyncLifetime
 {
-    
     public DistributedApplication App { get; private set; }= default!;
 
     public string SpwaUrl { get; private set; } = default!;
+
+    public async Task RestoreDb()
+    {
+        await ExecuteContainerAsync(
+            ServiceConstants.POSTGRESRESTORE, 
+            new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token
+        );
+    }
 
     public async Task InitializeAsync()
     {
@@ -34,9 +41,38 @@ public class AppHostFixture : IAsyncLifetime
         App = await appHost.BuildAsync();
         await App.StartAsync();
 
+        await App.ResourceNotifications.WaitForResourceAsync(
+            ServiceConstants.DATASERVICE, KnownResourceStates.Finished, 
+            new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token
+        );
+
+        await ExecuteContainerAsync(
+            ServiceConstants.POSTGRESBACKUP, 
+            new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token
+        );
+
         SpwaUrl = App.GetEndpoint(
             ServiceConstants.DEVPROXY, ServiceConstants.SPWA
         ).AbsoluteUri;
+    }
+
+    private async Task ExecuteContainerAsync(string name, CancellationToken cancellationToken)
+    {
+        var cmdService = App.Services.GetRequiredService<ResourceCommandService>();
+
+        var result = await cmdService.ExecuteCommandAsync(
+            name, "resource-start", cancellationToken
+        );
+        if (!result.Success)
+        {
+            throw new Exception(result.ErrorMessage);
+        }
+
+        await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+
+        await App.ResourceNotifications.WaitForResourceAsync(
+            name, KnownResourceStates.Exited, cancellationToken
+        );
     }
 
     public async Task DisposeAsync()

@@ -9,6 +9,8 @@ public sealed class UnitOfWork : IDomainTransaction
         Func<Task>? rollback = null
     )
     {
+        commit ??= () => Task.CompletedTask;
+        rollback ??= () => Task.CompletedTask;
         Append(new DelegateTransaction(commit, rollback));
     }
 
