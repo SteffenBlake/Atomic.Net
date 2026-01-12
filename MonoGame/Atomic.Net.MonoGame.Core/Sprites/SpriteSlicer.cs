@@ -1,8 +1,9 @@
+using Microsoft.Xna.Framework;
+
 namespace Atomic.Net.MonoGame.Core.Sprites;
 
-public class SpriteSlicer(int size)
+public readonly record struct SpriteSlicer(int Size)
 {
-    public int Size => size;
     public Rectangle this[int x, int y]
-        => new(x * size, y * size, size, size);
+        => new(x * Size, y * Size, Size, Size);
 }

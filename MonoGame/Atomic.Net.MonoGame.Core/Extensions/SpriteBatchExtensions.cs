@@ -1,6 +1,9 @@
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+
 namespace Atomic.Net.MonoGame.Core.Extensions;
 
-public class SpriteBatchExtensions 
+public static class SpriteBatchExtensions 
 {
     private static Texture2D? pixel;
 

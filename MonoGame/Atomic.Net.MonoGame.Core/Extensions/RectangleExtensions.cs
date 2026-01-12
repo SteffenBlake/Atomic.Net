@@ -1,3 +1,5 @@
+using Microsoft.Xna.Framework;
+
 namespace Atomic.Net.Monogame.Core.Extensions;
 
 public static class RectangleExtensions

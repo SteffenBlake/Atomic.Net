@@ -1,0 +1,147 @@
+using Microsoft.Xna.Framework;
+using Atomic.Net.MonoGame.Core;
+using Atomic.Net.MonoGame.BED;
+using Atomic.Net.MonoGame.BED.Hierarchy;
+
+namespace Atomic.Net.MonoGame.Transform;
+
+public sealed class TransformRegistry :
+    ISingleton<TransformRegistry>,
+    IEventHandler<BehaviorAddedEvent<PositionBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<PositionBehavior>>,
+    IEventHandler<BehaviorRemovedEvent<PositionBehavior>>,
+    IEventHandler<BehaviorAddedEvent<RotationBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<RotationBehavior>>,
+    IEventHandler<BehaviorRemovedEvent<RotationBehavior>>,
+    IEventHandler<BehaviorAddedEvent<ScaleBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<ScaleBehavior>>,
+    IEventHandler<BehaviorRemovedEvent<ScaleBehavior>>,
+    IEventHandler<BehaviorAddedEvent<AnchorBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<AnchorBehavior>>,
+    IEventHandler<BehaviorRemovedEvent<AnchorBehavior>>,
+    IEventHandler<BehaviorAddedEvent<Parent>>,
+    IEventHandler<PostBehaviorUpdatedEvent<Parent>>,
+    IEventHandler<BehaviorRemovedEvent<Parent>>
+{
+    public static TransformRegistry Instance { get; } = new();
+
+    private readonly bool[] _dirty = new bool[Constants.MaxEntities];
+
+    public void Recalculate()
+    {
+        for (ushort i = 0; i < Constants.MaxEntities; i++)
+        {
+            if (_dirty[i])
+            {
+                RecalculateNode(new Entity(i));
+            }
+        }
+    }
+
+    private void RecalculateNode(Entity entity)
+    {
+        _dirty[entity.Index] = false;
+
+        var parentTransform = Matrix.Identity;
+        if (entity.TryGetParent(out var parent))
+        {
+            if (BehaviorRegistry<WorldTransform>.Instance.TryGetBehavior(
+                    parent.Value, out var pTransform
+            ))
+            {
+                parentTransform = pTransform.Value.Transform;
+            }
+        }
+
+        var position = Vector3.Zero;
+        if (BehaviorRegistry<PositionBehavior>.Instance.TryGetBehavior(entity, out var pos))
+        {
+            position = pos.Value.Value;
+        }
+
+        var rotation = Quaternion.Identity;
+        if (BehaviorRegistry<RotationBehavior>.Instance.TryGetBehavior(entity, out var rot))
+        {
+            rotation = rot.Value.Value;
+        }
+
+        var scale = Vector3.One;
+        if (BehaviorRegistry<ScaleBehavior>.Instance.TryGetBehavior(entity, out var scl))
+        {
+            scale = scl.Value.Value;
+        }
+
+        var anchor = Vector3.Zero;
+        if (BehaviorRegistry<AnchorBehavior>.Instance.TryGetBehavior(entity, out var anc))
+        {
+            anchor = anc.Value.Value;
+        }
+
+        // Compute local transform: Scale * Rotation * Translation * Anchor offset
+        var localTransform =
+            Matrix.CreateTranslation(-anchor) *
+            Matrix.CreateScale(scale) *
+            Matrix.CreateFromQuaternion(rotation) *
+            Matrix.CreateTranslation(position + anchor);
+
+        var worldTransform = localTransform * parentTransform;
+
+        entity.SetBehavior((ref WorldTransform v) =>
+            v = new WorldTransform(worldTransform)
+        );
+
+        foreach (var child in entity.GetChildren())
+        {
+            RecalculateNode(child);
+        }
+    }
+
+    private void MarkDirty(Entity entity)
+    {
+        _dirty[entity.Index] = true;
+    }
+
+    public void OnEvent(BehaviorAddedEvent<PositionBehavior> e) => MarkDirty(e.Entity);
+    public void OnEvent(PostBehaviorUpdatedEvent<PositionBehavior> e) => MarkDirty(e.Entity);
+    public void OnEvent(BehaviorRemovedEvent<PositionBehavior> e) => MarkDirty(e.Entity);
+
+    public void OnEvent(BehaviorAddedEvent<RotationBehavior> e) => MarkDirty(e.Entity);
+    public void OnEvent(PostBehaviorUpdatedEvent<RotationBehavior> e) => MarkDirty(e.Entity);
+    public void OnEvent(BehaviorRemovedEvent<RotationBehavior> e) => MarkDirty(e.Entity);
+
+    public void OnEvent(BehaviorAddedEvent<ScaleBehavior> e) => MarkDirty(e.Entity);
+    public void OnEvent(PostBehaviorUpdatedEvent<ScaleBehavior> e) => MarkDirty(e.Entity);
+    public void OnEvent(BehaviorRemovedEvent<ScaleBehavior> e) => MarkDirty(e.Entity);
+
+    public void OnEvent(BehaviorAddedEvent<AnchorBehavior> e) => MarkDirty(e.Entity);
+    public void OnEvent(PostBehaviorUpdatedEvent<AnchorBehavior> e) => MarkDirty(e.Entity);
+    public void OnEvent(BehaviorRemovedEvent<AnchorBehavior> e) => MarkDirty(e.Entity);
+
+    public void OnEvent(BehaviorAddedEvent<Parent> e) => MarkDirty(e.Entity);
+    public void OnEvent(PostBehaviorUpdatedEvent<Parent> e) => MarkDirty(e.Entity);
+    public void OnEvent(BehaviorRemovedEvent<Parent> e) => MarkDirty(e.Entity);
+
+    public static void Register()
+    {
+        EventBus<BehaviorAddedEvent<PositionBehavior>>.Register<TransformRegistry>();
+        EventBus<PostBehaviorUpdatedEvent<PositionBehavior>>.Register<TransformRegistry>();
+        EventBus<BehaviorRemovedEvent<PositionBehavior>>.Register<TransformRegistry>();
+
+        EventBus<BehaviorAddedEvent<RotationBehavior>>.Register<TransformRegistry>();
+        EventBus<PostBehaviorUpdatedEvent<RotationBehavior>>.Register<TransformRegistry>();
+        EventBus<BehaviorRemovedEvent<RotationBehavior>>.Register<TransformRegistry>();
+
+        EventBus<BehaviorAddedEvent<ScaleBehavior>>.Register<TransformRegistry>();
+        EventBus<PostBehaviorUpdatedEvent<ScaleBehavior>>.Register<TransformRegistry>();
+        EventBus<BehaviorRemovedEvent<ScaleBehavior>>.Register<TransformRegistry>();
+
+        EventBus<BehaviorAddedEvent<AnchorBehavior>>.Register<TransformRegistry>();
+        EventBus<PostBehaviorUpdatedEvent<AnchorBehavior>>.Register<TransformRegistry>();
+        EventBus<BehaviorRemovedEvent<AnchorBehavior>>.Register<TransformRegistry>();
+
+        EventBus<BehaviorAddedEvent<Parent>>.Register<TransformRegistry>();
+        EventBus<PostBehaviorUpdatedEvent<Parent>>.Register<TransformRegistry>();
+        EventBus<BehaviorRemovedEvent<Parent>>.Register<TransformRegistry>();
+    }
+}
+
