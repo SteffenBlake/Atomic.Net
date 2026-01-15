@@ -1,3 +1,5 @@
+using Atomic.Net.MonoGame.Core;
+
 namespace Atomic.Net.MonoGame.BED.Hierarchy;
 
 /// <summary>
@@ -6,8 +8,8 @@ namespace Atomic.Net.MonoGame.BED.Hierarchy;
 /// </summary>
 public static class HierarchyRegistry
 {
-    private static readonly bool[]?[] _parentToChildLookup 
-        = new bool[]?[Constants.MaxEntities];
+    private static readonly SparseReferenceArray<SparseArray<bool>> _parentToChildLookup 
+        = new(Constants.MaxEntities);
 
     /// <summary>
     /// Tracks a child entity to the specified parent.
@@ -16,26 +18,34 @@ public static class HierarchyRegistry
     /// <param name="child">The child entity to add.</param>
     public static void TrackChild(Entity parent, Entity child)
     {
-        _parentToChildLookup[parent.Index] ??= new bool[Constants.MaxEntities];
-        _parentToChildLookup[parent.Index]![child.Index] = true;
+        if (!_parentToChildLookup.HasValue(parent.Index))
+        {
+            _parentToChildLookup[parent.Index] = new SparseArray<bool>(Constants.MaxEntities);
+        }
+
+        _parentToChildLookup[parent.Index][child.Index] = true;
     }
 
     /// <summary>
     /// Removes tracking of a child entity from the specified parent.
-    /// Throws an exception if the parent never had children tracked.
     /// </summary>
     /// <param name="parent">The parent entity.</param>
     /// <param name="child">The child entity to remove.</param>
     public static void UntrackChild(Entity parent, Entity child)
     {
-        if (_parentToChildLookup[parent.Index] is null) 
+        if (!_parentToChildLookup.TryGetValue(parent.Index, out var children))
         {
             throw new InvalidOperationException(
-                $"Attempted to remove a child from a parent({parent.Index}) that was never tracked."
+                $"Attempted to remove a child from an untracked parent({parent.Index})"
             );
         }
 
-        _parentToChildLookup[parent.Index]![child.Index] = false;
+        if (!children.Remove(child.Index))
+        {
+            throw new InvalidOperationException(
+                $"Attempted to remove an untracked child({child.Index}) from parent({parent.Index})"
+            );
+        }
     }
 
     /// <summary>
@@ -45,19 +55,12 @@ public static class HierarchyRegistry
     /// <returns>An enumerable of child entities belonging to the parent.</returns>
     public static IEnumerable<Entity> GetChildren(Entity parent)
     {
-        var children = _parentToChildLookup[parent.Index];
-        if (children == null)
+        if (!_parentToChildLookup.TryGetValue(parent.Index, out var children))
         {
-            yield break;
+            return [];
         }
 
-        for (ushort child = 0; child < Constants.MaxEntities; child++)
-        {
-            if (children[child])
-            {
-                yield return new Entity(child);
-            }
-        }
+        return children.Select(c => EntityRegistry.Instance[c.Index]);
     }
 
     /// <summary>
@@ -68,13 +71,16 @@ public static class HierarchyRegistry
     /// <returns>True if the child belongs to the parent; otherwise, false.</returns>
     public static bool HasChild(Entity parent, Entity child)
     {
-        return _parentToChildLookup[parent.Index]?[child.Index] ?? false;
+        return _parentToChildLookup.TryGetValue(parent.Index, out var children) &&
+            children.HasValue(child.Index);
     }
 
+    /// <summary>
+    /// Checks whether the parent has any children.
+    /// </summary>
     public static bool HasAnyChildren(Entity parent)
     {
-        return _parentToChildLookup[parent.Index]?.Any(static c => c) ?? false;
+        return _parentToChildLookup.TryGetValue(parent.Index, out var children) &&
+            children.Count > 0;
     }
 }
-
-

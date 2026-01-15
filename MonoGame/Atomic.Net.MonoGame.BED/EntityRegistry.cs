@@ -1,24 +1,36 @@
+using Atomic.Net.MonoGame.Core;
+
 namespace Atomic.Net.MonoGame.BED;
 
 /// <summary>
 /// Central registry for entity lifecycle management.
 /// </summary>
-public static class EntityRegistry
+public class EntityRegistry()
 {
-    private static readonly Entity[] _entities = [.. 
+    public static EntityRegistry Instance { get; }= new();
+
+    private readonly Entity[] _entities = [.. 
         Enumerable.Range(0, Constants.MaxEntities - 1)
         .Select(index => new Entity((ushort)index))
     ];
 
-    private static readonly bool[] _active = new bool[Constants.MaxEntities];
-    private static readonly bool[] _enabled = new bool[Constants.MaxEntities];
-    private static ushort _nextIndex = 0;
+    private readonly SparseArray<bool> _active = new(Constants.MaxEntities);
+    private readonly SparseArray<bool> _enabled = new(Constants.MaxEntities);
+    private ushort _nextIndex = 0;
+
+    public Entity this[ushort index]
+    {
+        get
+        {
+            return _entities[index];
+        }
+    }
 
     /// <summary>
     /// Activate the next available entity.
     /// </summary>
     /// <returns>The activated entity.</returns>
-    public static Entity Activate()
+    public Entity Activate()
     {
         for (ushort offset = 0; offset < Constants.MaxEntities; offset++)
         {
@@ -41,44 +53,41 @@ public static class EntityRegistry
     /// <summary>
     /// Deactivate an entity by index.
     /// </summary>
-    /// <param name="entityIndex">The entity index.</param>
-    public static void Deactivate(ushort entityIndex)
+    /// <param name="entity">The entity to deactivate.</param>
+    public void Deactivate(Entity entity)
     {
         // Check if already deactivated
-        if (!_active[entityIndex])
+        if (!_active.Remove(entity.Index))
         {
             return;
         }
 
-        _active[entityIndex] = false;
-        _enabled[entityIndex] = false;
-        EventBus<EntityDeactivatedEvent>.Push(
-            new(_entities[entityIndex])
-        );
+        _enabled.Remove(entity.Index);
+        EventBus<EntityDeactivatedEvent>.Push(new(entity));
     }
 
     /// <summary>
     /// Enable an entity by index.
     /// </summary>
     /// <param name="entityIndex">The entity index.</param>
-    public static void Enable(ushort entityIndex)
+    public void Enable(Entity entity)
     {
         // Check if already enabled
-        if (_enabled[entityIndex])
+        if (_enabled.HasValue(entity.Index))
         {
             return;
         }
 
-        if(!_active[entityIndex])
+        if(!_active.HasValue(entity.Index))
         {
             throw new InvalidOperationException(
-                $"Tried to enable an entity that doesnt exist, index:{entityIndex}"
+                $"Tried to enable an entity that doesnt exist, index:{entity.Index}"
             );
         }
 
-        _enabled[entityIndex] = true;
+        _enabled[entity.Index] = true;
         EventBus<EntityEnabledEvent>.Push(
-            new(_entities[entityIndex])
+            new(_entities[entity.Index])
         );
     }
 
@@ -86,24 +95,23 @@ public static class EntityRegistry
     /// Disable an entity by index.
     /// </summary>
     /// <param name="entityIndex">The entity index.</param>
-    public static void Disable(ushort entityIndex)
+    public void Disable(Entity entity)
     {
         // Check if already disabled
-        if (!_enabled[entityIndex])
+        if (!_enabled.Remove(entity.Index))
         {
             return;
         }
 
-        if(!_active[entityIndex])
+        if(!_active.HasValue(entity.Index))
         {
             throw new InvalidOperationException(
-                $"Tried to disable an entity that doesnt exist, index:{entityIndex}"
+                $"Tried to disable an entity that doesnt exist, index:{entity.Index}"
             );
         }
 
-        _enabled[entityIndex] = false;
         EventBus<EntityDisabledEvent>.Push(
-            new(_entities[entityIndex])
+            new(_entities[entity.Index])
         );
     }
 
@@ -112,62 +120,27 @@ public static class EntityRegistry
     /// </summary>
     /// <param name="entity">The entity.</param>
     /// <returns>True if active.</returns>
-    public static bool IsActive(Entity entity) => _active[entity.Index];
-    
-    /// <summary>
-    /// Check if an entity is active.
-    /// </summary>
-    /// <param name="entityIndex">The entity index.</param>
-    /// <returns>True if active.</returns>
-    public static bool IsActive(ushort entityIndex) => _active[entityIndex];
+    public bool IsActive(Entity entity) => _active.HasValue(entity.Index);
 
     /// <summary>
     /// Check if an entity is active and enabled.
     /// </summary>
     /// <param name="entity">The entity.</param>
     /// <returns>True if active.</returns>
-    public static bool IsEnabled(Entity entity) => 
-        _active[entity.Index] && _enabled[entity.Index];
+    public bool IsEnabled(Entity entity) => 
+        _active[entity.Index] && _enabled.HasValue(entity.Index);
     
     /// <summary>
-    /// Check if an entity is active and enabled.
-    /// </summary>
-    /// <param name="entityIndex">The entity index.</param>
-    /// <returns>True if active.</returns>
-    public static bool IsEnabled(ushort entityIndex) => 
-        _active[entityIndex] && _enabled[entityIndex];
-
-    /// <summary>
     /// Get an iterator over active entities.
     /// </summary>
     /// <returns>An enumerable of active entities.</returns>
-    public static IEnumerable<Entity> GetActiveEntities() => _active
-        .Index()
-        .Where(a => a.Item)
+    public IEnumerable<Entity> GetActiveEntities() => _active
         .Select(a => _entities[a.Index]);
 
     /// <summary>
     /// Get an iterator over active entities.
     /// </summary>
     /// <returns>An enumerable of active entities.</returns>
-    public static IEnumerable<Entity> GetEnabledEntities() => _active
-        .Index()
-        .Where(a => a.Item && _enabled[a.Index])
-        .Select(a => _entities[a.Index]);
-
-    /// <summary>
-    /// Expose active flags as read-only span.
-    /// </summary>
-    public static ReadOnlySpan<bool> Active => _active;
-
-    /// <summary>
-    /// Expose active flags as read-only span.
-    /// </summary>
-    public static ReadOnlySpan<bool> Enabled => _enabled;
-
-    /// <summary>
-    /// Expose all entities as read-only span.
-    /// </summary>
-    public static ReadOnlySpan<Entity> All => _entities;
+    public IEnumerable<Entity> GetEnabledEntities() => _enabled
+        .Select(e => _entities[e.Index]);
 }
-

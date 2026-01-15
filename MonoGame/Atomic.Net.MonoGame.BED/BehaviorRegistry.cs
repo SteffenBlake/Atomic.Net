@@ -1,14 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
+using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.BED;
-
-/// <summary>
-/// Delegate used to initialize or modify a behavior instance.
-/// </summary>
-/// <typeparam name="TBehavior">The behavior type.</typeparam>
-public delegate void BehavorInit<TBehavior>(ref TBehavior behavior)
-    where TBehavior : struct;
-
 
 /// <summary>
 /// Central registry for storing and managing behaviors per entity.
@@ -32,8 +25,7 @@ public class BehaviorRegistry<TBehavior> :
         EventBus<EntityDeactivatedEvent>.Register<BehaviorRegistry<TBehavior>>();
     }
 
-    private readonly TBehavior[] _behaviors = new TBehavior[Constants.MaxEntities];
-    private readonly bool[] _active = new bool[Constants.MaxEntities];
+    private readonly SparseArray<TBehavior> _behaviors = new(Constants.MaxEntities);
 
     /// <summary>
     /// Sets or overwrites a behavior for the given entity.
@@ -41,25 +33,23 @@ public class BehaviorRegistry<TBehavior> :
     /// </summary>
     /// <param name="entity">The target entity.</param>
     /// <param name="init">Initializer for the behavior.</param>
-    public void SetBehavior(Entity entity, BehavorInit<TBehavior> init)
+    public void SetBehavior(Entity entity, Func<TBehavior, TBehavior> init)
     {
-        if (!EntityRegistry.IsActive(entity.Index))
+        if (!entity.Active)
         {
             throw new InvalidOperationException(
                 $"Attempted to set behavior '{typeof(TBehavior)}' for inactive entity with id: {entity.Index}."
             );
         }
-        var wasActive = _active[entity.Index];
-        if (wasActive)
+        var wasBehaviorActive = _behaviors.HasValue(entity.Index);
+        if (wasBehaviorActive)
         {
             EventBus<PreBehaviorUpdatedEvent<TBehavior>>.Push(new(entity));
         }
 
-        init(ref _behaviors[entity.Index]);
+        _behaviors[entity.Index] = init(_behaviors[entity.Index]);
 
-        _active[entity.Index] = true;
-
-        if (wasActive)
+        if (wasBehaviorActive)
         {
             EventBus<PostBehaviorUpdatedEvent<TBehavior>>.Push(new(entity));
         }
@@ -76,23 +66,16 @@ public class BehaviorRegistry<TBehavior> :
     /// <returns>True if the behavior was removed.</returns>
     public bool Remove(Entity entity)
     {
-        if (!_active[entity.Index] || !EntityRegistry.IsActive(entity))
+        var removed = _behaviors.Remove(entity.Index);
+        if (!removed)
         {
             return false;
         }
 
-        _active[entity.Index] = false;
         EventBus<BehaviorRemovedEvent<TBehavior>>.Push(new(entity));
 
         return true;
     }
-
-    /// <summary>
-    /// Removes (deactivates) a behavior by entity index.
-    /// </summary>
-    /// <param name="entityIndex">The entity index.</param>
-    /// <returns>True if the behavior was removed.</returns>
-    public bool Remove(ushort entityIndex) => Remove(new Entity(entityIndex));
 
     /// <summary>
     /// Attempts to retrieve a behavior for an entity.
@@ -121,27 +104,27 @@ public class BehaviorRegistry<TBehavior> :
         out TBehavior? behavior
     )
     {
-        if (!_active[entityIndex])
-        {
-            behavior = default;
-            return false;
-        }
+        return _behaviors.TryGetValue(entityIndex, out behavior);
+    }
 
-        behavior = _behaviors[entityIndex];
-        return true;
+    /// <summary>
+    /// Check if an entity has this behavior 
+    /// </summary>
+    /// <returns>Whether the entity has the behavior or not</returns>
+    public bool HasBehavior(Entity entity)
+    {
+        return _behaviors.HasValue(entity.Index);
     }
 
     /// <summary>
     /// Iterator over active behaviors (entity + behavior).
     /// </summary>
     /// <returns>An enumerable of active entity-behavior pairs.</returns>
-    public IEnumerable<(Entity, TBehavior)> GetActiveBehaviors() => _active
-        .Index()
-        .Where(a => a.Item)
-        .Where(a => EntityRegistry.IsActive((ushort)a.Index))
+    public IEnumerable<(Entity Entity, TBehavior Behavior)> GetActiveBehaviors() => 
+        _behaviors
         .Select(a => (
-            EntityRegistry.All[a.Index], 
-            _behaviors[a.Index]
+            EntityRegistry.Instance[a.Index],
+            a.Value
         ));
 
     /// <summary>
@@ -150,12 +133,6 @@ public class BehaviorRegistry<TBehavior> :
     /// <param name="e">The deactivation event.</param>
     public void OnEvent(EntityDeactivatedEvent e)
     {
-        Remove(e.Entity.Index);
+        Remove(e.Entity);
     }
-
-    /// <summary>
-    /// Exposes behavior active flags as read-only span.
-    /// </summary>
-    public ReadOnlySpan<bool> Active => _active;
 }
-

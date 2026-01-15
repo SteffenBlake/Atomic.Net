@@ -1,3 +1,5 @@
+using Atomic.Net.MonoGame.Core;
+
 namespace Atomic.Net.MonoGame.BED.Hierarchy;
 
 /// <summary>
@@ -12,7 +14,10 @@ public sealed class ParentPostUpdatedDriver : IEventHandler<PostBehaviorUpdatedE
     {
         if (BehaviorRegistry<Parent>.Instance.TryGetBehavior(e.Entity, out var newBehavior))
         {
-            HierarchyRegistry.TrackChild(new Entity(newBehavior.Value.ParentIndex), e.Entity);
+            HierarchyRegistry.TrackChild(
+                EntityRegistry.Instance[newBehavior.Value.ParentIndex], 
+                e.Entity
+            );
         }
     }
 }

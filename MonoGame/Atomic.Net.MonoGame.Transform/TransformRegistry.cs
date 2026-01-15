@@ -1,7 +1,7 @@
-using Microsoft.Xna.Framework;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.BED.Hierarchy;
+using Microsoft.Xna.Framework;
 
 namespace Atomic.Net.MonoGame.Transform;
 
@@ -25,23 +25,25 @@ public sealed class TransformRegistry :
 {
     public static TransformRegistry Instance { get; } = new();
 
-    private readonly bool[] _dirty = new bool[Constants.MaxEntities];
+    private readonly SparseArray<bool> _dirty = new(Constants.MaxEntities);
 
     public void Recalculate()
     {
-        for (ushort i = 0; i < Constants.MaxEntities; i++)
+        foreach(var dirty in _dirty)
         {
-            if (_dirty[i])
+            if (!dirty.Value)
             {
-                RecalculateNode(new Entity(i));
+                continue;
             }
+
+            RecalculateNode(EntityRegistry.Instance[dirty.Index]);
         }
+        _dirty.Clear();
     }
 
     private void RecalculateNode(Entity entity)
     {
         _dirty[entity.Index] = false;
-
         var parentTransform = Matrix.Identity;
         if (entity.TryGetParent(out var parent))
         {
@@ -86,8 +88,8 @@ public sealed class TransformRegistry :
 
         var worldTransform = localTransform * parentTransform;
 
-        entity.SetBehavior((ref WorldTransform v) =>
-            v = new WorldTransform(worldTransform)
+        entity.SetBehavior<WorldTransform>(_ =>
+            new WorldTransform(worldTransform)
         );
 
         foreach (var child in entity.GetChildren())

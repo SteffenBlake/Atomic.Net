@@ -39,13 +39,13 @@ public partial class FlexRegistry :
         // Check if we have a flex parent, if so run on that instead
         if (BehaviorRegistry<Parent>.Instance.TryGetBehavior(index, out var parent))
         {
-            if (BehaviorRegistry<FlexBehavior>.Instance.Active[parent.Value.ParentIndex])
+            if (BehaviorRegistry<FlexBehavior>.Instance.[parent.Value.ParentIndex])
             {
                 RecalculateNode(parent.Value.ParentIndex);
                 return;
             }
         }
-        var root = new Entity(index);
+        var root = EntityRegistry.Instance[index];
 
         // Otherwise we are a root node, so confirm we are a flex node
         if (!root.HasBehavior<FlexBehavior>())

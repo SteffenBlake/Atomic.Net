@@ -1,3 +1,5 @@
+using Atomic.Net.MonoGame.Core;
+
 namespace Atomic.Net.MonoGame.BED.Hierarchy;
 
 /// <summary>
@@ -12,7 +14,10 @@ public sealed class ParentPreUpdatedDriver : IEventHandler<PreBehaviorUpdatedEve
     {
         if (BehaviorRegistry<Parent>.Instance.TryGetBehavior(e.Entity, out var oldBehavior))
         {
-            HierarchyRegistry.UntrackChild(new Entity(oldBehavior.Value.ParentIndex), e.Entity);
+            HierarchyRegistry.UntrackChild(
+                EntityRegistry.Instance[oldBehavior.Value.ParentIndex], 
+                e.Entity
+            );
         }
     }
 }

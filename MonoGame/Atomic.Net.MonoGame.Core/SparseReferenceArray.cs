@@ -3,10 +3,10 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Atomic.Net.MonoGame.Core;
 
-public sealed class SparseArray<T>(ushort capacity) : IEnumerable<(ushort Index, T Value)>
-    where T: struct
+public sealed class SparseReferenceArray<T>(ushort capacity) : IEnumerable<(ushort Index, T Value)>
+    where T : class
 {
-    private readonly T[] _sparse = new T[capacity];
+    private readonly T?[] _sparse = new T?[capacity];
     private readonly int[] _denseIndices = [.. Enumerable.Repeat(-1, capacity)];
     private readonly List<(ushort SparseIndex, T Value)> _dense = new(capacity);
 
@@ -14,22 +14,19 @@ public sealed class SparseArray<T>(ushort capacity) : IEnumerable<(ushort Index,
 
     public T this[ushort index]
     {
-        get
-        {
-            return _sparse[index];
-        }
+        get => _sparse[index] ?? throw new InvalidOperationException(
+            $"Attempted to access unset value at index {index}."
+        );
         set
         {
             var denseIndex = _denseIndices[index];
             if (denseIndex < 0)
             {
-                // Not set yet
                 _denseIndices[index] = _dense.Count;
                 _dense.Add((index, value));
             }
             else
             {
-                // Overwrite existing value
                 _dense[denseIndex] = (index, value);
             }
 
@@ -39,8 +36,7 @@ public sealed class SparseArray<T>(ushort capacity) : IEnumerable<(ushort Index,
 
     public bool TryGetValue(
         ushort index, 
-        [NotNullWhen(true)]
-        out T? value
+        [NotNullWhen(true)] out T? value
     )
     {
         if (_denseIndices[index] < 0)
@@ -48,54 +44,37 @@ public sealed class SparseArray<T>(ushort capacity) : IEnumerable<(ushort Index,
             value = null;
             return false;
         }
-        value = _sparse[index];
+
+        value = _sparse[index]!;
         return true;
     }
-
-    public int Count => _dense.Count;
 
     public bool HasValue(ushort index) => _denseIndices[index] >= 0;
 
     public bool Remove(ushort index)
     {
-        // Lookup where this index lives in the dense array
         var denseIndex = _denseIndices[index];
         if (denseIndex < 0)
         {
-            // Not set yet
-            return false; 
+            return false;
         }
 
-        // Swap-remove: move last dense element into the removed slot
         var last = _dense.Last();
         _dense[denseIndex] = last;
         _denseIndices[last.SparseIndex] = denseIndex;
 
-        // Remove the last slot and clear sparse tracking
         _dense.RemoveAt(_dense.Count - 1);
         _denseIndices[index] = -1;
-        _sparse[index] = default;
+        _sparse[index] = null;
 
         return true;
     }
 
-    public void Clear()
-    {
-        foreach(var (SparseIndex, _) in _dense)
-        {
-            _sparse[SparseIndex] = default;
-            _denseIndices[SparseIndex] = -1;
-        }
-        _dense.Clear();
-    }
+    public int Count => _dense.Count;
 
-    public IEnumerator<(ushort Index, T Value)> GetEnumerator()
-    {
-        return _dense.GetEnumerator();
-    }
+    public IEnumerator<(ushort Index, T Value)> GetEnumerator() => _dense.GetEnumerator();
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
+
+

@@ -1,3 +1,5 @@
+using Atomic.Net.MonoGame.Core;
+
 namespace Atomic.Net.MonoGame.BED.Hierarchy;
 
 /// <summary>
@@ -11,7 +13,10 @@ public sealed class ParentRemovedDriver : IEventHandler<BehaviorRemovedEvent<Par
     {
         if (BehaviorRegistry<Parent>.Instance.TryGetBehavior(e.Entity, out var behavior))
         {
-            HierarchyRegistry.UntrackChild(new Entity(behavior.Value.ParentIndex), e.Entity);
+            HierarchyRegistry.UntrackChild(
+                EntityRegistry.Instance[behavior.Value.ParentIndex], 
+                e.Entity
+            );
         }
     }
 }

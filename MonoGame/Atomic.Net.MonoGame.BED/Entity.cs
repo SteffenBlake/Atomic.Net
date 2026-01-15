@@ -15,20 +15,20 @@ public readonly struct Entity(ushort index)
     /// <summary>
     /// Indicates whether the entity is active.
     /// </summary>
-    public bool Active => EntityRegistry.IsActive(Index);
+    public bool Active => EntityRegistry.Instance.IsActive(this);
 
 
     /// <summary>
     /// Indicates whether the entity is active and enabled.
     /// </summary>
-    public bool Enabled => EntityRegistry.IsEnabled(Index);
+    public bool Enabled => EntityRegistry.Instance.IsEnabled(this);
 
     /// <summary>
     /// Sets a behavior on this entity.
     /// </summary>
     /// <typeparam name="TBehavior">The behavior type.</typeparam>
     /// <param name="init">Initializer for the behavior.</param>
-    public void SetBehavior<TBehavior>(BehavorInit<TBehavior> init)
+    public void SetBehavior<TBehavior>(Func<TBehavior, TBehavior> init)
         where TBehavior : struct
     {
         BehaviorRegistry<TBehavior>.Instance.SetBehavior(this, init);
@@ -42,7 +42,7 @@ public readonly struct Entity(ushort index)
     public bool RemoveBehavior<TBehavior>()
         where TBehavior : struct
     {
-        return BehaviorRegistry<TBehavior>.Instance.Remove(Index);
+        return BehaviorRegistry<TBehavior>.Instance.Remove(this);
     }
 
     /// <summary>
@@ -67,22 +67,22 @@ public readonly struct Entity(ushort index)
     public bool HasBehavior<TBehavior>()
         where TBehavior : struct
     {
-        return BehaviorRegistry<TBehavior>.Instance.Active[Index];
+        return BehaviorRegistry<TBehavior>.Instance.HasBehavior(this);
     }
 
     /// <summary>
     /// Deactivates this entity.
     /// </summary>
-    public void Deactivate() => EntityRegistry.Deactivate(Index);
+    public void Deactivate() => EntityRegistry.Instance.Deactivate(this);
     
     /// <summary>
     /// Enables this entity.
     /// </summary>
-    public void Enable() => EntityRegistry.Enable(Index);
+    public void Enable() => EntityRegistry.Instance.Enable(this);
 
     /// <summary>
     /// Disable this entity.
     /// </summary>
-    public void Disable() => EntityRegistry.Disable(Index);
+    public void Disable() => EntityRegistry.Instance.Disable(this);
 }
 

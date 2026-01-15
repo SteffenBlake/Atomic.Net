@@ -26,7 +26,7 @@ public static class EntityExtensions
     /// <param name="child">The child entity to reparent.</param>
     public static void SetParent(this Entity parent, Entity child)
     {
-        child.SetBehavior<Parent>((ref v) => v = new(parent.Index));
+        child.SetBehavior<Parent>(_ => new(parent.Index));
     }
 
     /// <summary>
@@ -83,7 +83,7 @@ public static class EntityExtensions
     /// <returns><c>true</c> if the child has a parent; otherwise, <c>false</c>.</returns>
     public static bool HasParent(this Entity child)
     {
-        return BehaviorRegistry<Parent>.Instance.Active[child.Index];
+        return BehaviorRegistry<Parent>.Instance.HasBehavior(child);
     }
 
     /// <summary>
