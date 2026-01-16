@@ -1,24 +1,15 @@
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
+using Atomic.Net.MonoGame.BED.BlockMaps;
 using Atomic.Net.MonoGame.BED.Hierarchy;
-using Microsoft.Xna.Framework;
 
 namespace Atomic.Net.MonoGame.Transform;
 
-public sealed class TransformRegistry :
+public sealed class TransformRegistry : 
     ISingleton<TransformRegistry>,
-    IEventHandler<BehaviorAddedEvent<PositionBehavior>>,
-    IEventHandler<PostBehaviorUpdatedEvent<PositionBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<PositionBehavior>>,
-    IEventHandler<BehaviorAddedEvent<RotationBehavior>>,
-    IEventHandler<PostBehaviorUpdatedEvent<RotationBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<RotationBehavior>>,
-    IEventHandler<BehaviorAddedEvent<ScaleBehavior>>,
-    IEventHandler<PostBehaviorUpdatedEvent<ScaleBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<ScaleBehavior>>,
-    IEventHandler<BehaviorAddedEvent<AnchorBehavior>>,
-    IEventHandler<PostBehaviorUpdatedEvent<AnchorBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<AnchorBehavior>>,
+    IEventHandler<BehaviorAddedEvent<TransformBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<TransformBehavior>>,
+    IEventHandler<BehaviorRemovedEvent<TransformBehavior>>,
     IEventHandler<BehaviorAddedEvent<Parent>>,
     IEventHandler<PostBehaviorUpdatedEvent<Parent>>,
     IEventHandler<BehaviorRemovedEvent<Parent>>
@@ -26,91 +17,115 @@ public sealed class TransformRegistry :
     public static TransformRegistry Instance { get; } = new();
 
     private readonly SparseArray<bool> _dirty = new(Constants.MaxEntities);
+    private readonly HashSet<ushort> _worldTransformUpdated = new(Constants.MaxEntities);
+
+    private readonly TransformBackingStore _inputStore = TransformBackingStore.Instance;
+    private readonly WorldTransformBackingStore _worldStore = WorldTransformBackingStore.Instance;
+    private readonly ParentWorldTransformBackingStore _parentStore = ParentWorldTransformBackingStore.Instance;
+
+    private readonly LocalTransformBlockMapSet _localTransformMaps;
+    private readonly WorldTransformBlockMapSet _worldTransformMaps;
+
+    private TransformRegistry()
+    {
+        _localTransformMaps = new LocalTransformBlockMapSet(_inputStore);
+        _worldTransformMaps = new WorldTransformBlockMapSet(_localTransformMaps, _parentStore);
+    }
 
     public void Recalculate()
     {
-        foreach(var dirty in _dirty)
+        const int maxIterations = 100;
+
+        _worldTransformUpdated.Clear();
+
+        for (var iteration = 0; iteration < maxIterations; iteration++)
         {
-            if (!dirty.Value)
+            if (_dirty.Count == 0)
             {
-                continue;
+                break;
             }
 
-            RecalculateNode(EntityRegistry.Instance[dirty.Index]);
+            var entitiesToProcess = _dirty.Select(d => d.Index).ToList();
+            _dirty.Clear();
+
+            foreach (var idx in entitiesToProcess)
+            {
+                _worldTransformUpdated.Add(idx);
+            }
+
+            // Step 1: SIMD compute LocalTransform from Position/Rotation/Scale/Anchor
+            _localTransformMaps.Recalculate();
+
+            // Step 2: SIMD compute WorldTransform = LocalTransform × ParentWorldTransform
+            _worldTransformMaps.Recalculate();
+
+            // Step 3: Copy computed WorldTransform to WorldTransformBackingStore
+            // (Only the 12 computed elements - M14, M24, M34, M44 are preset to constants)
+            CopyWorldTransformToStore(entitiesToProcess);
+
+            // Step 4: Scatter - copy WorldTransform to children's ParentWorldTransform
+            ScatterToChildren(entitiesToProcess);
         }
-        _dirty.Clear();
+
+        // Step 5: Fire bulk events
+        FireBulkEvents();
     }
 
-    private void RecalculateNode(Entity entity)
+    private void CopyWorldTransformToStore(List<ushort> entities)
     {
-        _dirty.Set(entity.Index, false);
-        var parentTransform = Matrix.Identity;
-        if (entity.TryGetParent(out var parent))
+        foreach (var idx in entities)
         {
-            if (RefBehaviorRegistry<WorldTransform>.Instance.TryGetBehavior(
-                    parent.Value, out var pTransform
-            ))
+            // Only copy the 12 computed elements
+            // M14, M24, M34, M44 are already preset to (0, 0, 0, 1) via initValue
+            _worldStore.M11.Set(idx, _worldTransformMaps.M11[idx] ?? 1f);
+            _worldStore.M12.Set(idx, _worldTransformMaps.M12[idx] ?? 0f);
+            _worldStore.M13.Set(idx, _worldTransformMaps.M13[idx] ?? 0f);
+            _worldStore.M21.Set(idx, _worldTransformMaps.M21[idx] ?? 0f);
+            _worldStore.M22.Set(idx, _worldTransformMaps.M22[idx] ?? 1f);
+            _worldStore.M23.Set(idx, _worldTransformMaps.M23[idx] ?? 0f);
+            _worldStore.M31.Set(idx, _worldTransformMaps.M31[idx] ?? 0f);
+            _worldStore.M32.Set(idx, _worldTransformMaps.M32[idx] ?? 0f);
+            _worldStore.M33.Set(idx, _worldTransformMaps.M33[idx] ?? 1f);
+            _worldStore.M41.Set(idx, _worldTransformMaps.M41[idx] ?? 0f);
+            _worldStore.M42.Set(idx, _worldTransformMaps.M42[idx] ?? 0f);
+            _worldStore.M43.Set(idx, _worldTransformMaps.M43[idx] ?? 0f);
+        }
+    }
+
+    private void ScatterToChildren(List<ushort> entities)
+    {
+        foreach (var parentIdx in entities)
+        {
+            var parent = EntityRegistry.Instance[parentIdx];
+            foreach (var child in parent.GetChildren())
             {
-                parentTransform = pTransform.Value.Value.AsMatrix();
+                var childIdx = child.Index;
+
+                // Copy only the 12 computed elements
+                _parentStore.M11.Set(childIdx, _worldStore.M11[parentIdx] ?? 1f);
+                _parentStore.M12.Set(childIdx, _worldStore.M12[parentIdx] ?? 0f);
+                _parentStore.M13.Set(childIdx, _worldStore.M13[parentIdx] ?? 0f);
+                _parentStore.M21.Set(childIdx, _worldStore.M21[parentIdx] ?? 0f);
+                _parentStore.M22.Set(childIdx, _worldStore.M22[parentIdx] ?? 1f);
+                _parentStore.M23.Set(childIdx, _worldStore.M23[parentIdx] ?? 0f);
+                _parentStore.M31.Set(childIdx, _worldStore.M31[parentIdx] ?? 0f);
+                _parentStore.M32.Set(childIdx, _worldStore.M32[parentIdx] ?? 0f);
+                _parentStore.M33.Set(childIdx, _worldStore.M33[parentIdx] ?? 1f);
+                _parentStore.M41.Set(childIdx, _worldStore.M41[parentIdx] ?? 0f);
+                _parentStore.M42.Set(childIdx, _worldStore.M42[parentIdx] ?? 0f);
+                _parentStore.M43.Set(childIdx, _worldStore.M43[parentIdx] ?? 0f);
+
+                _dirty.Set(childIdx, true);
             }
         }
+    }
 
-        var position = Vector3.Zero;
-        if (RefBehaviorRegistry<PositionBehavior>.Instance.TryGetBehavior(entity, out var pos))
+    private void FireBulkEvents()
+    {
+        foreach (var idx in _worldTransformUpdated)
         {
-            position = pos.Value.Value.AsVector3();
-        }
-
-        var rotation = Quaternion.Identity;
-        if (RefBehaviorRegistry<RotationBehavior>.Instance.TryGetBehavior(entity, out var rot))
-        {
-            rotation = rot.Value.Value.AsQuaternion();
-        }
-
-        var scale = Vector3.One;
-        if (RefBehaviorRegistry<ScaleBehavior>.Instance.TryGetBehavior(entity, out var scl))
-        {
-            scale = scl.Value.Value.AsVector3();
-        }
-
-        var anchor = Vector3.Zero;
-        if (RefBehaviorRegistry<AnchorBehavior>.Instance.TryGetBehavior(entity, out var anc))
-        {
-            anchor = anc.Value.Value.AsVector3();
-        }
-
-        // Compute local transform: Scale * Rotation * Translation * Anchor offset
-        var localTransform =
-            Matrix.CreateTranslation(-anchor) *
-            Matrix.CreateScale(scale) *
-            Matrix.CreateFromQuaternion(rotation) *
-            Matrix.CreateTranslation(position + anchor);
-
-        var worldTransform = localTransform * parentTransform;
-
-        RefBehaviorRegistry<WorldTransform>.Instance.SetBehavior(entity, (ref readonly WorldTransform wt) =>
-        {
-            wt.Value.M11.Value = worldTransform.M11;
-            wt.Value.M12.Value = worldTransform.M12;
-            wt.Value.M13.Value = worldTransform.M13;
-            wt.Value.M14.Value = worldTransform.M14;
-            wt.Value.M21.Value = worldTransform.M21;
-            wt.Value.M22.Value = worldTransform.M22;
-            wt.Value.M23.Value = worldTransform.M23;
-            wt.Value.M24.Value = worldTransform.M24;
-            wt.Value.M31.Value = worldTransform.M31;
-            wt.Value.M32.Value = worldTransform.M32;
-            wt.Value.M33.Value = worldTransform.M33;
-            wt.Value.M34.Value = worldTransform.M34;
-            wt.Value.M41.Value = worldTransform.M41;
-            wt.Value.M42.Value = worldTransform.M42;
-            wt.Value.M43.Value = worldTransform.M43;
-            wt.Value.M44.Value = worldTransform.M44;
-        });
-
-        foreach (var child in entity.GetChildren())
-        {
-            RecalculateNode(child);
+            var entity = EntityRegistry.Instance[idx];
+            EventBus<PostBehaviorUpdatedEvent<WorldTransform>>.Push(new(entity));
         }
     }
 
@@ -119,21 +134,9 @@ public sealed class TransformRegistry :
         _dirty.Set(entity.Index, true);
     }
 
-    public void OnEvent(BehaviorAddedEvent<PositionBehavior> e) => MarkDirty(e.Entity);
-    public void OnEvent(PostBehaviorUpdatedEvent<PositionBehavior> e) => MarkDirty(e.Entity);
-    public void OnEvent(BehaviorRemovedEvent<PositionBehavior> e) => MarkDirty(e.Entity);
-
-    public void OnEvent(BehaviorAddedEvent<RotationBehavior> e) => MarkDirty(e.Entity);
-    public void OnEvent(PostBehaviorUpdatedEvent<RotationBehavior> e) => MarkDirty(e.Entity);
-    public void OnEvent(BehaviorRemovedEvent<RotationBehavior> e) => MarkDirty(e.Entity);
-
-    public void OnEvent(BehaviorAddedEvent<ScaleBehavior> e) => MarkDirty(e.Entity);
-    public void OnEvent(PostBehaviorUpdatedEvent<ScaleBehavior> e) => MarkDirty(e.Entity);
-    public void OnEvent(BehaviorRemovedEvent<ScaleBehavior> e) => MarkDirty(e.Entity);
-
-    public void OnEvent(BehaviorAddedEvent<AnchorBehavior> e) => MarkDirty(e.Entity);
-    public void OnEvent(PostBehaviorUpdatedEvent<AnchorBehavior> e) => MarkDirty(e.Entity);
-    public void OnEvent(BehaviorRemovedEvent<AnchorBehavior> e) => MarkDirty(e.Entity);
+    public void OnEvent(BehaviorAddedEvent<TransformBehavior> e) => MarkDirty(e.Entity);
+    public void OnEvent(PostBehaviorUpdatedEvent<TransformBehavior> e) => MarkDirty(e.Entity);
+    public void OnEvent(BehaviorRemovedEvent<TransformBehavior> e) => MarkDirty(e.Entity);
 
     public void OnEvent(BehaviorAddedEvent<Parent> e) => MarkDirty(e.Entity);
     public void OnEvent(PostBehaviorUpdatedEvent<Parent> e) => MarkDirty(e.Entity);
@@ -141,21 +144,9 @@ public sealed class TransformRegistry :
 
     public static void Register()
     {
-        EventBus<BehaviorAddedEvent<PositionBehavior>>.Register<TransformRegistry>();
-        EventBus<PostBehaviorUpdatedEvent<PositionBehavior>>.Register<TransformRegistry>();
-        EventBus<BehaviorRemovedEvent<PositionBehavior>>.Register<TransformRegistry>();
-
-        EventBus<BehaviorAddedEvent<RotationBehavior>>.Register<TransformRegistry>();
-        EventBus<PostBehaviorUpdatedEvent<RotationBehavior>>.Register<TransformRegistry>();
-        EventBus<BehaviorRemovedEvent<RotationBehavior>>.Register<TransformRegistry>();
-
-        EventBus<BehaviorAddedEvent<ScaleBehavior>>.Register<TransformRegistry>();
-        EventBus<PostBehaviorUpdatedEvent<ScaleBehavior>>.Register<TransformRegistry>();
-        EventBus<BehaviorRemovedEvent<ScaleBehavior>>.Register<TransformRegistry>();
-
-        EventBus<BehaviorAddedEvent<AnchorBehavior>>.Register<TransformRegistry>();
-        EventBus<PostBehaviorUpdatedEvent<AnchorBehavior>>.Register<TransformRegistry>();
-        EventBus<BehaviorRemovedEvent<AnchorBehavior>>.Register<TransformRegistry>();
+        EventBus<BehaviorAddedEvent<TransformBehavior>>.Register<TransformRegistry>();
+        EventBus<PostBehaviorUpdatedEvent<TransformBehavior>>.Register<TransformRegistry>();
+        EventBus<BehaviorRemovedEvent<TransformBehavior>>.Register<TransformRegistry>();
 
         EventBus<BehaviorAddedEvent<Parent>>.Register<TransformRegistry>();
         EventBus<PostBehaviorUpdatedEvent<Parent>>.Register<TransformRegistry>();
