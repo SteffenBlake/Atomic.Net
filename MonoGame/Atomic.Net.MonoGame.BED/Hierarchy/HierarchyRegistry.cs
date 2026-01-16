@@ -23,7 +23,7 @@ public static class HierarchyRegistry
             _parentToChildLookup[parent.Index] = new SparseArray<bool>(Constants.MaxEntities);
         }
 
-        _parentToChildLookup[parent.Index][child.Index] = true;
+        _parentToChildLookup[parent.Index].Set(child.Index, true);
     }
 
     /// <summary>

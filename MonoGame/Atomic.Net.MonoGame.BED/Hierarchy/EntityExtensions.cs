@@ -26,7 +26,7 @@ public static class EntityExtensions
     /// <param name="child">The child entity to reparent.</param>
     public static void SetParent(this Entity parent, Entity child)
     {
-        child.SetBehavior<Parent>(_ => new(parent.Index));
+        child.SetBehavior<Parent>((ref Parent p) => p = new(parent.Index));
     }
 
     /// <summary>

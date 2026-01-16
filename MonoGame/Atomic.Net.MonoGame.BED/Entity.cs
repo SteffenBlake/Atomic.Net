@@ -24,14 +24,25 @@ public readonly struct Entity(ushort index)
     public bool Enabled => EntityRegistry.Instance.IsEnabled(this);
 
     /// <summary>
-    /// Sets a behavior on this entity.
+    /// Sets a ref readonly behavior. Auto-creates if missing. TBehavior inferred from lambda.
     /// </summary>
     /// <typeparam name="TBehavior">The behavior type.</typeparam>
-    /// <param name="init">Initializer for the behavior.</param>
-    public void SetBehavior<TBehavior>(Func<TBehavior, TBehavior> init)
+    /// <param name="mutate">Action to mutate the behavior's backing values.</param>
+    public void SetRefBehavior<TBehavior>(RefReadonlyAction<TBehavior> mutate)
+        where TBehavior : struct, IBehavior<TBehavior>
+    {
+        RefBehaviorRegistry<TBehavior>.Instance.SetBehavior(this, mutate);
+    }
+
+    /// <summary>
+    /// Sets or replaces a regular (non-backed) behavior.
+    /// </summary>
+    /// <typeparam name="TBehavior">The behavior type.</typeparam>
+    /// <param name="mutate">Action to mutate the behavior by reference.</param>
+    public void SetBehavior<TBehavior>(RefAction<TBehavior> mutate)
         where TBehavior : struct
     {
-        BehaviorRegistry<TBehavior>.Instance.SetBehavior(this, init);
+        BehaviorRegistry<TBehavior>.Instance.SetBehavior(this, mutate);
     }
 
     /// <summary>

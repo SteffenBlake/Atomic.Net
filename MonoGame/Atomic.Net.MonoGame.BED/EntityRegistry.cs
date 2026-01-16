@@ -40,8 +40,8 @@ public class EntityRegistry()
                 continue;
             }
 
-            _active[i] = true;
-            _enabled[i] = true;
+            _active.Set(i, true);
+            _enabled.Set(i, true);
             _nextIndex = (ushort)((i+1) % Constants.MaxEntities);
 
             return new(i);
@@ -85,7 +85,7 @@ public class EntityRegistry()
             );
         }
 
-        _enabled[entity.Index] = true;
+        _enabled.Set(entity.Index, true);
         EventBus<EntityEnabledEvent>.Push(
             new(_entities[entity.Index])
         );
@@ -128,7 +128,7 @@ public class EntityRegistry()
     /// <param name="entity">The entity.</param>
     /// <returns>True if active.</returns>
     public bool IsEnabled(Entity entity) => 
-        _active[entity.Index] && _enabled.HasValue(entity.Index);
+        _active.HasValue(entity.Index) && _enabled.HasValue(entity.Index);
     
     /// <summary>
     /// Get an iterator over active entities.

@@ -26,7 +26,7 @@ public class SparseArrayBenchmark
             if (_rng.NextDouble() < FillPercent)
             {
                 _array[i] = i;
-                _sparseArray[i] = i;
+                _sparseArray.Set(i, i);
             }
         }
     }

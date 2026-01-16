@@ -1,10 +1,16 @@
-using Microsoft.Xna.Framework;
+using Atomic.Net.MonoGame.BED;
+using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Transform;
 
 /// <summary>
 /// Stores the local scale input for an entity.
 /// </summary>
-public readonly record struct ScaleBehavior(Vector3 Value);
-
+public readonly record struct ScaleBehavior(BackedVector3 Value) : IBehavior<ScaleBehavior>
+{
+    public static ScaleBehavior CreateFor(Entity entity)
+    {
+        return ScaleBackingStore.Instance.CreateFor(entity);
+    }
+}
 
