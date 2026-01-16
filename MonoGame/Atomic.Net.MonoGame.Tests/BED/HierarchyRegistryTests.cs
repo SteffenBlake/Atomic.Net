@@ -203,18 +203,20 @@ public sealed class HierarchyRegistryTests : IDisposable
         var child = EntityRegistry.Instance.Activate().WithParent(parent);
         
         // Act
-        var hasChildParent = child.TryGetParent(out var childParent);
-        var hasParentParent = parent.TryGetParent(out var parentParent);
+        child.TryGetParent(out var childParent);
+        parent.TryGetParent(out var parentParent);
         var hasGrandparentParent = grandparent.TryGetParent(out _);
+        var parentChildren = parent.GetChildren();
+        var grandparentChildren = grandparent.GetChildren();
         
         // Assert
-        Assert.True(hasChildParent);
-        Assert.Equal(parent.Index, childParent!.Value.Index);
-        Assert.True(hasParentParent);
-        Assert.Equal(grandparent.Index, parentParent!.Value.Index);
+        Assert.NotNull(childParent);
+        Assert.Equal(parent.Index, childParent.Value.Index);
+        Assert.NotNull(parentParent);
+        Assert.Equal(grandparent.Index, parentParent.Value.Index);
         Assert.False(hasGrandparentParent);
-        Assert.Single(parent.GetChildren());
-        Assert.Single(grandparent.GetChildren());
+        Assert.Single(parentChildren);
+        Assert.Single(grandparentChildren);
     }
 
     [Fact]

@@ -21,7 +21,6 @@ public sealed class EntityRegistryTests : IDisposable
     public void Activate_AllocatesSceneEntity()
     {
         // Arrange
-        // (No setup needed)
 
         // Act
         var entity = EntityRegistry.Instance.Activate();
@@ -37,7 +36,6 @@ public sealed class EntityRegistryTests : IDisposable
     public void ActivateLoading_AllocatesLoadingEntity()
     {
         // Arrange
-        // (No setup needed)
 
         // Act
         var entity = EntityRegistry.Instance.ActivateLoading();
@@ -52,7 +50,6 @@ public sealed class EntityRegistryTests : IDisposable
     public void GetSceneRoot_ReturnsFirstSceneEntity()
     {
         // Arrange
-        // (No setup needed)
 
         // Act
         var root = EntityRegistry.Instance.GetSceneRoot();
@@ -65,7 +62,6 @@ public sealed class EntityRegistryTests : IDisposable
     public void GetLoadingRoot_ReturnsFirstLoadingEntity()
     {
         // Arrange
-        // (No setup needed)
 
         // Act
         var root = EntityRegistry.Instance.GetLoadingRoot();
@@ -78,7 +74,6 @@ public sealed class EntityRegistryTests : IDisposable
     public void Activate_AllocatesSequentialIndices()
     {
         // Arrange
-        // (No setup needed)
 
         // Act
         var entity1 = EntityRegistry.Instance.Activate();
@@ -94,7 +89,6 @@ public sealed class EntityRegistryTests : IDisposable
     public void ActivateLoading_AllocatesSequentialIndices()
     {
         // Arrange
-        // (No setup needed)
 
         // Act
         var entity1 = EntityRegistry.Instance.ActivateLoading();

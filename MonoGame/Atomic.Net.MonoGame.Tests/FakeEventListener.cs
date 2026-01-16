@@ -28,7 +28,5 @@ public sealed class FakeEventListener<TEvent> : IEventHandler<TEvent>, IDisposab
     
     public void Dispose()
     {
-        // Note: EventBus doesn't provide Unregister for non-singleton handlers
-        // The listener will remain registered but disposed instances won't be used in new tests
     }
 }
