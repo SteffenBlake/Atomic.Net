@@ -33,16 +33,14 @@ public class EntityRegistry : IEventHandler<ResetEvent>
     }
 
     /// <summary>
-    /// Activate the next available scene entity (index &gt;= MaxLoadingEntities).
+    /// Activate the next available scene entity (index greater than or equal to MaxLoadingEntities).
     /// </summary>
     /// <returns>The activated entity.</returns>
     public Entity Activate()
     {
         for (ushort offset = 0; offset < Constants.MaxEntities - Constants.MaxLoadingEntities; offset++)
         {
-            ushort i = (ushort)(Constants.MaxLoadingEntities + 
-                ((_nextSceneIndex - Constants.MaxLoadingEntities + offset) % 
-                (Constants.MaxEntities - Constants.MaxLoadingEntities)));
+            ushort i = GetNextSceneIndex(offset);
             
             if (_active[i])
             {
@@ -64,7 +62,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>
     }
 
     /// <summary>
-    /// Activate the next available loading entity (index &lt; MaxLoadingEntities).
+    /// Activate the next available loading entity (index less than MaxLoadingEntities).
     /// </summary>
     /// <returns>The activated entity.</returns>
     public Entity ActivateLoading()
@@ -86,6 +84,13 @@ public class EntityRegistry : IEventHandler<ResetEvent>
         }
 
         throw new InvalidOperationException("MaxLoadingEntities reached");
+    }
+
+    private ushort GetNextSceneIndex(ushort offset)
+    {
+        return (ushort)(Constants.MaxLoadingEntities + 
+            ((_nextSceneIndex - Constants.MaxLoadingEntities + offset) % 
+            (Constants.MaxEntities - Constants.MaxLoadingEntities)));
     }
 
     /// <summary>

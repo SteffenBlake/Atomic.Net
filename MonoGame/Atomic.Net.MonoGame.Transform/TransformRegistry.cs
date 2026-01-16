@@ -202,18 +202,18 @@ public sealed class TransformRegistry :
     public void OnEvent(BehaviorRemovedEvent<TransformBehavior> e)
     {
         CleanupForEntity(e.Entity);
-        _dirty.Remove(e.Entity.Index);
-        _worldTransformUpdated.Remove(e.Entity.Index);
     }
 
     /// <summary>
-    /// Cleans up all transform-related backing store data for an entity.
+    /// Cleans up all transform-related backing store data and dirty tracking for an entity.
     /// </summary>
     private void CleanupForEntity(Entity entity)
     {
         TransformBackingStore.Instance.CleanupForEntity(entity);
         ParentWorldTransformBackingStore.Instance.CleanupForEntity(entity);
         WorldTransformBackingStore.Instance.CleanupForEntity(entity);
+        _dirty.Remove(entity.Index);
+        _worldTransformUpdated.Remove(entity.Index);
     }
 
     public void OnEvent(BehaviorAddedEvent<Parent> e) => MarkDirty(e.Entity);
