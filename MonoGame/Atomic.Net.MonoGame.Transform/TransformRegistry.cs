@@ -202,7 +202,8 @@ public sealed class TransformRegistry :
     public void OnEvent(BehaviorRemovedEvent<TransformBehavior> e)
     {
         CleanupForEntity(e.Entity);
-        MarkDirty(e.Entity);
+        _dirty.Remove(e.Entity.Index);
+        _worldTransformUpdated.Remove(e.Entity.Index);
     }
 
     /// <summary>
