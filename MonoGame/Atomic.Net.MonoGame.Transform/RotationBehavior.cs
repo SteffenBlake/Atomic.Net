@@ -18,5 +18,10 @@ public readonly record struct RotationBehavior(
         RotationBackingStore.Instance.Z.InstanceFor(entityIndex),
         RotationBackingStore.Instance.W.InstanceFor(entityIndex)
     );
+
+    /// <summary>
+    /// Gets a BackedQuaternion view of this rotation.
+    /// </summary>
+    public BackedQuaternion AsQuaternion() => new(X, Y, Z, W);
 }
 

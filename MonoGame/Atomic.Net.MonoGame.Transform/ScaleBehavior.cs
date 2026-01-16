@@ -16,5 +16,10 @@ public readonly record struct ScaleBehavior(
         ScaleBackingStore.Instance.Y.InstanceFor(entityIndex),
         ScaleBackingStore.Instance.Z.InstanceFor(entityIndex)
     );
+
+    /// <summary>
+    /// Gets a BackedVector3 view of this scale.
+    /// </summary>
+    public BackedVector3 AsVector3() => new(X, Y, Z);
 }
 

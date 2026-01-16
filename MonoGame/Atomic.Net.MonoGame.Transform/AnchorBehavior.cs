@@ -16,5 +16,10 @@ public readonly record struct AnchorBehavior(
         AnchorBackingStore.Instance.Y.InstanceFor(entityIndex),
         AnchorBackingStore.Instance.Z.InstanceFor(entityIndex)
     );
+
+    /// <summary>
+    /// Gets a BackedVector3 view of this anchor.
+    /// </summary>
+    public BackedVector3 AsVector3() => new(X, Y, Z);
 }
 

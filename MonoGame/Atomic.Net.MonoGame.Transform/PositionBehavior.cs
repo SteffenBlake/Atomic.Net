@@ -16,5 +16,10 @@ public readonly record struct PositionBehavior(
         PositionBackingStore.Instance.Y.InstanceFor(entityIndex),
         PositionBackingStore.Instance.Z.InstanceFor(entityIndex)
     );
+
+    /// <summary>
+    /// Gets a BackedVector3 view of this position.
+    /// </summary>
+    public BackedVector3 AsVector3() => new(X, Y, Z);
 }
 

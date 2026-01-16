@@ -23,7 +23,7 @@ public abstract class UnaryFloatMapBase(
                     var entityIndex = (ushort)((i * blockSize) + laneIndex);
                     return (value, entityIndex);
                 })
-                .Where(b => EntityRegistry.Instance.IsActive(new Entity(b.entityIndex)))
+                .Where(b => EntityRegistry.Instance.IsActive(EntityRegistry.Instance[b.entityIndex]))
                 .Select(b => b.value);
 
                 _results[i] = Aggregate(filtered);
