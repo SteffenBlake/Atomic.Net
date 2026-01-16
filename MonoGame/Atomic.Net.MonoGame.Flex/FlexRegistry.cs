@@ -39,7 +39,7 @@ public partial class FlexRegistry :
         // Check if we have a flex parent, if so run on that instead
         if (BehaviorRegistry<Parent>.Instance.TryGetBehavior(index, out var parent))
         {
-            if (BehaviorRegistry<FlexBehavior>.Instance.[parent.Value.ParentIndex])
+            if (BehaviorRegistry<FlexBehavior>.Instance.HasBehavior(new Entity(parent.Value.ParentIndex)))
             {
                 RecalculateNode(parent.Value.ParentIndex);
                 return;
