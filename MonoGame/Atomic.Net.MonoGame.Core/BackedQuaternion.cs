@@ -6,24 +6,16 @@ namespace Atomic.Net.MonoGame.Core;
 /// A Quaternion backed by four BackedProperty<float> components.
 /// Provides conversion to/from Quaternion.
 /// </summary>
-public readonly struct BackedQuaternion
+public readonly struct BackedQuaternion(
+    BackedProperty<float> x,
+    BackedProperty<float> y,
+    BackedProperty<float> z,
+    BackedProperty<float> w)
 {
-    private readonly BackedProperty<float> _x;
-    private readonly BackedProperty<float> _y;
-    private readonly BackedProperty<float> _z;
-    private readonly BackedProperty<float> _w;
-
-    public BackedQuaternion(
-        BackedProperty<float> x,
-        BackedProperty<float> y,
-        BackedProperty<float> z,
-        BackedProperty<float> w)
-    {
-        _x = x;
-        _y = y;
-        _z = z;
-        _w = w;
-    }
+    private readonly BackedProperty<float> _x = x;
+    private readonly BackedProperty<float> _y = y;
+    private readonly BackedProperty<float> _z = z;
+    private readonly BackedProperty<float> _w = w;
 
     public BackedProperty<float> X => _x;
     public BackedProperty<float> Y => _y;

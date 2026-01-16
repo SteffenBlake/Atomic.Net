@@ -6,21 +6,14 @@ namespace Atomic.Net.MonoGame.Core;
 /// A Vector3 backed by three BackedProperty<float> components.
 /// Provides conversion to/from Vector3.
 /// </summary>
-public readonly struct BackedVector3
+public readonly struct BackedVector3(
+    BackedProperty<float> x,
+    BackedProperty<float> y,
+    BackedProperty<float> z)
 {
-    private readonly BackedProperty<float> _x;
-    private readonly BackedProperty<float> _y;
-    private readonly BackedProperty<float> _z;
-
-    public BackedVector3(
-        BackedProperty<float> x,
-        BackedProperty<float> y,
-        BackedProperty<float> z)
-    {
-        _x = x;
-        _y = y;
-        _z = z;
-    }
+    private readonly BackedProperty<float> _x = x;
+    private readonly BackedProperty<float> _y = y;
+    private readonly BackedProperty<float> _z = z;
 
     public BackedProperty<float> X => _x;
     public BackedProperty<float> Y => _y;

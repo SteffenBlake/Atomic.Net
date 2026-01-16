@@ -85,7 +85,9 @@ public sealed class SparseArray<T>(ushort capacity) : IEnumerable<(ushort Index,
     public SparseRef<T> GetMut(ushort index)
     {
         Ensure(index);
-        return new SparseRef<T>(_sparse, index, () => SyncDense(index));
+        var sparseRef = new SparseRef<T>(() => SyncDense(index));
+        sparseRef.Initialize(_sparse, index);
+        return sparseRef;
     }
 
     /// <summary>

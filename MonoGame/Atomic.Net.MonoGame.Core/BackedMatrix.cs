@@ -6,24 +6,16 @@ namespace Atomic.Net.MonoGame.Core;
 /// A Matrix backed by 16 BackedProperty<float> components.
 /// Provides conversion to/from Matrix (4x4 matrix).
 /// </summary>
-public readonly struct BackedMatrix
+public readonly struct BackedMatrix(
+    BackedProperty<float> m11, BackedProperty<float> m12, BackedProperty<float> m13, BackedProperty<float> m14,
+    BackedProperty<float> m21, BackedProperty<float> m22, BackedProperty<float> m23, BackedProperty<float> m24,
+    BackedProperty<float> m31, BackedProperty<float> m32, BackedProperty<float> m33, BackedProperty<float> m34,
+    BackedProperty<float> m41, BackedProperty<float> m42, BackedProperty<float> m43, BackedProperty<float> m44)
 {
-    private readonly BackedProperty<float> _m11, _m12, _m13, _m14;
-    private readonly BackedProperty<float> _m21, _m22, _m23, _m24;
-    private readonly BackedProperty<float> _m31, _m32, _m33, _m34;
-    private readonly BackedProperty<float> _m41, _m42, _m43, _m44;
-
-    public BackedMatrix(
-        BackedProperty<float> m11, BackedProperty<float> m12, BackedProperty<float> m13, BackedProperty<float> m14,
-        BackedProperty<float> m21, BackedProperty<float> m22, BackedProperty<float> m23, BackedProperty<float> m24,
-        BackedProperty<float> m31, BackedProperty<float> m32, BackedProperty<float> m33, BackedProperty<float> m34,
-        BackedProperty<float> m41, BackedProperty<float> m42, BackedProperty<float> m43, BackedProperty<float> m44)
-    {
-        _m11 = m11; _m12 = m12; _m13 = m13; _m14 = m14;
-        _m21 = m21; _m22 = m22; _m23 = m23; _m24 = m24;
-        _m31 = m31; _m32 = m32; _m33 = m33; _m34 = m34;
-        _m41 = m41; _m42 = m42; _m43 = m43; _m44 = m44;
-    }
+    private readonly BackedProperty<float> _m11 = m11, _m12 = m12, _m13 = m13, _m14 = m14;
+    private readonly BackedProperty<float> _m21 = m21, _m22 = m22, _m23 = m23, _m24 = m24;
+    private readonly BackedProperty<float> _m31 = m31, _m32 = m32, _m33 = m33, _m34 = m34;
+    private readonly BackedProperty<float> _m41 = m41, _m42 = m42, _m43 = m43, _m44 = m44;
 
     public BackedProperty<float> M11 => _m11;
     public BackedProperty<float> M12 => _m12;
