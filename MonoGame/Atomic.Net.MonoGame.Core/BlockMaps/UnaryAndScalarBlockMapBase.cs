@@ -32,7 +32,7 @@ public abstract class UnaryAndScalarBlockMapBase : UnaryBlockMapBase
         SIMDBlockAndScalar(input, sValue.Value, outputBlock);
     }
 
-    protected abstract void SIMDBlockAndScalar(float[] inut, float s, float[] outputBlock);
+    protected abstract void SIMDBlockAndScalar(float[] input, float s, float[] outputBlock);
 
     private void MakeDirtyAllBlocks()
     {

@@ -36,7 +36,7 @@ public abstract class UnaryFloatMapBase(
 
         if (!filteredResults.Any())
         {
-            Value = null;;
+            Value = null;
         }
 
         Value = Aggregate(filteredResults);
