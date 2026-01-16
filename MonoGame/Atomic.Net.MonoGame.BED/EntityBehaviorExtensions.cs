@@ -14,10 +14,12 @@ public static class EntityBehaviorExtensions
     /// <typeparam name="TBehavior">The behavior type.</typeparam>
     /// <param name="entity">The entity.</param>
     /// <param name="mutate">Action to mutate the behavior's backing values.</param>
-    public static void SetRefBehavior<TBehavior>(this Entity entity, RefReadonlyAction<TBehavior> mutate)
+    /// <returns>The entity for fluent chaining.</returns>
+    public static Entity SetRefBehavior<TBehavior>(this Entity entity, RefReadonlyAction<TBehavior> mutate)
         where TBehavior : struct, IBehavior<TBehavior>
     {
         RefBehaviorRegistry<TBehavior>.Instance.SetBehavior(entity, mutate);
+        return entity;
     }
 
     /// <summary>
@@ -26,10 +28,12 @@ public static class EntityBehaviorExtensions
     /// <typeparam name="TBehavior">The behavior type.</typeparam>
     /// <param name="entity">The entity.</param>
     /// <param name="mutate">Action to mutate the behavior by reference.</param>
-    public static void SetBehavior<TBehavior>(this Entity entity, RefAction<TBehavior> mutate)
+    /// <returns>The entity for fluent chaining.</returns>
+    public static Entity SetBehavior<TBehavior>(this Entity entity, RefAction<TBehavior> mutate)
         where TBehavior : struct
     {
         BehaviorRegistry<TBehavior>.Instance.SetBehavior(entity, mutate);
+        return entity;
     }
 
     /// <summary>

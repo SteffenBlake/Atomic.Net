@@ -9,7 +9,7 @@ namespace Atomic.Net.MonoGame.Transform;
 /// </summary>
 public sealed class LocalTransformBlockMapSet : ISingleton<LocalTransformBlockMapSet>
 {
-    public static LocalTransformBlockMapSet Instance { get; private set; } = null!;
+    public static LocalTransformBlockMapSet Instance { get; } = new();
 
     // Only 12 computed elements - M14, M24, M34, M44 are constants (0, 0, 0, 1) for affine transforms
     public BlockMapBase M11 { get; }
@@ -25,10 +25,10 @@ public sealed class LocalTransformBlockMapSet : ISingleton<LocalTransformBlockMa
     public BlockMapBase M42 { get; }
     public BlockMapBase M43 { get; }
 
-    public LocalTransformBlockMapSet(TransformBackingStore store)
+    private LocalTransformBlockMapSet()
     {
-        Instance = this;
-
+        var store = TransformBackingStore.Instance;
+        
         var rotX = store.RotationX;
         var rotY = store.RotationY;
         var rotZ = store.RotationZ;

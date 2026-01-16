@@ -7,7 +7,7 @@ namespace Atomic.Net.MonoGame.Core;
 /// </summary>
 public class EntityRegistry()
 {
-    public static EntityRegistry Instance { get; }= new();
+    public static EntityRegistry Instance { get; } = new();
 
     private readonly Entity[] _entities = [.. 
         Enumerable.Range(0, Constants.MaxEntities - 1)

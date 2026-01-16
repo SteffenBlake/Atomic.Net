@@ -9,7 +9,7 @@ namespace Atomic.Net.MonoGame.Transform;
 /// </summary>
 public sealed class WorldTransformBlockMapSet : ISingleton<WorldTransformBlockMapSet>
 {
-    public static WorldTransformBlockMapSet Instance { get; private set; } = null!;
+    public static WorldTransformBlockMapSet Instance { get; } = new();
 
     // Only 12 computed elements - M14, M24, M34, M44 are constants for affine transforms
     public BlockMapBase M11 { get; }
@@ -25,13 +25,11 @@ public sealed class WorldTransformBlockMapSet : ISingleton<WorldTransformBlockMa
     public BlockMapBase M42 { get; }
     public BlockMapBase M43 { get; }
 
-    public WorldTransformBlockMapSet(
-        LocalTransformBlockMapSet local,
-        ParentWorldTransformBackingStore parent
-    )
+    private WorldTransformBlockMapSet()
     {
-        Instance = this;
-
+        var local = LocalTransformBlockMapSet.Instance;
+        var parent = ParentWorldTransformBackingStore.Instance;
+        
         // Upper-left 3x3: standard matrix multiply
         M11 = BuildDotProduct3(local.M11, local.M12, local.M13, parent.M11, parent.M21, parent.M31);
         M12 = BuildDotProduct3(local.M11, local.M12, local.M13, parent.M12, parent.M22, parent.M32);

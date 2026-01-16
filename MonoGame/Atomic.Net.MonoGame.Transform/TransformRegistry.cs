@@ -7,6 +7,7 @@ namespace Atomic.Net.MonoGame.Transform;
 
 public sealed class TransformRegistry : 
     ISingleton<TransformRegistry>,
+    IEventHandler<InitializeEvent>,
     IEventHandler<BehaviorAddedEvent<TransformBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<TransformBehavior>>,
     IEventHandler<BehaviorRemovedEvent<TransformBehavior>>,
@@ -28,8 +29,20 @@ public sealed class TransformRegistry :
 
     private TransformRegistry()
     {
-        _localTransformMaps = new LocalTransformBlockMapSet(_inputStore);
-        _worldTransformMaps = new WorldTransformBlockMapSet(_localTransformMaps, _parentStore);
+        EventBus<InitializeEvent>.Register(this);
+        _localTransformMaps = LocalTransformBlockMapSet.Instance;
+        _worldTransformMaps = WorldTransformBlockMapSet.Instance;
+    }
+
+    public void OnEvent(InitializeEvent _)
+    {
+        EventBus<BehaviorAddedEvent<TransformBehavior>>.Register(this);
+        EventBus<PostBehaviorUpdatedEvent<TransformBehavior>>.Register(this);
+        EventBus<BehaviorRemovedEvent<TransformBehavior>>.Register(this);
+
+        EventBus<BehaviorAddedEvent<Parent>>.Register(this);
+        EventBus<PostBehaviorUpdatedEvent<Parent>>.Register(this);
+        EventBus<BehaviorRemovedEvent<Parent>>.Register(this);
     }
 
     public void Recalculate()
@@ -141,16 +154,5 @@ public sealed class TransformRegistry :
     public void OnEvent(BehaviorAddedEvent<Parent> e) => MarkDirty(e.Entity);
     public void OnEvent(PostBehaviorUpdatedEvent<Parent> e) => MarkDirty(e.Entity);
     public void OnEvent(BehaviorRemovedEvent<Parent> e) => MarkDirty(e.Entity);
-
-    public static void Register()
-    {
-        EventBus<BehaviorAddedEvent<TransformBehavior>>.Register<TransformRegistry>();
-        EventBus<PostBehaviorUpdatedEvent<TransformBehavior>>.Register<TransformRegistry>();
-        EventBus<BehaviorRemovedEvent<TransformBehavior>>.Register<TransformRegistry>();
-
-        EventBus<BehaviorAddedEvent<Parent>>.Register<TransformRegistry>();
-        EventBus<PostBehaviorUpdatedEvent<Parent>>.Register<TransformRegistry>();
-        EventBus<BehaviorRemovedEvent<Parent>>.Register<TransformRegistry>();
-    }
 }
 
