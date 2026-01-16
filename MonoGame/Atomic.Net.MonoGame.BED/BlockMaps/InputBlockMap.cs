@@ -25,13 +25,13 @@ public sealed class InputBlockMap(
     }
 
     /// <summary>
-    /// Creates a BackedProperty pointing to a specific entity index in this block map.
+    /// Creates a BackedFloat pointing to a specific entity index in this block map.
     /// </summary>
-    public BackedProperty<float> InstanceFor(int entityIndex)
+    public BackedFloat InstanceFor(int entityIndex)
     {
-        var (blockIndex, laneIndex) = GetBlockAndLane(entityIndex);
-        var block = _outputs[blockIndex] ??= InitBlock();
-        return new BackedProperty<float>(block, laneIndex);
+        var (blockIndex, _) = GetBlockAndLane(entityIndex);
+        _outputs[blockIndex] ??= InitBlock();
+        return new BackedFloat(this, entityIndex);
     }
 
     protected override void RecomputeBlock(int blockIndex)
