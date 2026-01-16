@@ -19,8 +19,10 @@ public sealed class ScaleBackingStore : ISingleton<ScaleBackingStore>
     /// Creates a ScaleBehavior for the specified entity.
     /// </summary>
     public ScaleBehavior CreateFor(Entity entity) => new(
-        X.InstanceFor(entity.Index),
-        Y.InstanceFor(entity.Index),
-        Z.InstanceFor(entity.Index)
+        new BackedVector3(
+            X.InstanceFor(entity.Index),
+            Y.InstanceFor(entity.Index),
+            Z.InstanceFor(entity.Index)
+        )
     );
 }

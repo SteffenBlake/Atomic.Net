@@ -19,8 +19,10 @@ public sealed class AnchorBackingStore : ISingleton<AnchorBackingStore>
     /// Creates an AnchorBehavior for the specified entity.
     /// </summary>
     public AnchorBehavior CreateFor(Entity entity) => new(
-        X.InstanceFor(entity.Index),
-        Y.InstanceFor(entity.Index),
-        Z.InstanceFor(entity.Index)
+        new BackedVector3(
+            X.InstanceFor(entity.Index),
+            Y.InstanceFor(entity.Index),
+            Z.InstanceFor(entity.Index)
+        )
     );
 }

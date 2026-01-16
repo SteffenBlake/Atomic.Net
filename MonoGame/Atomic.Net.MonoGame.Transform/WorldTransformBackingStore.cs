@@ -35,9 +35,11 @@ public sealed class WorldTransformBackingStore : ISingleton<WorldTransformBackin
     /// Creates a WorldTransform for the specified entity.
     /// </summary>
     public WorldTransform CreateFor(Entity entity) => new(
-        M11.InstanceFor(entity.Index), M12.InstanceFor(entity.Index), M13.InstanceFor(entity.Index), M14.InstanceFor(entity.Index),
-        M21.InstanceFor(entity.Index), M22.InstanceFor(entity.Index), M23.InstanceFor(entity.Index), M24.InstanceFor(entity.Index),
-        M31.InstanceFor(entity.Index), M32.InstanceFor(entity.Index), M33.InstanceFor(entity.Index), M34.InstanceFor(entity.Index),
-        M41.InstanceFor(entity.Index), M42.InstanceFor(entity.Index), M43.InstanceFor(entity.Index), M44.InstanceFor(entity.Index)
+        new BackedMatrix(
+            M11.InstanceFor(entity.Index), M12.InstanceFor(entity.Index), M13.InstanceFor(entity.Index), M14.InstanceFor(entity.Index),
+            M21.InstanceFor(entity.Index), M22.InstanceFor(entity.Index), M23.InstanceFor(entity.Index), M24.InstanceFor(entity.Index),
+            M31.InstanceFor(entity.Index), M32.InstanceFor(entity.Index), M33.InstanceFor(entity.Index), M34.InstanceFor(entity.Index),
+            M41.InstanceFor(entity.Index), M42.InstanceFor(entity.Index), M43.InstanceFor(entity.Index), M44.InstanceFor(entity.Index)
+        )
     );
 }

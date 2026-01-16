@@ -19,8 +19,10 @@ public sealed class PositionBackingStore : ISingleton<PositionBackingStore>
     /// Creates a PositionBehavior for the specified entity.
     /// </summary>
     public PositionBehavior CreateFor(Entity entity) => new(
-        X.InstanceFor(entity.Index),
-        Y.InstanceFor(entity.Index),
-        Z.InstanceFor(entity.Index)
+        new BackedVector3(
+            X.InstanceFor(entity.Index),
+            Y.InstanceFor(entity.Index),
+            Z.InstanceFor(entity.Index)
+        )
     );
 }

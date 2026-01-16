@@ -20,9 +20,11 @@ public sealed class RotationBackingStore : ISingleton<RotationBackingStore>
     /// Creates a RotationBehavior for the specified entity.
     /// </summary>
     public RotationBehavior CreateFor(Entity entity) => new(
-        X.InstanceFor(entity.Index),
-        Y.InstanceFor(entity.Index),
-        Z.InstanceFor(entity.Index),
-        W.InstanceFor(entity.Index)
+        new BackedQuaternion(
+            X.InstanceFor(entity.Index),
+            Y.InstanceFor(entity.Index),
+            Z.InstanceFor(entity.Index),
+            W.InstanceFor(entity.Index)
+        )
     );
 }
