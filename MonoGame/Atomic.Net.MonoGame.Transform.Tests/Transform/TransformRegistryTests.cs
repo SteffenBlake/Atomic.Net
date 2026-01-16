@@ -39,22 +39,24 @@ public sealed class TransformRegistryTests : IDisposable
         Assert.True(hasTransform, "Entity should have a WorldTransform behavior");
         
         var actual = worldTransform!.Value;
-        Assert.Equal(expected.M11, actual.Value.M11.Value, Tolerance);
-        Assert.Equal(expected.M12, actual.Value.M12.Value, Tolerance);
-        Assert.Equal(expected.M13, actual.Value.M13.Value, Tolerance);
-        Assert.Equal(expected.M14, actual.Value.M14.Value, Tolerance);
-        Assert.Equal(expected.M21, actual.Value.M21.Value, Tolerance);
-        Assert.Equal(expected.M22, actual.Value.M22.Value, Tolerance);
-        Assert.Equal(expected.M23, actual.Value.M23.Value, Tolerance);
-        Assert.Equal(expected.M24, actual.Value.M24.Value, Tolerance);
-        Assert.Equal(expected.M31, actual.Value.M31.Value, Tolerance);
-        Assert.Equal(expected.M32, actual.Value.M32.Value, Tolerance);
-        Assert.Equal(expected.M33, actual.Value.M33.Value, Tolerance);
-        Assert.Equal(expected.M34, actual.Value.M34.Value, Tolerance);
-        Assert.Equal(expected.M41, actual.Value.M41.Value, Tolerance);
-        Assert.Equal(expected.M42, actual.Value.M42.Value, Tolerance);
-        Assert.Equal(expected.M43, actual.Value.M43.Value, Tolerance);
-        Assert.Equal(expected.M44, actual.Value.M44.Value, Tolerance);
+        Assert.Multiple(
+            () => Assert.Equal(expected.M11, actual.Value.M11.Value, Tolerance),
+            () => Assert.Equal(expected.M12, actual.Value.M12.Value, Tolerance),
+            () => Assert.Equal(expected.M13, actual.Value.M13.Value, Tolerance),
+            () => Assert.Equal(expected.M14, actual.Value.M14.Value, Tolerance),
+            () => Assert.Equal(expected.M21, actual.Value.M21.Value, Tolerance),
+            () => Assert.Equal(expected.M22, actual.Value.M22.Value, Tolerance),
+            () => Assert.Equal(expected.M23, actual.Value.M23.Value, Tolerance),
+            () => Assert.Equal(expected.M24, actual.Value.M24.Value, Tolerance),
+            () => Assert.Equal(expected.M31, actual.Value.M31.Value, Tolerance),
+            () => Assert.Equal(expected.M32, actual.Value.M32.Value, Tolerance),
+            () => Assert.Equal(expected.M33, actual.Value.M33.Value, Tolerance),
+            () => Assert.Equal(expected.M34, actual.Value.M34.Value, Tolerance),
+            () => Assert.Equal(expected.M41, actual.Value.M41.Value, Tolerance),
+            () => Assert.Equal(expected.M42, actual.Value.M42.Value, Tolerance),
+            () => Assert.Equal(expected.M43, actual.Value.M43.Value, Tolerance),
+            () => Assert.Equal(expected.M44, actual.Value.M44.Value, Tolerance)
+        );
     }
 
     private static Quaternion Rotation90DegreesAroundZ() =>
@@ -148,7 +150,7 @@ public sealed class TransformRegistryTests : IDisposable
             {
                 t.Position.X.Value = 10f;
             })
-            .SetParent(parent);
+            .WithParent(parent);
 
         TransformRegistry.Instance.Recalculate();
 
@@ -180,7 +182,7 @@ public sealed class TransformRegistryTests : IDisposable
             {
                 t.Position.X.Value = 10f;
             })
-            .SetParent(parent);
+            .WithParent(parent);
 
         TransformRegistry.Instance.Recalculate();
 
@@ -218,7 +220,7 @@ public sealed class TransformRegistryTests : IDisposable
                 t.Rotation.Z.Value = rotation.Z;
                 t.Rotation.W.Value = rotation.W;
             })
-            .SetParent(parent);
+            .WithParent(parent);
 
         TransformRegistry.Instance.Recalculate();
 

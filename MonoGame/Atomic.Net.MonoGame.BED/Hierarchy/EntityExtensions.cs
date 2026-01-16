@@ -17,7 +17,7 @@ public static class EntityExtensions
     /// <returns>The parent entity for fluent chaining.</returns>
     public static Entity AddChild(this Entity parent, Entity child)
     {
-        child.SetParent(parent);
+        child.WithParent(parent);
         return parent;
     }
 
@@ -28,7 +28,7 @@ public static class EntityExtensions
     /// <param name="child">The child entity.</param>
     /// <param name="parent">The parent entity.</param>
     /// <returns>The child entity for fluent chaining.</returns>
-    public static Entity SetParent(this Entity child, Entity parent)
+    public static Entity WithParent(this Entity child, Entity parent)
     {
         child.SetBehavior<Parent>((ref Parent p) => p = new(parent.Index));
         return child;

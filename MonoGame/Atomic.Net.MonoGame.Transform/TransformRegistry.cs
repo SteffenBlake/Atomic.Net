@@ -30,8 +30,8 @@ public sealed class TransformRegistry :
     private TransformRegistry()
     {
         EventBus<InitializeEvent>.Register(this);
-        _localTransformMaps = new LocalTransformBlockMapSet(_inputStore);
-        _worldTransformMaps = new WorldTransformBlockMapSet(_localTransformMaps, _parentStore);
+        _localTransformMaps = LocalTransformBlockMapSet.Instance;
+        _worldTransformMaps = WorldTransformBlockMapSet.Instance;
     }
 
     public void OnEvent(InitializeEvent _)
@@ -47,7 +47,7 @@ public sealed class TransformRegistry :
 
     public void Recalculate()
     {
-        const int maxIterations = 5;
+        const int maxIterations = 100;
 
         _worldTransformUpdated.Clear();
 
