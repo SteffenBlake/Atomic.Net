@@ -12,18 +12,34 @@ public class BehaviorRegistry<TBehavior> :
     IEventHandler<EntityDeactivatedEvent>
     where TBehavior : struct
 {
+    private static bool _registered;
+
     /// <summary>
     /// Gets the singleton instance of the registry.
     /// </summary>
     [field: AllowNull]
-    public static BehaviorRegistry<TBehavior> Instance => field ??= new();
+    public static BehaviorRegistry<TBehavior> Instance
+    {
+        get
+        {
+            if (field == null)
+            {
+                field = new BehaviorRegistry<TBehavior>();
+                if (!_registered)
+                {
+                    EventBus<EntityDeactivatedEvent>.Register(field);
+                    _registered = true;
+                }
+            }
+            return field;
+        }
+    }
 
     /// <summary>
-    /// Initializes the registry and registers for entity deactivation events.
+    /// Initializes the registry.
     /// </summary>
     public BehaviorRegistry()
     {
-        EventBus<EntityDeactivatedEvent>.Register<BehaviorRegistry<TBehavior>>();
     }
 
     private readonly SparseArray<TBehavior> _behaviors = new(Constants.MaxEntities);
