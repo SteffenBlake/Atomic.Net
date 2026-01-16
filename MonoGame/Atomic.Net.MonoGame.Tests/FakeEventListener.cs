@@ -28,5 +28,6 @@ public sealed class FakeEventListener<TEvent> : IEventHandler<TEvent>, IDisposab
     
     public void Dispose()
     {
+        EventBus<TEvent>.Unregister(this);
     }
 }

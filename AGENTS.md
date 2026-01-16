@@ -51,3 +51,30 @@
 ### File Organization
 - `.csproj` minimal, sorted:  PropertyGroup → ItemGroup (PackageRef) → ItemGroup (ProjectRef)
 - Namespace matches folder path from project root
+
+## Testing Rules
+
+### Test Structure
+- All test methods must follow the Arrange/Act/Assert pattern
+- Add clear comment sections for each phase:
+  ```csharp
+  [Fact]
+  public void TestName()
+  {
+      // Arrange
+      // ... setup code
+      
+      // Act
+      // ... action being tested
+      
+      // Assert
+      // ... verification
+  }
+  ```
+- If a test doesn't fit this pattern, reorganize it or consider splitting into multiple tests
+- Each test should test one specific behavior or scenario
+
+### Test Helpers
+- Use `FakeEventListener<TEvent>` for testing event firing
+- Wrap `FakeEventListener` in `using` statements for proper cleanup
+- Deactivated entities should be treated as non-existent - expect exceptions when accessing them

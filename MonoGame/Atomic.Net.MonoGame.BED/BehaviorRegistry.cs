@@ -87,12 +87,19 @@ public class BehaviorRegistry<TBehavior> :
     /// <param name="entity">The target entity.</param>
     /// <param name="behavior">The behavior instance.</param>
     /// <returns>True if the behavior exists and is active.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when entity is not active.</exception>
     public bool TryGetBehavior(
         Entity entity, 
         [NotNullWhen(true)]
         out TBehavior? behavior
     )
     {
+        if (!entity.Active)
+        {
+            throw new InvalidOperationException(
+                $"Cannot get behavior '{typeof(TBehavior)}' for inactive entity with id: {entity.Index}."
+            );
+        }
         return TryGetBehavior(entity.Index, out behavior);
     }
 
@@ -115,8 +122,15 @@ public class BehaviorRegistry<TBehavior> :
     /// Check if an entity has this behavior 
     /// </summary>
     /// <returns>Whether the entity has the behavior or not</returns>
+    /// <exception cref="InvalidOperationException">Thrown when entity is not active.</exception>
     public bool HasBehavior(Entity entity)
     {
+        if (!entity.Active)
+        {
+            throw new InvalidOperationException(
+                $"Cannot check behavior '{typeof(TBehavior)}' for inactive entity with id: {entity.Index}."
+            );
+        }
         return _behaviors.HasValue(entity.Index);
     }
 

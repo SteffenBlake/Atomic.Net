@@ -65,13 +65,13 @@ public sealed class BehaviorRegistryTests : IDisposable
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref TestBehavior b) => b.Value = 42);
-        Assert.True(BehaviorRegistry<TestBehavior>.Instance.HasBehavior(entity));
         
         // Act
         EntityRegistry.Instance.Deactivate(entity);
         
-        // Assert
-        Assert.False(BehaviorRegistry<TestBehavior>.Instance.HasBehavior(entity));
+        // Assert - accessing behavior on deactivated entity should throw
+        Assert.Throws<InvalidOperationException>(() => 
+            BehaviorRegistry<TestBehavior>.Instance.HasBehavior(entity));
     }
 
     [Fact]
