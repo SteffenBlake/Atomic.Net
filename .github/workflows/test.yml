@@ -1,0 +1,28 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore MonoGame/Atomic.Net.MonoGame.sln
+
+    - name: Build
+      run: dotnet build MonoGame/Atomic.Net.MonoGame.sln --no-restore --configuration Release
+
+    - name: Test
+      run: dotnet test MonoGame/Atomic.Net.MonoGame.sln --no-build --configuration Release --verbosity normal

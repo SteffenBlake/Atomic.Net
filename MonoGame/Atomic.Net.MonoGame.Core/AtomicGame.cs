@@ -1,10 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Xna.Framework;
 
 namespace Atomic.Net.MonoGame.Core;
 
 public class AtomicGame : Game
 {
-    public static AtomicGame Instance { get; } = new()
+    [field: AllowNull]
+    public static AtomicGame Instance => field ??= new()
     {
         IsFixedTimeStep = false
     };

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Core;
@@ -7,7 +8,8 @@ namespace Atomic.Net.MonoGame.Core;
 /// </summary>
 public class EntityRegistry()
 {
-    public static EntityRegistry Instance { get; }= new();
+    [field: AllowNull]
+    public static EntityRegistry Instance => field ??= new();
 
     private readonly Entity[] _entities = [.. 
         Enumerable.Range(0, Constants.MaxEntities - 1)

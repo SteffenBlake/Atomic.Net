@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Core.BlockMaps;
@@ -9,7 +10,8 @@ namespace Atomic.Net.MonoGame.Transform;
 /// </summary>
 public sealed class WorldTransformBackingStore : ISingleton<WorldTransformBackingStore>
 {
-    public static WorldTransformBackingStore Instance { get; } = new();
+    [field: AllowNull]
+    public static WorldTransformBackingStore Instance => field ??= new();
 
     public InputBlockMap M11 { get; } = new(initValue: 1f);
     public InputBlockMap M12 { get; } = new(initValue: 0f);

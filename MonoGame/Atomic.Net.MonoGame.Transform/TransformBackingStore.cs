@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Core.BlockMaps;
@@ -9,7 +10,8 @@ namespace Atomic.Net.MonoGame.Transform;
 /// </summary>
 public sealed class TransformBackingStore : ISingleton<TransformBackingStore>
 {
-    public static TransformBackingStore Instance { get; } = new();
+    [field: AllowNull]
+    public static TransformBackingStore Instance => field ??= new();
 
     // Position (default: 0, 0, 0)
     public InputBlockMap PositionX { get; } = new(initValue: 0f);

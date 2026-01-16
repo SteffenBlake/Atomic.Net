@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.BED.Hierarchy;
@@ -7,7 +8,8 @@ namespace Atomic.Net.MonoGame.BED.Hierarchy;
 /// </summary>
 public sealed class ParentRemovedDriver : IEventHandler<BehaviorRemovedEvent<Parent>>, ISingleton<ParentRemovedDriver>
 {
-    public static ParentRemovedDriver Instance { get; } = new();
+    [field: AllowNull]
+    public static ParentRemovedDriver Instance => field ??= new();
 
     public void OnEvent(BehaviorRemovedEvent<Parent> e)
     {

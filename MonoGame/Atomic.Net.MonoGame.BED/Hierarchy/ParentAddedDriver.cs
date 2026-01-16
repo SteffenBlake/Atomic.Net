@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.BED.Hierarchy;
@@ -7,7 +8,8 @@ namespace Atomic.Net.MonoGame.BED.Hierarchy;
 /// </summary>
 public sealed class ParentAddedDriver : IEventHandler<BehaviorAddedEvent<Parent>>, ISingleton<ParentAddedDriver>
 {
-    public static ParentAddedDriver Instance { get; } = new();
+    [field: AllowNull]
+    public static ParentAddedDriver Instance => field ??= new();
 
     public void OnEvent(BehaviorAddedEvent<Parent> e)
     {

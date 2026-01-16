@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core.BlockMaps;
@@ -14,7 +15,8 @@ public sealed class TransformRegistry :
     IEventHandler<PostBehaviorUpdatedEvent<Parent>>,
     IEventHandler<BehaviorRemovedEvent<Parent>>
 {
-    public static TransformRegistry Instance { get; } = new();
+    [field: AllowNull]
+    public static TransformRegistry Instance => field ??= new();
 
     private readonly SparseArray<bool> _dirty = new(Constants.MaxEntities);
     private readonly HashSet<ushort> _worldTransformUpdated = new(Constants.MaxEntities);

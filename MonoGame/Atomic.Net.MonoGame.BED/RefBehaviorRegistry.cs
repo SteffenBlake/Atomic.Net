@@ -16,7 +16,8 @@ public class RefBehaviorRegistry<TBehavior> :
     /// <summary>
     /// Gets the singleton instance of the registry.
     /// </summary>
-    public static RefBehaviorRegistry<TBehavior> Instance { get; } = new();
+    [field: AllowNull]
+    public static RefBehaviorRegistry<TBehavior> Instance => field ??= new();
 
     /// <summary>
     /// Initializes the registry and registers for entity deactivation events.

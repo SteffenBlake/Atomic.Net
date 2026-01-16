@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.BED.Hierarchy;
 using Atomic.Net.MonoGame.Core;
@@ -14,7 +15,8 @@ public partial class FlexRegistry :
     IEventHandler<EntityEnabledEvent>,
     IEventHandler<EntityDisabledEvent>
 {
-    public static FlexRegistry Instance { get; } = new();
+    [field: AllowNull]
+    public static FlexRegistry Instance => field ??= new();
 
     private readonly Node?[] _nodes = new Node?[Constants.MaxEntities];
     private readonly bool[] _dirty = new bool[Constants.MaxEntities];
