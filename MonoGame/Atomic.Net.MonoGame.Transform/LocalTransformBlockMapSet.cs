@@ -1,5 +1,4 @@
 using Atomic.Net.MonoGame.Core;
-using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core.BlockMaps;
 
 namespace Atomic.Net.MonoGame.Transform;
@@ -9,7 +8,12 @@ namespace Atomic.Net.MonoGame.Transform;
 /// </summary>
 public sealed class LocalTransformBlockMapSet : ISingleton<LocalTransformBlockMapSet>
 {
-    public static LocalTransformBlockMapSet Instance { get; } = new();
+    internal static void Initialize()
+    {
+        Instance = new();
+    }
+
+    public static LocalTransformBlockMapSet Instance { get; private set; } = null!;
 
     // Only 12 computed elements - M14, M24, M34, M44 are constants (0, 0, 0, 1) for affine transforms
     public BlockMapBase M11 { get; }
@@ -27,20 +31,18 @@ public sealed class LocalTransformBlockMapSet : ISingleton<LocalTransformBlockMa
 
     private LocalTransformBlockMapSet()
     {
-        var store = TransformBackingStore.Instance;
-        
-        var rotX = store.RotationX;
-        var rotY = store.RotationY;
-        var rotZ = store.RotationZ;
-        var rotW = store.RotationW;
+        var rotX = TransformBackingStore.Instance.RotationX;
+        var rotY = TransformBackingStore.Instance.RotationY;
+        var rotZ = TransformBackingStore.Instance.RotationZ;
+        var rotW = TransformBackingStore.Instance.RotationW;
 
-        var scaleX = store.ScaleX;
-        var scaleY = store.ScaleY;
-        var scaleZ = store.ScaleZ;
+        var scaleX = TransformBackingStore.Instance.ScaleX;
+        var scaleY = TransformBackingStore.Instance.ScaleY;
+        var scaleZ = TransformBackingStore.Instance.ScaleZ;
 
-        var posX = store.PositionX;
-        var posY = store.PositionY;
-        var posZ = store.PositionZ;
+        var posX = TransformBackingStore.Instance.PositionX;
+        var posY = TransformBackingStore.Instance.PositionY;
+        var posZ = TransformBackingStore.Instance.PositionZ;
 
         // Constants using InputFloatMap (single float, not dense array)
         var one = new InputFloatMap(1f);

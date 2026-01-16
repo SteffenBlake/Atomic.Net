@@ -1,13 +1,17 @@
-using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Core;
 
 /// <summary>
 /// Central registry for entity lifecycle management.
 /// </summary>
-public class EntityRegistry()
+public class EntityRegistry
 {
-    public static EntityRegistry Instance { get; } = new();
+    internal static void Initialize()
+    {
+        Instance = new();
+    }
+
+    public static EntityRegistry Instance { get; private set; } = null!;
 
     private readonly Entity[] _entities = [.. 
         Enumerable.Range(0, Constants.MaxEntities - 1)

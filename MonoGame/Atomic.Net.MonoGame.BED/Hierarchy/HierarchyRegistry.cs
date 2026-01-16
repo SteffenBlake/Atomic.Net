@@ -6,9 +6,24 @@ namespace Atomic.Net.MonoGame.BED.Hierarchy;
 /// Tracks parent-to-child relationships between entities using a fixed-size jagged boolean array.
 /// This registry does not store any other state and serves as a fast lookup for hierarchical queries.
 /// </summary>
-public static class HierarchyRegistry
+public class HierarchyRegistry : 
+    ISingleton<HierarchyRegistry>,
+    IEventHandler<BehaviorAddedEvent<Parent>>,
+    IEventHandler<PreBehaviorUpdatedEvent<Parent>>,
+    IEventHandler<PostBehaviorUpdatedEvent<Parent>>,
+    IEventHandler<BehaviorRemovedEvent<Parent>>,
+    IEventHandler<EntityDeactivatedEvent>,
+    IEventHandler<InitializeEvent>
 {
-    private static readonly SparseReferenceArray<SparseArray<bool>> _parentToChildLookup 
+    internal static void Initialize()
+    {
+        Instance = new();
+        EventBus<InitializeEvent>.Register(Instance);
+    }
+
+    public static HierarchyRegistry Instance { get; private set; } = null!;
+
+    private readonly SparseReferenceArray<SparseArray<bool>> _parentToChildLookup 
         = new(Constants.MaxEntities);
 
     /// <summary>
@@ -16,7 +31,7 @@ public static class HierarchyRegistry
     /// </summary>
     /// <param name="parent">The parent entity.</param>
     /// <param name="child">The child entity to add.</param>
-    public static void TrackChild(Entity parent, Entity child)
+    public void TrackChild(Entity parent, Entity child)
     {
         if (!_parentToChildLookup.HasValue(parent.Index))
         {
@@ -31,7 +46,7 @@ public static class HierarchyRegistry
     /// </summary>
     /// <param name="parent">The parent entity.</param>
     /// <param name="child">The child entity to remove.</param>
-    public static void UntrackChild(Entity parent, Entity child)
+    public void UntrackChild(Entity parent, Entity child)
     {
         if (!_parentToChildLookup.TryGetValue(parent.Index, out var children))
         {
@@ -53,7 +68,7 @@ public static class HierarchyRegistry
     /// </summary>
     /// <param name="parent">The parent entity.</param>
     /// <returns>An enumerable of child entities belonging to the parent.</returns>
-    public static IEnumerable<Entity> GetChildren(Entity parent)
+    public IEnumerable<Entity> GetChildren(Entity parent)
     {
         if (!_parentToChildLookup.TryGetValue(parent.Index, out var children))
         {
@@ -69,7 +84,7 @@ public static class HierarchyRegistry
     /// <param name="parent">The parent entity.</param>
     /// <param name="child">The child entity to check for.</param>
     /// <returns>True if the child belongs to the parent; otherwise, false.</returns>
-    public static bool HasChild(Entity parent, Entity child)
+    public bool HasChild(Entity parent, Entity child)
     {
         return _parentToChildLookup.TryGetValue(parent.Index, out var children) &&
             children.HasValue(child.Index);
@@ -78,9 +93,68 @@ public static class HierarchyRegistry
     /// <summary>
     /// Checks whether the parent has any children.
     /// </summary>
-    public static bool HasAnyChildren(Entity parent)
+    public bool HasAnyChildren(Entity parent)
     {
         return _parentToChildLookup.TryGetValue(parent.Index, out var children) &&
             children.Count > 0;
+    }
+
+    public void OnEvent(BehaviorAddedEvent<Parent> e)
+    {
+        if (BehaviorRegistry<Parent>.Instance.TryGetBehavior(e.Entity, out var behavior))
+        {
+            TrackChild(new Entity(behavior.Value.ParentIndex), e.Entity);
+        }
+    }
+
+    public void OnEvent(PreBehaviorUpdatedEvent<Parent> e)
+    {
+        if (BehaviorRegistry<Parent>.Instance.TryGetBehavior(e.Entity, out var oldBehavior))
+        {
+            UntrackChild(
+                EntityRegistry.Instance[oldBehavior.Value.ParentIndex], 
+                e.Entity
+            );
+        }
+    }
+
+    public void OnEvent(PostBehaviorUpdatedEvent<Parent> e)
+    {
+        if (BehaviorRegistry<Parent>.Instance.TryGetBehavior(e.Entity, out var newBehavior))
+        {
+            TrackChild(
+                EntityRegistry.Instance[newBehavior.Value.ParentIndex], 
+                e.Entity
+            );
+        }
+    }
+
+    public void OnEvent(BehaviorRemovedEvent<Parent> e)
+    {
+        if (BehaviorRegistry<Parent>.Instance.TryGetBehavior(e.Entity, out var behavior))
+        {
+            UntrackChild(
+                EntityRegistry.Instance[behavior.Value.ParentIndex], 
+                e.Entity
+            );
+        }
+    }
+
+    public void OnEvent(EntityDeactivatedEvent e)
+    {
+        foreach (var child in GetChildren(e.Entity))
+        {
+            BehaviorRegistry<Parent>.Instance.Remove(child);
+        }
+    }
+
+    public void OnEvent(InitializeEvent e)
+    {
+        EventBus<BehaviorAddedEvent<Parent>>.Register<HierarchyRegistry>();
+        EventBus<BehaviorAddedEvent<Parent>>.Register<HierarchyRegistry>();
+        EventBus<PreBehaviorUpdatedEvent<Parent>>.Register<HierarchyRegistry>();
+        EventBus<PostBehaviorUpdatedEvent<Parent>>.Register<HierarchyRegistry>();
+        EventBus<BehaviorRemovedEvent<Parent>>.Register<HierarchyRegistry>();
+        EventBus<EntityDeactivatedEvent>.Register<HierarchyRegistry>();
     }
 }

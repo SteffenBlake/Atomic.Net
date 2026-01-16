@@ -6,9 +6,9 @@ namespace Atomic.Net.MonoGame.Transform;
 /// <summary>
 /// Stores the final world transform of an entity, calculated from inputs and parent hierarchy.
 /// </summary>
-public readonly record struct WorldTransform(BackedMatrix Value) : IBehavior<WorldTransform>
+public readonly record struct WorldTransformBehavior(BackedMatrix Value) : IBehavior<WorldTransformBehavior>
 {
-    public static WorldTransform CreateFor(Entity entity)
+    public static WorldTransformBehavior CreateFor(Entity entity)
     {
         return WorldTransformBackingStore.Instance.CreateFor(entity);
     }

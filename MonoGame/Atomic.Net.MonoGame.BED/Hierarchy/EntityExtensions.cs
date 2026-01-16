@@ -30,7 +30,7 @@ public static class EntityExtensions
     /// <returns>The child entity for fluent chaining.</returns>
     public static Entity WithParent(this Entity child, Entity parent)
     {
-        child.SetBehavior<Parent>((ref Parent p) => p = new(parent.Index));
+        child.SetBehavior((ref Parent p) => p = new(parent.Index));
         return child;
     }
 
@@ -41,7 +41,7 @@ public static class EntityExtensions
     /// <returns>An enumerable of child entities belonging to the parent.</returns>
     public static IEnumerable<Entity> GetChildren(this Entity parent)
     {
-        return HierarchyRegistry.GetChildren(parent);
+        return HierarchyRegistry.Instance.GetChildren(parent);
     }
 
     /// <summary>
@@ -99,7 +99,7 @@ public static class EntityExtensions
     /// <returns><c>true</c> if the child belongs to the parent; otherwise, <c>false</c>.</returns>
     public static bool HasChild(this Entity parent, Entity child)
     {
-        return HierarchyRegistry.HasChild(parent, child);
+        return HierarchyRegistry.Instance.HasChild(parent, child);
     }
 
     /// <summary>
@@ -125,7 +125,7 @@ public static class EntityExtensions
     /// <returns><c>true</c> if the parent has one or more children; otherwise, <c>false</c>.</returns>
     public static bool HasAnyChildren(this Entity parent)
     {
-        return HierarchyRegistry.HasAnyChildren(parent);
+        return HierarchyRegistry.Instance.HasAnyChildren(parent);
     }
 }
 

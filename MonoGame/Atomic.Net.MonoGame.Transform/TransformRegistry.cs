@@ -1,6 +1,5 @@
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
-using Atomic.Net.MonoGame.Core.BlockMaps;
 using Atomic.Net.MonoGame.BED.Hierarchy;
 
 namespace Atomic.Net.MonoGame.Transform;
@@ -15,24 +14,16 @@ public sealed class TransformRegistry :
     IEventHandler<PostBehaviorUpdatedEvent<Parent>>,
     IEventHandler<BehaviorRemovedEvent<Parent>>
 {
-    public static TransformRegistry Instance { get; } = new();
+    internal static void Initialize()
+    {
+        Instance = new();
+        EventBus<InitializeEvent>.Register(Instance);
+    }
+
+    public static TransformRegistry Instance { get; private set; } = null!;
 
     private readonly SparseArray<bool> _dirty = new(Constants.MaxEntities);
     private readonly HashSet<ushort> _worldTransformUpdated = new(Constants.MaxEntities);
-
-    private readonly TransformBackingStore _inputStore = TransformBackingStore.Instance;
-    private readonly WorldTransformBackingStore _worldStore = WorldTransformBackingStore.Instance;
-    private readonly ParentWorldTransformBackingStore _parentStore = ParentWorldTransformBackingStore.Instance;
-
-    private readonly LocalTransformBlockMapSet _localTransformMaps;
-    private readonly WorldTransformBlockMapSet _worldTransformMaps;
-
-    private TransformRegistry()
-    {
-        EventBus<InitializeEvent>.Register(this);
-        _localTransformMaps = LocalTransformBlockMapSet.Instance;
-        _worldTransformMaps = WorldTransformBlockMapSet.Instance;
-    }
 
     public void OnEvent(InitializeEvent _)
     {
@@ -67,10 +58,10 @@ public sealed class TransformRegistry :
             }
 
             // Step 1: SIMD compute LocalTransform from Position/Rotation/Scale/Anchor
-            _localTransformMaps.Recalculate();
+            LocalTransformBlockMapSet.Instance.Recalculate();
 
             // Step 2: SIMD compute WorldTransform = LocalTransform × ParentWorldTransform
-            _worldTransformMaps.Recalculate();
+            WorldTransformBlockMapSet.Instance.Recalculate();
 
             // Step 3: Copy computed WorldTransform to WorldTransformBackingStore
             // (Only the 12 computed elements - M14, M24, M34, M44 are preset to constants)
@@ -86,22 +77,46 @@ public sealed class TransformRegistry :
 
     private void CopyWorldTransformToStore(List<ushort> entities)
     {
-        foreach (var idx in entities)
+        foreach (var index in entities)
         {
             // Only copy the 12 computed elements
             // M14, M24, M34, M44 are already preset to (0, 0, 0, 1) via initValue
-            _worldStore.M11.Set(idx, _worldTransformMaps.M11[idx] ?? 1f);
-            _worldStore.M12.Set(idx, _worldTransformMaps.M12[idx] ?? 0f);
-            _worldStore.M13.Set(idx, _worldTransformMaps.M13[idx] ?? 0f);
-            _worldStore.M21.Set(idx, _worldTransformMaps.M21[idx] ?? 0f);
-            _worldStore.M22.Set(idx, _worldTransformMaps.M22[idx] ?? 1f);
-            _worldStore.M23.Set(idx, _worldTransformMaps.M23[idx] ?? 0f);
-            _worldStore.M31.Set(idx, _worldTransformMaps.M31[idx] ?? 0f);
-            _worldStore.M32.Set(idx, _worldTransformMaps.M32[idx] ?? 0f);
-            _worldStore.M33.Set(idx, _worldTransformMaps.M33[idx] ?? 1f);
-            _worldStore.M41.Set(idx, _worldTransformMaps.M41[idx] ?? 0f);
-            _worldStore.M42.Set(idx, _worldTransformMaps.M42[idx] ?? 0f);
-            _worldStore.M43.Set(idx, _worldTransformMaps.M43[idx] ?? 0f);
+            WorldTransformBackingStore.Instance.M11.Set(
+                index, WorldTransformBlockMapSet.Instance.M11[index] ?? 1f
+            );
+            WorldTransformBackingStore.Instance.M12.Set(
+                index, WorldTransformBlockMapSet.Instance.M12[index] ?? 0f
+            );
+            WorldTransformBackingStore.Instance.M13.Set(
+                index, WorldTransformBlockMapSet.Instance.M13[index] ?? 0f
+            );
+            WorldTransformBackingStore.Instance.M21.Set(
+                index, WorldTransformBlockMapSet.Instance.M21[index] ?? 0f
+            );
+            WorldTransformBackingStore.Instance.M22.Set(
+                index, WorldTransformBlockMapSet.Instance.M22[index] ?? 1f
+            );
+            WorldTransformBackingStore.Instance.M23.Set(
+                index, WorldTransformBlockMapSet.Instance.M23[index] ?? 0f
+            );
+            WorldTransformBackingStore.Instance.M31.Set(
+                index, WorldTransformBlockMapSet.Instance.M31[index] ?? 0f
+            );
+            WorldTransformBackingStore.Instance.M32.Set(
+                index, WorldTransformBlockMapSet.Instance.M32[index] ?? 0f
+            );
+            WorldTransformBackingStore.Instance.M33.Set(
+                index, WorldTransformBlockMapSet.Instance.M33[index] ?? 1f
+            );
+            WorldTransformBackingStore.Instance.M41.Set(
+                index, WorldTransformBlockMapSet.Instance.M41[index] ?? 0f
+            );
+            WorldTransformBackingStore.Instance.M42.Set(
+                index, WorldTransformBlockMapSet.Instance.M42[index] ?? 0f
+            );
+            WorldTransformBackingStore.Instance.M43.Set(
+                index, WorldTransformBlockMapSet.Instance.M43[index] ?? 0f
+            );
         }
     }
 
@@ -115,18 +130,42 @@ public sealed class TransformRegistry :
                 var childIdx = child.Index;
 
                 // Copy only the 12 computed elements
-                _parentStore.M11.Set(childIdx, _worldStore.M11[parentIdx] ?? 1f);
-                _parentStore.M12.Set(childIdx, _worldStore.M12[parentIdx] ?? 0f);
-                _parentStore.M13.Set(childIdx, _worldStore.M13[parentIdx] ?? 0f);
-                _parentStore.M21.Set(childIdx, _worldStore.M21[parentIdx] ?? 0f);
-                _parentStore.M22.Set(childIdx, _worldStore.M22[parentIdx] ?? 1f);
-                _parentStore.M23.Set(childIdx, _worldStore.M23[parentIdx] ?? 0f);
-                _parentStore.M31.Set(childIdx, _worldStore.M31[parentIdx] ?? 0f);
-                _parentStore.M32.Set(childIdx, _worldStore.M32[parentIdx] ?? 0f);
-                _parentStore.M33.Set(childIdx, _worldStore.M33[parentIdx] ?? 1f);
-                _parentStore.M41.Set(childIdx, _worldStore.M41[parentIdx] ?? 0f);
-                _parentStore.M42.Set(childIdx, _worldStore.M42[parentIdx] ?? 0f);
-                _parentStore.M43.Set(childIdx, _worldStore.M43[parentIdx] ?? 0f);
+                ParentWorldTransformBackingStore.Instance.M11.Set(
+                    childIdx, WorldTransformBackingStore.Instance.M11[parentIdx] ?? 1f
+                );
+                ParentWorldTransformBackingStore.Instance.M12.Set(
+                    childIdx, WorldTransformBackingStore.Instance.M12[parentIdx] ?? 0f
+                );
+                ParentWorldTransformBackingStore.Instance.M13.Set(
+                    childIdx, WorldTransformBackingStore.Instance.M13[parentIdx] ?? 0f
+                );
+                ParentWorldTransformBackingStore.Instance.M21.Set(
+                    childIdx, WorldTransformBackingStore.Instance.M21[parentIdx] ?? 0f
+                );
+                ParentWorldTransformBackingStore.Instance.M22.Set(
+                    childIdx, WorldTransformBackingStore.Instance.M22[parentIdx] ?? 1f
+                );
+                ParentWorldTransformBackingStore.Instance.M23.Set(
+                    childIdx, WorldTransformBackingStore.Instance.M23[parentIdx] ?? 0f
+                );
+                ParentWorldTransformBackingStore.Instance.M31.Set(
+                    childIdx, WorldTransformBackingStore.Instance.M31[parentIdx] ?? 0f
+                );
+                ParentWorldTransformBackingStore.Instance.M32.Set(
+                    childIdx, WorldTransformBackingStore.Instance.M32[parentIdx] ?? 0f
+                );
+                ParentWorldTransformBackingStore.Instance.M33.Set(
+                    childIdx, WorldTransformBackingStore.Instance.M33[parentIdx] ?? 1f
+                );
+                ParentWorldTransformBackingStore.Instance.M41.Set(
+                    childIdx, WorldTransformBackingStore.Instance.M41[parentIdx] ?? 0f
+                );
+                ParentWorldTransformBackingStore.Instance.M42.Set(
+                    childIdx, WorldTransformBackingStore.Instance.M42[parentIdx] ?? 0f
+                );
+                ParentWorldTransformBackingStore.Instance.M43.Set(
+                    childIdx, WorldTransformBackingStore.Instance.M43[parentIdx] ?? 0f
+                );
 
                 _dirty.Set(childIdx, true);
             }
@@ -135,10 +174,10 @@ public sealed class TransformRegistry :
 
     private void FireBulkEvents()
     {
-        foreach (var idx in _worldTransformUpdated)
+        foreach (var index in _worldTransformUpdated)
         {
-            var entity = EntityRegistry.Instance[idx];
-            EventBus<PostBehaviorUpdatedEvent<WorldTransform>>.Push(new(entity));
+            var entity = EntityRegistry.Instance[index];
+            EventBus<PostBehaviorUpdatedEvent<WorldTransformBehavior>>.Push(new(entity));
         }
     }
 

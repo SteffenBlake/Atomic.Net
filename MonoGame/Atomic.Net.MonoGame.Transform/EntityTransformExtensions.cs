@@ -14,13 +14,15 @@ public static class EntityTransformExtensions
     /// <param name="entity">The entity.</param>
     /// <param name="mutate">Action to mutate the transform behavior's backing values.</param>
     /// <returns>The entity for fluent chaining.</returns>
-    public static Entity WithTransform(this Entity entity, RefReadonlyAction<TransformBehavior> mutate)
+    public static Entity WithTransform(
+        this Entity entity, RefReadonlyAction<TransformBehavior> mutate
+    )
     {
         // Set the TransformBehavior
         entity.SetRefBehavior(mutate);
         
         // Ensure WorldTransform behavior is initialized
-        entity.SetRefBehavior((ref readonly WorldTransform _) => { });
+        entity.SetRefBehavior((ref readonly WorldTransformBehavior _) => { });
         
         return entity;
     }

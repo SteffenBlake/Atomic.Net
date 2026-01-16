@@ -13,18 +13,13 @@ public class BehaviorRegistry<TBehavior> :
     IEventHandler<EntityDeactivatedEvent>
     where TBehavior : struct
 {
-    /// <summary>
-    /// Gets the singleton instance of the registry.
-    /// </summary>
+    public static void Initialize()
+    {
+        EventBus<InitializeEvent>.Register<BehaviorRegistry<TBehavior>>();
+    }
+
     public static BehaviorRegistry<TBehavior> Instance { get; } = new();
 
-    /// <summary>
-    /// Initializes the registry and registers for initialization event.
-    /// </summary>
-    public BehaviorRegistry()
-    {
-        EventBus<InitializeEvent>.Register(this);
-    }
 
     /// <summary>
     /// Handles initialization by registering for entity deactivation events.
