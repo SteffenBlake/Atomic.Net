@@ -16,11 +16,11 @@ public sealed class AnchorBackingStore : ISingleton<AnchorBackingStore>
     public InputBlockMap Z { get; } = new();
 
     /// <summary>
-    /// Creates an AnchorBehavior for the specified entity index.
+    /// Creates an AnchorBehavior for the specified entity.
     /// </summary>
-    public AnchorBehavior CreateFor(int entityIndex) => new(
-        X.InstanceFor(entityIndex),
-        Y.InstanceFor(entityIndex),
-        Z.InstanceFor(entityIndex)
+    public AnchorBehavior CreateFor(Entity entity) => new(
+        X.InstanceFor(entity.Index),
+        Y.InstanceFor(entity.Index),
+        Z.InstanceFor(entity.Index)
     );
 }

@@ -53,7 +53,7 @@ public class RefBehaviorRegistry<TBehavior> :
         using var behaviorRef = _behaviors.GetMut(entity.Index);
         if (isNew)
         {
-            behaviorRef.Value = TBehavior.CreateFor(entity.Index);
+            behaviorRef.Value = TBehavior.CreateFor(entity);
         }
         mutate(ref behaviorRef.Value);
 

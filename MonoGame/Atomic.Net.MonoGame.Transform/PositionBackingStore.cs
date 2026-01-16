@@ -16,11 +16,11 @@ public sealed class PositionBackingStore : ISingleton<PositionBackingStore>
     public InputBlockMap Z { get; } = new();
 
     /// <summary>
-    /// Creates a PositionBehavior for the specified entity index.
+    /// Creates a PositionBehavior for the specified entity.
     /// </summary>
-    public PositionBehavior CreateFor(int entityIndex) => new(
-        X.InstanceFor(entityIndex),
-        Y.InstanceFor(entityIndex),
-        Z.InstanceFor(entityIndex)
+    public PositionBehavior CreateFor(Entity entity) => new(
+        X.InstanceFor(entity.Index),
+        Y.InstanceFor(entity.Index),
+        Z.InstanceFor(entity.Index)
     );
 }

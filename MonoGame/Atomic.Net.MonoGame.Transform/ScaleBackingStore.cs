@@ -16,11 +16,11 @@ public sealed class ScaleBackingStore : ISingleton<ScaleBackingStore>
     public InputBlockMap Z { get; } = new();
 
     /// <summary>
-    /// Creates a ScaleBehavior for the specified entity index.
+    /// Creates a ScaleBehavior for the specified entity.
     /// </summary>
-    public ScaleBehavior CreateFor(int entityIndex) => new(
-        X.InstanceFor(entityIndex),
-        Y.InstanceFor(entityIndex),
-        Z.InstanceFor(entityIndex)
+    public ScaleBehavior CreateFor(Entity entity) => new(
+        X.InstanceFor(entity.Index),
+        Y.InstanceFor(entity.Index),
+        Z.InstanceFor(entity.Index)
     );
 }

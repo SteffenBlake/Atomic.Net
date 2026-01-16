@@ -19,9 +19,9 @@ public readonly record struct ScaleBehavior : IBehavior<ScaleBehavior>
         Z = z;
     }
 
-    public static ScaleBehavior CreateFor(int entityIndex)
+    public static ScaleBehavior CreateFor(Entity entity)
     {
-        return ScaleBackingStore.Instance.CreateFor(entityIndex);
+        return ScaleBackingStore.Instance.CreateFor(entity);
     }
 }
 

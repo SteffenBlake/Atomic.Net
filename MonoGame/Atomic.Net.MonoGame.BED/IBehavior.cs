@@ -8,7 +8,7 @@ public interface IBehavior<TSelf>
     where TSelf : struct, IBehavior<TSelf>
 {
     /// <summary>
-    /// Creates a behavior instance bound to the specified entity index.
+    /// Creates a behavior instance bound to the specified entity.
     /// </summary>
-    static abstract TSelf CreateFor(int entityIndex);
+    static abstract TSelf CreateFor(Entity entity);
 }

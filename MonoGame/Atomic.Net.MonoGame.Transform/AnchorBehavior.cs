@@ -19,9 +19,9 @@ public readonly record struct AnchorBehavior : IBehavior<AnchorBehavior>
         Z = z;
     }
 
-    public static AnchorBehavior CreateFor(int entityIndex)
+    public static AnchorBehavior CreateFor(Entity entity)
     {
-        return AnchorBackingStore.Instance.CreateFor(entityIndex);
+        return AnchorBackingStore.Instance.CreateFor(entity);
     }
 }
 

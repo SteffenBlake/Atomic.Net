@@ -17,12 +17,12 @@ public sealed class RotationBackingStore : ISingleton<RotationBackingStore>
     public InputBlockMap W { get; } = new();
 
     /// <summary>
-    /// Creates a RotationBehavior for the specified entity index.
+    /// Creates a RotationBehavior for the specified entity.
     /// </summary>
-    public RotationBehavior CreateFor(int entityIndex) => new(
-        X.InstanceFor(entityIndex),
-        Y.InstanceFor(entityIndex),
-        Z.InstanceFor(entityIndex),
-        W.InstanceFor(entityIndex)
+    public RotationBehavior CreateFor(Entity entity) => new(
+        X.InstanceFor(entity.Index),
+        Y.InstanceFor(entity.Index),
+        Z.InstanceFor(entity.Index),
+        W.InstanceFor(entity.Index)
     );
 }

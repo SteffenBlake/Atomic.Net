@@ -21,9 +21,9 @@ public readonly record struct RotationBehavior : IBehavior<RotationBehavior>
         W = w;
     }
 
-    public static RotationBehavior CreateFor(int entityIndex)
+    public static RotationBehavior CreateFor(Entity entity)
     {
-        return RotationBackingStore.Instance.CreateFor(entityIndex);
+        return RotationBackingStore.Instance.CreateFor(entity);
     }
 }
 

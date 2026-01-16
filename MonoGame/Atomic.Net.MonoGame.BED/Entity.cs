@@ -28,7 +28,7 @@ public readonly struct Entity(ushort index)
     /// </summary>
     /// <typeparam name="TBehavior">The behavior type.</typeparam>
     /// <param name="mutate">Action to mutate the behavior's backing values.</param>
-    public void SetBehavior<TBehavior>(RefReadonlyAction<TBehavior> mutate)
+    public void SetRefBehavior<TBehavior>(RefReadonlyAction<TBehavior> mutate)
         where TBehavior : struct, IBehavior<TBehavior>
     {
         RefBehaviorRegistry<TBehavior>.Instance.SetBehavior(this, mutate);

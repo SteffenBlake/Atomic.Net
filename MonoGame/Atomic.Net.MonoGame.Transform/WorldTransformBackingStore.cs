@@ -32,12 +32,12 @@ public sealed class WorldTransformBackingStore : ISingleton<WorldTransformBackin
     public InputBlockMap M44 { get; } = new();
 
     /// <summary>
-    /// Creates a WorldTransform for the specified entity index.
+    /// Creates a WorldTransform for the specified entity.
     /// </summary>
-    public WorldTransform CreateFor(int entityIndex) => new(
-        M11.InstanceFor(entityIndex), M12.InstanceFor(entityIndex), M13.InstanceFor(entityIndex), M14.InstanceFor(entityIndex),
-        M21.InstanceFor(entityIndex), M22.InstanceFor(entityIndex), M23.InstanceFor(entityIndex), M24.InstanceFor(entityIndex),
-        M31.InstanceFor(entityIndex), M32.InstanceFor(entityIndex), M33.InstanceFor(entityIndex), M34.InstanceFor(entityIndex),
-        M41.InstanceFor(entityIndex), M42.InstanceFor(entityIndex), M43.InstanceFor(entityIndex), M44.InstanceFor(entityIndex)
+    public WorldTransform CreateFor(Entity entity) => new(
+        M11.InstanceFor(entity.Index), M12.InstanceFor(entity.Index), M13.InstanceFor(entity.Index), M14.InstanceFor(entity.Index),
+        M21.InstanceFor(entity.Index), M22.InstanceFor(entity.Index), M23.InstanceFor(entity.Index), M24.InstanceFor(entity.Index),
+        M31.InstanceFor(entity.Index), M32.InstanceFor(entity.Index), M33.InstanceFor(entity.Index), M34.InstanceFor(entity.Index),
+        M41.InstanceFor(entity.Index), M42.InstanceFor(entity.Index), M43.InstanceFor(entity.Index), M44.InstanceFor(entity.Index)
     );
 }

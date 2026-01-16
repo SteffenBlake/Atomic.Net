@@ -19,9 +19,9 @@ public readonly record struct PositionBehavior : IBehavior<PositionBehavior>
         Z = z;
     }
 
-    public static PositionBehavior CreateFor(int entityIndex)
+    public static PositionBehavior CreateFor(Entity entity)
     {
-        return PositionBackingStore.Instance.CreateFor(entityIndex);
+        return PositionBackingStore.Instance.CreateFor(entity);
     }
 }
 

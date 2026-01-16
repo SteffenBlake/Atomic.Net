@@ -37,9 +37,9 @@ public readonly record struct WorldTransform : IBehavior<WorldTransform>
         M41 = m41; M42 = m42; M43 = m43; M44 = m44;
     }
 
-    public static WorldTransform CreateFor(int entityIndex)
+    public static WorldTransform CreateFor(Entity entity)
     {
-        return WorldTransformBackingStore.Instance.CreateFor(entityIndex);
+        return WorldTransformBackingStore.Instance.CreateFor(entity);
     }
 }
 
