@@ -290,4 +290,91 @@ public sealed class TransformRegistryTests : IDisposable
         // Step 3: Compare
         AssertMatricesEqual(expectedMatrix, entity);
     }
+
+    [Fact]
+    public void IdentityTransform_StaysIdentity()
+    {
+        // Create an entity with default transform (identity)
+        var entity = CreateEntity().WithTransform();
+        
+        TransformRegistry.Instance.Recalculate();
+        
+        // Should be identity matrix
+        var identityMatrix = Matrix.Identity;
+        AssertMatricesEqual(identityMatrix, entity);
+    }
+
+    [Fact]
+    public void ResetPreventsPollution()
+    {
+        // Step 1: Create entity with rotation (potential polluter)
+        var entity1 = CreateEntity();
+        entity1.WithTransform((ref readonly t) =>
+        {
+            var rotation = Rotation90DegreesAroundZ();
+            t.Rotation.X.Value = rotation.X;
+            t.Rotation.Y.Value = rotation.Y;
+            t.Rotation.Z.Value = rotation.Z;
+            t.Rotation.W.Value = rotation.W;
+        });
+        TransformRegistry.Instance.Recalculate();
+        
+        // Verify it has rotation (not identity)
+        var hasTransform1 = RefBehaviorRegistry<WorldTransformBehavior>.Instance
+            .TryGetBehavior(entity1, out var wt1);
+        Assert.True(hasTransform1);
+        var m11_before = wt1!.Value.Value.M11.Value;
+        // M11 should NOT be 1.0 (it should be ~0 due to 90 degree rotation)
+        Assert.False(MathF.Abs(m11_before - 1.0f) < Tolerance, 
+            $"M11 should not be identity (1.0), but was {m11_before}");
+        
+        // Step 2: Reset to clean up
+        EventBus<ResetEvent>.Push(new());
+        
+        // Step 3: Create two new entities with identity transforms
+        var entity2 = EntityRegistry.Instance.Activate();
+        entity2.WithTransform(); // Default identity transform
+        TransformRegistry.Instance.Recalculate();
+        
+        var entity3 = EntityRegistry.Instance.Activate();
+        entity3.WithTransform(); // Default identity transform
+        TransformRegistry.Instance.Recalculate();
+        
+        // Step 4: Verify both are identity (no pollution from entity1's rotation)
+        var identityMatrix = Matrix.Identity;
+        AssertMatricesEqual(identityMatrix, entity2);
+        AssertMatricesEqual(identityMatrix, entity3);
+    }
+
+    [Fact]
+    public void ResetPreventsPollution_WithExplicitPositionOnly()
+    {
+        // Step 1: Create entity with complex transform (rotation + position)
+        var rotation = Rotation90DegreesAroundZ();
+        var entity1 = CreateEntity();
+        entity1.WithTransform((ref readonly t) =>
+        {
+            t.Position.X.Value = 100f;
+            t.Rotation.X.Value = rotation.X;
+            t.Rotation.Y.Value = rotation.Y;
+            t.Rotation.Z.Value = rotation.Z;
+            t.Rotation.W.Value = rotation.W;
+        });
+        TransformRegistry.Instance.Recalculate();
+        
+        // Step 2: Reset
+        EventBus<ResetEvent>.Push(new());
+        
+        // Step 3: Create new entity with ONLY position (no rotation)
+        var entity2 = EntityRegistry.Instance.Activate();
+        entity2.WithTransform((ref readonly t) =>
+        {
+            t.Position.X.Value = 10f;
+        });
+        TransformRegistry.Instance.Recalculate();
+        
+        // Step 4: Verify it has translation but NO rotation pollution
+        var expectedMatrix = Matrix.CreateTranslation(10f, 0f, 0f);
+        AssertMatricesEqual(expectedMatrix, entity2);
+    }
 }
