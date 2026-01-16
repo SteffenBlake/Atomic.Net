@@ -20,9 +20,13 @@ public sealed class EntityRegistryTests : IDisposable
     [Fact]
     public void Activate_AllocatesSceneEntity()
     {
+        // Arrange
+        // (No setup needed)
+
+        // Act
         var entity = EntityRegistry.Instance.Activate();
         
-        // Should allocate from scene partition (>= MaxLoadingEntities)
+        // Assert
         Assert.True(entity.Index >= Constants.MaxLoadingEntities);
         Assert.True(entity.Index < Constants.MaxEntities);
         Assert.True(EntityRegistry.Instance.IsActive(entity));
@@ -32,9 +36,13 @@ public sealed class EntityRegistryTests : IDisposable
     [Fact]
     public void ActivateLoading_AllocatesLoadingEntity()
     {
+        // Arrange
+        // (No setup needed)
+
+        // Act
         var entity = EntityRegistry.Instance.ActivateLoading();
         
-        // Should allocate from loading partition (< MaxLoadingEntities)
+        // Assert
         Assert.True(entity.Index < Constants.MaxLoadingEntities);
         Assert.True(EntityRegistry.Instance.IsActive(entity));
         Assert.True(EntityRegistry.Instance.IsEnabled(entity));
@@ -43,27 +51,41 @@ public sealed class EntityRegistryTests : IDisposable
     [Fact]
     public void GetSceneRoot_ReturnsFirstSceneEntity()
     {
+        // Arrange
+        // (No setup needed)
+
+        // Act
         var root = EntityRegistry.Instance.GetSceneRoot();
         
+        // Assert
         Assert.Equal(Constants.MaxLoadingEntities, root.Index);
     }
 
     [Fact]
     public void GetLoadingRoot_ReturnsFirstLoadingEntity()
     {
+        // Arrange
+        // (No setup needed)
+
+        // Act
         var root = EntityRegistry.Instance.GetLoadingRoot();
         
+        // Assert
         Assert.Equal((ushort)0, root.Index);
     }
 
     [Fact]
     public void Activate_AllocatesSequentialIndices()
     {
+        // Arrange
+        // (No setup needed)
+
+        // Act
         var entity1 = EntityRegistry.Instance.Activate();
         var entity2 = EntityRegistry.Instance.Activate();
         var entity3 = EntityRegistry.Instance.Activate();
         
-        // Should allocate sequential indices in scene partition
+        // Assert
         Assert.Equal(entity1.Index + 1, entity2.Index);
         Assert.Equal(entity2.Index + 1, entity3.Index);
     }
@@ -71,11 +93,15 @@ public sealed class EntityRegistryTests : IDisposable
     [Fact]
     public void ActivateLoading_AllocatesSequentialIndices()
     {
+        // Arrange
+        // (No setup needed)
+
+        // Act
         var entity1 = EntityRegistry.Instance.ActivateLoading();
         var entity2 = EntityRegistry.Instance.ActivateLoading();
         var entity3 = EntityRegistry.Instance.ActivateLoading();
         
-        // Should allocate sequential indices in loading partition
+        // Assert
         Assert.Equal(entity1.Index + 1, entity2.Index);
         Assert.Equal(entity2.Index + 1, entity3.Index);
     }
@@ -83,11 +109,14 @@ public sealed class EntityRegistryTests : IDisposable
     [Fact]
     public void Deactivate_MarksEntityInactive()
     {
+        // Arrange
         var entity = EntityRegistry.Instance.Activate();
         Assert.True(EntityRegistry.Instance.IsActive(entity));
         
+        // Act
         EntityRegistry.Instance.Deactivate(entity);
         
+        // Assert
         Assert.False(EntityRegistry.Instance.IsActive(entity));
         Assert.False(EntityRegistry.Instance.IsEnabled(entity));
     }
@@ -95,36 +124,44 @@ public sealed class EntityRegistryTests : IDisposable
     [Fact]
     public void Disable_MarksEntityDisabled()
     {
+        // Arrange
         var entity = EntityRegistry.Instance.Activate();
         Assert.True(EntityRegistry.Instance.IsEnabled(entity));
         
+        // Act
         EntityRegistry.Instance.Disable(entity);
         
+        // Assert
         Assert.False(EntityRegistry.Instance.IsEnabled(entity));
-        Assert.True(EntityRegistry.Instance.IsActive(entity)); // Still active, just disabled
+        Assert.True(EntityRegistry.Instance.IsActive(entity));
     }
 
     [Fact]
     public void Enable_MarksEntityEnabled()
     {
+        // Arrange
         var entity = EntityRegistry.Instance.Activate();
         EntityRegistry.Instance.Disable(entity);
         Assert.False(EntityRegistry.Instance.IsEnabled(entity));
         
+        // Act
         EntityRegistry.Instance.Enable(entity);
         
+        // Assert
         Assert.True(EntityRegistry.Instance.IsEnabled(entity));
     }
 
     [Fact]
     public void Deactivate_FiresEntityDeactivatedEvent()
     {
-        var listener = new EventListener<EntityDeactivatedEvent>();
-        EventBus<EntityDeactivatedEvent>.Register(listener);
-        
+        // Arrange
+        using var listener = new FakeEventListener<EntityDeactivatedEvent>();
         var entity = EntityRegistry.Instance.Activate();
+        
+        // Act
         EntityRegistry.Instance.Deactivate(entity);
         
+        // Assert
         Assert.Single(listener.ReceivedEvents);
         Assert.Equal(entity.Index, listener.ReceivedEvents[0].Entity.Index);
     }
@@ -132,16 +169,16 @@ public sealed class EntityRegistryTests : IDisposable
     [Fact]
     public void Enable_FiresEntityEnabledEvent()
     {
-        var listener = new EventListener<EntityEnabledEvent>();
-        EventBus<EntityEnabledEvent>.Register(listener);
-        
+        // Arrange
+        using var listener = new FakeEventListener<EntityEnabledEvent>();
         var entity = EntityRegistry.Instance.Activate();
         EntityRegistry.Instance.Disable(entity);
+        listener.Clear();
         
-        listener.Clear(); // Clear events from initial activation
-        
+        // Act
         EntityRegistry.Instance.Enable(entity);
         
+        // Assert
         Assert.Single(listener.ReceivedEvents);
         Assert.Equal(entity.Index, listener.ReceivedEvents[0].Entity.Index);
     }
@@ -149,12 +186,14 @@ public sealed class EntityRegistryTests : IDisposable
     [Fact]
     public void Disable_FiresEntityDisabledEvent()
     {
-        var listener = new EventListener<EntityDisabledEvent>();
-        EventBus<EntityDisabledEvent>.Register(listener);
-        
+        // Arrange
+        using var listener = new FakeEventListener<EntityDisabledEvent>();
         var entity = EntityRegistry.Instance.Activate();
+        
+        // Act
         EntityRegistry.Instance.Disable(entity);
         
+        // Assert
         Assert.Single(listener.ReceivedEvents);
         Assert.Equal(entity.Index, listener.ReceivedEvents[0].Entity.Index);
     }
@@ -162,25 +201,22 @@ public sealed class EntityRegistryTests : IDisposable
     [Fact]
     public void ResetEvent_DeactivatesOnlySceneEntities()
     {
-        // Create loading and scene entities
+        // Arrange
         var loadingEntity1 = EntityRegistry.Instance.ActivateLoading();
         var loadingEntity2 = EntityRegistry.Instance.ActivateLoading();
         var sceneEntity1 = EntityRegistry.Instance.Activate();
         var sceneEntity2 = EntityRegistry.Instance.Activate();
-        
         Assert.True(EntityRegistry.Instance.IsActive(loadingEntity1));
         Assert.True(EntityRegistry.Instance.IsActive(loadingEntity2));
         Assert.True(EntityRegistry.Instance.IsActive(sceneEntity1));
         Assert.True(EntityRegistry.Instance.IsActive(sceneEntity2));
         
-        // Fire reset event
+        // Act
         EventBus<ResetEvent>.Push(new());
         
-        // Loading entities should still be active
+        // Assert
         Assert.True(EntityRegistry.Instance.IsActive(loadingEntity1));
         Assert.True(EntityRegistry.Instance.IsActive(loadingEntity2));
-        
-        // Scene entities should be deactivated
         Assert.False(EntityRegistry.Instance.IsActive(sceneEntity1));
         Assert.False(EntityRegistry.Instance.IsActive(sceneEntity2));
     }
@@ -188,16 +224,15 @@ public sealed class EntityRegistryTests : IDisposable
     [Fact]
     public void ResetEvent_AllowsSceneEntityReuse()
     {
-        // Create scene entity
+        // Arrange
         var entity1 = EntityRegistry.Instance.Activate();
         var index1 = entity1.Index;
         
-        // Fire reset
+        // Act
         EventBus<ResetEvent>.Push(new());
-        
-        // Create another scene entity - should get same index
         var entity2 = EntityRegistry.Instance.Activate();
         
+        // Assert
         Assert.Equal(index1, entity2.Index);
         Assert.True(EntityRegistry.Instance.IsActive(entity2));
     }
@@ -205,17 +240,17 @@ public sealed class EntityRegistryTests : IDisposable
     [Fact]
     public void ResetEvent_DoesNotPollute_BasicCheck()
     {
-        // Create and activate first entity
+        // Arrange
         var entity1 = EntityRegistry.Instance.Activate();
         var index1 = entity1.Index;
         Assert.True(EntityRegistry.Instance.IsActive(entity1));
         
-        // Reset
+        // Act
         EventBus<ResetEvent>.Push(new());
         Assert.False(EntityRegistry.Instance.IsActive(entity1));
-        
-        // Create second entity at same index
         var entity2 = EntityRegistry.Instance.Activate();
+        
+        // Assert
         Assert.Equal(index1, entity2.Index);
         Assert.True(EntityRegistry.Instance.IsActive(entity2));
         Assert.True(EntityRegistry.Instance.IsEnabled(entity2));
@@ -224,14 +259,16 @@ public sealed class EntityRegistryTests : IDisposable
     [Fact]
     public void GetActiveEntities_ReturnsOnlyActiveEntities()
     {
+        // Arrange
         var entity1 = EntityRegistry.Instance.Activate();
         var entity2 = EntityRegistry.Instance.Activate();
         var entity3 = EntityRegistry.Instance.Activate();
-        
         EntityRegistry.Instance.Deactivate(entity2);
         
+        // Act
         var activeEntities = EntityRegistry.Instance.GetActiveEntities().ToList();
         
+        // Assert
         Assert.Contains(entity1, activeEntities);
         Assert.DoesNotContain(entity2, activeEntities);
         Assert.Contains(entity3, activeEntities);
@@ -240,14 +277,16 @@ public sealed class EntityRegistryTests : IDisposable
     [Fact]
     public void GetEnabledEntities_ReturnsOnlyEnabledEntities()
     {
+        // Arrange
         var entity1 = EntityRegistry.Instance.Activate();
         var entity2 = EntityRegistry.Instance.Activate();
         var entity3 = EntityRegistry.Instance.Activate();
-        
         EntityRegistry.Instance.Disable(entity2);
         
+        // Act
         var enabledEntities = EntityRegistry.Instance.GetEnabledEntities().ToList();
         
+        // Assert
         Assert.Contains(entity1, enabledEntities);
         Assert.DoesNotContain(entity2, enabledEntities);
         Assert.Contains(entity3, enabledEntities);

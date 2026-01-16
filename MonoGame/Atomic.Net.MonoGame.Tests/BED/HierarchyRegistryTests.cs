@@ -22,11 +22,14 @@ public sealed class HierarchyRegistryTests : IDisposable
     [Fact]
     public void WithParent_SetsParentChildRelationship()
     {
+        // Arrange
         var parent = EntityRegistry.Instance.Activate();
         var child = EntityRegistry.Instance.Activate();
         
+        // Act
         child.WithParent(parent);
         
+        // Assert
         Assert.True(child.TryGetParent(out var retrievedParent));
         Assert.Equal(parent.Index, retrievedParent!.Value.Index);
     }
@@ -34,13 +37,16 @@ public sealed class HierarchyRegistryTests : IDisposable
     [Fact]
     public void GetChildren_ReturnsChildEntities()
     {
+        // Arrange
         var parent = EntityRegistry.Instance.Activate();
         var child1 = EntityRegistry.Instance.Activate().WithParent(parent);
         var child2 = EntityRegistry.Instance.Activate().WithParent(parent);
         var child3 = EntityRegistry.Instance.Activate().WithParent(parent);
         
+        // Act
         var children = parent.GetChildren().ToList();
         
+        // Assert
         Assert.Equal(3, children.Count);
         Assert.Contains(child1, children);
         Assert.Contains(child2, children);
@@ -50,29 +56,32 @@ public sealed class HierarchyRegistryTests : IDisposable
     [Fact]
     public void RemoveParent_ClearsParentRelationship()
     {
+        // Arrange
         var parent = EntityRegistry.Instance.Activate();
         var child = EntityRegistry.Instance.Activate().WithParent(parent);
-        
         Assert.True(child.TryGetParent(out _));
         
+        // Act
         BehaviorRegistry<Parent>.Instance.Remove(child);
         
+        // Assert
         Assert.False(child.TryGetParent(out _));
     }
 
     [Fact]
     public void ParentDeactivation_OrphansChildren()
     {
+        // Arrange
         var parent = EntityRegistry.Instance.Activate();
         var child1 = EntityRegistry.Instance.Activate().WithParent(parent);
         var child2 = EntityRegistry.Instance.Activate().WithParent(parent);
-        
         Assert.True(child1.TryGetParent(out _));
         Assert.True(child2.TryGetParent(out _));
         
+        // Act
         EntityRegistry.Instance.Deactivate(parent);
         
-        // Children should be orphaned
+        // Assert
         Assert.False(child1.TryGetParent(out _));
         Assert.False(child2.TryGetParent(out _));
     }
@@ -80,14 +89,16 @@ public sealed class HierarchyRegistryTests : IDisposable
     [Fact]
     public void ChildDeactivation_RemovesFromParentChildren()
     {
+        // Arrange
         var parent = EntityRegistry.Instance.Activate();
         var child1 = EntityRegistry.Instance.Activate().WithParent(parent);
         var child2 = EntityRegistry.Instance.Activate().WithParent(parent);
-        
         Assert.Equal(2, parent.GetChildren().Count());
         
+        // Act
         EntityRegistry.Instance.Deactivate(child1);
         
+        // Assert
         var children = parent.GetChildren().ToList();
         Assert.Single(children);
         Assert.Contains(child2, children);
@@ -97,15 +108,16 @@ public sealed class HierarchyRegistryTests : IDisposable
     [Fact]
     public void ResetEvent_ClearsSceneEntityHierarchy()
     {
+        // Arrange
         var sceneParent = EntityRegistry.Instance.Activate();
         var sceneChild = EntityRegistry.Instance.Activate().WithParent(sceneParent);
-        
         Assert.True(sceneChild.TryGetParent(out _));
         Assert.Single(sceneParent.GetChildren());
         
+        // Act
         EventBus<ResetEvent>.Push(new());
         
-        // Both should be deactivated, hierarchy should be cleared
+        // Assert
         Assert.False(EntityRegistry.Instance.IsActive(sceneParent));
         Assert.False(EntityRegistry.Instance.IsActive(sceneChild));
     }
@@ -113,15 +125,16 @@ public sealed class HierarchyRegistryTests : IDisposable
     [Fact]
     public void ResetEvent_PreservesLoadingEntityHierarchy()
     {
+        // Arrange
         var loadingParent = EntityRegistry.Instance.ActivateLoading();
         var loadingChild = EntityRegistry.Instance.ActivateLoading().WithParent(loadingParent);
-        
         Assert.True(loadingChild.TryGetParent(out var parent1));
         Assert.Equal(loadingParent.Index, parent1!.Value.Index);
         
+        // Act
         EventBus<ResetEvent>.Push(new());
         
-        // Loading entities should still be active with hierarchy intact
+        // Assert
         Assert.True(EntityRegistry.Instance.IsActive(loadingParent));
         Assert.True(EntityRegistry.Instance.IsActive(loadingChild));
         Assert.True(loadingChild.TryGetParent(out var parent2));
@@ -132,29 +145,23 @@ public sealed class HierarchyRegistryTests : IDisposable
     [Fact]
     public void ResetEvent_DoesNotPolluteHierarchy()
     {
-        // Create parent-child relationship
+        // Arrange
         var parent1 = EntityRegistry.Instance.Activate();
         var child1 = EntityRegistry.Instance.Activate().WithParent(parent1);
-        
         Assert.True(child1.TryGetParent(out _));
         Assert.Single(parent1.GetChildren());
         
-        // Reset
+        // Act
         EventBus<ResetEvent>.Push(new());
-        
-        // Create new entities at same indices
         var parent2 = EntityRegistry.Instance.Activate();
         var child2 = EntityRegistry.Instance.Activate();
-        
         Assert.Equal(parent1.Index, parent2.Index);
         Assert.Equal(child1.Index, child2.Index);
-        
-        // Should not have parent relationship from previous entities
         Assert.False(child2.TryGetParent(out _));
         Assert.Empty(parent2.GetChildren());
-        
-        // Can establish new relationship cleanly
         child2.WithParent(parent2);
+        
+        // Assert
         Assert.True(child2.TryGetParent(out var newParent));
         Assert.Equal(parent2.Index, newParent!.Value.Index);
         Assert.Single(parent2.GetChildren());
@@ -163,10 +170,13 @@ public sealed class HierarchyRegistryTests : IDisposable
     [Fact]
     public void TryGetParent_ReturnsFalseWhenNoParent()
     {
+        // Arrange
         var entity = EntityRegistry.Instance.Activate();
         
+        // Act
         var hasParent = entity.TryGetParent(out var parent);
         
+        // Assert
         Assert.False(hasParent);
         Assert.Null(parent);
     }
@@ -174,29 +184,35 @@ public sealed class HierarchyRegistryTests : IDisposable
     [Fact]
     public void GetChildren_ReturnsEmptyWhenNoChildren()
     {
+        // Arrange
         var entity = EntityRegistry.Instance.Activate();
         
+        // Act
         var children = entity.GetChildren();
         
+        // Assert
         Assert.Empty(children);
     }
 
     [Fact]
     public void NestedHierarchy_WorksCorrectly()
     {
+        // Arrange
         var grandparent = EntityRegistry.Instance.Activate();
         var parent = EntityRegistry.Instance.Activate().WithParent(grandparent);
         var child = EntityRegistry.Instance.Activate().WithParent(parent);
         
-        // Verify full hierarchy
-        Assert.True(child.TryGetParent(out var childParent));
+        // Act
+        var hasChildParent = child.TryGetParent(out var childParent);
+        var hasParentParent = parent.TryGetParent(out var parentParent);
+        var hasGrandparentParent = grandparent.TryGetParent(out _);
+        
+        // Assert
+        Assert.True(hasChildParent);
         Assert.Equal(parent.Index, childParent!.Value.Index);
-        
-        Assert.True(parent.TryGetParent(out var parentParent));
+        Assert.True(hasParentParent);
         Assert.Equal(grandparent.Index, parentParent!.Value.Index);
-        
-        Assert.False(grandparent.TryGetParent(out _));
-        
+        Assert.False(hasGrandparentParent);
         Assert.Single(parent.GetChildren());
         Assert.Single(grandparent.GetChildren());
     }
@@ -204,14 +220,15 @@ public sealed class HierarchyRegistryTests : IDisposable
     [Fact]
     public void WithParent_FiresBehaviorAddedEvent()
     {
-        var listener = new EventListener<BehaviorAddedEvent<Parent>>();
-        EventBus<BehaviorAddedEvent<Parent>>.Register(listener);
-        
+        // Arrange
+        using var listener = new FakeEventListener<BehaviorAddedEvent<Parent>>();
         var parent = EntityRegistry.Instance.Activate();
         var child = EntityRegistry.Instance.Activate();
         
+        // Act
         child.WithParent(parent);
         
+        // Assert
         Assert.Single(listener.ReceivedEvents);
         Assert.Equal(child.Index, listener.ReceivedEvents[0].Entity.Index);
     }
@@ -219,14 +236,15 @@ public sealed class HierarchyRegistryTests : IDisposable
     [Fact]
     public void RemoveParent_FiresBehaviorRemovedEvent()
     {
+        // Arrange
+        using var listener = new FakeEventListener<BehaviorRemovedEvent<Parent>>();
         var parent = EntityRegistry.Instance.Activate();
         var child = EntityRegistry.Instance.Activate().WithParent(parent);
         
-        var listener = new EventListener<BehaviorRemovedEvent<Parent>>();
-        EventBus<BehaviorRemovedEvent<Parent>>.Register(listener);
-        
+        // Act
         BehaviorRegistry<Parent>.Instance.Remove(child);
         
+        // Assert
         Assert.Single(listener.ReceivedEvents);
         Assert.Equal(child.Index, listener.ReceivedEvents[0].Entity.Index);
     }
