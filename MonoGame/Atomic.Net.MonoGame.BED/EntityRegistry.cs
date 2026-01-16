@@ -128,7 +128,7 @@ public class EntityRegistry()
     /// <param name="entity">The entity.</param>
     /// <returns>True if active.</returns>
     public bool IsEnabled(Entity entity) => 
-        _active[entity.Index] && _enabled.HasValue(entity.Index);
+        _active.HasValue(entity.Index) && _enabled.HasValue(entity.Index);
     
     /// <summary>
     /// Get an iterator over active entities.

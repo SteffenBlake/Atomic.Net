@@ -62,6 +62,7 @@ public sealed class SparseArray<T>(ushort capacity) : IEnumerable<(ushort Index,
 
     /// <summary>
     /// Ensures a value exists at the given index. If it doesn't exist, initializes it with default(T).
+    /// Note: The default value is typically overwritten immediately by the caller.
     /// </summary>
     public void Ensure(ushort index)
     {
