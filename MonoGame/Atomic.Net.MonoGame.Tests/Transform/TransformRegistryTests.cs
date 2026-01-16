@@ -31,10 +31,8 @@ public sealed class TransformRegistryTests : IDisposable
 
     public void Dispose()
     {
-        foreach (var entity in _entities)
-        {
-            EntityRegistry.Instance.Deactivate(entity);
-        }
+        // Fire reset event to clean up scene entities between tests
+        EventBus<ResetEvent>.Push(new());
         _entities.Clear();
     }
 

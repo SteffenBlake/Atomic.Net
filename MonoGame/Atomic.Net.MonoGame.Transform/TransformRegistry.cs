@@ -188,7 +188,12 @@ public sealed class TransformRegistry :
 
     public void OnEvent(BehaviorAddedEvent<TransformBehavior> e)
     {
-        SetupForEntity(e.Entity);
+        // Initialize WorldTransformBehavior and ParentWorldTransformBackingStore
+        // Note: TransformBackingStore is already initialized by the behavior creation itself
+        ParentWorldTransformBackingStore.Instance.SetupForEntity(e.Entity);
+        WorldTransformBackingStore.Instance.SetupForEntity(e.Entity);
+        e.Entity.SetRefBehavior((ref readonly WorldTransformBehavior _) => { });
+        
         MarkDirty(e.Entity);
     }
 
@@ -198,17 +203,6 @@ public sealed class TransformRegistry :
     {
         CleanupForEntity(e.Entity);
         MarkDirty(e.Entity);
-    }
-
-    /// <summary>
-    /// Initializes all transform-related backing store data for an entity.
-    /// </summary>
-    private void SetupForEntity(Entity entity)
-    {
-        TransformBackingStore.Instance.SetupForEntity(entity);
-        ParentWorldTransformBackingStore.Instance.SetupForEntity(entity);
-        WorldTransformBackingStore.Instance.SetupForEntity(entity);
-        entity.SetRefBehavior((ref readonly WorldTransformBehavior _) => { });
     }
 
     /// <summary>
