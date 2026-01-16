@@ -14,20 +14,24 @@ public static class EntityExtensions
     /// </summary>
     /// <param name="parent">The parent entity.</param>
     /// <param name="child">The child entity to add.</param>
-    public static void AddChild(this Entity parent, Entity child)
+    /// <returns>The parent entity for fluent chaining.</returns>
+    public static Entity AddChild(this Entity parent, Entity child)
     {
         child.SetParent(parent);
+        return parent;
     }
 
     /// <summary>
-    /// Sets the parent of a child entity.
-    /// Updates the child's <see cref="Parent"/> behavior to reference the specified parent.
+    /// Sets the parent of this child entity.
+    /// Updates this entity's <see cref="Parent"/> behavior to reference the specified parent.
     /// </summary>
+    /// <param name="child">The child entity.</param>
     /// <param name="parent">The parent entity.</param>
-    /// <param name="child">The child entity to reparent.</param>
-    public static void SetParent(this Entity parent, Entity child)
+    /// <returns>The child entity for fluent chaining.</returns>
+    public static Entity SetParent(this Entity child, Entity parent)
     {
         child.SetBehavior<Parent>((ref Parent p) => p = new(parent.Index));
+        return child;
     }
 
     /// <summary>

@@ -67,13 +67,13 @@ public sealed class TransformRegistryTests : IDisposable
         var expectedMatrix = Matrix.CreateTranslation(10f, 0f, 0f);
 
         // Step 2: Setup entity and compute using TransformRegistry
-        var entity = CreateEntity();
-        entity.SetRefBehavior((ref readonly TransformBehavior t) =>
-        {
-            t.Position.X.Value = 10f;
-            t.Position.Y.Value = 0f;
-            t.Position.Z.Value = 0f;
-        });
+        var entity = CreateEntity()
+            .WithTransform((ref readonly TransformBehavior t) =>
+            {
+                t.Position.X.Value = 10f;
+                t.Position.Y.Value = 0f;
+                t.Position.Z.Value = 0f;
+            });
 
         TransformRegistry.Instance.Recalculate();
 
@@ -88,13 +88,13 @@ public sealed class TransformRegistryTests : IDisposable
         var expectedMatrix = Matrix.CreateScale(2f, 2f, 2f);
 
         // Step 2: Setup entity and compute using TransformRegistry
-        var entity = CreateEntity();
-        entity.SetRefBehavior((ref readonly TransformBehavior t) =>
-        {
-            t.Scale.X.Value = 2f;
-            t.Scale.Y.Value = 2f;
-            t.Scale.Z.Value = 2f;
-        });
+        var entity = CreateEntity()
+            .WithTransform((ref readonly TransformBehavior t) =>
+            {
+                t.Scale.X.Value = 2f;
+                t.Scale.Y.Value = 2f;
+                t.Scale.Z.Value = 2f;
+            });
 
         TransformRegistry.Instance.Recalculate();
 
@@ -110,14 +110,14 @@ public sealed class TransformRegistryTests : IDisposable
         var expectedMatrix = Matrix.CreateFromQuaternion(rotation);
 
         // Step 2: Setup entity and compute using TransformRegistry
-        var entity = CreateEntity();
-        entity.SetRefBehavior((ref readonly TransformBehavior t) =>
-        {
-            t.Rotation.X.Value = rotation.X;
-            t.Rotation.Y.Value = rotation.Y;
-            t.Rotation.Z.Value = rotation.Z;
-            t.Rotation.W.Value = rotation.W;
-        });
+        var entity = CreateEntity()
+            .WithTransform((ref readonly TransformBehavior t) =>
+            {
+                t.Rotation.X.Value = rotation.X;
+                t.Rotation.Y.Value = rotation.Y;
+                t.Rotation.Z.Value = rotation.Z;
+                t.Rotation.W.Value = rotation.W;
+            });
 
         TransformRegistry.Instance.Recalculate();
 
@@ -137,18 +137,18 @@ public sealed class TransformRegistryTests : IDisposable
         var expectedChildWorld = childLocalMatrix * parentMatrix;
 
         // Step 2: Setup entities and compute using TransformRegistry
-        var parent = CreateEntity();
-        parent.SetRefBehavior((ref readonly TransformBehavior t) =>
-        {
-            t.Position.X.Value = 100f;
-        });
+        var parent = CreateEntity()
+            .WithTransform((ref readonly TransformBehavior t) =>
+            {
+                t.Position.X.Value = 100f;
+            });
 
-        var child = CreateEntity();
-        child.SetRefBehavior((ref readonly TransformBehavior t) =>
-        {
-            t.Position.X.Value = 10f;
-        });
-        child.SetParent(parent);
+        var child = CreateEntity()
+            .WithTransform((ref readonly TransformBehavior t) =>
+            {
+                t.Position.X.Value = 10f;
+            })
+            .SetParent(parent);
 
         TransformRegistry.Instance.Recalculate();
 
@@ -166,21 +166,21 @@ public sealed class TransformRegistryTests : IDisposable
         var expectedChildWorld = childLocalMatrix * parentMatrix;
 
         // Step 2: Setup entities and compute using TransformRegistry
-        var parent = CreateEntity();
-        parent.SetRefBehavior((ref readonly TransformBehavior t) =>
-        {
-            t.Rotation.X.Value = rotation.X;
-            t.Rotation.Y.Value = rotation.Y;
-            t.Rotation.Z.Value = rotation.Z;
-            t.Rotation.W.Value = rotation.W;
-        });
+        var parent = CreateEntity()
+            .WithTransform((ref readonly TransformBehavior t) =>
+            {
+                t.Rotation.X.Value = rotation.X;
+                t.Rotation.Y.Value = rotation.Y;
+                t.Rotation.Z.Value = rotation.Z;
+                t.Rotation.W.Value = rotation.W;
+            });
 
-        var child = CreateEntity();
-        child.SetRefBehavior((ref readonly TransformBehavior t) =>
-        {
-            t.Position.X.Value = 10f;
-        });
-        child.SetParent(parent);
+        var child = CreateEntity()
+            .WithTransform((ref readonly TransformBehavior t) =>
+            {
+                t.Position.X.Value = 10f;
+            })
+            .SetParent(parent);
 
         TransformRegistry.Instance.Recalculate();
 
@@ -200,25 +200,25 @@ public sealed class TransformRegistryTests : IDisposable
         var expectedChildWorld = childLocalMatrix * parentMatrix;
 
         // Step 2: Setup entities and compute using TransformRegistry
-        var parent = CreateEntity();
-        parent.SetRefBehavior((ref readonly TransformBehavior t) =>
-        {
-            t.Rotation.X.Value = rotation.X;
-            t.Rotation.Y.Value = rotation.Y;
-            t.Rotation.Z.Value = rotation.Z;
-            t.Rotation.W.Value = rotation.W;
-        });
+        var parent = CreateEntity()
+            .WithTransform((ref readonly TransformBehavior t) =>
+            {
+                t.Rotation.X.Value = rotation.X;
+                t.Rotation.Y.Value = rotation.Y;
+                t.Rotation.Z.Value = rotation.Z;
+                t.Rotation.W.Value = rotation.W;
+            });
 
-        var child = CreateEntity();
-        child.SetRefBehavior((ref readonly TransformBehavior t) =>
-        {
-            t.Position.X.Value = 10f;
-            t.Rotation.X.Value = rotation.X;
-            t.Rotation.Y.Value = rotation.Y;
-            t.Rotation.Z.Value = rotation.Z;
-            t.Rotation.W.Value = rotation.W;
-        });
-        child.SetParent(parent);
+        var child = CreateEntity()
+            .WithTransform((ref readonly TransformBehavior t) =>
+            {
+                t.Position.X.Value = 10f;
+                t.Rotation.X.Value = rotation.X;
+                t.Rotation.Y.Value = rotation.Y;
+                t.Rotation.Z.Value = rotation.Z;
+                t.Rotation.W.Value = rotation.W;
+            })
+            .SetParent(parent);
 
         TransformRegistry.Instance.Recalculate();
 
@@ -239,15 +239,15 @@ public sealed class TransformRegistryTests : IDisposable
             Matrix.CreateTranslation(anchor);
 
         // Step 2: Setup entity and compute using TransformRegistry
-        var entity = CreateEntity();
-        entity.SetRefBehavior((ref readonly TransformBehavior t) =>
-        {
-            t.Anchor.X.Value = 5f;
-            t.Rotation.X.Value = rotation.X;
-            t.Rotation.Y.Value = rotation.Y;
-            t.Rotation.Z.Value = rotation.Z;
-            t.Rotation.W.Value = rotation.W;
-        });
+        var entity = CreateEntity()
+            .WithTransform((ref readonly TransformBehavior t) =>
+            {
+                t.Anchor.X.Value = 5f;
+                t.Rotation.X.Value = rotation.X;
+                t.Rotation.Y.Value = rotation.Y;
+                t.Rotation.Z.Value = rotation.Z;
+                t.Rotation.W.Value = rotation.W;
+            });
 
         TransformRegistry.Instance.Recalculate();
 
