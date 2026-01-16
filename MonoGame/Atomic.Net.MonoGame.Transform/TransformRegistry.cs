@@ -1,6 +1,6 @@
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
-using Atomic.Net.MonoGame.BED.BlockMaps;
+using Atomic.Net.MonoGame.Core.BlockMaps;
 using Atomic.Net.MonoGame.BED.Hierarchy;
 
 namespace Atomic.Net.MonoGame.Transform;

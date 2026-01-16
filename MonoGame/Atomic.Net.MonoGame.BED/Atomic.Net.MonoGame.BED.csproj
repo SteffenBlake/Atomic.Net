@@ -7,10 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Numerics.Tensors" Version="10.0.1" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Atomic.Net.MonoGame.Core\Atomic.Net.MonoGame.Core.csproj" />
   </ItemGroup>
 

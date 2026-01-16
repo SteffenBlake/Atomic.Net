@@ -1,5 +1,5 @@
-using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
+using Atomic.Net.MonoGame.BED;
 
 namespace Atomic.Net.MonoGame.Transform;
 
@@ -13,5 +13,4 @@ public readonly record struct WorldTransform(BackedMatrix Value) : IBehavior<Wor
         return WorldTransformBackingStore.Instance.CreateFor(entity);
     }
 }
-
 
