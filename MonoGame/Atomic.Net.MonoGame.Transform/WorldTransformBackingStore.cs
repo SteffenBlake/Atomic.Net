@@ -1,6 +1,6 @@
 using Atomic.Net.MonoGame.BED;
-using Atomic.Net.MonoGame.BED.BlockMaps;
 using Atomic.Net.MonoGame.Core;
+using Atomic.Net.MonoGame.Core.BlockMaps;
 
 namespace Atomic.Net.MonoGame.Transform;
 
@@ -11,25 +11,25 @@ public sealed class WorldTransformBackingStore : ISingleton<WorldTransformBackin
 {
     public static WorldTransformBackingStore Instance { get; } = new();
 
-    public InputBlockMap M11 { get; } = new();
-    public InputBlockMap M12 { get; } = new();
-    public InputBlockMap M13 { get; } = new();
-    public InputBlockMap M14 { get; } = new();
+    public InputBlockMap M11 { get; } = new(initValue: 1f);
+    public InputBlockMap M12 { get; } = new(initValue: 0f);
+    public InputBlockMap M13 { get; } = new(initValue: 0f);
+    public InputBlockMap M14 { get; } = new(initValue: 0f);
     
-    public InputBlockMap M21 { get; } = new();
-    public InputBlockMap M22 { get; } = new();
-    public InputBlockMap M23 { get; } = new();
-    public InputBlockMap M24 { get; } = new();
+    public InputBlockMap M21 { get; } = new(initValue: 0f);
+    public InputBlockMap M22 { get; } = new(initValue: 1f);
+    public InputBlockMap M23 { get; } = new(initValue: 0f);
+    public InputBlockMap M24 { get; } = new(initValue: 0f);
     
-    public InputBlockMap M31 { get; } = new();
-    public InputBlockMap M32 { get; } = new();
-    public InputBlockMap M33 { get; } = new();
-    public InputBlockMap M34 { get; } = new();
+    public InputBlockMap M31 { get; } = new(initValue: 0f);
+    public InputBlockMap M32 { get; } = new(initValue: 0f);
+    public InputBlockMap M33 { get; } = new(initValue: 1f);
+    public InputBlockMap M34 { get; } = new(initValue: 0f);
     
-    public InputBlockMap M41 { get; } = new();
-    public InputBlockMap M42 { get; } = new();
-    public InputBlockMap M43 { get; } = new();
-    public InputBlockMap M44 { get; } = new();
+    public InputBlockMap M41 { get; } = new(initValue: 0f);
+    public InputBlockMap M42 { get; } = new(initValue: 0f);
+    public InputBlockMap M43 { get; } = new(initValue: 0f);
+    public InputBlockMap M44 { get; } = new(initValue: 1f);
 
     /// <summary>
     /// Creates a WorldTransform for the specified entity.

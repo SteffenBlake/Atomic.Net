@@ -1,24 +1,19 @@
-using Microsoft.Xna.Framework;
-
 namespace Atomic.Net.MonoGame.Core;
 
 /// <summary>
-/// A Quaternion backed by four BackedProperty<float> components.
-/// Provides conversion to/from Quaternion.
+/// A Quaternion backed by four InputBlockMap properties.
 /// </summary>
 public readonly struct BackedQuaternion(
-    BackedProperty<float> x,
-    BackedProperty<float> y,
-    BackedProperty<float> z,
-    BackedProperty<float> w)
+    BackedFloat x,
+    BackedFloat y,
+    BackedFloat z,
+    BackedFloat w
+)
 {
-    public readonly BackedProperty<float> X = x;
-    public readonly BackedProperty<float> Y = y;
-    public readonly BackedProperty<float> Z = z;
-    public readonly BackedProperty<float> W = w;
+    public readonly BackedFloat X = x;
+    public readonly BackedFloat Y = y;
+    public readonly BackedFloat Z = z;
+    public readonly BackedFloat W = w;
 
-    /// <summary>
-    /// Converts the backed components to a Quaternion.
-    /// </summary>
-    public Quaternion AsQuaternion() => new(X.Value, Y.Value, Z.Value, W.Value);
+    public Microsoft.Xna.Framework.Quaternion AsQuaternion() => new(X.Value, Y.Value, Z.Value, W.Value);
 }
