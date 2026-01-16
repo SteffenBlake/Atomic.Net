@@ -12,6 +12,10 @@ public ref struct SparseRef<T>(Action? onDispose = null)
     private readonly Action? _onDispose = onDispose;
     private bool _disposed;
 
+    /// <summary>
+    /// Initializes the span and index for this ref.
+    /// Separate from constructor because Span<T> cannot be used in primary constructors (ref-like type limitation).
+    /// </summary>
     public void Initialize(Span<T> span, int index)
     {
         _span = span;
