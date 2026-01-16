@@ -18,23 +18,6 @@ public sealed class SparseArray<T>(ushort capacity) : IEnumerable<(ushort Index,
         {
             return _sparse[index];
         }
-        set
-        {
-            var denseIndex = _denseIndices[index];
-            if (denseIndex < 0)
-            {
-                // Not set yet
-                _denseIndices[index] = _dense.Count;
-                _dense.Add((index, value));
-            }
-            else
-            {
-                // Overwrite existing value
-                _dense[denseIndex] = (index, value);
-            }
-
-            _sparse[index] = value;
-        }
     }
 
     public bool TryGetValue(
@@ -55,6 +38,68 @@ public sealed class SparseArray<T>(ushort capacity) : IEnumerable<(ushort Index,
     public int Count => _dense.Count;
 
     public bool HasValue(ushort index) => _denseIndices[index] >= 0;
+
+    /// <summary>
+    /// Sets a value at the given index.
+    /// </summary>
+    public void Set(ushort index, T value)
+    {
+        var denseIndex = _denseIndices[index];
+        if (denseIndex < 0)
+        {
+            // Not set yet
+            _denseIndices[index] = _dense.Count;
+            _dense.Add((index, value));
+        }
+        else
+        {
+            // Overwrite existing value
+            _dense[denseIndex] = (index, value);
+        }
+
+        _sparse[index] = value;
+    }
+
+    /// <summary>
+    /// Ensures a value exists at the given index. If it doesn't exist, initializes it with default(T).
+    /// </summary>
+    public void Ensure(ushort index)
+    {
+        if (_denseIndices[index] >= 0)
+        {
+            return;
+        }
+        
+        var value = default(T);
+        _denseIndices[index] = _dense.Count;
+        _dense.Add((index, value));
+        _sparse[index] = value;
+    }
+
+    /// <summary>
+    /// Gets a mutable reference to a value at the given index.
+    /// If the value doesn't exist, it will be created with default(T).
+    /// Returns a SparseRef that must be disposed to sync changes back to the dense array.
+    /// </summary>
+    public SparseRef<T> GetMut(ushort index)
+    {
+        Ensure(index);
+        return new SparseRef<T>(this, index, ref _sparse[index]);
+    }
+
+    /// <summary>
+    /// Syncs the sparse value at the given index back to the dense array.
+    /// Called by SparseRef on disposal.
+    /// </summary>
+    internal void SyncDense(ushort index)
+    {
+        var denseIndex = _denseIndices[index];
+        if (denseIndex < 0)
+        {
+            return;
+        }
+        _dense[denseIndex] = (index, _sparse[index]);
+    }
 
     public bool Remove(ushort index)
     {

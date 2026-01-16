@@ -43,7 +43,7 @@ public sealed class TransformRegistry :
 
     private void RecalculateNode(Entity entity)
     {
-        _dirty[entity.Index] = false;
+        _dirty.Set(entity.Index, false);
         var parentTransform = Matrix.Identity;
         if (entity.TryGetParent(out var parent))
         {
@@ -58,25 +58,25 @@ public sealed class TransformRegistry :
         var position = Vector3.Zero;
         if (BehaviorRegistry<PositionBehavior>.Instance.TryGetBehavior(entity, out var pos))
         {
-            position = pos.Value.Value;
+            position = new Vector3(pos.Value.X, pos.Value.Y, pos.Value.Z);
         }
 
         var rotation = Quaternion.Identity;
         if (BehaviorRegistry<RotationBehavior>.Instance.TryGetBehavior(entity, out var rot))
         {
-            rotation = rot.Value.Value;
+            rotation = new Quaternion(rot.Value.X, rot.Value.Y, rot.Value.Z, rot.Value.W);
         }
 
         var scale = Vector3.One;
         if (BehaviorRegistry<ScaleBehavior>.Instance.TryGetBehavior(entity, out var scl))
         {
-            scale = scl.Value.Value;
+            scale = new Vector3(scl.Value.X, scl.Value.Y, scl.Value.Z);
         }
 
         var anchor = Vector3.Zero;
         if (BehaviorRegistry<AnchorBehavior>.Instance.TryGetBehavior(entity, out var anc))
         {
-            anchor = anc.Value.Value;
+            anchor = new Vector3(anc.Value.X, anc.Value.Y, anc.Value.Z);
         }
 
         // Compute local transform: Scale * Rotation * Translation * Anchor offset
@@ -88,8 +88,8 @@ public sealed class TransformRegistry :
 
         var worldTransform = localTransform * parentTransform;
 
-        entity.SetBehavior<WorldTransform>(_ =>
-            new WorldTransform(worldTransform)
+        entity.SetBehavior<WorldTransform>((ref WorldTransform wt) =>
+            wt = new WorldTransform(worldTransform)
         );
 
         foreach (var child in entity.GetChildren())
@@ -100,7 +100,7 @@ public sealed class TransformRegistry :
 
     private void MarkDirty(Entity entity)
     {
-        _dirty[entity.Index] = true;
+        _dirty.Set(entity.Index, true);
     }
 
     public void OnEvent(BehaviorAddedEvent<PositionBehavior> e) => MarkDirty(e.Entity);

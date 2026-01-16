@@ -32,8 +32,8 @@ public class BehaviorRegistry<TBehavior> :
     /// Only works if the entity itself is active.
     /// </summary>
     /// <param name="entity">The target entity.</param>
-    /// <param name="init">Initializer for the behavior.</param>
-    public void SetBehavior(Entity entity, Func<TBehavior, TBehavior> init)
+    /// <param name="mutate">Action to mutate the behavior by reference.</param>
+    public void SetBehavior(Entity entity, RefAction<TBehavior> mutate)
     {
         if (!entity.Active)
         {
@@ -47,7 +47,8 @@ public class BehaviorRegistry<TBehavior> :
             EventBus<PreBehaviorUpdatedEvent<TBehavior>>.Push(new(entity));
         }
 
-        _behaviors[entity.Index] = init(_behaviors[entity.Index]);
+        using var behaviorRef = _behaviors.GetMut(entity.Index);
+        mutate(ref behaviorRef.Value);
 
         if (wasBehaviorActive)
         {

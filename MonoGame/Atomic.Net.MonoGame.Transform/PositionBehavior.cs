@@ -1,10 +1,20 @@
-using Microsoft.Xna.Framework;
+using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Transform;
 
 /// <summary>
 /// Stores the local position input for an entity.
 /// </summary>
-public readonly record struct PositionBehavior(Vector3 Value);
-
+public readonly record struct PositionBehavior(
+    BackedProperty<float> X,
+    BackedProperty<float> Y,
+    BackedProperty<float> Z
+)
+{
+    public static PositionBehavior Create(int entityIndex) => new(
+        PositionBackingStore.Instance.X.InstanceFor(entityIndex),
+        PositionBackingStore.Instance.Y.InstanceFor(entityIndex),
+        PositionBackingStore.Instance.Z.InstanceFor(entityIndex)
+    );
+}
 

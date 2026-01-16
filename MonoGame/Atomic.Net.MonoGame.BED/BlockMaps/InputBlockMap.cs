@@ -1,3 +1,5 @@
+using Atomic.Net.MonoGame.Core;
+
 namespace Atomic.Net.MonoGame.BED.BlockMaps;
 
 /// <summary>
@@ -20,6 +22,16 @@ public sealed class InputBlockMap(
 
         block[laneIndex] = value;
         MakeDirty(blockIndex); 
+    }
+
+    /// <summary>
+    /// Creates a BackedProperty pointing to a specific entity index in this block map.
+    /// </summary>
+    public BackedProperty<float> InstanceFor(int entityIndex)
+    {
+        var (blockIndex, laneIndex) = GetBlockAndLane(entityIndex);
+        var block = _outputs[blockIndex] ??= InitBlock();
+        return new BackedProperty<float>(block, laneIndex);
     }
 
     protected override void RecomputeBlock(int blockIndex)
