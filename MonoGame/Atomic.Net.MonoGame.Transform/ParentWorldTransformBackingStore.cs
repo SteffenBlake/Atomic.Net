@@ -31,4 +31,20 @@ public sealed class ParentWorldTransformBackingStore : ISingleton<ParentWorldTra
     public InputBlockMap M42 { get; } = new(initValue: 0f);
     public InputBlockMap M43 { get; } = new(initValue: 0f);
     public InputBlockMap M44 { get; } = new(initValue: 1f);
+
+    public void EnsureFor(Entity entity)
+    {
+        M11.Set(entity.Index, 1f);
+        M12.Set(entity.Index, 0f);
+        M13.Set(entity.Index, 0f);
+        M21.Set(entity.Index, 0f);
+        M22.Set(entity.Index, 1f);
+        M23.Set(entity.Index, 0f);
+        M31.Set(entity.Index, 0f);
+        M32.Set(entity.Index, 0f);
+        M33.Set(entity.Index, 1f);
+        M41.Set(entity.Index, 0f);
+        M42.Set(entity.Index, 0f);
+        M43.Set(entity.Index, 0f);
+    }
 }

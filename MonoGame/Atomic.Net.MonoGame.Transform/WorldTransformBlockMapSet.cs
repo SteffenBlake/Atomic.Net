@@ -110,6 +110,9 @@ public sealed class WorldTransformBlockMapSet : ISingleton<WorldTransformBlockMa
 
     public void Recalculate()
     {
+        var local = LocalTransformBlockMapSet.Instance;
+        var parent = ParentWorldTransformBackingStore.Instance;
+
         M11.Recalculate();
         M12.Recalculate();
         M13.Recalculate();

@@ -103,15 +103,15 @@ public sealed class LocalTransformBlockMapSet : ISingleton<LocalTransformBlockMa
 
         // Apply scale to rotation matrix
         M11 = new MultiplyBlockMap(scaleX, r11);
-        M12 = new MultiplyBlockMap(scaleX, r12);
-        M13 = new MultiplyBlockMap(scaleX, r13);
+        M12 = new MultiplyBlockMap(scaleX, r21);
+        M13 = new MultiplyBlockMap(scaleX, r31);
 
-        M21 = new MultiplyBlockMap(scaleY, r21);
+        M21 = new MultiplyBlockMap(scaleY, r12);
         M22 = new MultiplyBlockMap(scaleY, r22);
-        M23 = new MultiplyBlockMap(scaleY, r23);
+        M23 = new MultiplyBlockMap(scaleY, r32);
 
-        M31 = new MultiplyBlockMap(scaleZ, r31);
-        M32 = new MultiplyBlockMap(scaleZ, r32);
+        M31 = new MultiplyBlockMap(scaleZ, r13);
+        M32 = new MultiplyBlockMap(scaleZ, r23);
         M33 = new MultiplyBlockMap(scaleZ, r33);
 
         // Translation row - just position directly

@@ -6,7 +6,7 @@ namespace Atomic.Net.MonoGame.Transform;
 /// <summary>
 /// Extension methods for Entity that provide transform-related functionality.
 /// </summary>
-public static class EntityTransformExtensions
+public static class EntityExtensions
 {
     /// <summary>
     /// Sets up transform behavior for an entity and ensures WorldTransform is initialized.
@@ -23,7 +23,9 @@ public static class EntityTransformExtensions
         
         // Ensure WorldTransform behavior is initialized
         entity.SetRefBehavior((ref readonly WorldTransformBehavior _) => { });
-        
+       
+        ParentWorldTransformBackingStore.Instance.EnsureFor(entity);
+
         return entity;
     }
 
@@ -34,6 +36,6 @@ public static class EntityTransformExtensions
     /// <returns>The entity for fluent chaining.</returns>
     public static Entity WithTransform(this Entity entity)
     {
-        return entity.WithTransform((ref readonly TransformBehavior _) => { });
+        return entity.WithTransform((ref readonly _) => { });
     }
 }

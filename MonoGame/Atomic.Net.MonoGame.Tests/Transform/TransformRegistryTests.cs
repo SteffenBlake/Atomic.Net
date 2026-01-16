@@ -40,28 +40,59 @@ public sealed class TransformRegistryTests : IDisposable
 
     private static void AssertMatricesEqual(Matrix expected, Entity entity)
     {
-        var hasTransform = RefBehaviorRegistry<WorldTransformBehavior>.Instance.TryGetBehavior(entity, out var worldTransform);
-        Assert.True(hasTransform, "Entity should have a WorldTransform behavior");
+        var hasTransform = RefBehaviorRegistry<WorldTransformBehavior>.Instance
+            .TryGetBehavior(entity, out var worldTransform);
+
+        Assert.True(hasTransform, "Entity should have a WorldTransformBehavior behavior");
         
-        var actual = worldTransform!.Value;
-        Assert.Multiple(
-            () => Assert.Equal(expected.M11, actual.Value.M11.Value, Tolerance),
-            () => Assert.Equal(expected.M12, actual.Value.M12.Value, Tolerance),
-            () => Assert.Equal(expected.M13, actual.Value.M13.Value, Tolerance),
-            () => Assert.Equal(expected.M14, actual.Value.M14.Value, Tolerance),
-            () => Assert.Equal(expected.M21, actual.Value.M21.Value, Tolerance),
-            () => Assert.Equal(expected.M22, actual.Value.M22.Value, Tolerance),
-            () => Assert.Equal(expected.M23, actual.Value.M23.Value, Tolerance),
-            () => Assert.Equal(expected.M24, actual.Value.M24.Value, Tolerance),
-            () => Assert.Equal(expected.M31, actual.Value.M31.Value, Tolerance),
-            () => Assert.Equal(expected.M32, actual.Value.M32.Value, Tolerance),
-            () => Assert.Equal(expected.M33, actual.Value.M33.Value, Tolerance),
-            () => Assert.Equal(expected.M34, actual.Value.M34.Value, Tolerance),
-            () => Assert.Equal(expected.M41, actual.Value.M41.Value, Tolerance),
-            () => Assert.Equal(expected.M42, actual.Value.M42.Value, Tolerance),
-            () => Assert.Equal(expected.M43, actual.Value.M43.Value, Tolerance),
-            () => Assert.Equal(expected.M44, actual.Value.M44.Value, Tolerance)
-        );
+        var actual = worldTransform!.Value.Value;
+        
+        // Convert to arrays for easier comparison and clearer error messages
+        var expectedArray = new float[]
+        {
+            expected.M11, expected.M12, expected.M13, expected.M14,
+            expected.M21, expected. M22, expected.M23, expected.M24,
+            expected.M31, expected.M32, expected.M33, expected. M34,
+            expected.M41, expected.M42, expected.M43, expected.M44
+        };
+        
+        var actualArray = new float[]
+        {
+            actual.M11.Value, actual.M12.Value, actual.M13.Value, actual.M14.Value,
+            actual.M21.Value, actual.M22.Value, actual.M23.Value, actual. M24.Value,
+            actual.M31.Value, actual. M32.Value, actual.M33.Value, actual.M34.Value,
+            actual.M41.Value, actual.M42.Value, actual.M43.Value, actual.M44.Value
+        };
+        
+        var labels = new[]
+        {
+            "M11", "M12", "M13", "M14",
+            "M21", "M22", "M23", "M24",
+            "M31", "M32", "M33", "M34",
+            "M41", "M42", "M43", "M44"
+        };
+        
+        var mismatches = new List<string>();
+        
+        for (int i = 0; i < 16; i++)
+        {
+            if (MathF.Abs(expectedArray[i] - actualArray[i]) > Tolerance)
+            {
+                mismatches.Add(
+                    $"{labels[i]}: expected {expectedArray[i]:F6}, actual {actualArray[i]:F6}"
+                );
+            }
+        }
+        
+        if (mismatches.Count > 0)
+        {
+            var message = $@"
+                Matrix mismatch:
+                Expected: [{string.Join(", ", expectedArray. Select(v => v.ToString("F4")))}]
+                Actual:   [{string.Join(", ", actualArray. Select(v => v.ToString("F4")))}]
+                Differences:\n  {string.Join("\n  ", mismatches)}";
+            Assert.Fail(message);
+        }
     }
 
     private static Quaternion Rotation90DegreesAroundZ() =>
