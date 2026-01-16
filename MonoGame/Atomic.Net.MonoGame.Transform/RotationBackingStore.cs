@@ -17,9 +17,9 @@ public sealed class RotationBackingStore : ISingleton<RotationBackingStore>
     public InputBlockMap W { get; } = new();
 
     /// <summary>
-    /// Creates a BackedQuaternion for the specified entity index.
+    /// Creates a RotationBehavior for the specified entity index.
     /// </summary>
-    public BackedQuaternion InstanceFor(int entityIndex) => new(
+    public RotationBehavior CreateFor(int entityIndex) => new(
         X.InstanceFor(entityIndex),
         Y.InstanceFor(entityIndex),
         Z.InstanceFor(entityIndex),

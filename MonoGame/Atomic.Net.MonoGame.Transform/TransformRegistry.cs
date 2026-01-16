@@ -47,51 +47,46 @@ public sealed class TransformRegistry :
         var parentTransform = Matrix.Identity;
         if (entity.TryGetParent(out var parent))
         {
-            if (BehaviorRegistry<WorldTransform>.Instance.TryGetBehavior(
+            if (RefBehaviorRegistry<WorldTransform>.Instance.TryGetBehavior(
                     parent.Value, out var pTransform
             ))
             {
-                if (pTransform.Value.Value.HasValue)
-                {
-                    parentTransform = pTransform.Value.Value.Value.AsMatrix();
-                }
+                var backedMatrix = new BackedMatrix(
+                    pTransform.Value.M11, pTransform.Value.M12, pTransform.Value.M13, pTransform.Value.M14,
+                    pTransform.Value.M21, pTransform.Value.M22, pTransform.Value.M23, pTransform.Value.M24,
+                    pTransform.Value.M31, pTransform.Value.M32, pTransform.Value.M33, pTransform.Value.M34,
+                    pTransform.Value.M41, pTransform.Value.M42, pTransform.Value.M43, pTransform.Value.M44
+                );
+                parentTransform = backedMatrix.AsMatrix();
             }
         }
 
         var position = Vector3.Zero;
-        if (BehaviorRegistry<PositionBehavior>.Instance.TryGetBehavior(entity, out var pos))
+        if (RefBehaviorRegistry<PositionBehavior>.Instance.TryGetBehavior(entity, out var pos))
         {
-            if (pos.Value.Value.HasValue)
-            {
-                position = pos.Value.Value.Value.AsVector3();
-            }
+            var backedVector = new BackedVector3(pos.Value.X, pos.Value.Y, pos.Value.Z);
+            position = backedVector.AsVector3();
         }
 
         var rotation = Quaternion.Identity;
-        if (BehaviorRegistry<RotationBehavior>.Instance.TryGetBehavior(entity, out var rot))
+        if (RefBehaviorRegistry<RotationBehavior>.Instance.TryGetBehavior(entity, out var rot))
         {
-            if (rot.Value.Value.HasValue)
-            {
-                rotation = rot.Value.Value.Value.AsQuaternion();
-            }
+            var backedQuat = new BackedQuaternion(rot.Value.X, rot.Value.Y, rot.Value.Z, rot.Value.W);
+            rotation = backedQuat.AsQuaternion();
         }
 
         var scale = Vector3.One;
-        if (BehaviorRegistry<ScaleBehavior>.Instance.TryGetBehavior(entity, out var scl))
+        if (RefBehaviorRegistry<ScaleBehavior>.Instance.TryGetBehavior(entity, out var scl))
         {
-            if (scl.Value.Value.HasValue)
-            {
-                scale = scl.Value.Value.Value.AsVector3();
-            }
+            var backedVector = new BackedVector3(scl.Value.X, scl.Value.Y, scl.Value.Z);
+            scale = backedVector.AsVector3();
         }
 
         var anchor = Vector3.Zero;
-        if (BehaviorRegistry<AnchorBehavior>.Instance.TryGetBehavior(entity, out var anc))
+        if (RefBehaviorRegistry<AnchorBehavior>.Instance.TryGetBehavior(entity, out var anc))
         {
-            if (anc.Value.Value.HasValue)
-            {
-                anchor = anc.Value.Value.Value.AsVector3();
-            }
+            var backedVector = new BackedVector3(anc.Value.X, anc.Value.Y, anc.Value.Z);
+            anchor = backedVector.AsVector3();
         }
 
         // Compute local transform: Scale * Rotation * Translation * Anchor offset
@@ -103,14 +98,24 @@ public sealed class TransformRegistry :
 
         var worldTransform = localTransform * parentTransform;
 
-        entity.SetBehavior<WorldTransform>((ref WorldTransform wt) =>
+        RefBehaviorRegistry<WorldTransform>.Instance.SetBehavior(entity, (ref readonly WorldTransform wt) =>
         {
-            var matrix = wt.Value ?? WorldTransformBackingStore.Instance.InstanceFor(entity.Index);
-            matrix.M11.Value = worldTransform.M11; matrix.M12.Value = worldTransform.M12; matrix.M13.Value = worldTransform.M13; matrix.M14.Value = worldTransform.M14;
-            matrix.M21.Value = worldTransform.M21; matrix.M22.Value = worldTransform.M22; matrix.M23.Value = worldTransform.M23; matrix.M24.Value = worldTransform.M24;
-            matrix.M31.Value = worldTransform.M31; matrix.M32.Value = worldTransform.M32; matrix.M33.Value = worldTransform.M33; matrix.M34.Value = worldTransform.M34;
-            matrix.M41.Value = worldTransform.M41; matrix.M42.Value = worldTransform.M42; matrix.M43.Value = worldTransform.M43; matrix.M44.Value = worldTransform.M44;
-            wt = new WorldTransform(matrix);
+            wt.M11.Value = worldTransform.M11;
+            wt.M12.Value = worldTransform.M12;
+            wt.M13.Value = worldTransform.M13;
+            wt.M14.Value = worldTransform.M14;
+            wt.M21.Value = worldTransform.M21;
+            wt.M22.Value = worldTransform.M22;
+            wt.M23.Value = worldTransform.M23;
+            wt.M24.Value = worldTransform.M24;
+            wt.M31.Value = worldTransform.M31;
+            wt.M32.Value = worldTransform.M32;
+            wt.M33.Value = worldTransform.M33;
+            wt.M34.Value = worldTransform.M34;
+            wt.M41.Value = worldTransform.M41;
+            wt.M42.Value = worldTransform.M42;
+            wt.M43.Value = worldTransform.M43;
+            wt.M44.Value = worldTransform.M44;
         });
 
         foreach (var child in entity.GetChildren())

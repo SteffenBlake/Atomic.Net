@@ -16,9 +16,9 @@ public sealed class PositionBackingStore : ISingleton<PositionBackingStore>
     public InputBlockMap Z { get; } = new();
 
     /// <summary>
-    /// Creates a BackedVector3 for the specified entity index.
+    /// Creates a PositionBehavior for the specified entity index.
     /// </summary>
-    public BackedVector3 InstanceFor(int entityIndex) => new(
+    public PositionBehavior CreateFor(int entityIndex) => new(
         X.InstanceFor(entityIndex),
         Y.InstanceFor(entityIndex),
         Z.InstanceFor(entityIndex)

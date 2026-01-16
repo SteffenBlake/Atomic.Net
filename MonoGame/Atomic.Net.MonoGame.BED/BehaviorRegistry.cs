@@ -28,8 +28,7 @@ public class BehaviorRegistry<TBehavior> :
     private readonly SparseArray<TBehavior> _behaviors = new(Constants.MaxEntities);
 
     /// <summary>
-    /// Sets or overwrites a behavior for the given entity.
-    /// Only works if the entity itself is active.
+    /// Sets or replaces a regular (non-backed) behavior.
     /// </summary>
     /// <param name="entity">The target entity.</param>
     /// <param name="mutate">Action to mutate the behavior by reference.</param>

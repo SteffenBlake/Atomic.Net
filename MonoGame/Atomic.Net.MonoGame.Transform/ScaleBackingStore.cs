@@ -16,9 +16,9 @@ public sealed class ScaleBackingStore : ISingleton<ScaleBackingStore>
     public InputBlockMap Z { get; } = new();
 
     /// <summary>
-    /// Creates a BackedVector3 for the specified entity index.
+    /// Creates a ScaleBehavior for the specified entity index.
     /// </summary>
-    public BackedVector3 InstanceFor(int entityIndex) => new(
+    public ScaleBehavior CreateFor(int entityIndex) => new(
         X.InstanceFor(entityIndex),
         Y.InstanceFor(entityIndex),
         Z.InstanceFor(entityIndex)
