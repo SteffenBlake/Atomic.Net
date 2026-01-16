@@ -20,7 +20,7 @@ public readonly struct BackedMatrix(
     /// <summary>
     /// Converts the backed components to a Matrix.
     /// </summary>
-    public Matrix ToMatrix() => new(
+    public Matrix AsMatrix() => new(
         M11.Value, M12.Value, M13.Value, M14.Value,
         M21.Value, M22.Value, M23.Value, M24.Value,
         M31.Value, M32.Value, M33.Value, M34.Value,
@@ -38,5 +38,5 @@ public readonly struct BackedMatrix(
         M41.Value = value.M41; M42.Value = value.M42; M43.Value = value.M43; M44.Value = value.M44;
     }
 
-    public static implicit operator Matrix(BackedMatrix backed) => backed.ToMatrix();
+    public static implicit operator Matrix(BackedMatrix backed) => backed.AsMatrix();
 }

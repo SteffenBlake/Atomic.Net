@@ -15,4 +15,14 @@ public sealed class RotationBackingStore : ISingleton<RotationBackingStore>
     public InputBlockMap Y { get; } = new();
     public InputBlockMap Z { get; } = new();
     public InputBlockMap W { get; } = new();
+
+    /// <summary>
+    /// Creates a BackedQuaternion for the specified entity index.
+    /// </summary>
+    public BackedQuaternion Build(int entityIndex) => new(
+        X.InstanceFor(entityIndex),
+        Y.InstanceFor(entityIndex),
+        Z.InstanceFor(entityIndex),
+        W.InstanceFor(entityIndex)
+    );
 }

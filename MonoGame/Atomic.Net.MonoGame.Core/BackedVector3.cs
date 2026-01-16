@@ -18,7 +18,7 @@ public readonly struct BackedVector3(
     /// <summary>
     /// Converts the backed components to a Vector3.
     /// </summary>
-    public Vector3 ToVector3() => new(X.Value, Y.Value, Z.Value);
+    public Vector3 AsVector3() => new(X.Value, Y.Value, Z.Value);
 
     /// <summary>
     /// Sets the backed components from a Vector3.
@@ -30,5 +30,5 @@ public readonly struct BackedVector3(
         Z.Value = value.Z;
     }
 
-    public static implicit operator Vector3(BackedVector3 backed) => backed.ToVector3();
+    public static implicit operator Vector3(BackedVector3 backed) => backed.AsVector3();
 }

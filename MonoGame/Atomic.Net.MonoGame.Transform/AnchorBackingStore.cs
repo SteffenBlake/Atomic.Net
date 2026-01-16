@@ -14,4 +14,13 @@ public sealed class AnchorBackingStore : ISingleton<AnchorBackingStore>
     public InputBlockMap X { get; } = new();
     public InputBlockMap Y { get; } = new();
     public InputBlockMap Z { get; } = new();
+
+    /// <summary>
+    /// Creates a BackedVector3 for the specified entity index.
+    /// </summary>
+    public BackedVector3 Build(int entityIndex) => new(
+        X.InstanceFor(entityIndex),
+        Y.InstanceFor(entityIndex),
+        Z.InstanceFor(entityIndex)
+    );
 }
