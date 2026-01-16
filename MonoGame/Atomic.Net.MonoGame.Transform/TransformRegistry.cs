@@ -36,7 +36,7 @@ public sealed class TransformRegistry :
 
     public void Recalculate()
     {
-        const int maxIterations = 100;
+        const int maxIterations = 5;
 
         _worldTransformUpdated.Clear();
 
