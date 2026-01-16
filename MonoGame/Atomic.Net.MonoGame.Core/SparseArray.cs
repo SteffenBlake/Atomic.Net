@@ -61,30 +61,20 @@ public sealed class SparseArray<T>(ushort capacity) : IEnumerable<(ushort Index,
     }
 
     /// <summary>
-    /// Ensures a value exists at the given index. If it doesn't exist, initializes it with default(T).
-    /// Note: The default value is typically overwritten immediately by the caller.
-    /// </summary>
-    public void Ensure(ushort index)
-    {
-        if (_denseIndices[index] >= 0)
-        {
-            return;
-        }
-        
-        var value = default(T);
-        _denseIndices[index] = _dense.Count;
-        _dense.Add((index, value));
-        _sparse[index] = value;
-    }
-
-    /// <summary>
     /// Gets a mutable reference to a value at the given index.
     /// If the value doesn't exist, it will be created with default(T).
     /// Returns a SparseRef that must be disposed to sync changes back to the dense array.
     /// </summary>
     public SparseRef<T> GetMut(ushort index)
     {
-        Ensure(index);
+        if (_denseIndices[index] < 0)
+        {
+            var value = default(T);
+            _denseIndices[index] = _dense.Count;
+            _dense.Add((index, value));
+            _sparse[index] = value;
+        }
+        
         var sparseRef = new SparseRef<T>(() => SyncDense(index));
         sparseRef.Initialize(_sparse, index);
         return sparseRef;

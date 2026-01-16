@@ -21,17 +21,4 @@ public readonly struct BackedQuaternion(
     /// Converts the backed components to a Quaternion.
     /// </summary>
     public Quaternion AsQuaternion() => new(X.Value, Y.Value, Z.Value, W.Value);
-
-    /// <summary>
-    /// Sets the backed components from a Quaternion.
-    /// </summary>
-    public void FromQuaternion(Quaternion value)
-    {
-        X.Value = value.X;
-        Y.Value = value.Y;
-        Z.Value = value.Z;
-        W.Value = value.W;
-    }
-
-    public static implicit operator Quaternion(BackedQuaternion backed) => backed.AsQuaternion();
 }

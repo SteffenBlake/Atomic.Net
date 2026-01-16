@@ -34,7 +34,7 @@ public sealed class WorldTransformBackingStore : ISingleton<WorldTransformBackin
     /// <summary>
     /// Creates a BackedMatrix for the specified entity index.
     /// </summary>
-    public BackedMatrix Build(int entityIndex) => new(
+    public BackedMatrix InstanceFor(int entityIndex) => new(
         M11.InstanceFor(entityIndex), M12.InstanceFor(entityIndex), M13.InstanceFor(entityIndex), M14.InstanceFor(entityIndex),
         M21.InstanceFor(entityIndex), M22.InstanceFor(entityIndex), M23.InstanceFor(entityIndex), M24.InstanceFor(entityIndex),
         M31.InstanceFor(entityIndex), M32.InstanceFor(entityIndex), M33.InstanceFor(entityIndex), M34.InstanceFor(entityIndex),

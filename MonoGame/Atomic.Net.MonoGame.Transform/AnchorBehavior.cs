@@ -5,5 +5,5 @@ namespace Atomic.Net.MonoGame.Transform;
 /// <summary>
 /// Stores the anchor/pivot point for an entity.
 /// </summary>
-public readonly record struct AnchorBehavior(BackedVector3 Value);
+public readonly record struct AnchorBehavior(BackedVector3? Value);
 

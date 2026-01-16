@@ -18,7 +18,7 @@ public sealed class ScaleBackingStore : ISingleton<ScaleBackingStore>
     /// <summary>
     /// Creates a BackedVector3 for the specified entity index.
     /// </summary>
-    public BackedVector3 Build(int entityIndex) => new(
+    public BackedVector3 InstanceFor(int entityIndex) => new(
         X.InstanceFor(entityIndex),
         Y.InstanceFor(entityIndex),
         Z.InstanceFor(entityIndex)

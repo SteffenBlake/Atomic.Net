@@ -11,6 +11,4 @@ public readonly struct BackedProperty<T>(T[] backing, int index)
         get => backing[index];
         set => backing[index] = value;
     }
-
-    public static implicit operator T(BackedProperty<T> prop) => prop.Value;
 }
