@@ -11,13 +11,9 @@ public readonly struct BackedVector3(
     BackedProperty<float> y,
     BackedProperty<float> z)
 {
-    private readonly BackedProperty<float> _x = x;
-    private readonly BackedProperty<float> _y = y;
-    private readonly BackedProperty<float> _z = z;
-
-    public BackedProperty<float> X => _x;
-    public BackedProperty<float> Y => _y;
-    public BackedProperty<float> Z => _z;
+    public readonly BackedProperty<float> X = x;
+    public readonly BackedProperty<float> Y = y;
+    public readonly BackedProperty<float> Z = z;
 
     /// <summary>
     /// Converts the backed components to a Vector3.
@@ -29,9 +25,9 @@ public readonly struct BackedVector3(
     /// </summary>
     public void FromVector3(Vector3 value)
     {
-        _x.Value = value.X;
-        _y.Value = value.Y;
-        _z.Value = value.Z;
+        X.Value = value.X;
+        Y.Value = value.Y;
+        Z.Value = value.Z;
     }
 
     public static implicit operator Vector3(BackedVector3 backed) => backed.ToVector3();

@@ -12,30 +12,10 @@ public readonly struct BackedMatrix(
     BackedProperty<float> m31, BackedProperty<float> m32, BackedProperty<float> m33, BackedProperty<float> m34,
     BackedProperty<float> m41, BackedProperty<float> m42, BackedProperty<float> m43, BackedProperty<float> m44)
 {
-    private readonly BackedProperty<float> _m11 = m11, _m12 = m12, _m13 = m13, _m14 = m14;
-    private readonly BackedProperty<float> _m21 = m21, _m22 = m22, _m23 = m23, _m24 = m24;
-    private readonly BackedProperty<float> _m31 = m31, _m32 = m32, _m33 = m33, _m34 = m34;
-    private readonly BackedProperty<float> _m41 = m41, _m42 = m42, _m43 = m43, _m44 = m44;
-
-    public BackedProperty<float> M11 => _m11;
-    public BackedProperty<float> M12 => _m12;
-    public BackedProperty<float> M13 => _m13;
-    public BackedProperty<float> M14 => _m14;
-    
-    public BackedProperty<float> M21 => _m21;
-    public BackedProperty<float> M22 => _m22;
-    public BackedProperty<float> M23 => _m23;
-    public BackedProperty<float> M24 => _m24;
-    
-    public BackedProperty<float> M31 => _m31;
-    public BackedProperty<float> M32 => _m32;
-    public BackedProperty<float> M33 => _m33;
-    public BackedProperty<float> M34 => _m34;
-    
-    public BackedProperty<float> M41 => _m41;
-    public BackedProperty<float> M42 => _m42;
-    public BackedProperty<float> M43 => _m43;
-    public BackedProperty<float> M44 => _m44;
+    public readonly BackedProperty<float> M11 = m11, M12 = m12, M13 = m13, M14 = m14;
+    public readonly BackedProperty<float> M21 = m21, M22 = m22, M23 = m23, M24 = m24;
+    public readonly BackedProperty<float> M31 = m31, M32 = m32, M33 = m33, M34 = m34;
+    public readonly BackedProperty<float> M41 = m41, M42 = m42, M43 = m43, M44 = m44;
 
     /// <summary>
     /// Converts the backed components to a Matrix.
@@ -52,10 +32,10 @@ public readonly struct BackedMatrix(
     /// </summary>
     public void FromMatrix(Matrix value)
     {
-        _m11.Value = value.M11; _m12.Value = value.M12; _m13.Value = value.M13; _m14.Value = value.M14;
-        _m21.Value = value.M21; _m22.Value = value.M22; _m23.Value = value.M23; _m24.Value = value.M24;
-        _m31.Value = value.M31; _m32.Value = value.M32; _m33.Value = value.M33; _m34.Value = value.M34;
-        _m41.Value = value.M41; _m42.Value = value.M42; _m43.Value = value.M43; _m44.Value = value.M44;
+        M11.Value = value.M11; M12.Value = value.M12; M13.Value = value.M13; M14.Value = value.M14;
+        M21.Value = value.M21; M22.Value = value.M22; M23.Value = value.M23; M24.Value = value.M24;
+        M31.Value = value.M31; M32.Value = value.M32; M33.Value = value.M33; M34.Value = value.M34;
+        M41.Value = value.M41; M42.Value = value.M42; M43.Value = value.M43; M44.Value = value.M44;
     }
 
     public static implicit operator Matrix(BackedMatrix backed) => backed.ToMatrix();

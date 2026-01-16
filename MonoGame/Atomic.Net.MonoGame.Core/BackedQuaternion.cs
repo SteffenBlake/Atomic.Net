@@ -12,15 +12,10 @@ public readonly struct BackedQuaternion(
     BackedProperty<float> z,
     BackedProperty<float> w)
 {
-    private readonly BackedProperty<float> _x = x;
-    private readonly BackedProperty<float> _y = y;
-    private readonly BackedProperty<float> _z = z;
-    private readonly BackedProperty<float> _w = w;
-
-    public BackedProperty<float> X => _x;
-    public BackedProperty<float> Y => _y;
-    public BackedProperty<float> Z => _z;
-    public BackedProperty<float> W => _w;
+    public readonly BackedProperty<float> X = x;
+    public readonly BackedProperty<float> Y = y;
+    public readonly BackedProperty<float> Z = z;
+    public readonly BackedProperty<float> W = w;
 
     /// <summary>
     /// Converts the backed components to a Quaternion.
@@ -32,10 +27,10 @@ public readonly struct BackedQuaternion(
     /// </summary>
     public void FromQuaternion(Quaternion value)
     {
-        _x.Value = value.X;
-        _y.Value = value.Y;
-        _z.Value = value.Z;
-        _w.Value = value.W;
+        X.Value = value.X;
+        Y.Value = value.Y;
+        Z.Value = value.Z;
+        W.Value = value.W;
     }
 
     public static implicit operator Quaternion(BackedQuaternion backed) => backed.ToQuaternion();
