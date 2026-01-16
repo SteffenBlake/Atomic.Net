@@ -9,37 +9,30 @@ namespace Atomic.Net.MonoGame.BED;
 /// <typeparam name="TBehavior">The behavior type.</typeparam>
 public class BehaviorRegistry<TBehavior> : 
     ISingleton<BehaviorRegistry<TBehavior>>, 
+    IEventHandler<InitializeEvent>,
     IEventHandler<EntityDeactivatedEvent>
     where TBehavior : struct
 {
-    private static bool _registered;
-
     /// <summary>
     /// Gets the singleton instance of the registry.
     /// </summary>
     [field: AllowNull]
-    public static BehaviorRegistry<TBehavior> Instance
-    {
-        get
-        {
-            if (field == null)
-            {
-                field = new BehaviorRegistry<TBehavior>();
-                if (!_registered)
-                {
-                    EventBus<EntityDeactivatedEvent>.Register(field);
-                    _registered = true;
-                }
-            }
-            return field;
-        }
-    }
+    public static BehaviorRegistry<TBehavior> Instance => field ??= new();
 
     /// <summary>
-    /// Initializes the registry.
+    /// Initializes the registry and registers for initialization event.
     /// </summary>
     public BehaviorRegistry()
     {
+        EventBus<InitializeEvent>.Register(this);
+    }
+
+    /// <summary>
+    /// Handles initialization by registering for entity deactivation events.
+    /// </summary>
+    public void OnEvent(InitializeEvent _)
+    {
+        EventBus<EntityDeactivatedEvent>.Register(this);
     }
 
     private readonly SparseArray<TBehavior> _behaviors = new(Constants.MaxEntities);
