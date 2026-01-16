@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core.BlockMaps;
@@ -8,6 +7,7 @@ namespace Atomic.Net.MonoGame.Transform;
 
 public sealed class TransformRegistry : 
     ISingleton<TransformRegistry>,
+    IEventHandler<InitializeEvent>,
     IEventHandler<BehaviorAddedEvent<TransformBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<TransformBehavior>>,
     IEventHandler<BehaviorRemovedEvent<TransformBehavior>>,
@@ -15,8 +15,7 @@ public sealed class TransformRegistry :
     IEventHandler<PostBehaviorUpdatedEvent<Parent>>,
     IEventHandler<BehaviorRemovedEvent<Parent>>
 {
-    [field: AllowNull]
-    public static TransformRegistry Instance => field ??= new();
+    public static TransformRegistry Instance { get; } = new();
 
     private readonly SparseArray<bool> _dirty = new(Constants.MaxEntities);
     private readonly HashSet<ushort> _worldTransformUpdated = new(Constants.MaxEntities);
@@ -30,8 +29,20 @@ public sealed class TransformRegistry :
 
     private TransformRegistry()
     {
+        EventBus<InitializeEvent>.Register(this);
         _localTransformMaps = new LocalTransformBlockMapSet(_inputStore);
         _worldTransformMaps = new WorldTransformBlockMapSet(_localTransformMaps, _parentStore);
+    }
+
+    public void OnEvent(InitializeEvent _)
+    {
+        EventBus<BehaviorAddedEvent<TransformBehavior>>.Register(this);
+        EventBus<PostBehaviorUpdatedEvent<TransformBehavior>>.Register(this);
+        EventBus<BehaviorRemovedEvent<TransformBehavior>>.Register(this);
+
+        EventBus<BehaviorAddedEvent<Parent>>.Register(this);
+        EventBus<PostBehaviorUpdatedEvent<Parent>>.Register(this);
+        EventBus<BehaviorRemovedEvent<Parent>>.Register(this);
     }
 
     public void Recalculate()
@@ -143,16 +154,5 @@ public sealed class TransformRegistry :
     public void OnEvent(BehaviorAddedEvent<Parent> e) => MarkDirty(e.Entity);
     public void OnEvent(PostBehaviorUpdatedEvent<Parent> e) => MarkDirty(e.Entity);
     public void OnEvent(BehaviorRemovedEvent<Parent> e) => MarkDirty(e.Entity);
-
-    public static void Register()
-    {
-        EventBus<BehaviorAddedEvent<TransformBehavior>>.Register<TransformRegistry>();
-        EventBus<PostBehaviorUpdatedEvent<TransformBehavior>>.Register<TransformRegistry>();
-        EventBus<BehaviorRemovedEvent<TransformBehavior>>.Register<TransformRegistry>();
-
-        EventBus<BehaviorAddedEvent<Parent>>.Register<TransformRegistry>();
-        EventBus<PostBehaviorUpdatedEvent<Parent>>.Register<TransformRegistry>();
-        EventBus<BehaviorRemovedEvent<Parent>>.Register<TransformRegistry>();
-    }
 }
 

@@ -13,7 +13,8 @@ public sealed class TransformRegistryTests : IDisposable
 
     public TransformRegistryTests()
     {
-        TransformRegistry.Register();
+        // Trigger initialization to register event handlers
+        EventBus<InitializeEvent>.Push(new());
     }
 
     private Entity CreateEntity()

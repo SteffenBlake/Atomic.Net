@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core.BlockMaps;
@@ -10,8 +9,7 @@ namespace Atomic.Net.MonoGame.Transform;
 /// </summary>
 public sealed class LocalTransformBlockMapSet : ISingleton<LocalTransformBlockMapSet>
 {
-    [field: AllowNull]
-    public static LocalTransformBlockMapSet Instance => field ??= new(TransformBackingStore.Instance);
+    public static LocalTransformBlockMapSet Instance { get; } = new(TransformBackingStore.Instance);
 
     // Only 12 computed elements - M14, M24, M34, M44 are constants (0, 0, 0, 1) for affine transforms
     public BlockMapBase M11 { get; }

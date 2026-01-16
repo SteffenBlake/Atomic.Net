@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.BED.Hierarchy;
@@ -9,8 +8,7 @@ namespace Atomic.Net.MonoGame.BED.Hierarchy;
 /// </summary>
 public sealed class ParentPreUpdatedDriver : IEventHandler<PreBehaviorUpdatedEvent<Parent>>, ISingleton<ParentPreUpdatedDriver>
 {
-    [field: AllowNull]
-    public static ParentPreUpdatedDriver Instance => field ??= new();
+    public static ParentPreUpdatedDriver Instance { get; } = new();
 
     public void OnEvent(PreBehaviorUpdatedEvent<Parent> e)
     {

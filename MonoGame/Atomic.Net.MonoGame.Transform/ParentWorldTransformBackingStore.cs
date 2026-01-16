@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core.BlockMaps;
@@ -10,8 +9,7 @@ namespace Atomic.Net.MonoGame.Transform;
 /// </summary>
 public sealed class ParentWorldTransformBackingStore : ISingleton<ParentWorldTransformBackingStore>
 {
-    [field: AllowNull]
-    public static ParentWorldTransformBackingStore Instance => field ??= new();
+    public static ParentWorldTransformBackingStore Instance { get; } = new();
 
     public InputBlockMap M11 { get; } = new(initValue: 1f);
     public InputBlockMap M12 { get; } = new(initValue: 0f);

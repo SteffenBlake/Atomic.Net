@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core.BlockMaps;
@@ -10,8 +9,7 @@ namespace Atomic.Net.MonoGame.Transform;
 /// </summary>
 public sealed class WorldTransformBlockMapSet : ISingleton<WorldTransformBlockMapSet>
 {
-    [field: AllowNull]
-    public static WorldTransformBlockMapSet Instance => field ??= new(
+    public static WorldTransformBlockMapSet Instance { get; } = new(
         LocalTransformBlockMapSet.Instance,
         ParentWorldTransformBackingStore.Instance
     );

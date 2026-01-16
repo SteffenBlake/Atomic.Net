@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.BED.Hierarchy;
@@ -9,8 +8,7 @@ namespace Atomic.Net.MonoGame.BED.Hierarchy;
 /// </summary>
 public sealed class ParentPostUpdatedDriver : IEventHandler<PostBehaviorUpdatedEvent<Parent>>, ISingleton<ParentPostUpdatedDriver>
 {
-    [field: AllowNull]
-    public static ParentPostUpdatedDriver Instance => field ??= new();
+    public static ParentPostUpdatedDriver Instance { get; } = new();
 
     public void OnEvent(PostBehaviorUpdatedEvent<Parent> e)
     {

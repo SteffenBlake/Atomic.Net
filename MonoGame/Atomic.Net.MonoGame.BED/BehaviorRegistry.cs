@@ -16,8 +16,7 @@ public class BehaviorRegistry<TBehavior> :
     /// <summary>
     /// Gets the singleton instance of the registry.
     /// </summary>
-    [field: AllowNull]
-    public static BehaviorRegistry<TBehavior> Instance => field ??= new();
+    public static BehaviorRegistry<TBehavior> Instance { get; } = new();
 
     /// <summary>
     /// Initializes the registry and registers for initialization event.
