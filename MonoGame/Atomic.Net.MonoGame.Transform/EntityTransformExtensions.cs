@@ -9,7 +9,8 @@ namespace Atomic.Net.MonoGame.Transform;
 public static class EntityExtensions
 {
     /// <summary>
-    /// Sets up transform behavior for an entity and ensures WorldTransform is initialized.
+    /// Sets up transform behavior for an entity. The TransformRegistry will automatically initialize
+    /// all related backing stores and the WorldTransformBehavior.
     /// </summary>
     /// <param name="entity">The entity.</param>
     /// <param name="mutate">Action to mutate the transform behavior's backing values.</param>
@@ -18,19 +19,13 @@ public static class EntityExtensions
         this Entity entity, RefReadonlyAction<TransformBehavior> mutate
     )
     {
-        // Set the TransformBehavior
         entity.SetRefBehavior(mutate);
-        
-        // Ensure WorldTransform behavior is initialized
-        entity.SetRefBehavior((ref readonly WorldTransformBehavior _) => { });
-       
-        ParentWorldTransformBackingStore.Instance.EnsureFor(entity);
-
         return entity;
     }
 
     /// <summary>
-    /// Sets up transform behavior for an entity with default values and ensures WorldTransform is initialized.
+    /// Sets up transform behavior for an entity with default values. The TransformRegistry will
+    /// automatically initialize all related backing stores and the WorldTransformBehavior.
     /// </summary>
     /// <param name="entity">The entity.</param>
     /// <returns>The entity for fluent chaining.</returns>

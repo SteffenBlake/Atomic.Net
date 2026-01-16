@@ -63,4 +63,33 @@ public sealed class TransformBackingStore : ISingleton<TransformBackingStore>
             )
         );
     }
+
+    /// <summary>
+    /// Initializes transform backing store entries for an entity with default values.
+    /// </summary>
+    public void SetupForEntity(Entity entity)
+    {
+        var idx = entity.Index;
+        PositionX.Set(idx, 0f);
+        PositionY.Set(idx, 0f);
+        PositionZ.Set(idx, 0f);
+        RotationX.Set(idx, 0f);
+        RotationY.Set(idx, 0f);
+        RotationZ.Set(idx, 0f);
+        RotationW.Set(idx, 1f);
+        ScaleX.Set(idx, 1f);
+        ScaleY.Set(idx, 1f);
+        ScaleZ.Set(idx, 1f);
+        AnchorX.Set(idx, 0f);
+        AnchorY.Set(idx, 0f);
+        AnchorZ.Set(idx, 0f);
+    }
+
+    /// <summary>
+    /// Clears transform backing store entries for an entity, resetting to default values.
+    /// </summary>
+    public void CleanupForEntity(Entity entity)
+    {
+        SetupForEntity(entity);
+    }
 }
