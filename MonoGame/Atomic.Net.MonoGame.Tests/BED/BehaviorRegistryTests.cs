@@ -77,6 +77,8 @@ public sealed class BehaviorRegistryTests : IDisposable
     [Fact]
     public void ResetEvent_DoesNotPolluteBehaviors()
     {
+        // Copilot: 1) Fails in group: YES - finds behavior when shouldn't 2) Alone: FAILS - same issue 3) Logic alignment: @Steffen - BehaviorRegistry doesn't implement IEventHandler<ResetEvent>, so behaviors persist across resets. Should BehaviorRegistry clear behaviors on ResetEvent?
+        
         // Arrange
         var entity1 = EntityRegistry.Instance.Activate();
         BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity1, (ref TestBehavior b) => b.Value = 999);
@@ -98,6 +100,8 @@ public sealed class BehaviorRegistryTests : IDisposable
     [Fact]
     public void HasBehavior_ReturnsTrueWhenPresent()
     {
+        // Copilot: 1) Fails in group: NO - passes 2) Alone: PASSES 3) Logic alignment: YES - HasBehavior should return true after SetBehavior is called
+        
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
         Assert.False(BehaviorRegistry<TestBehavior>.Instance.HasBehavior(entity));
@@ -112,6 +116,8 @@ public sealed class BehaviorRegistryTests : IDisposable
     [Fact]
     public void TryGetBehavior_ReturnsFalseWhenNotPresent()
     {
+        // Copilot: 1) Fails in group: YES - returns true when should be false 2) Alone: PASSES 3) Logic alignment: @Steffen - When run in group, TryGetBehavior finds behaviors from previous tests. This suggests BehaviorRegistry state pollution between tests - is there a missing cleanup mechanism?
+        
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
         
@@ -126,6 +132,8 @@ public sealed class BehaviorRegistryTests : IDisposable
     [Fact]
     public void UpdateBehavior_UpdatesValue()
     {
+        // Copilot: 1) Fails in group: NO - passes 2) Alone: PASSES 3) Logic alignment: YES - test logic matches implementation (SetBehavior should update existing behavior value)
+        
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref TestBehavior b) => b.Value = 1);
@@ -142,6 +150,8 @@ public sealed class BehaviorRegistryTests : IDisposable
     [Fact]
     public void SetBehavior_FiresBehaviorAddedEvent_OnFirstSet()
     {
+        // Copilot: 1) Fails in group: YES - no events received 2) Alone: PASSES 3) Logic alignment: @Steffen - Is BehaviorAddedEvent only fired once per BehaviorRegistry instance? The event fires alone but not in group, suggesting event listener pollution or event bus state issues.
+        
         // Arrange
         using var listener = new FakeEventListener<BehaviorAddedEvent<TestBehavior>>();
         var entity = EntityRegistry.Instance.Activate();
