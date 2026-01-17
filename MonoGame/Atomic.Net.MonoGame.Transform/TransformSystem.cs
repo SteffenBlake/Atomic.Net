@@ -9,6 +9,7 @@ public static class TransformSystem
         BehaviorRegistry<TransformBehavior>.Initialize();
         BehaviorRegistry<WorldTransformBehavior>.Initialize();
         RefBehaviorRegistry<TransformBehavior>.Initialize();
+        RefBehaviorRegistry<WorldTransformBehavior>.Initialize();
 
         TransformBackingStore.Initialize();
         ParentWorldTransformBackingStore.Initialize();
