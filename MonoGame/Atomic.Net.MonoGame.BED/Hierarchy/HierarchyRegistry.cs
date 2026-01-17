@@ -70,10 +70,13 @@ public class HierarchyRegistry :
     {
         if (!_parentToChildLookup.TryGetValue(parent.Index, out var children))
         {
-            return [];
+            yield break;
         }
 
-        return children.Select(c => EntityRegistry.Instance[c.Index]);
+        foreach (var (childIdx, _) in children)
+        {
+            yield return EntityRegistry.Instance[childIdx];
+        }
     }
 
     /// <summary>
