@@ -14,7 +14,7 @@ public static class Constants
     /// <summary>
     /// Maximum number of entities supported.
     /// </summary>
-    public const ushort MaxEntities = 512;
+    public const ushort MaxEntities = 8192;
 #endif
 
 #if MAX_LOADING_ENTITIES

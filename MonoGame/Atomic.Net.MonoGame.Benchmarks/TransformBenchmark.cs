@@ -12,9 +12,9 @@ public class TransformBenchmark
 {
     // Block size is 16 (SIMD width), MaxEntities = 512, MaxLoadingEntities = 32
     // Scene entities: indices 32-511 = 480 total available
-    private const int LowEntityCount = 64;      // 4 blocks - simple scene
-    private const int MediumEntityCount = 256;  // 16 blocks - typical game scene  
-    private const int HighEntityCount = 470;    // 30 blocks - max scene entities (bullet hell/particle storm)
+    private const int LowEntityCount = 200;      // 4 blocks - simple scene
+    private const int MediumEntityCount = 1000;  // 16 blocks - typical game scene  
+    private const int HighEntityCount = 8000;    // 30 blocks - max scene entities (bullet hell/particle storm)
 
     // Manual computation storage
     private Matrix[] _manualResults = null! ;
