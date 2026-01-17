@@ -29,6 +29,7 @@ public sealed class TransformRegistry :
 
     private readonly SparseArray<bool> _dirty = new(Constants.MaxEntities);
     private readonly HashSet<ushort> _worldTransformUpdated = new(Constants.MaxEntities);
+    private readonly List<ushort> _dirtyIndices = new(Constants.MaxEntities);
 
     public void OnEvent(InitializeEvent _)
     {
@@ -54,10 +55,14 @@ public sealed class TransformRegistry :
                 break;
             }
 
-            var entitiesToProcess = _dirty.Select(d => d.Index).ToList();
+            _dirtyIndices.Clear();
+            foreach (var (index, _) in _dirty)
+            {
+                _dirtyIndices.Add(index);
+            }
             _dirty.Clear();
 
-            foreach (var idx in entitiesToProcess)
+            foreach (var idx in _dirtyIndices)
             {
                 _worldTransformUpdated.Add(idx);
             }
@@ -70,10 +75,10 @@ public sealed class TransformRegistry :
 
             // Step 3: Copy computed WorldTransform to WorldTransformBackingStore
             // (Only the 12 computed elements - M14, M24, M34, M44 are preset to constants)
-            CopyWorldTransformToStore(entitiesToProcess);
+            CopyWorldTransformToStore(_dirtyIndices);
 
             // Step 4: Scatter - copy WorldTransform to children's ParentWorldTransform
-            ScatterToChildren(entitiesToProcess);
+            ScatterToChildren(_dirtyIndices);
         }
 
         // Step 5: Fire bulk events
@@ -129,10 +134,14 @@ public sealed class TransformRegistry :
     {
         foreach (var parentIdx in entities)
         {
-            var parent = EntityRegistry.Instance[parentIdx];
-            foreach (var child in parent.GetChildren())
+            var children = HierarchyRegistry.Instance.GetChildrenArray(parentIdx);
+            if (children == null)
             {
-                var childIdx = child.Index;
+                continue;
+            }
+
+            foreach (var (childIdx, _) in children)
+            {
 
                 // Copy only the 12 computed elements
                 ParentWorldTransformBackingStore.Instance.M11.Set(

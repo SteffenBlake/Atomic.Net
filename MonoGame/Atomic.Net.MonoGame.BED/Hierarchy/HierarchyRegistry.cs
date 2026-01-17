@@ -70,10 +70,24 @@ public class HierarchyRegistry :
     {
         if (!_parentToChildLookup.TryGetValue(parent.Index, out var children))
         {
-            return [];
+            yield break;
         }
 
-        return children.Select(c => EntityRegistry.Instance[c.Index]);
+        foreach (var (childIdx, _) in children)
+        {
+            yield return EntityRegistry.Instance[childIdx];
+        }
+    }
+
+    /// <summary>
+    /// Gets the child sparse array for a parent, or null if no children exist.
+    /// Allows allocation-free iteration of child indices.
+    /// </summary>
+    /// <param name="parentIndex">The parent entity index.</param>
+    /// <returns>The sparse array of children, or null if no children.</returns>
+    public SparseArray<bool>? GetChildrenArray(ushort parentIndex)
+    {
+        return _parentToChildLookup.TryGetValue(parentIndex, out var children) ? children : null;
     }
 
     /// <summary>
