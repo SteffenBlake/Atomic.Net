@@ -152,7 +152,7 @@ public sealed class EntityRegistryTests : IDisposable
     public void Deactivate_FiresEntityDeactivatedEvent()
     {
         // Arrange
-        using var listener = new FakeEventListener<PreEntityDeactivatedEvent>();
+        using var listener = new FakeEventListener<PostEntityDeactivatedEvent>();
         var entity = EntityRegistry.Instance.Activate();
         
         // Act

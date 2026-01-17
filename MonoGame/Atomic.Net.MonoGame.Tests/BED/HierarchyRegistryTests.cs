@@ -239,7 +239,7 @@ public sealed class HierarchyRegistryTests : IDisposable
     public void RemoveParent_FiresBehaviorRemovedEvent()
     {
         // Arrange
-        using var listener = new FakeEventListener<PreBehaviorRemovedEvent<Parent>>();
+        using var listener = new FakeEventListener<PostBehaviorRemovedEvent<Parent>>();
         var parent = EntityRegistry.Instance.Activate();
         var child = EntityRegistry.Instance.Activate().WithParent(parent);
         

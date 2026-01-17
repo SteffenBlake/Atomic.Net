@@ -174,7 +174,7 @@ public sealed class BehaviorRegistryTests : IDisposable
     public void Remove_FiresBehaviorRemovedEvent()
     {
         // Arrange
-        using var listener = new FakeEventListener<PreBehaviorRemovedEvent<TestBehavior>>();
+        using var listener = new FakeEventListener<PostBehaviorRemovedEvent<TestBehavior>>();
         var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref TestBehavior b) => b.Value = 42);
         
