@@ -152,13 +152,38 @@ public sealed class SparseArray<T>(ushort capacity) : IEnumerable<(ushort Index,
         _dense.Clear();
     }
 
-    public IEnumerator<(ushort Index, T Value)> GetEnumerator()
+    public Enumerator GetEnumerator() => new(this);
+
+    IEnumerator<(ushort Index, T Value)> IEnumerable<(ushort Index, T Value)>.GetEnumerator()
     {
         return _dense.GetEnumerator();
     }
 
     IEnumerator IEnumerable.GetEnumerator()
     {
-        return GetEnumerator();
+        return _dense.GetEnumerator();
+    }
+
+    /// <summary>
+    /// Struct enumerator to avoid allocation on foreach.
+    /// </summary>
+    public struct Enumerator
+    {
+        private readonly List<(ushort SparseIndex, T Value)> _dense;
+        private int _index;
+
+        internal Enumerator(SparseArray<T> array)
+        {
+            _dense = array._dense;
+            _index = -1;
+        }
+
+        public (ushort Index, T Value) Current => _dense[_index];
+
+        public bool MoveNext()
+        {
+            _index++;
+            return _index < _dense.Count;
+        }
     }
 }
