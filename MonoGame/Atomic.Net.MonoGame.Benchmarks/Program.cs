@@ -1,4 +1,5 @@
-﻿using Atomic.Net.MonoGame.Benchmarks.Core;
+﻿using Atomic.Net.MonoGame.Benchmarks;
+using Atomic.Net.MonoGame.Benchmarks.Core;
 using BenchmarkDotNet.Running;
 
-BenchmarkRunner.Run<SparseArrayBenchmark>();
+BenchmarkRunner.Run<TransformBenchmark>();

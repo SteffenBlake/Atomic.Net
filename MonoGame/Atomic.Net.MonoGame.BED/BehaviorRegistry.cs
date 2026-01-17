@@ -13,13 +13,18 @@ public class BehaviorRegistry<TBehavior> :
     IEventHandler<PreEntityDeactivatedEvent>
     where TBehavior : struct
 {
+    public static BehaviorRegistry<TBehavior> Instance { get; private set; } = null!;
+    
     public static void Initialize()
     {
+        if (Instance != null)
+        {
+            return;
+        }
+
+        Instance ??= new();
         EventBus<InitializeEvent>.Register<BehaviorRegistry<TBehavior>>();
     }
-
-    public static BehaviorRegistry<TBehavior> Instance { get; } = new();
-
 
     /// <summary>
     /// Handles initialization by registering for entity deactivation events.

@@ -10,7 +10,12 @@ public sealed class TransformBackingStore : ISingleton<TransformBackingStore>
 {
     internal static void Initialize()
     {
-        Instance = new();
+        if (Instance != null)
+        {
+            return;
+        }
+
+        Instance ??= new();
     }
 
     public static TransformBackingStore Instance { get; private set; } = null!;

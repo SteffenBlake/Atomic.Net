@@ -8,7 +8,12 @@ public class EntityRegistry : IEventHandler<ResetEvent>
 {
     internal static void Initialize()
     {
-        Instance = new();
+        if (Instance != null)
+        {
+            return;
+        }
+
+        Instance ??= new();
         EventBus<ResetEvent>.Register(Instance);
     }
 

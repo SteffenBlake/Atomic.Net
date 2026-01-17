@@ -17,7 +17,12 @@ public class HierarchyRegistry :
 {
     internal static void Initialize()
     {
-        Instance = new();
+        if (Instance != null)
+        {
+            return;
+        }
+
+        Instance ??= new();
         EventBus<InitializeEvent>.Register(Instance);
     }
 

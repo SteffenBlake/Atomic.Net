@@ -10,7 +10,12 @@ public sealed class LocalTransformBlockMapSet : ISingleton<LocalTransformBlockMa
 {
     internal static void Initialize()
     {
-        Instance = new();
+        if (Instance != null)
+        {
+            return;
+        }
+
+        Instance ??= new();
     }
 
     public static LocalTransformBlockMapSet Instance { get; private set; } = null!;

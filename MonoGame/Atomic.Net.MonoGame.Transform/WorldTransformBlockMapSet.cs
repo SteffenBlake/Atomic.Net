@@ -10,7 +10,12 @@ public sealed class WorldTransformBlockMapSet : ISingleton<WorldTransformBlockMa
 {
     internal static void Initialize()
     {
-        Instance = new();
+        if (Instance != null)
+        {
+            return;
+        }
+
+        Instance ??= new();
     }
 
     public static WorldTransformBlockMapSet Instance { get; private set; } = null!;

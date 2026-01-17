@@ -9,10 +9,13 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+    <PackageReference Include="MonoGame.Framework.DesktopGL" PrivateAssets="All" Version="3.8.4" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Atomic.Net.MonoGame.Core\Atomic.Net.MonoGame.Core.csproj" />
+    <ProjectReference Include="..\Atomic.Net.MonoGame.BED\Atomic.Net.MonoGame.BED.csproj" />
+    <ProjectReference Include="..\Atomic.Net.MonoGame.Transform\Atomic.Net.MonoGame.Transform.csproj" />
   </ItemGroup>
 
 </Project>

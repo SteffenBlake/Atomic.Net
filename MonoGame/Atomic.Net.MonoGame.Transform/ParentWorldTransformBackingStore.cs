@@ -10,7 +10,12 @@ public sealed class ParentWorldTransformBackingStore : ISingleton<ParentWorldTra
 {
     internal static void Initialize()
     {
-        Instance = new();
+        if (Instance != null)
+        {
+            return;
+        }
+
+        Instance ??= new();
     }
 
     public static ParentWorldTransformBackingStore Instance { get; private set; } = null!;

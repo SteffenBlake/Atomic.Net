@@ -16,7 +16,12 @@ public class RefBehaviorRegistry<TBehavior> :
 {
     public static void Initialize()
     {
-        Instance = new();
+        if (Instance != null)
+        {
+            return;
+        }
+
+        Instance ??= new();
         EventBus<InitializeEvent>.Register<RefBehaviorRegistry<TBehavior>>();
     }
 

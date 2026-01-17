@@ -10,7 +10,12 @@ public sealed class WorldTransformBackingStore : ISingleton<WorldTransformBackin
 {
     internal static void Initialize()
     {
-        Instance = new();
+        if (Instance != null)
+        {
+            return;
+        }
+
+        Instance ??= new();
     }
 
     public static WorldTransformBackingStore Instance { get; private set; } = null!;
