@@ -21,6 +21,12 @@ public sealed class BehaviorRegistryTests : IDisposable
     {
         AtomicSystem.Initialize();
         BEDSystem.Initialize();
+        
+        // CRITICAL: Must initialize BehaviorRegistry for each behavior type used in tests
+        // This registers the BehaviorRegistry to listen for PreEntityDeactivatedEvent
+        // Without this, behaviors won't be cleaned up when entities are deactivated!
+        BehaviorRegistry<TestBehavior>.Initialize();
+        
         EventBus<InitializeEvent>.Push(new());
     }
 
@@ -77,8 +83,6 @@ public sealed class BehaviorRegistryTests : IDisposable
     [Fact]
     public void ResetEvent_DoesNotPolluteBehaviors()
     {
-        // Copilot: 1) Fails in group: YES - finds behavior when shouldn't 2) Alone: FAILS - same issue 3) Logic alignment: @Steffen - BehaviorRegistry doesn't implement IEventHandler<ResetEvent>, so behaviors persist across resets. Should BehaviorRegistry clear behaviors on ResetEvent?
-        
         // Arrange
         var entity1 = EntityRegistry.Instance.Activate();
         BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity1, (ref TestBehavior b) => b.Value = 999);
@@ -100,8 +104,6 @@ public sealed class BehaviorRegistryTests : IDisposable
     [Fact]
     public void HasBehavior_ReturnsTrueWhenPresent()
     {
-        // Copilot: 1) Fails in group: NO - passes 2) Alone: PASSES 3) Logic alignment: YES - HasBehavior should return true after SetBehavior is called
-        
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
         Assert.False(BehaviorRegistry<TestBehavior>.Instance.HasBehavior(entity));
@@ -116,8 +118,6 @@ public sealed class BehaviorRegistryTests : IDisposable
     [Fact]
     public void TryGetBehavior_ReturnsFalseWhenNotPresent()
     {
-        // Copilot: 1) Fails in group: YES - returns true when should be false 2) Alone: PASSES 3) Logic alignment: @Steffen - When run in group, TryGetBehavior finds behaviors from previous tests. This suggests BehaviorRegistry state pollution between tests - is there a missing cleanup mechanism?
-        
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
         
@@ -132,8 +132,6 @@ public sealed class BehaviorRegistryTests : IDisposable
     [Fact]
     public void UpdateBehavior_UpdatesValue()
     {
-        // Copilot: 1) Fails in group: NO - passes 2) Alone: PASSES 3) Logic alignment: YES - test logic matches implementation (SetBehavior should update existing behavior value)
-        
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref TestBehavior b) => b.Value = 1);
@@ -150,8 +148,6 @@ public sealed class BehaviorRegistryTests : IDisposable
     [Fact]
     public void SetBehavior_FiresBehaviorAddedEvent_OnFirstSet()
     {
-        // Copilot: 1) Fails in group: YES - no events received 2) Alone: PASSES 3) Logic alignment: @Steffen - Is BehaviorAddedEvent only fired once per BehaviorRegistry instance? The event fires alone but not in group, suggesting event listener pollution or event bus state issues.
-        
         // Arrange
         using var listener = new FakeEventListener<BehaviorAddedEvent<TestBehavior>>();
         var entity = EntityRegistry.Instance.Activate();
@@ -194,5 +190,51 @@ public sealed class BehaviorRegistryTests : IDisposable
         // Assert
         Assert.Single(listener.ReceivedEvents);
         Assert.Equal(entity.Index, listener.ReceivedEvents[0].Entity.Index);
+    }
+
+    [Fact]
+    public void StandalonePollutionTest_BehaviorPersistsAcrossReset()
+    {
+        // DISCOVERED: The pollution was caused by BehaviorRegistry<TestBehavior> not being initialized!
+        // Without Initialize(), BehaviorRegistry doesn't register for PreEntityDeactivatedEvent,
+        // so it never removes behaviors when entities are deactivated.
+        // FIXED: Added BehaviorRegistry<TestBehavior>.Initialize() to test constructor.
+        //
+        // This test now verifies the cascade works correctly:
+        // ResetEvent → EntityRegistry.Deactivate → PreEntityDeactivatedEvent → BehaviorRegistry.Remove
+        
+        // Set up event listeners to verify cascade
+        using var preDeactivatedListener = new FakeEventListener<PreEntityDeactivatedEvent>();
+        using var postDeactivatedListener = new FakeEventListener<PostEntityDeactivatedEvent>();
+        using var preBehaviorRemovedListener = new FakeEventListener<PreBehaviorRemovedEvent<TestBehavior>>();
+        using var postBehaviorRemovedListener = new FakeEventListener<PostBehaviorRemovedEvent<TestBehavior>>();
+        
+        // Arrange - Create and set a behavior on a scene entity
+        var entity1 = EntityRegistry.Instance.Activate();
+        var index1 = entity1.Index;
+        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity1, (ref TestBehavior b) => b.Value = 999);
+        
+        // Clear any events from setup
+        preDeactivatedListener.Clear();
+        postDeactivatedListener.Clear();
+        preBehaviorRemovedListener.Clear();
+        postBehaviorRemovedListener.Clear();
+        
+        // Act - Fire ResetEvent
+        EventBus<ResetEvent>.Push(new());
+        
+        // Verify cascade happened correctly
+        Assert.Single(preDeactivatedListener.ReceivedEvents);
+        Assert.Single(postDeactivatedListener.ReceivedEvents);
+        Assert.Single(preBehaviorRemovedListener.ReceivedEvents);
+        Assert.Single(postBehaviorRemovedListener.ReceivedEvents);
+        
+        // Create new entity at same index
+        var entity2 = EntityRegistry.Instance.Activate();
+        Assert.Equal(index1, entity2.Index);
+        
+        // Assert - The new entity should NOT have the old behavior
+        var hasAfterReset = BehaviorRegistry<TestBehavior>.Instance.TryGetBehavior(entity2, out var behaviorAfter);
+        Assert.False(hasAfterReset, "New entity should not have behavior from previous entity");
     }
 }

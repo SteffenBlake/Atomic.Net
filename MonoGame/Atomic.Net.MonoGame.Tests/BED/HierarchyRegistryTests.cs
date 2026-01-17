@@ -56,8 +56,6 @@ public sealed class HierarchyRegistryTests : IDisposable
     [Fact]
     public void RemoveParent_ClearsParentRelationship()
     {
-        // Copilot: 1) Fails in group: NO - passes 2) Alone: PASSES 3) Logic alignment: YES - removing Parent behavior should clear parent-child relationship
-        
         // Arrange
         var parent = EntityRegistry.Instance.Activate();
         var child = EntityRegistry.Instance.Activate().WithParent(parent);

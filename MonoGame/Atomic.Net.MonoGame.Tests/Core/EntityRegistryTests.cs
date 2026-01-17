@@ -151,8 +151,6 @@ public sealed class EntityRegistryTests : IDisposable
     [Fact]
     public void Deactivate_FiresEntityDeactivatedEvent()
     {
-        // Copilot: 1) Fails in group: NO - passes 2) Alone: PASSES 3) Logic alignment: YES - test expects event on deactivation which EntityRegistry.Deactivate should fire
-        
         // Arrange
         using var listener = new FakeEventListener<PostEntityDeactivatedEvent>();
         var entity = EntityRegistry.Instance.Activate();
