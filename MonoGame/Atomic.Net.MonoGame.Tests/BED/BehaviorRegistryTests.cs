@@ -195,6 +195,13 @@ public sealed class BehaviorRegistryTests : IDisposable
     [Fact]
     public void StandalonePollutionTest_BehaviorPersistsAcrossReset()
     {
+        // Copilot: INVESTIGATION
+        // 1) Fails in group: YES
+        // 2) Fails alone: NO
+        // 3) Root cause: Tries to set behavior on inactive entity (id 35+), suggesting entity pool exhaustion or state corruption
+        // 4) Fix attempted: BehaviorRegistry<TestBehavior>.Initialize() already added, but issue persists in group runs
+        // 5) @Steffen: This passes alone but fails in group with "inactive entity" error - suggests test execution order creates entity/behavior state mismatch
+        
         // DISCOVERED: The pollution was caused by BehaviorRegistry<TestBehavior> not being initialized!
         // Without Initialize(), BehaviorRegistry doesn't register for PreEntityDeactivatedEvent,
         // so it never removes behaviors when entities are deactivated.

@@ -229,6 +229,13 @@ public sealed class TransformRegistryTests : IDisposable
     [Fact]
     public void TwoBodyOrbit_MatchesXnaMultiplication()
     {
+        // Copilot: INVESTIGATION
+        // 1) Fails in group: YES
+        // 2) Fails alone: NO
+        // 3) Root cause: Attempts to set TransformBehavior on inactive entity (id 34+), similar to BehaviorRegistry pollution
+        // 4) Fix attempted: TransformSystem.Initialize() already called, but entity pool appears corrupted in group runs
+        // 5) @Steffen: Same pattern as StandalonePollutionTest - entity becomes inactive between test setup phases when run in group
+        
         // Step 1: Compute expected using XNA
         var rotation = Rotation90DegreesAroundZ();
         var parentMatrix = Matrix.CreateFromQuaternion(rotation);
@@ -265,6 +272,13 @@ public sealed class TransformRegistryTests : IDisposable
     [Fact]
     public void AnchorWithRotation_MatchesXnaTransformOrder()
     {
+        // Copilot: INVESTIGATION
+        // 1) Fails in group: YES
+        // 2) Fails alone: YES
+        // 3) Root cause: Anchor point transform not being applied - translation components M41/M42 are (0,0) instead of (5,-5)
+        // 4) Fix attempted: None yet - appears to be actual bug in transform calculation, not test pollution
+        // 5) @Steffen: The anchor translation is not being applied. Expected: translate(-anchor) * rotate * translate(anchor), but getting rotation-only matrix. Is anchor transform logic implemented?
+        
         // Step 1: Compute expected using XNA
         // Anchor means: translate to anchor point, rotate, translate back
         var anchor = new Vector3(5f, 0f, 0f);
@@ -307,6 +321,13 @@ public sealed class TransformRegistryTests : IDisposable
     [Fact]
     public void ResetPreventsPollution()
     {
+        // Copilot: INVESTIGATION
+        // 1) Fails in group: YES
+        // 2) Fails alone: YES
+        // 3) Root cause: Expected rotation matrix but got identity - transform state not being cleared/reset properly
+        // 4) Fix attempted: None yet - entity1's rotation should make M11≈0, but it's 1.0 (identity)
+        // 5) @Steffen: The test expects entity1 to have rotation (M11≠1.0) but it has identity matrix. Is TransformRegistry.Recalculate() working? Or is the transform not being applied?
+        
         // Step 1: Create entity with rotation (potential polluter)
         var entity1 = CreateEntity();
         entity1.WithTransform((ref readonly t) =>
