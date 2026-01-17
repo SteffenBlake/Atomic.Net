@@ -134,10 +134,14 @@ public sealed class TransformRegistry :
     {
         foreach (var parentIdx in entities)
         {
-            var parent = EntityRegistry.Instance[parentIdx];
-            foreach (var child in parent.GetChildren())
+            var children = HierarchyRegistry.Instance.GetChildrenArray(parentIdx);
+            if (children == null)
             {
-                var childIdx = child.Index;
+                continue;
+            }
+
+            foreach (var (childIdx, _) in children)
+            {
 
                 // Copy only the 12 computed elements
                 ParentWorldTransformBackingStore.Instance.M11.Set(

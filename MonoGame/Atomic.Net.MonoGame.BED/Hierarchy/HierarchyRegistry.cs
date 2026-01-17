@@ -80,6 +80,17 @@ public class HierarchyRegistry :
     }
 
     /// <summary>
+    /// Gets the child sparse array for a parent, or null if no children exist.
+    /// Allows allocation-free iteration of child indices.
+    /// </summary>
+    /// <param name="parentIndex">The parent entity index.</param>
+    /// <returns>The sparse array of children, or null if no children.</returns>
+    public SparseArray<bool>? GetChildrenArray(ushort parentIndex)
+    {
+        return _parentToChildLookup.TryGetValue(parentIndex, out var children) ? children : null;
+    }
+
+    /// <summary>
     /// Checks whether the specified child entity belongs to the given parent.
     /// </summary>
     /// <param name="parent">The parent entity.</param>
