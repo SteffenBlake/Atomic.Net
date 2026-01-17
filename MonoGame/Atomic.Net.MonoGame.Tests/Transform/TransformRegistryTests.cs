@@ -7,6 +7,7 @@ using Atomic.Net.MonoGame.Transform;
 
 namespace Atomic.Net.MonoGame.Tests.Transform;
 
+[Collection("NonParallel")]
 public sealed class TransformRegistryTests : IDisposable
 {
     private const float Tolerance = 0.0001f;
@@ -99,6 +100,13 @@ public sealed class TransformRegistryTests : IDisposable
     [Fact]
     public void PositionOnly_MatchesXnaTranslation()
     {
+        // Copilot: INVESTIGATION
+        // 1) Fails in group: YES
+        // 2) Fails alone: YES
+        // 3) Root cause: Anchor point transform not being applied - translation components M41/M42 are (0,0) instead of (5,-5)
+        // 4) Fix attempted: None yet - appears to be actual bug in transform calculation, not test pollution
+        // 5) @Steffen: The anchor translation is not being applied. Expected: translate(-anchor) * rotate * translate(anchor), but getting rotation-only matrix. Is anchor transform logic implemented?
+        //
         // Step 1: Compute expected using XNA
         var expectedMatrix = Matrix.CreateTranslation(10f, 0f, 0f);
 
@@ -229,13 +237,6 @@ public sealed class TransformRegistryTests : IDisposable
     [Fact]
     public void TwoBodyOrbit_MatchesXnaMultiplication()
     {
-        // Copilot: INVESTIGATION
-        // 1) Fails in group: YES
-        // 2) Fails alone: NO
-        // 3) Root cause: Attempts to set TransformBehavior on inactive entity (id 34+), similar to BehaviorRegistry pollution
-        // 4) Fix attempted: TransformSystem.Initialize() already called, but entity pool appears corrupted in group runs
-        // 5) @Steffen: Same pattern as StandalonePollutionTest - entity becomes inactive between test setup phases when run in group
-        
         // Step 1: Compute expected using XNA
         var rotation = Rotation90DegreesAroundZ();
         var parentMatrix = Matrix.CreateFromQuaternion(rotation);
@@ -321,13 +322,6 @@ public sealed class TransformRegistryTests : IDisposable
     [Fact]
     public void ResetPreventsPollution()
     {
-        // Copilot: INVESTIGATION - FIXED!
-        // 1) Fails in group: YES → NOW PASSES
-        // 2) Fails alone: YES → NOW PASSES
-        // 3) Root cause: RefBehaviorRegistry<TransformBehavior> not initialized before InitializeEvent fired
-        // 4) Fix attempted: Added `_ = RefBehaviorRegistry<TransformBehavior>.Instance;` to TransformSystem.Initialize()
-        // 5) @Steffen: FIXED - Same initialization pattern as BehaviorRegistry. RefBehaviorRegistry must be accessed before InitializeEvent to register for PreEntityDeactivatedEvent.
-        
         // Step 1: Create entity with rotation (potential polluter)
         var entity1 = CreateEntity();
         entity1.WithTransform((ref readonly t) =>
@@ -343,11 +337,15 @@ public sealed class TransformRegistryTests : IDisposable
         // Verify it has rotation (not identity)
         var hasTransform1 = RefBehaviorRegistry<WorldTransformBehavior>.Instance
             .TryGetBehavior(entity1, out var wt1);
+
         Assert.True(hasTransform1);
+
         var m11_before = wt1!.Value.Value.M11.Value;
         // M11 should NOT be 1.0 (it should be ~0 due to 90 degree rotation)
-        Assert.False(MathF.Abs(m11_before - 1.0f) < Tolerance, 
-            $"M11 should not be identity (1.0), but was {m11_before}");
+        Assert.False(
+            MathF.Abs(m11_before - 1.0f) < Tolerance, 
+            $"M11 should not be identity (1.0), but was {m11_before}"
+        );
         
         // Step 2: Reset to clean up
         EventBus<ResetEvent>.Push(new());

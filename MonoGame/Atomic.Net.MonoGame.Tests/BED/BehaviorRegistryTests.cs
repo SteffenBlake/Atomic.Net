@@ -15,6 +15,7 @@ public struct TestBehavior : IBehavior<TestBehavior>
     }
 }
 
+[Collection("NonParallel")]
 public sealed class BehaviorRegistryTests : IDisposable
 {
     public BehaviorRegistryTests()
@@ -42,7 +43,7 @@ public sealed class BehaviorRegistryTests : IDisposable
         var entity = EntityRegistry.Instance.Activate();
         
         // Act
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref TestBehavior b) => b.Value = 42);
+        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref b) => b.Value = 42);
         
         // Assert
         var hasBehavior = BehaviorRegistry<TestBehavior>.Instance.TryGetBehavior(entity, out var retrieved);
@@ -55,7 +56,7 @@ public sealed class BehaviorRegistryTests : IDisposable
     {
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref TestBehavior b) => b.Value = 42);
+        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref b) => b.Value = 42);
         Assert.True(BehaviorRegistry<TestBehavior>.Instance.HasBehavior(entity));
         
         // Act
@@ -70,7 +71,7 @@ public sealed class BehaviorRegistryTests : IDisposable
     {
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref TestBehavior b) => b.Value = 42);
+        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref b) => b.Value = 42);
         
         // Act
         EntityRegistry.Instance.Deactivate(entity);
@@ -85,7 +86,7 @@ public sealed class BehaviorRegistryTests : IDisposable
     {
         // Arrange
         var entity1 = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity1, (ref TestBehavior b) => b.Value = 999);
+        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity1, (ref b) => b.Value = 999);
         Assert.True(BehaviorRegistry<TestBehavior>.Instance.HasBehavior(entity1));
         
         // Act
@@ -93,7 +94,7 @@ public sealed class BehaviorRegistryTests : IDisposable
         var entity2 = EntityRegistry.Instance.Activate();
         Assert.Equal(entity1.Index, entity2.Index);
         Assert.False(BehaviorRegistry<TestBehavior>.Instance.HasBehavior(entity2));
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity2, (ref TestBehavior b) => b.Value = 111);
+        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity2, (ref b) => b.Value = 111);
         
         // Assert
         var hasBehavior = BehaviorRegistry<TestBehavior>.Instance.TryGetBehavior(entity2, out var behavior);
@@ -109,7 +110,7 @@ public sealed class BehaviorRegistryTests : IDisposable
         Assert.False(BehaviorRegistry<TestBehavior>.Instance.HasBehavior(entity));
         
         // Act
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref TestBehavior b) => b.Value = 42);
+        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref b) => b.Value = 42);
         
         // Assert
         Assert.True(BehaviorRegistry<TestBehavior>.Instance.HasBehavior(entity));
@@ -134,10 +135,10 @@ public sealed class BehaviorRegistryTests : IDisposable
     {
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref TestBehavior b) => b.Value = 1);
+        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref b) => b.Value = 1);
         
         // Act
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref TestBehavior b) => b.Value = 2);
+        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref b) => b.Value = 2);
         
         // Assert
         var hasBehavior = BehaviorRegistry<TestBehavior>.Instance.TryGetBehavior(entity, out var behavior);
@@ -153,7 +154,7 @@ public sealed class BehaviorRegistryTests : IDisposable
         var entity = EntityRegistry.Instance.Activate();
         
         // Act
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref TestBehavior b) => b.Value = 42);
+        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref b) => b.Value = 42);
         
         // Assert
         Assert.Single(listener.ReceivedEvents);
@@ -166,10 +167,10 @@ public sealed class BehaviorRegistryTests : IDisposable
         // Arrange
         using var listener = new FakeEventListener<PostBehaviorUpdatedEvent<TestBehavior>>();
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref TestBehavior b) => b.Value = 1);
+        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref b) => b.Value = 1);
         
         // Act
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref TestBehavior b) => b.Value = 2);
+        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref b) => b.Value = 2);
         
         // Assert
         Assert.Single(listener.ReceivedEvents);
@@ -182,7 +183,7 @@ public sealed class BehaviorRegistryTests : IDisposable
         // Arrange
         using var listener = new FakeEventListener<PostBehaviorRemovedEvent<TestBehavior>>();
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref TestBehavior b) => b.Value = 42);
+        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref b) => b.Value = 42);
         
         // Act
         BehaviorRegistry<TestBehavior>.Instance.Remove(entity);
@@ -219,7 +220,7 @@ public sealed class BehaviorRegistryTests : IDisposable
         // Arrange - Create and set a behavior on a scene entity
         var entity1 = EntityRegistry.Instance.Activate();
         var index1 = entity1.Index;
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity1, (ref TestBehavior b) => b.Value = 999);
+        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity1, (ref b) => b.Value = 999);
         
         // Clear any events from setup
         preDeactivatedListener.Clear();

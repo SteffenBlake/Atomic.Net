@@ -5,6 +5,7 @@ using Atomic.Net.MonoGame.BED.Hierarchy;
 
 namespace Atomic.Net.MonoGame.Tests.BED;
 
+[Collection("NonParallel")]
 public sealed class HierarchyRegistryTests : IDisposable
 {
     public HierarchyRegistryTests()
@@ -129,7 +130,7 @@ public sealed class HierarchyRegistryTests : IDisposable
         var loadingParent = EntityRegistry.Instance.ActivateLoading();
         var loadingChild = EntityRegistry.Instance.ActivateLoading().WithParent(loadingParent);
         Assert.True(loadingChild.TryGetParent(out var parent1));
-        Assert.Equal(loadingParent.Index, parent1!.Value.Index);
+        Assert.Equal(loadingParent.Index, parent1.Value.Index);
         
         // Act
         EventBus<ResetEvent>.Push(new());
@@ -138,7 +139,7 @@ public sealed class HierarchyRegistryTests : IDisposable
         Assert.True(EntityRegistry.Instance.IsActive(loadingParent));
         Assert.True(EntityRegistry.Instance.IsActive(loadingChild));
         Assert.True(loadingChild.TryGetParent(out var parent2));
-        Assert.Equal(loadingParent.Index, parent2!.Value.Index);
+        Assert.Equal(loadingParent.Index, parent2.Value.Index);
         Assert.Single(loadingParent.GetChildren());
     }
 
@@ -163,7 +164,7 @@ public sealed class HierarchyRegistryTests : IDisposable
         
         // Assert
         Assert.True(child2.TryGetParent(out var newParent));
-        Assert.Equal(parent2.Index, newParent!.Value.Index);
+        Assert.Equal(parent2.Index, newParent.Value.Index);
         Assert.Single(parent2.GetChildren());
     }
 

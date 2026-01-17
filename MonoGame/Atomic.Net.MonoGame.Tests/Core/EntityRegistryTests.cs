@@ -3,6 +3,7 @@ using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Tests.Core;
 
+[Collection("NonParallel")]
 public sealed class EntityRegistryTests : IDisposable
 {
     public EntityRegistryTests()
@@ -151,13 +152,6 @@ public sealed class EntityRegistryTests : IDisposable
     [Fact]
     public void Deactivate_FiresEntityDeactivatedEvent()
     {
-        // Copilot: INVESTIGATION
-        // 1) Fails in group: YES
-        // 2) Fails alone: NO
-        // 3) Root cause: Event listener receives multiple events when run in group (expects 1, gets 2+)
-        // 4) Fix attempted: None yet - suggests event bus pollution or FakeEventListener not being properly isolated
-        // 5) @Steffen: Should FakeEventListener be clearing events on construction? Or is there event bus state leaking?
-        
         // Arrange
         using var listener = new FakeEventListener<PostEntityDeactivatedEvent>();
         var entity = EntityRegistry.Instance.Activate();
@@ -244,13 +238,6 @@ public sealed class EntityRegistryTests : IDisposable
     [Fact]
     public void ResetEvent_DoesNotPollute_BasicCheck()
     {
-        // Copilot: INVESTIGATION
-        // 1) Fails in group: YES
-        // 2) Fails alone: NO
-        // 3) Root cause: Test execution order pollution - other tests leave state that affects entity index allocation
-        // 4) Fix attempted: None yet - this appears to be test isolation issue, not a code bug
-        // 5) @Steffen: Is this expected behavior or should tests be fully isolated? The entity index differs when run in group vs alone.
-        
         // Arrange
         var entity1 = EntityRegistry.Instance.Activate();
         var index1 = entity1.Index;
@@ -288,13 +275,6 @@ public sealed class EntityRegistryTests : IDisposable
     [Fact]
     public void GetEnabledEntities_ReturnsOnlyEnabledEntities()
     {
-        // Copilot: INVESTIGATION
-        // 1) Fails in group: YES
-        // 2) Fails alone: NO
-        // 3) Root cause: Test isolation - previous tests leave entities in unexpected states
-        // 4) Fix attempted: None yet - EntityRegistry state appears to bleed between tests
-        // 5) @Steffen: Should EntityRegistry reset more aggressively in Dispose, or is the test suite execution order the issue?
-        
         // Arrange
         var entity1 = EntityRegistry.Instance.Activate();
         var entity2 = EntityRegistry.Instance.Activate();
