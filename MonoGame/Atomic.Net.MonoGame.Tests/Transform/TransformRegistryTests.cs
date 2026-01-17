@@ -321,12 +321,12 @@ public sealed class TransformRegistryTests : IDisposable
     [Fact]
     public void ResetPreventsPollution()
     {
-        // Copilot: INVESTIGATION
-        // 1) Fails in group: YES
-        // 2) Fails alone: YES
-        // 3) Root cause: Expected rotation matrix but got identity - transform state not being cleared/reset properly
-        // 4) Fix attempted: None yet - entity1's rotation should make M11≈0, but it's 1.0 (identity)
-        // 5) @Steffen: The test expects entity1 to have rotation (M11≠1.0) but it has identity matrix. Is TransformRegistry.Recalculate() working? Or is the transform not being applied?
+        // Copilot: INVESTIGATION - FIXED!
+        // 1) Fails in group: YES → NOW PASSES
+        // 2) Fails alone: YES → NOW PASSES
+        // 3) Root cause: RefBehaviorRegistry<TransformBehavior> not initialized before InitializeEvent fired
+        // 4) Fix attempted: Added `_ = RefBehaviorRegistry<TransformBehavior>.Instance;` to TransformSystem.Initialize()
+        // 5) @Steffen: FIXED - Same initialization pattern as BehaviorRegistry. RefBehaviorRegistry must be accessed before InitializeEvent to register for PreEntityDeactivatedEvent.
         
         // Step 1: Create entity with rotation (potential polluter)
         var entity1 = CreateEntity();
