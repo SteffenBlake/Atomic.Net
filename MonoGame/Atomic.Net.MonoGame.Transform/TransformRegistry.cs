@@ -9,10 +9,10 @@ public sealed class TransformRegistry :
     IEventHandler<InitializeEvent>,
     IEventHandler<BehaviorAddedEvent<TransformBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<TransformBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<TransformBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<TransformBehavior>>,
     IEventHandler<BehaviorAddedEvent<Parent>>,
     IEventHandler<PostBehaviorUpdatedEvent<Parent>>,
-    IEventHandler<BehaviorRemovedEvent<Parent>>
+    IEventHandler<PreBehaviorRemovedEvent<Parent>>
 {
     internal static void Initialize()
     {
@@ -29,11 +29,11 @@ public sealed class TransformRegistry :
     {
         EventBus<BehaviorAddedEvent<TransformBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<TransformBehavior>>.Register(this);
-        EventBus<BehaviorRemovedEvent<TransformBehavior>>.Register(this);
+        EventBus<PreBehaviorRemovedEvent<TransformBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<Parent>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<Parent>>.Register(this);
-        EventBus<BehaviorRemovedEvent<Parent>>.Register(this);
+        EventBus<PreBehaviorRemovedEvent<Parent>>.Register(this);
     }
 
     public void Recalculate()
@@ -186,12 +186,40 @@ public sealed class TransformRegistry :
         _dirty.Set(entity.Index, true);
     }
 
-    public void OnEvent(BehaviorAddedEvent<TransformBehavior> e) => MarkDirty(e.Entity);
+    public void OnEvent(BehaviorAddedEvent<TransformBehavior> e)
+    {
+        // Initialize WorldTransformBehavior and backing stores
+        // Note: TransformBackingStore is already initialized by the behavior creation,
+        // and user values have already been set via the mutate function
+        ParentWorldTransformBackingStore.Instance.SetupForEntity(e.Entity);
+        WorldTransformBackingStore.Instance.SetupForEntity(e.Entity);
+        e.Entity.SetRefBehavior((ref readonly WorldTransformBehavior _) => { });
+        
+        MarkDirty(e.Entity);
+    }
+
     public void OnEvent(PostBehaviorUpdatedEvent<TransformBehavior> e) => MarkDirty(e.Entity);
-    public void OnEvent(BehaviorRemovedEvent<TransformBehavior> e) => MarkDirty(e.Entity);
+
+    public void OnEvent(PreBehaviorRemovedEvent<TransformBehavior> e)
+    {
+        CleanupForEntity(e.Entity);
+        // Keep entity marked dirty to ensure proper recomputation on next allocation
+        MarkDirty(e.Entity);
+    }
+
+    /// <summary>
+    /// Cleans up all transform-related backing store data for an entity.
+    /// </summary>
+    private void CleanupForEntity(Entity entity)
+    {
+        TransformBackingStore.Instance.CleanupForEntity(entity);
+        ParentWorldTransformBackingStore.Instance.CleanupForEntity(entity);
+        WorldTransformBackingStore.Instance.CleanupForEntity(entity);
+        _worldTransformUpdated.Remove(entity.Index);
+    }
 
     public void OnEvent(BehaviorAddedEvent<Parent> e) => MarkDirty(e.Entity);
     public void OnEvent(PostBehaviorUpdatedEvent<Parent> e) => MarkDirty(e.Entity);
-    public void OnEvent(BehaviorRemovedEvent<Parent> e) => MarkDirty(e.Entity);
+    public void OnEvent(PreBehaviorRemovedEvent<Parent> e) => MarkDirty(e.Entity);
 }
 

@@ -6,7 +6,7 @@ namespace Atomic.Net.MonoGame.Flex;
 public partial class FlexRegistry : 
     IEventHandler<BehaviorAddedEvent<JustifyContentBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<JustifyContentBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<JustifyContentBehavior>>
+    IEventHandler<PreBehaviorRemovedEvent<JustifyContentBehavior>>
 {
     public void OnEvent(BehaviorAddedEvent<JustifyContentBehavior> e)
     {
@@ -28,7 +28,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<JustifyContentBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<JustifyContentBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();

@@ -6,7 +6,7 @@ namespace Atomic.Net.MonoGame.Flex;
 public partial class FlexRegistry : 
     IEventHandler<BehaviorAddedEvent<FlexZOverride>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexZOverride>>,
-    IEventHandler<BehaviorRemovedEvent<FlexZOverride>>
+    IEventHandler<PreBehaviorRemovedEvent<FlexZOverride>>
 {
     public void OnEvent(BehaviorAddedEvent<FlexZOverride> e)
     {
@@ -20,7 +20,7 @@ public partial class FlexRegistry :
         _dirty[e.Entity.Index] = true;
     }
 
-    public void OnEvent(BehaviorRemovedEvent<FlexZOverride> e)
+    public void OnEvent(PreBehaviorRemovedEvent<FlexZOverride> e)
     {
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
         _dirty[e.Entity.Index] = true;

@@ -7,6 +7,7 @@ using Atomic.Net.MonoGame.Transform;
 
 namespace Atomic.Net.MonoGame.Tests.Transform;
 
+[Collection("NonParallel")]
 public sealed class TransformRegistryTests : IDisposable
 {
     private const float Tolerance = 0.0001f;
@@ -31,10 +32,8 @@ public sealed class TransformRegistryTests : IDisposable
 
     public void Dispose()
     {
-        foreach (var entity in _entities)
-        {
-            EntityRegistry.Instance.Deactivate(entity);
-        }
+        // Fire reset event to clean up scene entities between tests
+        EventBus<ResetEvent>.Push(new());
         _entities.Clear();
     }
 
@@ -101,6 +100,13 @@ public sealed class TransformRegistryTests : IDisposable
     [Fact]
     public void PositionOnly_MatchesXnaTranslation()
     {
+        // Copilot: INVESTIGATION
+        // 1) Fails in group: YES
+        // 2) Fails alone: YES
+        // 3) Root cause: Anchor point transform not being applied - translation components M41/M42 are (0,0) instead of (5,-5)
+        // 4) Fix attempted: None yet - appears to be actual bug in transform calculation, not test pollution
+        // 5) @Steffen: The anchor translation is not being applied. Expected: translate(-anchor) * rotate * translate(anchor), but getting rotation-only matrix. Is anchor transform logic implemented?
+        //
         // Step 1: Compute expected using XNA
         var expectedMatrix = Matrix.CreateTranslation(10f, 0f, 0f);
 
@@ -267,6 +273,13 @@ public sealed class TransformRegistryTests : IDisposable
     [Fact]
     public void AnchorWithRotation_MatchesXnaTransformOrder()
     {
+        // Copilot: INVESTIGATION
+        // 1) Fails in group: YES
+        // 2) Fails alone: YES
+        // 3) Root cause: Anchor point transform not being applied - translation components M41/M42 are (0,0) instead of (5,-5)
+        // 4) Fix attempted: None yet - appears to be actual bug in transform calculation, not test pollution
+        // 5) @Steffen: The anchor translation is not being applied. Expected: translate(-anchor) * rotate * translate(anchor), but getting rotation-only matrix. Is anchor transform logic implemented?
+        
         // Step 1: Compute expected using XNA
         // Anchor means: translate to anchor point, rotate, translate back
         var anchor = new Vector3(5f, 0f, 0f);
@@ -291,5 +304,96 @@ public sealed class TransformRegistryTests : IDisposable
 
         // Step 3: Compare
         AssertMatricesEqual(expectedMatrix, entity);
+    }
+
+    [Fact]
+    public void IdentityTransform_StaysIdentity()
+    {
+        // Create an entity with default transform (identity)
+        var entity = CreateEntity().WithTransform();
+        
+        TransformRegistry.Instance.Recalculate();
+        
+        // Should be identity matrix
+        var identityMatrix = Matrix.Identity;
+        AssertMatricesEqual(identityMatrix, entity);
+    }
+
+    [Fact]
+    public void ResetPreventsPollution()
+    {
+        // Step 1: Create entity with rotation (potential polluter)
+        var entity1 = CreateEntity();
+        entity1.WithTransform((ref readonly t) =>
+        {
+            var rotation = Rotation90DegreesAroundZ();
+            t.Rotation.X.Value = rotation.X;
+            t.Rotation.Y.Value = rotation.Y;
+            t.Rotation.Z.Value = rotation.Z;
+            t.Rotation.W.Value = rotation.W;
+        });
+        TransformRegistry.Instance.Recalculate();
+        
+        // Verify it has rotation (not identity)
+        var hasTransform1 = RefBehaviorRegistry<WorldTransformBehavior>.Instance
+            .TryGetBehavior(entity1, out var wt1);
+
+        Assert.True(hasTransform1);
+
+        var m11_before = wt1!.Value.Value.M11.Value;
+        // M11 should NOT be 1.0 (it should be ~0 due to 90 degree rotation)
+        Assert.False(
+            MathF.Abs(m11_before - 1.0f) < Tolerance, 
+            $"M11 should not be identity (1.0), but was {m11_before}"
+        );
+        
+        // Step 2: Reset to clean up
+        EventBus<ResetEvent>.Push(new());
+        
+        // Step 3: Create two new entities with identity transforms
+        var entity2 = EntityRegistry.Instance.Activate();
+        entity2.WithTransform(); // Default identity transform
+        TransformRegistry.Instance.Recalculate();
+        
+        var entity3 = EntityRegistry.Instance.Activate();
+        entity3.WithTransform(); // Default identity transform
+        TransformRegistry.Instance.Recalculate();
+        
+        // Step 4: Verify both are identity (no pollution from entity1's rotation)
+        var identityMatrix = Matrix.Identity;
+        AssertMatricesEqual(identityMatrix, entity2);
+        AssertMatricesEqual(identityMatrix, entity3);
+    }
+
+    [Fact]
+    public void ResetPreventsPollution_WithExplicitPositionOnly()
+    {
+        // Step 1: Create entity with complex transform (rotation + position)
+        var rotation = Rotation90DegreesAroundZ();
+        var entity1 = CreateEntity();
+        entity1.WithTransform((ref readonly t) =>
+        {
+            t.Position.X.Value = 100f;
+            t.Rotation.X.Value = rotation.X;
+            t.Rotation.Y.Value = rotation.Y;
+            t.Rotation.Z.Value = rotation.Z;
+            t.Rotation.W.Value = rotation.W;
+        });
+        TransformRegistry.Instance.Recalculate();
+        
+        // Step 2: Reset
+        EventBus<ResetEvent>.Push(new());
+        
+        // Step 3: Create new entity with ONLY position (no rotation)
+        var entity2 = EntityRegistry.Instance.Activate();
+        entity2.WithTransform((ref readonly t) =>
+        {
+            t.Position.X.Value = 10f;
+        });
+        TransformRegistry.Instance.Recalculate();
+        
+        // Step 4: Verify it has translation but NO rotation pollution
+        var expectedMatrix = Matrix.CreateTranslation(10f, 0f, 0f);
+        AssertMatricesEqual(expectedMatrix, entity2);
     }
 }

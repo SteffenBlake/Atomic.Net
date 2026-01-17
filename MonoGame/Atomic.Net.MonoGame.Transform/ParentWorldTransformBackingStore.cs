@@ -34,17 +34,34 @@ public sealed class ParentWorldTransformBackingStore : ISingleton<ParentWorldTra
 
     public void EnsureFor(Entity entity)
     {
-        M11.Set(entity.Index, 1f);
-        M12.Set(entity.Index, 0f);
-        M13.Set(entity.Index, 0f);
-        M21.Set(entity.Index, 0f);
-        M22.Set(entity.Index, 1f);
-        M23.Set(entity.Index, 0f);
-        M31.Set(entity.Index, 0f);
-        M32.Set(entity.Index, 0f);
-        M33.Set(entity.Index, 1f);
-        M41.Set(entity.Index, 0f);
-        M42.Set(entity.Index, 0f);
-        M43.Set(entity.Index, 0f);
+        SetupForEntity(entity);
+    }
+
+    /// <summary>
+    /// Initializes parent world transform backing store entries for an entity with identity matrix values.
+    /// </summary>
+    public void SetupForEntity(Entity entity)
+    {
+        var idx = entity.Index;
+        M11.Set(idx, 1f);
+        M12.Set(idx, 0f);
+        M13.Set(idx, 0f);
+        M21.Set(idx, 0f);
+        M22.Set(idx, 1f);
+        M23.Set(idx, 0f);
+        M31.Set(idx, 0f);
+        M32.Set(idx, 0f);
+        M33.Set(idx, 1f);
+        M41.Set(idx, 0f);
+        M42.Set(idx, 0f);
+        M43.Set(idx, 0f);
+    }
+
+    /// <summary>
+    /// Clears parent world transform backing store entries for an entity, resetting to identity matrix.
+    /// </summary>
+    public void CleanupForEntity(Entity entity)
+    {
+        SetupForEntity(entity);
     }
 }

@@ -8,19 +8,19 @@ public partial class FlexRegistry :
     // Margins
     IEventHandler<BehaviorAddedEvent<MarginLeftBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<MarginLeftBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<MarginLeftBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<MarginLeftBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<MarginRightBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<MarginRightBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<MarginRightBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<MarginRightBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<MarginTopBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<MarginTopBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<MarginTopBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<MarginTopBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<MarginBottomBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<MarginBottomBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<MarginBottomBehavior>>
+    IEventHandler<PreBehaviorRemovedEvent<MarginBottomBehavior>>
 {
     // MarginLeft
     public void OnEvent(BehaviorAddedEvent<MarginLeftBehavior> e)
@@ -43,7 +43,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<MarginLeftBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<MarginLeftBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
@@ -71,7 +71,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<MarginRightBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<MarginRightBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
@@ -99,7 +99,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<MarginTopBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<MarginTopBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
@@ -127,7 +127,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<MarginBottomBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<MarginBottomBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();

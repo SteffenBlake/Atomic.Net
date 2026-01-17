@@ -6,7 +6,7 @@ namespace Atomic.Net.MonoGame.Flex;
 public partial class FlexRegistry : 
     IEventHandler<BehaviorAddedEvent<AlignItemsBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<AlignItemsBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<AlignItemsBehavior>>
+    IEventHandler<PreBehaviorRemovedEvent<AlignItemsBehavior>>
 {
     public void OnEvent(BehaviorAddedEvent<AlignItemsBehavior> e)
     {
@@ -28,7 +28,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<AlignItemsBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<AlignItemsBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();

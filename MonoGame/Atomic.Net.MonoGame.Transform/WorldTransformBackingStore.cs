@@ -58,4 +58,36 @@ public sealed class WorldTransformBackingStore : ISingleton<WorldTransformBackin
             M44.InstanceFor(entity.Index)
         )
     );
+
+    /// <summary>
+    /// Initializes world transform backing store entries for an entity with identity matrix values.
+    /// </summary>
+    public void SetupForEntity(Entity entity)
+    {
+        var idx = entity.Index;
+        M11.Set(idx, 1f);
+        M12.Set(idx, 0f);
+        M13.Set(idx, 0f);
+        M14.Set(idx, 0f);
+        M21.Set(idx, 0f);
+        M22.Set(idx, 1f);
+        M23.Set(idx, 0f);
+        M24.Set(idx, 0f);
+        M31.Set(idx, 0f);
+        M32.Set(idx, 0f);
+        M33.Set(idx, 1f);
+        M34.Set(idx, 0f);
+        M41.Set(idx, 0f);
+        M42.Set(idx, 0f);
+        M43.Set(idx, 0f);
+        M44.Set(idx, 1f);
+    }
+
+    /// <summary>
+    /// Clears world transform backing store entries for an entity, resetting to identity matrix.
+    /// </summary>
+    public void CleanupForEntity(Entity entity)
+    {
+        SetupForEntity(entity);
+    }
 }

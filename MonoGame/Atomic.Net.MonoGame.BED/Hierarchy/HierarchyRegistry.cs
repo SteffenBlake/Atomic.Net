@@ -11,8 +11,8 @@ public class HierarchyRegistry :
     IEventHandler<BehaviorAddedEvent<Parent>>,
     IEventHandler<PreBehaviorUpdatedEvent<Parent>>,
     IEventHandler<PostBehaviorUpdatedEvent<Parent>>,
-    IEventHandler<BehaviorRemovedEvent<Parent>>,
-    IEventHandler<EntityDeactivatedEvent>,
+    IEventHandler<PreBehaviorRemovedEvent<Parent>>,
+    IEventHandler<PreEntityDeactivatedEvent>,
     IEventHandler<InitializeEvent>
 {
     internal static void Initialize()
@@ -50,17 +50,10 @@ public class HierarchyRegistry :
     {
         if (!_parentToChildLookup.TryGetValue(parent.Index, out var children))
         {
-            throw new InvalidOperationException(
-                $"Attempted to remove a child from an untracked parent({parent.Index})"
-            );
+            return;
         }
 
-        if (!children.Remove(child.Index))
-        {
-            throw new InvalidOperationException(
-                $"Attempted to remove an untracked child({child.Index}) from parent({parent.Index})"
-            );
-        }
+        _ = children.Remove(child.Index);
     }
 
     /// <summary>
@@ -129,7 +122,7 @@ public class HierarchyRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<Parent> e)
+    public void OnEvent(PreBehaviorRemovedEvent<Parent> e)
     {
         if (BehaviorRegistry<Parent>.Instance.TryGetBehavior(e.Entity, out var behavior))
         {
@@ -140,10 +133,16 @@ public class HierarchyRegistry :
         }
     }
 
-    public void OnEvent(EntityDeactivatedEvent e)
+    public void OnEvent(PreEntityDeactivatedEvent e)
     {
-        foreach (var child in GetChildren(e.Entity))
+        if (!_parentToChildLookup.TryGetValue(e.Entity.Index, out var children))
         {
+            return;
+        }
+
+        while (children.TryPop(out _, out var childIndex))
+        {
+            var child = EntityRegistry.Instance[childIndex.Value];
             BehaviorRegistry<Parent>.Instance.Remove(child);
         }
     }
@@ -154,7 +153,7 @@ public class HierarchyRegistry :
         EventBus<BehaviorAddedEvent<Parent>>.Register<HierarchyRegistry>();
         EventBus<PreBehaviorUpdatedEvent<Parent>>.Register<HierarchyRegistry>();
         EventBus<PostBehaviorUpdatedEvent<Parent>>.Register<HierarchyRegistry>();
-        EventBus<BehaviorRemovedEvent<Parent>>.Register<HierarchyRegistry>();
-        EventBus<EntityDeactivatedEvent>.Register<HierarchyRegistry>();
+        EventBus<PreBehaviorRemovedEvent<Parent>>.Register<HierarchyRegistry>();
+        EventBus<PreEntityDeactivatedEvent>.Register<HierarchyRegistry>();
     }
 }

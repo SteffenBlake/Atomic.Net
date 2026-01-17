@@ -11,22 +11,23 @@ namespace Atomic.Net.MonoGame.BED;
 public class RefBehaviorRegistry<TBehavior> : 
     ISingleton<RefBehaviorRegistry<TBehavior>>, 
     IEventHandler<InitializeEvent>,
-    IEventHandler<EntityDeactivatedEvent>
+    IEventHandler<PreEntityDeactivatedEvent>
     where TBehavior : struct, IBehavior<TBehavior>
 {
-    public RefBehaviorRegistry()
+    public static void Initialize()
     {
-        EventBus<InitializeEvent>.Register(this);
+        Instance = new();
+        EventBus<InitializeEvent>.Register<RefBehaviorRegistry<TBehavior>>();
     }
 
-    public static RefBehaviorRegistry<TBehavior> Instance { get; } = new();
+    public static RefBehaviorRegistry<TBehavior> Instance { get; private set; } = null!;
 
     /// <summary>
     /// Handles initialization by registering for entity deactivation events.
     /// </summary>
     public void OnEvent(InitializeEvent _)
     {
-        EventBus<EntityDeactivatedEvent>.Register(this);
+        EventBus<PreEntityDeactivatedEvent>.Register(this);
     }
 
     private readonly SparseArray<TBehavior> _behaviors = new(Constants.MaxEntities);
@@ -80,7 +81,7 @@ public class RefBehaviorRegistry<TBehavior> :
         var removed = _behaviors.Remove(entity.Index);
         if (removed)
         {
-            EventBus<BehaviorRemovedEvent<TBehavior>>.Push(new(entity));
+            EventBus<PreBehaviorRemovedEvent<TBehavior>>.Push(new(entity));
         }
         return removed;
     }
@@ -110,7 +111,7 @@ public class RefBehaviorRegistry<TBehavior> :
     /// Handles entity deactivation by cleaning up associated behaviors.
     /// </summary>
     /// <param name="evt">The deactivation event.</param>
-    public void OnEvent(EntityDeactivatedEvent evt)
+    public void OnEvent(PreEntityDeactivatedEvent evt)
     {
         Remove(evt.Entity);
     }

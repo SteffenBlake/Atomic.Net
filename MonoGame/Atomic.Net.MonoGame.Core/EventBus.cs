@@ -44,11 +44,11 @@ public static class EventBus<TEvent>
     }
 
     /// <summary>
-    /// Unregisters a singleton handler for this event type.
+    /// Unregisters a handler for this event type.
     /// </summary>
     /// <typeparam name="THandler">The handler type.</typeparam>
     public static void Unregister<THandler>(THandler handler)
-        where THandler : ISingleton<THandler>, IEventHandler<TEvent>
+        where THandler : IEventHandler<TEvent>
     {
         _onPush -= handler.OnEvent;
     }
