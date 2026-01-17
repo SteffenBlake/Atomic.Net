@@ -14,12 +14,13 @@ public class RefBehaviorRegistry<TBehavior> :
     IEventHandler<PreEntityDeactivatedEvent>
     where TBehavior : struct, IBehavior<TBehavior>
 {
-    public RefBehaviorRegistry()
+    public static void Initialize()
     {
-        EventBus<InitializeEvent>.Register(this);
+        Instance = new();
+        EventBus<InitializeEvent>.Register<RefBehaviorRegistry<TBehavior>>();
     }
 
-    public static RefBehaviorRegistry<TBehavior> Instance { get; } = new();
+    public static RefBehaviorRegistry<TBehavior> Instance { get; private set; } = null!;
 
     /// <summary>
     /// Handles initialization by registering for entity deactivation events.

@@ -8,10 +8,7 @@ public static class TransformSystem
     {
         BehaviorRegistry<TransformBehavior>.Initialize();
         BehaviorRegistry<WorldTransformBehavior>.Initialize();
-        
-        // CRITICAL: Must initialize RefBehaviorRegistry to register for PreEntityDeactivatedEvent
-        // Without this, TransformBehavior won't be cleaned up when entities are deactivated!
-        _ = RefBehaviorRegistry<TransformBehavior>.Instance;
+        RefBehaviorRegistry<TransformBehavior>.Initialize();
 
         TransformBackingStore.Initialize();
         ParentWorldTransformBackingStore.Initialize();
