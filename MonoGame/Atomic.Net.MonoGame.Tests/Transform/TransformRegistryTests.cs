@@ -396,4 +396,153 @@ public sealed class TransformRegistryTests : IDisposable
         var expectedMatrix = Matrix.CreateTranslation(10f, 0f, 0f);
         AssertMatricesEqual(expectedMatrix, entity2);
     }
+
+    [Fact]
+    public void AnchorWithScale_MatchesXnaTransformOrder()
+    {
+        // Test anchor with scale to ensure anchor offset is scaled correctly
+        var anchor = new Vector3(3f, 0f, 0f);
+        var scale = new Vector3(2f, 2f, 2f);
+        
+        // MonoGame calculation: translate to anchor, scale, translate back
+        var expectedMatrix = 
+            Matrix.CreateTranslation(-anchor) * 
+            Matrix.CreateScale(scale) * 
+            Matrix.CreateTranslation(anchor);
+
+        var entity = CreateEntity()
+            .WithTransform((ref readonly t) =>
+            {
+                t.Anchor.X.Value = 3f;
+                t.Scale.X.Value = 2f;
+                t.Scale.Y.Value = 2f;
+                t.Scale.Z.Value = 2f;
+            });
+
+        TransformRegistry.Instance.Recalculate();
+
+        AssertMatricesEqual(expectedMatrix, entity);
+    }
+
+    [Fact]
+    public void AnchorWithScaleAndRotation_MatchesXnaTransformOrder()
+    {
+        // Test anchor with both scale and rotation
+        var anchor = new Vector3(4f, 2f, 0f);
+        var rotation = Rotation90DegreesAroundZ();
+        var scale = new Vector3(1.5f, 1.5f, 1f);
+        
+        // MonoGame calculation
+        var expectedMatrix = 
+            Matrix.CreateTranslation(-anchor) * 
+            Matrix.CreateScale(scale) *
+            Matrix.CreateFromQuaternion(rotation) * 
+            Matrix.CreateTranslation(anchor);
+
+        var entity = CreateEntity()
+            .WithTransform((ref readonly t) =>
+            {
+                t.Anchor.X.Value = 4f;
+                t.Anchor.Y.Value = 2f;
+                t.Rotation.X.Value = rotation.X;
+                t.Rotation.Y.Value = rotation.Y;
+                t.Rotation.Z.Value = rotation.Z;
+                t.Rotation.W.Value = rotation.W;
+                t.Scale.X.Value = 1.5f;
+                t.Scale.Y.Value = 1.5f;
+            });
+
+        TransformRegistry.Instance.Recalculate();
+
+        AssertMatricesEqual(expectedMatrix, entity);
+    }
+
+    [Fact]
+    public void PositionWithAnchorAndRotation_MatchesXnaTransformOrder()
+    {
+        // Test full transformation: position + anchor + rotation
+        var position = new Vector3(10f, 5f, 0f);
+        var anchor = new Vector3(3f, 0f, 0f);
+        var rotation = Rotation90DegreesAroundZ();
+        
+        // MonoGame calculation
+        var expectedMatrix = 
+            Matrix.CreateTranslation(-anchor) * 
+            Matrix.CreateFromQuaternion(rotation) * 
+            Matrix.CreateTranslation(anchor) *
+            Matrix.CreateTranslation(position);
+
+        var entity = CreateEntity()
+            .WithTransform((ref readonly t) =>
+            {
+                t.Position.X.Value = 10f;
+                t.Position.Y.Value = 5f;
+                t.Anchor.X.Value = 3f;
+                t.Rotation.X.Value = rotation.X;
+                t.Rotation.Y.Value = rotation.Y;
+                t.Rotation.Z.Value = rotation.Z;
+                t.Rotation.W.Value = rotation.W;
+            });
+
+        TransformRegistry.Instance.Recalculate();
+
+        AssertMatricesEqual(expectedMatrix, entity);
+    }
+
+    [Fact]
+    public void CompleteTransform_MatchesXnaTransformOrder()
+    {
+        // Test all components together: position, rotation, scale, anchor
+        var position = new Vector3(8f, -3f, 2f);
+        var anchor = new Vector3(2f, 1f, 0f);
+        var rotation = Rotation90DegreesAroundZ();
+        var scale = new Vector3(2f, 3f, 1f);
+        
+        // MonoGame calculation
+        var expectedMatrix = 
+            Matrix.CreateTranslation(-anchor) * 
+            Matrix.CreateScale(scale) *
+            Matrix.CreateFromQuaternion(rotation) * 
+            Matrix.CreateTranslation(anchor) *
+            Matrix.CreateTranslation(position);
+
+        var entity = CreateEntity()
+            .WithTransform((ref readonly t) =>
+            {
+                t.Position.X.Value = 8f;
+                t.Position.Y.Value = -3f;
+                t.Position.Z.Value = 2f;
+                t.Anchor.X.Value = 2f;
+                t.Anchor.Y.Value = 1f;
+                t.Rotation.X.Value = rotation.X;
+                t.Rotation.Y.Value = rotation.Y;
+                t.Rotation.Z.Value = rotation.Z;
+                t.Rotation.W.Value = rotation.W;
+                t.Scale.X.Value = 2f;
+                t.Scale.Y.Value = 3f;
+            });
+
+        TransformRegistry.Instance.Recalculate();
+
+        AssertMatricesEqual(expectedMatrix, entity);
+    }
+
+    [Fact]
+    public void NonUniformScale_MatchesXnaScale()
+    {
+        // Test non-uniform scaling without anchor
+        var expectedMatrix = Matrix.CreateScale(2f, 3f, 0.5f);
+
+        var entity = CreateEntity()
+            .WithTransform((ref readonly t) =>
+            {
+                t.Scale.X.Value = 2f;
+                t.Scale.Y.Value = 3f;
+                t.Scale.Z.Value = 0.5f;
+            });
+
+        TransformRegistry.Instance.Recalculate();
+
+        AssertMatricesEqual(expectedMatrix, entity);
+    }
 }
