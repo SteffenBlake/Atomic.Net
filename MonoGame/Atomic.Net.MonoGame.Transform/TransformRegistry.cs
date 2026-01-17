@@ -9,10 +9,10 @@ public sealed class TransformRegistry :
     IEventHandler<InitializeEvent>,
     IEventHandler<BehaviorAddedEvent<TransformBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<TransformBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<TransformBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<TransformBehavior>>,
     IEventHandler<BehaviorAddedEvent<Parent>>,
     IEventHandler<PostBehaviorUpdatedEvent<Parent>>,
-    IEventHandler<BehaviorRemovedEvent<Parent>>
+    IEventHandler<PreBehaviorRemovedEvent<Parent>>
 {
     internal static void Initialize()
     {
@@ -29,11 +29,11 @@ public sealed class TransformRegistry :
     {
         EventBus<BehaviorAddedEvent<TransformBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<TransformBehavior>>.Register(this);
-        EventBus<BehaviorRemovedEvent<TransformBehavior>>.Register(this);
+        EventBus<PreBehaviorRemovedEvent<TransformBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<Parent>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<Parent>>.Register(this);
-        EventBus<BehaviorRemovedEvent<Parent>>.Register(this);
+        EventBus<PreBehaviorRemovedEvent<Parent>>.Register(this);
     }
 
     public void Recalculate()
@@ -200,7 +200,7 @@ public sealed class TransformRegistry :
 
     public void OnEvent(PostBehaviorUpdatedEvent<TransformBehavior> e) => MarkDirty(e.Entity);
 
-    public void OnEvent(BehaviorRemovedEvent<TransformBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<TransformBehavior> e)
     {
         CleanupForEntity(e.Entity);
         // Keep entity marked dirty to ensure proper recomputation on next allocation
@@ -220,6 +220,6 @@ public sealed class TransformRegistry :
 
     public void OnEvent(BehaviorAddedEvent<Parent> e) => MarkDirty(e.Entity);
     public void OnEvent(PostBehaviorUpdatedEvent<Parent> e) => MarkDirty(e.Entity);
-    public void OnEvent(BehaviorRemovedEvent<Parent> e) => MarkDirty(e.Entity);
+    public void OnEvent(PreBehaviorRemovedEvent<Parent> e) => MarkDirty(e.Entity);
 }
 

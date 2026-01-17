@@ -31,7 +31,7 @@ public sealed class HierarchyRegistryTests : IDisposable
         
         // Assert
         Assert.True(child.TryGetParent(out var retrievedParent));
-        Assert.Equal(parent.Index, retrievedParent!.Value.Index);
+        Assert.Equal(parent.Index, retrievedParent.Value.Index);
     }
 
     [Fact]
@@ -239,7 +239,7 @@ public sealed class HierarchyRegistryTests : IDisposable
     public void RemoveParent_FiresBehaviorRemovedEvent()
     {
         // Arrange
-        using var listener = new FakeEventListener<BehaviorRemovedEvent<Parent>>();
+        using var listener = new FakeEventListener<PreBehaviorRemovedEvent<Parent>>();
         var parent = EntityRegistry.Instance.Activate();
         var child = EntityRegistry.Instance.Activate().WithParent(parent);
         

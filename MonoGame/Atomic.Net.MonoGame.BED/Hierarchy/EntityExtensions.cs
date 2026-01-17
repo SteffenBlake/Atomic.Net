@@ -55,9 +55,9 @@ public static class EntityExtensions
         out Entity? parent
     )
     {
-        if (BehaviorRegistry<Parent>.Instance.TryGetBehavior(child, out var parentBehavior))
+        if (child.TryGetBehavior<Parent>(out var parentBehavior))
         {
-            parent = new(parentBehavior.Value.ParentIndex);
+            parent = EntityRegistry.Instance[parentBehavior.Value.ParentIndex];
             return true;
         }
 

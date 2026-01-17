@@ -8,19 +8,19 @@ public partial class FlexRegistry :
     // Borders
     IEventHandler<BehaviorAddedEvent<BorderLeftBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<BorderLeftBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<BorderLeftBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<BorderLeftBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<BorderRightBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<BorderRightBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<BorderRightBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<BorderRightBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<BorderTopBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<BorderTopBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<BorderTopBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<BorderTopBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<BorderBottomBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<BorderBottomBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<BorderBottomBehavior>>
+    IEventHandler<PreBehaviorRemovedEvent<BorderBottomBehavior>>
 {
     // BorderLeft
     public void OnEvent(BehaviorAddedEvent<BorderLeftBehavior> e)
@@ -43,7 +43,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<BorderLeftBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<BorderLeftBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
@@ -71,7 +71,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<BorderRightBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<BorderRightBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
@@ -99,7 +99,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<BorderTopBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<BorderTopBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
@@ -127,7 +127,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<BorderBottomBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<BorderBottomBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();

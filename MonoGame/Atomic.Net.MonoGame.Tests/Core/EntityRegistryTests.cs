@@ -30,6 +30,9 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.True(entity.Index < Constants.MaxEntities);
         Assert.True(EntityRegistry.Instance.IsActive(entity));
         Assert.True(EntityRegistry.Instance.IsEnabled(entity));
+
+        Assert.True(entity.Active);
+        Assert.True(entity.Enabled);
     }
 
     [Fact]
@@ -149,7 +152,7 @@ public sealed class EntityRegistryTests : IDisposable
     public void Deactivate_FiresEntityDeactivatedEvent()
     {
         // Arrange
-        using var listener = new FakeEventListener<EntityDeactivatedEvent>();
+        using var listener = new FakeEventListener<PreEntityDeactivatedEvent>();
         var entity = EntityRegistry.Instance.Activate();
         
         // Act

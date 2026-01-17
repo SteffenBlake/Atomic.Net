@@ -8,19 +8,19 @@ public partial class FlexRegistry :
     // Padding
     IEventHandler<BehaviorAddedEvent<PaddingLeftBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<PaddingLeftBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<PaddingLeftBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<PaddingLeftBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<PaddingRightBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<PaddingRightBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<PaddingRightBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<PaddingRightBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<PaddingTopBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<PaddingTopBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<PaddingTopBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<PaddingTopBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<PaddingBottomBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<PaddingBottomBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<PaddingBottomBehavior>>
+    IEventHandler<PreBehaviorRemovedEvent<PaddingBottomBehavior>>
 {
     // PaddingLeft
     public void OnEvent(BehaviorAddedEvent<PaddingLeftBehavior> e)
@@ -43,7 +43,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<PaddingLeftBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<PaddingLeftBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
@@ -71,7 +71,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<PaddingRightBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<PaddingRightBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
@@ -99,7 +99,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<PaddingTopBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<PaddingTopBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
@@ -127,7 +127,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<PaddingBottomBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<PaddingBottomBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();

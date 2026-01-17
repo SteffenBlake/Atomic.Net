@@ -97,13 +97,13 @@ public class EntityRegistry : IEventHandler<ResetEvent>
     /// Get the first scene entity (index MaxLoadingEntities).
     /// </summary>
     /// <returns>The scene root entity.</returns>
-    public Entity GetSceneRoot() => new(Constants.MaxLoadingEntities);
+    public Entity GetSceneRoot() => _entities[Constants.MaxLoadingEntities];
 
     /// <summary>
     /// Get the first loading entity (index 0).
     /// </summary>
     /// <returns>The loading root entity.</returns>
-    public Entity GetLoadingRoot() => new(0);
+    public Entity GetLoadingRoot() => _entities[0];
 
     /// <summary>
     /// Deactivate an entity by index.
@@ -112,13 +112,14 @@ public class EntityRegistry : IEventHandler<ResetEvent>
     public void Deactivate(Entity entity)
     {
         // Check if already deactivated
-        if (!_active.Remove(entity.Index))
+        if (!_active.HasValue(entity.Index))
         {
             return;
         }
-
-        _enabled.Remove(entity.Index);
-        EventBus<EntityDeactivatedEvent>.Push(new(entity));
+        EventBus<PreEntityDeactivatedEvent>.Push(new(entity));
+        _ = _active.Remove(entity.Index);
+        _ = _enabled.Remove(entity.Index);
+        EventBus<PostEntityDeactivatedEvent>.Push(new(entity));
     }
 
     /// <summary>

@@ -7,11 +7,11 @@ public partial class FlexRegistry :
     // Width / Height
     IEventHandler<BehaviorAddedEvent<WidthBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<WidthBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<WidthBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<WidthBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<HeightBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<HeightBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<HeightBehavior>>
+    IEventHandler<PreBehaviorRemovedEvent<HeightBehavior>>
 {
     // Width
     public void OnEvent(BehaviorAddedEvent<WidthBehavior> e)
@@ -48,7 +48,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<WidthBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<WidthBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
@@ -90,7 +90,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<HeightBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<HeightBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();

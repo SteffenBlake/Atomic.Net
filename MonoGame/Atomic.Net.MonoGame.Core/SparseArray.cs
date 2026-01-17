@@ -114,6 +114,34 @@ public sealed class SparseArray<T>(ushort capacity) : IEnumerable<(ushort Index,
         return true;
     }
 
+    public bool TryPop(
+        [NotNullWhen(true)]
+        out T? value,
+        [NotNullWhen(true)]
+        out ushort? index
+    )
+    {
+        if (_dense.Count == 0)
+        {
+            value = null;
+            index = null;
+            return false;
+        }
+
+        var lastIndex = _dense.Count - 1;
+        var (sparseIndex, val) = _dense[lastIndex];
+
+        value = val;
+        index = sparseIndex;
+
+        // Clear sparse tracking and remove from dense
+        _denseIndices[sparseIndex] = -1;
+        _sparse[sparseIndex] = default;
+        _dense.RemoveAt(lastIndex);
+
+        return true;
+    }
+
     public void Clear()
     {
         foreach(var (SparseIndex, _) in _dense)

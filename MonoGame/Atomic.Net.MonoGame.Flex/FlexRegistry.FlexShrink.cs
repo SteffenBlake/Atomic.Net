@@ -6,7 +6,7 @@ namespace Atomic.Net.MonoGame.Flex;
 public partial class FlexRegistry : 
     IEventHandler<BehaviorAddedEvent<FlexShrinkBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexShrinkBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<FlexShrinkBehavior>>
+    IEventHandler<PreBehaviorRemovedEvent<FlexShrinkBehavior>>
 {
     public void OnEvent(BehaviorAddedEvent<FlexShrinkBehavior> e)
     {
@@ -28,7 +28,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<FlexShrinkBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<FlexShrinkBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();

@@ -7,23 +7,23 @@ namespace Atomic.Net.MonoGame.Flex;
 public partial class FlexRegistry : 
     IEventHandler<BehaviorAddedEvent<PositionTypeBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<PositionTypeBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<PositionTypeBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<PositionTypeBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<PositionLeftBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<PositionLeftBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<PositionLeftBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<PositionLeftBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<PositionRightBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<PositionRightBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<PositionRightBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<PositionRightBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<PositionTopBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<PositionTopBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<PositionTopBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<PositionTopBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<PositionBottomBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<PositionBottomBehavior>>,
-    IEventHandler<BehaviorRemovedEvent<PositionBottomBehavior>>
+    IEventHandler<PreBehaviorRemovedEvent<PositionBottomBehavior>>
 {
     public void OnEvent(BehaviorAddedEvent<PositionTypeBehavior> e)
     {
@@ -45,7 +45,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<PositionTypeBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<PositionTypeBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
@@ -85,7 +85,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<PositionLeftBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<PositionLeftBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
@@ -126,7 +126,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<PositionRightBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<PositionRightBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
@@ -167,7 +167,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<PositionTopBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<PositionTopBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
@@ -208,7 +208,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(BehaviorRemovedEvent<PositionBottomBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<PositionBottomBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();

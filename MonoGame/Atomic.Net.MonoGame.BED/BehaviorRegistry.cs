@@ -10,7 +10,7 @@ namespace Atomic.Net.MonoGame.BED;
 public class BehaviorRegistry<TBehavior> : 
     ISingleton<BehaviorRegistry<TBehavior>>, 
     IEventHandler<InitializeEvent>,
-    IEventHandler<EntityDeactivatedEvent>
+    IEventHandler<PreEntityDeactivatedEvent>
     where TBehavior : struct
 {
     public static void Initialize()
@@ -26,7 +26,7 @@ public class BehaviorRegistry<TBehavior> :
     /// </summary>
     public void OnEvent(InitializeEvent _)
     {
-        EventBus<EntityDeactivatedEvent>.Register(this);
+        EventBus<PreEntityDeactivatedEvent>.Register(this);
     }
 
     private readonly SparseArray<TBehavior> _behaviors = new(Constants.MaxEntities);
@@ -70,13 +70,16 @@ public class BehaviorRegistry<TBehavior> :
     /// <returns>True if the behavior was removed.</returns>
     public bool Remove(Entity entity)
     {
-        var removed = _behaviors.Remove(entity.Index);
-        if (!removed)
+        if (!_behaviors.HasValue(entity.Index))
         {
             return false;
         }
 
-        EventBus<BehaviorRemovedEvent<TBehavior>>.Push(new(entity));
+        EventBus<PreBehaviorRemovedEvent<TBehavior>>.Push(new(entity));
+
+        _ = _behaviors.Remove(entity.Index);
+        
+        EventBus<PostBehaviorRemovedEvent<TBehavior>>.Push(new(entity));
 
         return true;
     }
@@ -149,7 +152,7 @@ public class BehaviorRegistry<TBehavior> :
     /// Handles entity deactivation by removing its behavior.
     /// </summary>
     /// <param name="e">The deactivation event.</param>
-    public void OnEvent(EntityDeactivatedEvent e)
+    public void OnEvent(PreEntityDeactivatedEvent e)
     {
         Remove(e.Entity);
     }
