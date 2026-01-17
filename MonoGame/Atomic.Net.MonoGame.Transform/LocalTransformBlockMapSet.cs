@@ -120,7 +120,8 @@ public sealed class LocalTransformBlockMapSet : ISingleton<LocalTransformBlockMa
 
         // Translation row with anchor transformation
         // Formula: position + anchor - (rotationScale * anchor)
-        // Since RS matrix is stored in transpose form, we need to use column indices
+        // The rotation-scale matrix is stored in transpose form, so to multiply RS * anchor,
+        // we access matrix columns: M11,M21,M31 is column 1 (X), M12,M22,M32 is column 2 (Y), etc.
         // M41 = posX + anchorX - (M11*anchorX + M21*anchorY + M31*anchorZ)
         var transformedAnchorX = new AddBlockMap(
             new AddBlockMap(
