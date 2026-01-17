@@ -44,6 +44,10 @@ public sealed class LocalTransformBlockMapSet : ISingleton<LocalTransformBlockMa
         var posY = TransformBackingStore.Instance.PositionY;
         var posZ = TransformBackingStore.Instance.PositionZ;
 
+        var anchorX = TransformBackingStore.Instance.AnchorX;
+        var anchorY = TransformBackingStore.Instance.AnchorY;
+        var anchorZ = TransformBackingStore.Instance.AnchorZ;
+
         // Constants using InputFloatMap (single float, not dense array)
         var one = new InputFloatMap(1f);
         var two = new InputFloatMap(2f);
@@ -114,10 +118,51 @@ public sealed class LocalTransformBlockMapSet : ISingleton<LocalTransformBlockMa
         M32 = new MultiplyBlockMap(scaleZ, r23);
         M33 = new MultiplyBlockMap(scaleZ, r33);
 
-        // Translation row - just position directly
-        M41 = posX;
-        M42 = posY;
-        M43 = posZ;
+        // Translation row with anchor transformation
+        // Formula: position + anchor - (rotationScale * anchor)
+        // Since RS matrix is stored in transpose form, we need to use column indices
+        // M41 = posX + anchorX - (M11*anchorX + M21*anchorY + M31*anchorZ)
+        var transformedAnchorX = new AddBlockMap(
+            new AddBlockMap(
+                new MultiplyBlockMap(M11, anchorX),
+                new MultiplyBlockMap(M21, anchorY)
+            ),
+            new MultiplyBlockMap(M31, anchorZ)
+        );
+        var translationX = new SubtractBlockMap(
+            new AddBlockMap(posX, anchorX),
+            transformedAnchorX
+        );
+
+        // M42 = posY + anchorY - (M12*anchorX + M22*anchorY + M32*anchorZ)
+        var transformedAnchorY = new AddBlockMap(
+            new AddBlockMap(
+                new MultiplyBlockMap(M12, anchorX),
+                new MultiplyBlockMap(M22, anchorY)
+            ),
+            new MultiplyBlockMap(M32, anchorZ)
+        );
+        var translationY = new SubtractBlockMap(
+            new AddBlockMap(posY, anchorY),
+            transformedAnchorY
+        );
+
+        // M43 = posZ + anchorZ - (M13*anchorX + M23*anchorY + M33*anchorZ)
+        var transformedAnchorZ = new AddBlockMap(
+            new AddBlockMap(
+                new MultiplyBlockMap(M13, anchorX),
+                new MultiplyBlockMap(M23, anchorY)
+            ),
+            new MultiplyBlockMap(M33, anchorZ)
+        );
+        var translationZ = new SubtractBlockMap(
+            new AddBlockMap(posZ, anchorZ),
+            transformedAnchorZ
+        );
+
+        M41 = translationX;
+        M42 = translationY;
+        M43 = translationZ;
 
         // M14, M24, M34, M44 are NOT computed - they are constants (0, 0, 0, 1) for affine transforms
     }
