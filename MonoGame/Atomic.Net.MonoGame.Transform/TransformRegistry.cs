@@ -50,64 +50,53 @@ public sealed class TransformRegistry :
             return;
         }
 
-        const int maxIterations = 100;
         _worldTransformUpdated.Clear();
 
-        for (var iteration = 0; iteration < maxIterations; iteration++)
+        // Collect all dirty entities
+        _dirtyIndices.Clear();
+        foreach (var (index, _) in _dirty)
         {
-            if (_dirty.Count == 0)
+            _dirtyIndices.Add(index);
+            _worldTransformUpdated.Set(index, true);
+        }
+        _dirty.Clear();
+
+        // Process each dirty entity using MonoGame Matrix helpers
+        foreach (var entityIndex in _dirtyIndices)
+        {
+            var entity = EntityRegistry.Instance[entityIndex];
+
+            if (!BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var transform))
             {
-                break;
+                continue;
             }
 
-            _dirtyIndices.Clear();
-            foreach (var (index, _) in _dirty)
-            {
-                _dirtyIndices.Add(index);
-                _worldTransformUpdated.Set(index, true);
-            }
-            _dirty.Clear();
+            // Build local transform using MonoGame's Matrix.Create* methods
+            var localTransform =
+                Matrix.CreateTranslation(-transform.Value.Anchor) *
+                Matrix.CreateScale(transform.Value.Scale) *
+                Matrix.CreateFromQuaternion(transform.Value.Rotation) *
+                Matrix.CreateTranslation(transform.Value.Anchor) *
+                Matrix.CreateTranslation(transform.Value.Position);
 
-            // Process each dirty entity using MonoGame Matrix helpers
-            foreach (var entityIndex in _dirtyIndices)
+            // Get parent world transform
+            Matrix parentWorldTransform = Matrix.Identity;
+            if (entity.TryGetParent(out var parent))
             {
-                var entity = EntityRegistry.Instance[entityIndex];
-
-                if (!BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var transform))
+                if (BehaviorRegistry<WorldTransformBehavior>.Instance.TryGetBehavior(parent.Value, out var parentWorld))
                 {
-                    continue;
+                    parentWorldTransform = parentWorld.Value.Value;
                 }
-
-                // Build local transform using MonoGame's Matrix.Create* methods
-                var localTransform =
-                    Matrix.CreateTranslation(-transform.Value.Anchor) *
-                    Matrix.CreateScale(transform.Value.Scale) *
-                    Matrix.CreateFromQuaternion(transform.Value.Rotation) *
-                    Matrix.CreateTranslation(transform.Value.Anchor) *
-                    Matrix.CreateTranslation(transform.Value.Position);
-
-                // Get parent world transform
-                Matrix parentWorldTransform = Matrix.Identity;
-                if (entity.TryGetParent(out var parent))
-                {
-                    if (BehaviorRegistry<WorldTransformBehavior>.Instance.TryGetBehavior(parent.Value, out var parentWorld))
-                    {
-                        parentWorldTransform = parentWorld.Value.Value;
-                    }
-                }
-
-                // Compute world transform
-                var worldTransform = localTransform * parentWorldTransform;
-
-                // Update world transform behavior
-                BehaviorRegistry<WorldTransformBehavior>.Instance.SetBehavior(
-                    entity,
-                    (ref WorldTransformBehavior wt) => wt.Value = worldTransform
-                );
             }
 
-            // Scatter to children
-            ScatterToChildren(_dirtyIndices);
+            // Compute world transform
+            var worldTransform = localTransform * parentWorldTransform;
+
+            // Update world transform behavior
+            BehaviorRegistry<WorldTransformBehavior>.Instance.SetBehavior(
+                entity,
+                (ref WorldTransformBehavior wt) => wt.Value = worldTransform
+            );
         }
 
         // Fire bulk events
