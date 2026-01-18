@@ -5,7 +5,7 @@ using Atomic.Net.MonoGame.BED.Hierarchy;
 using BenchmarkDotNet. Attributes;
 using Microsoft. Xna.Framework;
 
-namespace Atomic.Net.MonoGame.Benchmarks;
+namespace Atomic.Net.MonoGame.Benchmarks.Transform;
 
 [MemoryDiagnoser]
 public class TransformBenchmark

@@ -1,3 +1,5 @@
+using Microsoft.Xna.Framework;
+
 namespace Atomic.Net.MonoGame.Core;
 
 /// <summary>
@@ -39,7 +41,7 @@ public readonly struct ReadOnlyBackedMatrix(
     public readonly ReadOnlyBackedFloat M43 = m43;
     public readonly ReadOnlyBackedFloat M44 = m44;
 
-    public Microsoft.Xna.Framework.Matrix AsMatrix() => new(
+    public Matrix AsMatrix() => new(
         M11.Value, M12.Value, M13.Value, M14.Value,
         M21.Value, M22.Value, M23.Value, M24.Value,
         M31.Value, M32.Value, M33.Value, M34.Value,

@@ -1,3 +1,5 @@
+using Microsoft.Xna.Framework;
+
 namespace Atomic.Net.MonoGame.Core;
 
 /// <summary>
@@ -9,5 +11,5 @@ public readonly struct BackedVector3(BackedFloat x, BackedFloat y, BackedFloat z
     public readonly BackedFloat Y = y;
     public readonly BackedFloat Z = z;
 
-    public Microsoft.Xna.Framework.Vector3 AsVector3() => new(X.Value, Y.Value, Z.Value);
+    public Vector3 AsVector3() => new(X.Value, Y.Value, Z.Value);
 }

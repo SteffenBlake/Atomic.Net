@@ -11,7 +11,7 @@ public readonly record struct WorldTransformBehavior(ReadOnlyBackedMatrix Value)
 {
     public static WorldTransformBehavior CreateFor(Entity entity)
     {
-        return WorldTransformBackingStore.CreateFor(entity);
+        return WorldTransformStore.CreateFor(entity);
     }
 }
 

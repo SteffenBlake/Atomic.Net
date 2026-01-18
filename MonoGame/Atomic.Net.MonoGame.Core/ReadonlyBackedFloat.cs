@@ -1,16 +1,12 @@
-using Atomic.Net.MonoGame.Core.BlockMaps;
-
 namespace Atomic.Net.MonoGame.Core;
 
 /// <summary>
-/// A float property backed by an InputBlockMap. Writes trigger dirty propagation.
+/// A float property backed by an array.
 /// </summary>
-public readonly struct ReadOnlyBackedFloat(BlockMapBase backing, int entityIndex)
+public readonly struct ReadOnlyBackedFloat(float[] backing, ushort entityIndex)
 {
     public float Value
     {
-        get => backing[entityIndex] ?? 0f;
+        get => backing[entityIndex];
     }
 }
-
-

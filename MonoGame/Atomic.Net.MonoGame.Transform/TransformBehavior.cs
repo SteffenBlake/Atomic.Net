@@ -15,6 +15,6 @@ public readonly record struct TransformBehavior(
 {
     public static TransformBehavior CreateFor(Entity entity)
     {
-        return TransformBackingStore.Instance.CreateFor(entity);
+        return TransformStore.Instance.CreateFor(entity);
     }
 }

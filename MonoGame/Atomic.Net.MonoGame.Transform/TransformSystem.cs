@@ -11,11 +11,8 @@ public static class TransformSystem
         RefBehaviorRegistry<TransformBehavior>.Initialize();
         RefBehaviorRegistry<WorldTransformBehavior>.Initialize();
 
-        TransformBackingStore.Initialize();
-        ParentWorldTransformBackingStore.Initialize();
-        
-        LocalTransformBlockMapSet.Initialize();
-        WorldTransformBlockMapSet.Initialize(dense: false);
+        TransformStore.Initialize();
+        ParentWorldTransformStore.Initialize();
 
         TransformRegistry.Initialize();
     }

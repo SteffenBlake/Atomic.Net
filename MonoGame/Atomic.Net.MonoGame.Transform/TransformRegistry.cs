@@ -1,10 +1,11 @@
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.BED.Hierarchy;
+using System.Numerics.Tensors;
 
 namespace Atomic.Net.MonoGame.Transform;
 
-public sealed class TransformRegistry : 
+public sealed class TransformRegistry :
     ISingleton<TransformRegistry>,
     IEventHandler<InitializeEvent>,
     IEventHandler<BehaviorAddedEvent<TransformBehavior>>,
@@ -29,6 +30,28 @@ public sealed class TransformRegistry :
 
     private readonly SparseArray<bool> _dirty = new(Constants.MaxEntities);
     private readonly SparseArray<bool> _worldTransformUpdated = new(Constants.MaxEntities);
+    private readonly List<ushort> _dirtyIndices = new(Constants.MaxEntities);
+
+    // LocalTransform matrix buffers (12 total - each used 3x in WorldTransform calculation)
+    private readonly float[] _localTransformM11 = new float[Constants.MaxEntities];
+    private readonly float[] _localTransformM12 = new float[Constants.MaxEntities];
+    private readonly float[] _localTransformM13 = new float[Constants.MaxEntities];
+    private readonly float[] _localTransformM21 = new float[Constants.MaxEntities];
+    private readonly float[] _localTransformM22 = new float[Constants.MaxEntities];
+    private readonly float[] _localTransformM23 = new float[Constants.MaxEntities];
+    private readonly float[] _localTransformM31 = new float[Constants.MaxEntities];
+    private readonly float[] _localTransformM32 = new float[Constants.MaxEntities];
+    private readonly float[] _localTransformM33 = new float[Constants.MaxEntities];
+    private readonly float[] _localTransformM41 = new float[Constants.MaxEntities];
+    private readonly float[] _localTransformM42 = new float[Constants.MaxEntities];
+    private readonly float[] _localTransformM43 = new float[Constants.MaxEntities];
+
+    // Ping-pong buffers for intermediate SIMD calculations (5 total)
+    private readonly float[] _intermediateBuffer1 = new float[Constants.MaxEntities];
+    private readonly float[] _intermediateBuffer2 = new float[Constants.MaxEntities];
+    private readonly float[] _intermediateBuffer3 = new float[Constants.MaxEntities];
+    private readonly float[] _intermediateBuffer4 = new float[Constants.MaxEntities];
+    private readonly float[] _intermediateBuffer5 = new float[Constants.MaxEntities];
 
     public void OnEvent(InitializeEvent _)
     {
@@ -52,9 +75,10 @@ public sealed class TransformRegistry :
 
         _worldTransformUpdated.Clear();
 
-        // Step 1: SIMD compute LocalTransform from Position/Rotation/Scale/Anchor
-        LocalTransformBlockMapSet.Instance.Recalculate();
+        // Step 1: Compute LocalTransform from Position/Rotation/Scale/Anchor (ONCE)
+        ComputeLocalTransforms();
 
+        // Step 2: Iteratively propagate world transforms through hierarchy
         for (var iteration = 0; iteration < maxIterations; iteration++)
         {
             if (_dirty.Count == 0)
@@ -62,75 +86,265 @@ public sealed class TransformRegistry :
                 break;
             }
 
+            _dirtyIndices.Clear();
+            foreach (var (index, _) in _dirty)
+            {
+                _dirtyIndices.Add(index);
+                _worldTransformUpdated.Set(index, true);
+            }
             _dirty.Clear();
 
-            foreach (var (idx, _) in _dirty)
-            {
-                _worldTransformUpdated.Set(idx, true);
-            }
+            // Compute WorldTransform = LocalTransform × ParentWorldTransform
+            ComputeWorldTransforms();
 
-            // Step 2: SIMD compute WorldTransform = LocalTransform × ParentWorldTransform
-            WorldTransformBlockMapSet.Instance.Recalculate();
-
-            // Step 3: Scatter - copy WorldTransform to children's ParentWorldTransform
-            ScatterToChildren();
+            // Scatter WorldTransform to children's ParentWorldTransform
+            ScatterToChildren(_dirtyIndices);
         }
 
-        // Step 5: Fire bulk events
+        // Step 3: Fire bulk events
         FireBulkEvents();
     }
 
-    private void ScatterToChildren()
+    private void ComputeLocalTransforms()
     {
-        foreach (var (parentIdx, _) in _dirty)
+        // Phase 1: Compute rotation matrix element r11 = 1 - 2(y² + z²), then scale by X
+        TensorPrimitives.Multiply(TransformStore.Instance.RotationY, TransformStore.Instance.RotationY, _intermediateBuffer1); // yy
+        TensorPrimitives.Multiply(_intermediateBuffer1, 2f, _intermediateBuffer1); // 2*yy
+        TensorPrimitives.Multiply(TransformStore.Instance.RotationZ, TransformStore.Instance.RotationZ, _intermediateBuffer2); // zz
+        TensorPrimitives.Multiply(_intermediateBuffer2, 2f, _intermediateBuffer2); // 2*zz
+        TensorPrimitives.Add(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer3); // 2*yy + 2*zz
+        TensorPrimitives.Negate(_intermediateBuffer3, _intermediateBuffer3); // -(2*yy + 2*zz)
+        TensorPrimitives.Add(_intermediateBuffer3, 1f, _intermediateBuffer3); // r11 = 1 - 2(yy + zz)
+        TensorPrimitives.Multiply(TransformStore.Instance.ScaleX, _intermediateBuffer3, _localTransformM11);
+
+        // Phase 2: Compute rotation matrix element r21 = 2(xy + wz), then scale by X
+        TensorPrimitives.Multiply(TransformStore.Instance.RotationX, TransformStore.Instance.RotationY, _intermediateBuffer1); // xy
+        TensorPrimitives.Multiply(_intermediateBuffer1, 2f, _intermediateBuffer1); // 2*xy
+        TensorPrimitives.Multiply(TransformStore.Instance.RotationW, TransformStore.Instance.RotationZ, _intermediateBuffer2); // wz
+        TensorPrimitives.Multiply(_intermediateBuffer2, 2f, _intermediateBuffer2); // 2*wz
+        TensorPrimitives.Add(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer3); // r21 = 2(xy + wz)
+        TensorPrimitives.Multiply(TransformStore.Instance.ScaleX, _intermediateBuffer3, _localTransformM12);
+
+        // Phase 3: Compute rotation matrix element r31 = 2(xz - wy), then scale by X
+        TensorPrimitives.Multiply(TransformStore.Instance.RotationX, TransformStore.Instance.RotationZ, _intermediateBuffer1); // xz
+        TensorPrimitives.Multiply(_intermediateBuffer1, 2f, _intermediateBuffer1); // 2*xz
+        TensorPrimitives.Multiply(TransformStore.Instance.RotationW, TransformStore.Instance.RotationY, _intermediateBuffer2); // wy
+        TensorPrimitives.Multiply(_intermediateBuffer2, 2f, _intermediateBuffer2); // 2*wy
+        TensorPrimitives.Subtract(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer3); // r31 = 2(xz - wy)
+        TensorPrimitives.Multiply(TransformStore.Instance.ScaleX, _intermediateBuffer3, _localTransformM13);
+
+        // Phase 4: Compute rotation matrix element r12 = 2(xy - wz), then scale by Y
+        TensorPrimitives.Multiply(TransformStore.Instance.RotationX, TransformStore.Instance.RotationY, _intermediateBuffer1); // xy
+        TensorPrimitives.Multiply(_intermediateBuffer1, 2f, _intermediateBuffer1); // 2*xy
+        TensorPrimitives.Multiply(TransformStore.Instance.RotationW, TransformStore.Instance.RotationZ, _intermediateBuffer2); // wz
+        TensorPrimitives.Multiply(_intermediateBuffer2, 2f, _intermediateBuffer2); // 2*wz
+        TensorPrimitives.Subtract(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer3); // r12 = 2(xy - wz)
+        TensorPrimitives.Multiply(TransformStore.Instance.ScaleY, _intermediateBuffer3, _localTransformM21);
+
+        // Phase 5: Compute rotation matrix element r22 = 1 - 2(x² + z²), then scale by Y
+        TensorPrimitives.Multiply(TransformStore.Instance.RotationX, TransformStore.Instance.RotationX, _intermediateBuffer1); // xx
+        TensorPrimitives.Multiply(_intermediateBuffer1, 2f, _intermediateBuffer1); // 2*xx
+        TensorPrimitives.Multiply(TransformStore.Instance.RotationZ, TransformStore.Instance.RotationZ, _intermediateBuffer2); // zz
+        TensorPrimitives.Multiply(_intermediateBuffer2, 2f, _intermediateBuffer2); // 2*zz
+        TensorPrimitives.Add(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer3); // 2*xx + 2*zz
+        TensorPrimitives.Negate(_intermediateBuffer3, _intermediateBuffer3);
+        TensorPrimitives.Add(_intermediateBuffer3, 1f, _intermediateBuffer3); // r22 = 1 - 2(xx + zz)
+        TensorPrimitives.Multiply(TransformStore.Instance.ScaleY, _intermediateBuffer3, _localTransformM22);
+
+        // Phase 6: Compute rotation matrix element r32 = 2(yz + wx), then scale by Y
+        TensorPrimitives.Multiply(TransformStore.Instance.RotationY, TransformStore.Instance.RotationZ, _intermediateBuffer1); // yz
+        TensorPrimitives.Multiply(_intermediateBuffer1, 2f, _intermediateBuffer1); // 2*yz
+        TensorPrimitives.Multiply(TransformStore.Instance.RotationW, TransformStore.Instance.RotationX, _intermediateBuffer2); // wx
+        TensorPrimitives.Multiply(_intermediateBuffer2, 2f, _intermediateBuffer2); // 2*wx
+        TensorPrimitives.Add(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer3); // r32 = 2(yz + wx)
+        TensorPrimitives.Multiply(TransformStore.Instance.ScaleY, _intermediateBuffer3, _localTransformM23);
+
+        // Phase 7: Compute rotation matrix element r13 = 2(xz + wy), then scale by Z
+        TensorPrimitives.Multiply(TransformStore.Instance.RotationX, TransformStore.Instance.RotationZ, _intermediateBuffer1); // xz
+        TensorPrimitives.Multiply(_intermediateBuffer1, 2f, _intermediateBuffer1); // 2*xz
+        TensorPrimitives.Multiply(TransformStore.Instance.RotationW, TransformStore.Instance.RotationY, _intermediateBuffer2); // wy
+        TensorPrimitives.Multiply(_intermediateBuffer2, 2f, _intermediateBuffer2); // 2*wy
+        TensorPrimitives.Add(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer3); // r13 = 2(xz + wy)
+        TensorPrimitives.Multiply(TransformStore.Instance.ScaleZ, _intermediateBuffer3, _localTransformM31);
+
+        // Phase 8: Compute rotation matrix element r23 = 2(yz - wx), then scale by Z
+        TensorPrimitives.Multiply(TransformStore.Instance.RotationY, TransformStore.Instance.RotationZ, _intermediateBuffer1); // yz
+        TensorPrimitives.Multiply(_intermediateBuffer1, 2f, _intermediateBuffer1); // 2*yz
+        TensorPrimitives.Multiply(TransformStore.Instance.RotationW, TransformStore.Instance.RotationX, _intermediateBuffer2); // wx
+        TensorPrimitives.Multiply(_intermediateBuffer2, 2f, _intermediateBuffer2); // 2*wx
+        TensorPrimitives.Subtract(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer3); // r23 = 2(yz - wx)
+        TensorPrimitives.Multiply(TransformStore.Instance.ScaleZ, _intermediateBuffer3, _localTransformM32);
+
+        // Phase 9: Compute rotation matrix element r33 = 1 - 2(x² + y²), then scale by Z
+        TensorPrimitives.Multiply(TransformStore.Instance.RotationX, TransformStore.Instance.RotationX, _intermediateBuffer1); // xx
+        TensorPrimitives.Multiply(_intermediateBuffer1, 2f, _intermediateBuffer1); // 2*xx
+        TensorPrimitives.Multiply(TransformStore.Instance.RotationY, TransformStore.Instance.RotationY, _intermediateBuffer2); // yy
+        TensorPrimitives.Multiply(_intermediateBuffer2, 2f, _intermediateBuffer2); // 2*yy
+        TensorPrimitives.Add(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer3); // 2*xx + 2*yy
+        TensorPrimitives.Negate(_intermediateBuffer3, _intermediateBuffer3);
+        TensorPrimitives.Add(_intermediateBuffer3, 1f, _intermediateBuffer3); // r33 = 1 - 2(xx + yy)
+        TensorPrimitives.Multiply(TransformStore.Instance.ScaleZ, _intermediateBuffer3, _localTransformM33);
+
+        // Phase 10: Compute translation with anchor transformation
+        // transformedAnchorX = M11*anchorX + M21*anchorY + M31*anchorZ
+        TensorPrimitives.Multiply(_localTransformM11, TransformStore.Instance.AnchorX, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_localTransformM21, TransformStore.Instance.AnchorY, _intermediateBuffer2);
+        TensorPrimitives.Multiply(_localTransformM31, TransformStore.Instance.AnchorZ, _intermediateBuffer3);
+        TensorPrimitives.Add(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer4);
+        TensorPrimitives.Add(_intermediateBuffer4, _intermediateBuffer3, _intermediateBuffer4); // transformedAnchorX
+        TensorPrimitives.Add(TransformStore.Instance.PositionX, TransformStore.Instance.AnchorX, _intermediateBuffer5);
+        TensorPrimitives.Subtract(_intermediateBuffer5, _intermediateBuffer4, _localTransformM41);
+
+        // transformedAnchorY = M12*anchorX + M22*anchorY + M32*anchorZ
+        TensorPrimitives.Multiply(_localTransformM12, TransformStore.Instance.AnchorX, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_localTransformM22, TransformStore.Instance.AnchorY, _intermediateBuffer2);
+        TensorPrimitives.Multiply(_localTransformM32, TransformStore.Instance.AnchorZ, _intermediateBuffer3);
+        TensorPrimitives.Add(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer4);
+        TensorPrimitives.Add(_intermediateBuffer4, _intermediateBuffer3, _intermediateBuffer4); // transformedAnchorY
+        TensorPrimitives.Add(TransformStore.Instance.PositionY, TransformStore.Instance.AnchorY, _intermediateBuffer5);
+        TensorPrimitives.Subtract(_intermediateBuffer5, _intermediateBuffer4, _localTransformM42);
+
+        // transformedAnchorZ = M13*anchorX + M23*anchorY + M33*anchorZ
+        TensorPrimitives.Multiply(_localTransformM13, TransformStore.Instance.AnchorX, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_localTransformM23, TransformStore.Instance.AnchorY, _intermediateBuffer2);
+        TensorPrimitives.Multiply(_localTransformM33, TransformStore.Instance.AnchorZ, _intermediateBuffer3);
+        TensorPrimitives.Add(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer4);
+        TensorPrimitives.Add(_intermediateBuffer4, _intermediateBuffer3, _intermediateBuffer4); // transformedAnchorZ
+        TensorPrimitives.Add(TransformStore.Instance.PositionZ, TransformStore.Instance.AnchorZ, _intermediateBuffer5);
+        TensorPrimitives.Subtract(_intermediateBuffer5, _intermediateBuffer4, _localTransformM43);
+    }
+
+    private void ComputeWorldTransforms()
+    {
+        // WorldTransform M11 = LocalTransform[M11*PWT_M11 + M12*PWT_M21 + M13*PWT_M31]
+        TensorPrimitives.Multiply(_localTransformM11, ParentWorldTransformStore.Instance.M11, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_localTransformM12, ParentWorldTransformStore.Instance.M21, _intermediateBuffer2);
+        TensorPrimitives.Multiply(_localTransformM13, ParentWorldTransformStore.Instance.M31, _intermediateBuffer3);
+        TensorPrimitives.Add(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer4);
+        TensorPrimitives.Add(_intermediateBuffer4, _intermediateBuffer3, WorldTransformStore.M11);
+
+        // WorldTransform M12 = LocalTransform[M11*PWT_M12 + M12*PWT_M22 + M13*PWT_M32]
+        TensorPrimitives.Multiply(_localTransformM11, ParentWorldTransformStore.Instance.M12, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_localTransformM12, ParentWorldTransformStore.Instance.M22, _intermediateBuffer2);
+        TensorPrimitives.Multiply(_localTransformM13, ParentWorldTransformStore.Instance.M32, _intermediateBuffer3);
+        TensorPrimitives.Add(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer4);
+        TensorPrimitives.Add(_intermediateBuffer4, _intermediateBuffer3, WorldTransformStore.M12);
+
+        // WorldTransform M13 = LocalTransform[M11*PWT_M13 + M12*PWT_M23 + M13*PWT_M33]
+        TensorPrimitives.Multiply(_localTransformM11, ParentWorldTransformStore.Instance.M13, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_localTransformM12, ParentWorldTransformStore.Instance.M23, _intermediateBuffer2);
+        TensorPrimitives.Multiply(_localTransformM13, ParentWorldTransformStore.Instance.M33, _intermediateBuffer3);
+        TensorPrimitives.Add(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer4);
+        TensorPrimitives.Add(_intermediateBuffer4, _intermediateBuffer3, WorldTransformStore.M13);
+
+        // WorldTransform M21 = LocalTransform[M21*PWT_M11 + M22*PWT_M21 + M23*PWT_M31]
+        TensorPrimitives.Multiply(_localTransformM21, ParentWorldTransformStore.Instance.M11, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_localTransformM22, ParentWorldTransformStore.Instance.M21, _intermediateBuffer2);
+        TensorPrimitives.Multiply(_localTransformM23, ParentWorldTransformStore.Instance.M31, _intermediateBuffer3);
+        TensorPrimitives.Add(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer4);
+        TensorPrimitives.Add(_intermediateBuffer4, _intermediateBuffer3, WorldTransformStore.M21);
+
+        // WorldTransform M22 = LocalTransform[M21*PWT_M12 + M22*PWT_M22 + M23*PWT_M32]
+        TensorPrimitives.Multiply(_localTransformM21, ParentWorldTransformStore.Instance.M12, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_localTransformM22, ParentWorldTransformStore.Instance.M22, _intermediateBuffer2);
+        TensorPrimitives.Multiply(_localTransformM23, ParentWorldTransformStore.Instance.M32, _intermediateBuffer3);
+        TensorPrimitives.Add(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer4);
+        TensorPrimitives.Add(_intermediateBuffer4, _intermediateBuffer3, WorldTransformStore.M22);
+
+        // WorldTransform M23 = LocalTransform[M21*PWT_M13 + M22*PWT_M23 + M23*PWT_M33]
+        TensorPrimitives.Multiply(_localTransformM21, ParentWorldTransformStore.Instance.M13, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_localTransformM22, ParentWorldTransformStore.Instance.M23, _intermediateBuffer2);
+        TensorPrimitives.Multiply(_localTransformM23, ParentWorldTransformStore.Instance.M33, _intermediateBuffer3);
+        TensorPrimitives.Add(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer4);
+        TensorPrimitives.Add(_intermediateBuffer4, _intermediateBuffer3, WorldTransformStore.M23);
+
+        // WorldTransform M31 = LocalTransform[M31*PWT_M11 + M32*PWT_M21 + M33*PWT_M31]
+        TensorPrimitives.Multiply(_localTransformM31, ParentWorldTransformStore.Instance.M11, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_localTransformM32, ParentWorldTransformStore.Instance.M21, _intermediateBuffer2);
+        TensorPrimitives.Multiply(_localTransformM33, ParentWorldTransformStore.Instance.M31, _intermediateBuffer3);
+        TensorPrimitives.Add(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer4);
+        TensorPrimitives.Add(_intermediateBuffer4, _intermediateBuffer3, WorldTransformStore.M31);
+
+        // WorldTransform M32 = LocalTransform[M31*PWT_M12 + M32*PWT_M22 + M33*PWT_M32]
+        TensorPrimitives.Multiply(_localTransformM31, ParentWorldTransformStore.Instance.M12, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_localTransformM32, ParentWorldTransformStore.Instance.M22, _intermediateBuffer2);
+        TensorPrimitives.Multiply(_localTransformM33, ParentWorldTransformStore.Instance.M32, _intermediateBuffer3);
+        TensorPrimitives.Add(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer4);
+        TensorPrimitives.Add(_intermediateBuffer4, _intermediateBuffer3, WorldTransformStore.M32);
+
+        // WorldTransform M33 = LocalTransform[M31*PWT_M13 + M32*PWT_M23 + M33*PWT_M33]
+        TensorPrimitives.Multiply(_localTransformM31, ParentWorldTransformStore.Instance.M13, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_localTransformM32, ParentWorldTransformStore.Instance.M23, _intermediateBuffer2);
+        TensorPrimitives.Multiply(_localTransformM33, ParentWorldTransformStore.Instance.M33, _intermediateBuffer3);
+        TensorPrimitives.Add(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer4);
+        TensorPrimitives.Add(_intermediateBuffer4, _intermediateBuffer3, WorldTransformStore.M33);
+
+        // WorldTransform M41 = LocalTransform[M41*PWT_M11 + M42*PWT_M21 + M43*PWT_M31 + PWT_M41]
+        TensorPrimitives.Multiply(_localTransformM41, ParentWorldTransformStore.Instance.M11, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_localTransformM42, ParentWorldTransformStore.Instance.M21, _intermediateBuffer2);
+        TensorPrimitives.Multiply(_localTransformM43, ParentWorldTransformStore.Instance.M31, _intermediateBuffer3);
+        TensorPrimitives.Add(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer4);
+        TensorPrimitives.Add(_intermediateBuffer4, _intermediateBuffer3, _intermediateBuffer5);
+        TensorPrimitives.Add(_intermediateBuffer5, ParentWorldTransformStore.Instance.M41, WorldTransformStore.M41);
+
+        // WorldTransform M42 = LocalTransform[M41*PWT_M12 + M42*PWT_M22 + M43*PWT_M32 + PWT_M42]
+        TensorPrimitives.Multiply(_localTransformM41, ParentWorldTransformStore.Instance.M12, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_localTransformM42, ParentWorldTransformStore.Instance.M22, _intermediateBuffer2);
+        TensorPrimitives.Multiply(_localTransformM43, ParentWorldTransformStore.Instance.M32, _intermediateBuffer3);
+        TensorPrimitives.Add(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer4);
+        TensorPrimitives.Add(_intermediateBuffer4, _intermediateBuffer3, _intermediateBuffer5);
+        TensorPrimitives.Add(_intermediateBuffer5, ParentWorldTransformStore.Instance.M42, WorldTransformStore.M42);
+
+        // WorldTransform M43 = LocalTransform[M41*PWT_M13 + M42*PWT_M23 + M43*PWT_M33 + PWT_M43]
+        TensorPrimitives.Multiply(_localTransformM41, ParentWorldTransformStore.Instance.M13, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_localTransformM42, ParentWorldTransformStore.Instance.M23, _intermediateBuffer2);
+        TensorPrimitives.Multiply(_localTransformM43, ParentWorldTransformStore.Instance.M33, _intermediateBuffer3);
+        TensorPrimitives.Add(_intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer4);
+        TensorPrimitives.Add(_intermediateBuffer4, _intermediateBuffer3, _intermediateBuffer5);
+        TensorPrimitives.Add(_intermediateBuffer5, ParentWorldTransformStore.Instance.M43, WorldTransformStore.M43);
+    }
+
+    private void ScatterToChildren(List<ushort> parentIndices)
+    {
+        foreach (var parentIndex in parentIndices)
         {
-            var children = HierarchyRegistry.Instance.GetChildrenArray(parentIdx);
+            var children = HierarchyRegistry.Instance.GetChildrenArray(parentIndex);
             if (children == null)
             {
                 continue;
             }
 
-            foreach (var (childIdx, _) in children)
-            {
-                // Copy only the 12 computed elements
-                ParentWorldTransformBackingStore.Instance.M11.Set(
-                    childIdx, WorldTransformBackingStore.M11[parentIdx] ?? 1f
-                );
-                ParentWorldTransformBackingStore.Instance.M12.Set(
-                    childIdx, WorldTransformBackingStore.M12[parentIdx] ?? 0f
-                );
-                ParentWorldTransformBackingStore.Instance.M13.Set(
-                    childIdx, WorldTransformBackingStore.M13[parentIdx] ?? 0f
-                );
-                ParentWorldTransformBackingStore.Instance.M21.Set(
-                    childIdx, WorldTransformBackingStore.M21[parentIdx] ?? 0f
-                );
-                ParentWorldTransformBackingStore.Instance.M22.Set(
-                    childIdx, WorldTransformBackingStore.M22[parentIdx] ?? 1f
-                );
-                ParentWorldTransformBackingStore.Instance.M23.Set(
-                    childIdx, WorldTransformBackingStore.M23[parentIdx] ?? 0f
-                );
-                ParentWorldTransformBackingStore.Instance.M31.Set(
-                    childIdx, WorldTransformBackingStore.M31[parentIdx] ?? 0f
-                );
-                ParentWorldTransformBackingStore.Instance.M32.Set(
-                    childIdx, WorldTransformBackingStore.M32[parentIdx] ?? 0f
-                );
-                ParentWorldTransformBackingStore.Instance.M33.Set(
-                    childIdx, WorldTransformBackingStore.M33[parentIdx] ?? 1f
-                );
-                ParentWorldTransformBackingStore.Instance.M41.Set(
-                    childIdx, WorldTransformBackingStore.M41[parentIdx] ?? 0f
-                );
-                ParentWorldTransformBackingStore.Instance.M42.Set(
-                    childIdx, WorldTransformBackingStore.M42[parentIdx] ?? 0f
-                );
-                ParentWorldTransformBackingStore.Instance.M43.Set(
-                    childIdx, WorldTransformBackingStore.M43[parentIdx] ?? 0f
-                );
+            // Cache parent world transform values (12 reads)
+            float parentM11 = WorldTransformStore.M11[parentIndex];
+            float parentM12 = WorldTransformStore.M12[parentIndex];
+            float parentM13 = WorldTransformStore.M13[parentIndex];
+            float parentM21 = WorldTransformStore.M21[parentIndex];
+            float parentM22 = WorldTransformStore.M22[parentIndex];
+            float parentM23 = WorldTransformStore.M23[parentIndex];
+            float parentM31 = WorldTransformStore.M31[parentIndex];
+            float parentM32 = WorldTransformStore.M32[parentIndex];
+            float parentM33 = WorldTransformStore.M33[parentIndex];
+            float parentM41 = WorldTransformStore.M41[parentIndex];
+            float parentM42 = WorldTransformStore.M42[parentIndex];
+            float parentM43 = WorldTransformStore.M43[parentIndex];
 
-                _dirty.Set(childIdx, true);
+            foreach (var (childIndex, _) in children)
+            {
+                // Direct scatter to child's parent transform (12 writes)
+                ParentWorldTransformStore.Instance.M11[childIndex] = parentM11;
+                ParentWorldTransformStore.Instance.M12[childIndex] = parentM12;
+                ParentWorldTransformStore.Instance.M13[childIndex] = parentM13;
+                ParentWorldTransformStore.Instance.M21[childIndex] = parentM21;
+                ParentWorldTransformStore.Instance.M22[childIndex] = parentM22;
+                ParentWorldTransformStore.Instance.M23[childIndex] = parentM23;
+                ParentWorldTransformStore.Instance.M31[childIndex] = parentM31;
+                ParentWorldTransformStore.Instance.M32[childIndex] = parentM32;
+                ParentWorldTransformStore.Instance.M33[childIndex] = parentM33;
+                ParentWorldTransformStore.Instance.M41[childIndex] = parentM41;
+                ParentWorldTransformStore.Instance.M42[childIndex] = parentM42;
+                ParentWorldTransformStore.Instance.M43[childIndex] = parentM43;
+
+                _dirty.Set(childIndex, true);
             }
         }
     }
@@ -153,12 +367,7 @@ public sealed class TransformRegistry :
 
     public void OnEvent(BehaviorAddedEvent<TransformBehavior> e)
     {
-        // Initialize WorldTransformBehavior and backing stores
-        // Note: TransformBackingStore is already initialized by the behavior creation,
-        // and user values have already been set via the mutate function
-        ParentWorldTransformBackingStore.Instance.SetupForEntity(e.Entity);
         e.Entity.SetRefBehavior<WorldTransformBehavior>();
-        
         MarkDirty(e.Entity);
     }
 
@@ -166,23 +375,12 @@ public sealed class TransformRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<TransformBehavior> e)
     {
-        CleanupForEntity(e.Entity);
-        // Keep entity marked dirty to ensure proper recomputation on next allocation
+        _dirty.Remove(e.Entity.Index);
+        _worldTransformUpdated.Remove(e.Entity.Index);
         MarkDirty(e.Entity);
-    }
-
-    /// <summary>
-    /// Cleans up all transform-related backing store data for an entity.
-    /// </summary>
-    private void CleanupForEntity(Entity entity)
-    {
-        TransformBackingStore.Instance.CleanupForEntity(entity);
-        ParentWorldTransformBackingStore.Instance.CleanupForEntity(entity);
-        _worldTransformUpdated.Remove(entity.Index);
     }
 
     public void OnEvent(BehaviorAddedEvent<Parent> e) => MarkDirty(e.Entity);
     public void OnEvent(PostBehaviorUpdatedEvent<Parent> e) => MarkDirty(e.Entity);
     public void OnEvent(PreBehaviorRemovedEvent<Parent> e) => MarkDirty(e.Entity);
 }
-

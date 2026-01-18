@@ -1,3 +1,5 @@
+using Microsoft.Xna.Framework;
+
 namespace Atomic.Net.MonoGame.Core;
 
 /// <summary>
@@ -15,5 +17,5 @@ public readonly struct BackedQuaternion(
     public readonly BackedFloat Z = z;
     public readonly BackedFloat W = w;
 
-    public Microsoft.Xna.Framework.Quaternion AsQuaternion() => new(X.Value, Y.Value, Z.Value, W.Value);
+    public Quaternion AsQuaternion() => new(X.Value, Y.Value, Z.Value, W.Value);
 }
