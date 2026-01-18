@@ -1,5 +1,6 @@
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
+using Microsoft.Xna.Framework;
 
 namespace Atomic.Net.MonoGame.Transform;
 
@@ -13,13 +14,13 @@ public static class EntityExtensions
     /// all related backing stores and the WorldTransformBehavior.
     /// </summary>
     /// <param name="entity">The entity.</param>
-    /// <param name="mutate">Action to mutate the transform behavior's backing values.</param>
+    /// <param name="mutate">Action to mutate the transform behavior.</param>
     /// <returns>The entity for fluent chaining.</returns>
     public static Entity WithTransform(
-        this Entity entity, RefReadonlyAction<TransformBehavior> mutate
+        this Entity entity, RefAction<TransformBehavior> mutate
     )
     {
-        entity.SetRefBehavior(mutate);
+        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(entity, mutate);
         return entity;
     }
 
@@ -31,6 +32,13 @@ public static class EntityExtensions
     /// <returns>The entity for fluent chaining.</returns>
     public static Entity WithTransform(this Entity entity)
     {
-        return entity.WithTransform((ref readonly _) => { });
+        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(entity, (ref TransformBehavior t) =>
+        {
+            t.Position = Vector3.Zero;
+            t.Rotation = Quaternion.Identity;
+            t.Scale = Vector3.One;
+            t.Anchor = Vector3.Zero;
+        });
+        return entity;
     }
 }

@@ -133,27 +133,15 @@ public class TransformBenchmark
         // Setup entities for SIMD benchmark (not measured)
         for (int i = 0; i < EntityCount; i++)
         {
-            var entity = EntityRegistry.Instance. Activate();
+            var entity = EntityRegistry.Instance.Activate();
             var data = _transformData[i];
 
-            entity.WithTransform((ref readonly t) =>
+            entity.WithTransform((ref t) =>
             {
-                t.Position. X. Value = data.Position.X;
-                t.Position.Y.Value = data.Position.Y;
-                t.Position.Z.Value = data.Position.Z;
-
-                t.Rotation.X. Value = data.Rotation.X;
-                t.Rotation. Y.Value = data.Rotation.Y;
-                t. Rotation.Z.Value = data. Rotation.Z;
-                t.Rotation.W. Value = data.Rotation.W;
-
-                t.Scale.X.Value = data.Scale.X;
-                t.Scale.Y.Value = data.Scale.Y;
-                t.Scale.Z.Value = data.Scale.Z;
-
-                t.Anchor.X. Value = data.Anchor.X;
-                t.Anchor. Y.Value = data.Anchor.Y;
-                t. Anchor.Z.Value = data. Anchor.Z;
+                t.Position = data.Position;
+                t.Rotation = data.Rotation;
+                t.Scale = data.Scale;
+                t.Anchor = data.Anchor;
             });
 
             if (_parentIndices[i] >= 0)
@@ -198,7 +186,7 @@ public class TransformBenchmark
     }
 
     [Benchmark]
-    public void SIMD_EntitySystem()
+    public void EntitySystem()
     {
         TransformRegistry.Instance.Recalculate();
     }
