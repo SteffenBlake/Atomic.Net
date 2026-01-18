@@ -73,8 +73,6 @@ public sealed class TransformRegistry :
 
         const int maxIterations = 100;
 
-        _worldTransformUpdated.Clear();
-
         // Step 1: Compute LocalTransform from Position/Rotation/Scale/Anchor (ONCE)
         ComputeLocalTransforms();
 

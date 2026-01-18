@@ -162,6 +162,11 @@ public class TransformBenchmark
                 entity.WithParent(EntityRegistry.Instance[parentIndex]);
             }
         }
+
+        // var processId = Environment.ProcessId;
+        // Console.WriteLine($"Waiting for profiler to attach to PID: {processId}");
+        // Console.WriteLine("Press ENTER after attaching profiler.. .");
+        // Console.ReadLine();
     }
 
     [Benchmark]
