@@ -9,6 +9,21 @@ namespace Atomic.Net.MonoGame.BED;
 public static class EntityBehaviorExtensions
 {
     /// <summary>
+    /// Sets a ref readonly behavior. Auto-creates if missing. 
+    /// </summary>
+    /// <typeparam name="TBehavior">The behavior type.</typeparam>
+    /// <param name="entity">The entity.</param>
+    /// <returns>The entity for fluent chaining.</returns>
+    public static Entity SetRefBehavior<TBehavior>(this Entity entity)
+        where TBehavior : struct, IBehavior<TBehavior>
+    {
+        RefBehaviorRegistry<TBehavior>.Instance.SetBehavior(
+            entity, static (ref readonly _) => {}
+        );
+        return entity;
+    }
+
+    /// <summary>
     /// Sets a ref readonly behavior. Auto-creates if missing. TBehavior inferred from lambda.
     /// </summary>
     /// <typeparam name="TBehavior">The behavior type.</typeparam>

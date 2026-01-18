@@ -13,10 +13,9 @@ public static class TransformSystem
 
         TransformBackingStore.Initialize();
         ParentWorldTransformBackingStore.Initialize();
-        WorldTransformBackingStore.Initialize();
         
         LocalTransformBlockMapSet.Initialize();
-        WorldTransformBlockMapSet.Initialize();
+        WorldTransformBlockMapSet.Initialize(dense: false);
 
         TransformRegistry.Initialize();
     }

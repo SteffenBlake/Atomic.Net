@@ -8,14 +8,14 @@ namespace Atomic.Net.MonoGame.Transform;
 /// </summary>
 public sealed class WorldTransformBlockMapSet : ISingleton<WorldTransformBlockMapSet>
 {
-    internal static void Initialize()
+    internal static void Initialize(bool dense = false)
     {
         if (Instance != null)
         {
             return;
         }
 
-        Instance ??= new();
+        Instance ??= new(dense);
     }
 
     public static WorldTransformBlockMapSet Instance { get; private set; } = null!;
@@ -34,52 +34,64 @@ public sealed class WorldTransformBlockMapSet : ISingleton<WorldTransformBlockMa
     public BlockMapBase M42 { get; }
     public BlockMapBase M43 { get; }
 
-    private WorldTransformBlockMapSet()
+    private WorldTransformBlockMapSet(bool dense = false)
     {
         var local = LocalTransformBlockMapSet.Instance;
         var parent = ParentWorldTransformBackingStore.Instance;
         
         // Upper-left 3x3: standard matrix multiply
         M11 = BuildDotProduct3(
-            local.M11, local.M12, local.M13, parent.M11, parent.M21, parent.M31
+            local.M11, local.M12, local.M13, parent.M11, parent.M21, parent.M31,
+            initValue: 0.0f, dense
         );
         M12 = BuildDotProduct3(
-            local.M11, local.M12, local.M13, parent.M12, parent.M22, parent.M32
+            local.M11, local.M12, local.M13, parent.M12, parent.M22, parent.M32,
+            initValue: 0.0f, dense
         );
         M13 = BuildDotProduct3(
-            local.M11, local.M12, local.M13, parent.M13, parent.M23, parent.M33
+            local.M11, local.M12, local.M13, parent.M13, parent.M23, parent.M33,
+            initValue: 0.0f, dense
         );
 
         M21 = BuildDotProduct3(
-            local.M21, local.M22, local.M23, parent.M11, parent.M21, parent.M31
+            local.M21, local.M22, local.M23, parent.M11, parent.M21, parent.M31,
+            initValue: 0.0f, dense
         );
         M22 = BuildDotProduct3(
-            local.M21, local.M22, local.M23, parent.M12, parent.M22, parent.M32
+            local.M21, local.M22, local.M23, parent.M12, parent.M22, parent.M32,
+            initValue: 1.0f, dense
         );
         M23 = BuildDotProduct3(
-            local.M21, local.M22, local.M23, parent.M13, parent.M23, parent.M33
+            local.M21, local.M22, local.M23, parent.M13, parent.M23, parent.M33,
+            initValue: 0.0f, dense
         );
 
         M31 = BuildDotProduct3(
-            local.M31, local.M32, local.M33, parent.M11, parent.M21, parent.M31
+            local.M31, local.M32, local.M33, parent.M11, parent.M21, parent.M31,
+            initValue: 0.0f, dense
         );
         M32 = BuildDotProduct3(
-            local.M31, local.M32, local.M33, parent.M12, parent.M22, parent.M32
+            local.M31, local.M32, local.M33, parent.M12, parent.M22, parent.M32,
+            initValue: 0.0f, dense
         );
         M33 = BuildDotProduct3(
-            local.M31, local.M32, local.M33, parent.M13, parent.M23, parent.M33
+            local.M31, local.M32, local.M33, parent.M13, parent.M23, parent.M33,
+            initValue: 1.0f, dense
         );
 
         // Translation row: local.M41*parent.M1x + local.M42*parent.M2x + local.M43*parent.M3x + parent.M4x
         // (since local.M44 = 1, the last term is just parent.M4x)
         M41 = BuildTranslationRow(
-            local.M41, local.M42, local.M43, parent.M11, parent.M21, parent.M31, parent.M41
+            local.M41, local.M42, local.M43, parent.M11, parent.M21, parent.M31, parent.M41,
+            initValue: 0.0f, dense
         );
         M42 = BuildTranslationRow(
-            local.M41, local.M42, local.M43, parent.M12, parent.M22, parent.M32, parent.M42
+            local.M41, local.M42, local.M43, parent.M12, parent.M22, parent.M32, parent.M42,
+            initValue: 0.0f, dense
         );
         M43 = BuildTranslationRow(
-            local.M41, local.M42, local.M43, parent.M13, parent.M23, parent.M33, parent.M43
+            local.M41, local.M42, local.M43, parent.M13, parent.M23, parent.M33, parent.M43,
+            initValue: 0.0f, dense
         );
 
         // M14, M24, M34, M44 are NOT computed - they are always (0, 0, 0, 1) for affine transforms
@@ -87,7 +99,8 @@ public sealed class WorldTransformBlockMapSet : ISingleton<WorldTransformBlockMa
 
     private static AddBlockMap BuildDotProduct3(
         BlockMapBase a1, BlockMapBase a2, BlockMapBase a3,
-        BlockMapBase b1, BlockMapBase b2, BlockMapBase b3
+        BlockMapBase b1, BlockMapBase b2, BlockMapBase b3,
+        float initValue = 0.0f, bool dense = false
     )
     {
         var term1 = new MultiplyBlockMap(a1, b1);
@@ -95,13 +108,14 @@ public sealed class WorldTransformBlockMapSet : ISingleton<WorldTransformBlockMa
         var term3 = new MultiplyBlockMap(a3, b3);
 
         var sum12 = new AddBlockMap(term1, term2);
-        return new AddBlockMap(sum12, term3);
+        return new AddBlockMap(sum12, term3, initValue, dense);
     }
 
     private static AddBlockMap BuildTranslationRow(
         BlockMapBase a1, BlockMapBase a2, BlockMapBase a3,
         BlockMapBase b1, BlockMapBase b2, BlockMapBase b3,
-        BlockMapBase add
+        BlockMapBase add,
+        float initValue = 0.0f, bool dense = false
     )
     {
         // a1*b1 + a2*b2 + a3*b3 + add
@@ -110,14 +124,11 @@ public sealed class WorldTransformBlockMapSet : ISingleton<WorldTransformBlockMa
         var term3 = new MultiplyBlockMap(a3, b3);
         var sum12 = new AddBlockMap(term1, term2);
         var sum123 = new AddBlockMap(sum12, term3);
-        return new AddBlockMap(sum123, add);
+        return new AddBlockMap(sum123, add, initValue, dense);
     }
 
     public void Recalculate()
     {
-        var local = LocalTransformBlockMapSet.Instance;
-        var parent = ParentWorldTransformBackingStore.Instance;
-
         M11.Recalculate();
         M12.Recalculate();
         M13.Recalculate();

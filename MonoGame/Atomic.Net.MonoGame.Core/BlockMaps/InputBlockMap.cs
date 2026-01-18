@@ -1,5 +1,3 @@
-using Atomic.Net.MonoGame.Core;
-
 namespace Atomic.Net.MonoGame.Core.BlockMaps;
 
 /// <summary>

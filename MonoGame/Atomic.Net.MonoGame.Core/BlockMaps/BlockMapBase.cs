@@ -136,6 +136,16 @@ public abstract class BlockMapBase : MapBase
     }
 
     protected abstract void RecomputeBlock(int blockIndex);
+
+    /// <summary>
+    /// Creates a BackedFloat pointing to a specific entity index in this block map.
+    /// </summary>
+    public ReadOnlyBackedFloat ReadOnlyInstanceFor(int entityIndex)
+    {
+        var (blockIndex, _) = GetBlockAndLane(entityIndex);
+        _outputs[blockIndex] ??= InitBlock();
+        return new ReadOnlyBackedFloat(this, entityIndex);
+    }
 }
 
 
