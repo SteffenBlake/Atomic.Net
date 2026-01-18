@@ -31,6 +31,7 @@ public sealed class TransformRegistry :
     private SparseArray<bool> _dirty = new(Constants.MaxEntities);
     private SparseArray<bool> _nextDirty = new(Constants.MaxEntities);
     private readonly SparseArray<bool> _worldTransformUpdated = new(Constants.MaxEntities);
+    private readonly SparseArray<Matrix> _worldTransforms = new(Constants.MaxEntities);
 
     public void OnEvent(InitializeEvent _)
     {
@@ -61,6 +62,12 @@ public sealed class TransformRegistry :
             {
                 var entity = EntityRegistry.Instance[entityIndex];
 
+                // Skip if any ancestor is dirty - they will mark us dirty again after they process
+                if (HasDirtyAncestor(entity))
+                {
+                    continue;
+                }
+
                 if (!BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var transform))
                 {
                     continue;
@@ -88,22 +95,24 @@ public sealed class TransformRegistry :
                 Matrix parentWorldTransform = Matrix.Identity;
                 if (entity.TryGetParent(out var parent))
                 {
-                    if (parent.Value.TryGetBehavior<WorldTransformBehavior>(out var parentWorld))
+                    if (_worldTransforms.TryGetValue(parent.Value.Index, out var parentWorld))
                     {
-                        parentWorldTransform = parentWorld.Value.Value;
+                        parentWorldTransform = parentWorld.Value;
                     }
                 }
 
-                // Update world transform behavior
-                entity.SetBehavior<WorldTransformBehavior>(
-                    (ref wt) => Matrix.Multiply(
-                        ref _localTransform, ref parentWorldTransform, out wt.Value
-                    )
-                );
+                // Calculate and store world transform directly
+                Matrix.Multiply(ref _localTransform, ref parentWorldTransform, out var worldTransform);
+                _worldTransforms.Set(entityIndex, worldTransform);
 
-                foreach(var child in entity.GetChildren())
+                // Use GetChildrenArray for allocation-free iteration
+                var childrenArray = HierarchyRegistry.Instance.GetChildrenArray(entityIndex);
+                if (childrenArray != null)
                 {
-                    _nextDirty.Set(child.Index, true);
+                    foreach (var (childIndex, _) in childrenArray)
+                    {
+                        _nextDirty.Set(childIndex, true);
+                    }
                 }
 
                 _worldTransformUpdated.Set(entityIndex, true);
@@ -124,13 +133,34 @@ public sealed class TransformRegistry :
 
     private void FireBulkEvents()
     {
+        // Sync world transforms to behavior registry and fire events
         foreach (var (index, _) in _worldTransformUpdated)
         {
             var entity = EntityRegistry.Instance[index];
-            EventBus<PostBehaviorUpdatedEvent<WorldTransformBehavior>>.Push(new(entity));
+            if (_worldTransforms.TryGetValue(index, out var worldTransform))
+            {
+                BehaviorRegistry<WorldTransformBehavior>.Instance.SetBehavior(
+                    entity,
+                    (ref wt) => wt.Value = worldTransform.Value
+                );
+            }
         }
 
         _worldTransformUpdated.Clear();
+    }
+
+    private bool HasDirtyAncestor(Entity entity)
+    {
+        var current = entity;
+        while (current.TryGetParent(out var parent))
+        {
+            if (_dirty.HasValue(parent.Value.Index))
+            {
+                return true;
+            }
+            current = parent.Value;
+        }
+        return false;
     }
 
     private void MarkDirty(Entity entity)
