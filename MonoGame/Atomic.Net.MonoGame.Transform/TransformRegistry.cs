@@ -72,6 +72,7 @@ public sealed class TransformRegistry :
             }
 
             // Build local transform using MonoGame's Matrix.Create* methods
+            // Order: translate to origin → scale → rotate → translate back to anchor → translate to position
             var localTransform =
                 Matrix.CreateTranslation(-transform.Value.Anchor) *
                 Matrix.CreateScale(transform.Value.Scale) *
