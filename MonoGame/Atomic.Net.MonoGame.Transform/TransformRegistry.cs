@@ -67,7 +67,7 @@ public sealed class TransformRegistry :
                     continue;
                 }
 
-                TransformBehavior? transform = null;
+                TransformBehavior? transform;
                 if (!BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out transform))
                 {
                     continue;
@@ -93,10 +93,10 @@ public sealed class TransformRegistry :
 
                 // Get parent world transform
                 Matrix parentWorldTransform = Matrix.Identity;
-                Entity? parent = null;
+                Entity? parent;
                 if (entity.TryGetParent(out parent))
                 {
-                    WorldTransformBehavior? parentWorld = null;
+                    WorldTransformBehavior? parentWorld;
                     if (parent.Value.TryGetBehavior<WorldTransformBehavior>(out parentWorld))
                     {
                         parentWorldTransform = parentWorld.Value.Value;
@@ -139,7 +139,7 @@ public sealed class TransformRegistry :
     private bool HasDirtyAncestor(Entity entity)
     {
         var current = entity;
-        Entity? parent = null;
+        Entity? parent;
         while (current.TryGetParent(out parent))
         {
             if (_dirty.HasValue(parent.Value.Index))
