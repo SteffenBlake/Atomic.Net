@@ -61,15 +61,21 @@ public sealed class TransformRegistry :
             {
                 var entity = EntityRegistry.Instance[entityIndex];
 
-                if (!BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var transform))
+                // Skip if any ancestor is dirty on FIRST iteration only - they will mark us dirty again after they process
+                if (iterations == 1 && HasDirtyAncestor(entity))
                 {
                     continue;
                 }
 
-                var anchor = transform.Value.Anchor;
-                var scale = transform.Value.Scale;
-                var rotation = transform.Value.Rotation;
-                var position = transform.Value.Position;
+                if (!BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var _transform))
+                {
+                    continue;
+                }
+
+                var anchor = _transform.Value.Anchor;
+                var scale = _transform.Value.Scale;
+                var rotation = _transform.Value.Rotation;
+                var position = _transform.Value.Position;
 
                 Vector3.Multiply(ref anchor, -1, out _localAnchorNegV);
 
@@ -86,11 +92,11 @@ public sealed class TransformRegistry :
 
                 // Get parent world transform
                 Matrix parentWorldTransform = Matrix.Identity;
-                if (entity.TryGetParent(out var parent))
+                if (entity.TryGetParent(out var _parent))
                 {
-                    if (parent.Value.TryGetBehavior<WorldTransformBehavior>(out var parentWorld))
+                    if (_parent.Value.TryGetBehavior<WorldTransformBehavior>(out var _parentWorld))
                     {
-                        parentWorldTransform = parentWorld.Value.Value;
+                        parentWorldTransform = _parentWorld.Value.Value;
                     }
                 }
 
@@ -101,9 +107,14 @@ public sealed class TransformRegistry :
                     )
                 );
 
-                foreach(var child in entity.GetChildren())
+                // Use GetChildrenArray for allocation-free iteration
+                var childrenArray = HierarchyRegistry.Instance.GetChildrenArray(entityIndex);
+                if (childrenArray != null)
                 {
-                    _nextDirty.Set(child.Index, true);
+                    foreach (var (childIndex, _) in childrenArray)
+                    {
+                        _nextDirty.Set(childIndex, true);
+                    }
                 }
 
                 _worldTransformUpdated.Set(entityIndex, true);
@@ -120,6 +131,20 @@ public sealed class TransformRegistry :
 
         // Fire bulk events
         FireBulkEvents();
+    }
+
+    private bool HasDirtyAncestor(Entity entity)
+    {
+        var current = entity;
+        while (current.TryGetParent(out var _parent))
+        {
+            if (_dirty.HasValue(_parent.Value.Index))
+            {
+                return true;
+            }
+            current = _parent.Value;
+        }
+        return false;
     }
 
     private void FireBulkEvents()
