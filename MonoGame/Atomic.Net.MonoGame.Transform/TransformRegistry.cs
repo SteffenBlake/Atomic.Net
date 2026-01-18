@@ -46,6 +46,17 @@ public sealed class TransformRegistry :
     private readonly float[] _localTransformM42 = new float[Constants.MaxEntities];
     private readonly float[] _localTransformM43 = new float[Constants.MaxEntities];
 
+    // Quaternion product cache buffers (9 total - eliminates redundant calculations)
+    private readonly float[] _quatProductXX = new float[Constants.MaxEntities];
+    private readonly float[] _quatProductYY = new float[Constants.MaxEntities];
+    private readonly float[] _quatProductZZ = new float[Constants.MaxEntities];
+    private readonly float[] _quatProductXY = new float[Constants.MaxEntities];
+    private readonly float[] _quatProductXZ = new float[Constants.MaxEntities];
+    private readonly float[] _quatProductYZ = new float[Constants.MaxEntities];
+    private readonly float[] _quatProductWX = new float[Constants.MaxEntities];
+    private readonly float[] _quatProductWY = new float[Constants.MaxEntities];
+    private readonly float[] _quatProductWZ = new float[Constants.MaxEntities];
+
     // Ping-pong buffers for intermediate SIMD calculations (5 total)
     private readonly float[] _intermediateBuffer1 = new float[Constants.MaxEntities];
     private readonly float[] _intermediateBuffer2 = new float[Constants.MaxEntities];
@@ -108,205 +119,133 @@ public sealed class TransformRegistry :
     private void ComputeLocalTransforms()
     {
         var _transformStore = TransformStore.Instance;
-        // Phase 1: Compute rotation matrix element r11 = 1 - 2(y² + z²), then scale by X
+        
+        // Phase 1: Compute all quaternion products once and cache them
         TensorPrimitives.Multiply(
-            _transformStore.RotationY, _transformStore.RotationY, _intermediateBuffer1
-        ); // yy
+            _transformStore.RotationX, _transformStore.RotationX, _quatProductXX
+        );
         TensorPrimitives.Multiply(
-            _intermediateBuffer1, 2f, _intermediateBuffer1
-        ); // 2*yy
+            _transformStore.RotationY, _transformStore.RotationY, _quatProductYY
+        );
         TensorPrimitives.Multiply(
-            _transformStore.RotationZ, _transformStore.RotationZ, _intermediateBuffer2
-        ); // zz
+            _transformStore.RotationZ, _transformStore.RotationZ, _quatProductZZ
+        );
         TensorPrimitives.Multiply(
-            _intermediateBuffer2, 2f, _intermediateBuffer2
-        ); // 2*zz
+            _transformStore.RotationX, _transformStore.RotationY, _quatProductXY
+        );
+        TensorPrimitives.Multiply(
+            _transformStore.RotationX, _transformStore.RotationZ, _quatProductXZ
+        );
+        TensorPrimitives.Multiply(
+            _transformStore.RotationY, _transformStore.RotationZ, _quatProductYZ
+        );
+        TensorPrimitives.Multiply(
+            _transformStore.RotationW, _transformStore.RotationX, _quatProductWX
+        );
+        TensorPrimitives.Multiply(
+            _transformStore.RotationW, _transformStore.RotationY, _quatProductWY
+        );
+        TensorPrimitives.Multiply(
+            _transformStore.RotationW, _transformStore.RotationZ, _quatProductWZ
+        );
+
+        // Phase 2: Compute rotation matrix element r11 = 1 - 2(y² + z²), then scale by X
+        TensorPrimitives.Multiply(_quatProductYY, 2f, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_quatProductZZ, 2f, _intermediateBuffer2);
         TensorPrimitives.Add(
             _intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer3
-        ); // 2*yy + 2*zz
-        TensorPrimitives.Negate(
-            _intermediateBuffer3, _intermediateBuffer3
-        ); // -(2*yy + 2*zz)
-        TensorPrimitives.Add(
-            _intermediateBuffer3, 1f, _intermediateBuffer3
-        ); // r11 = 1 - 2(yy + zz)
+        );
+        TensorPrimitives.Negate(_intermediateBuffer3, _intermediateBuffer3);
+        TensorPrimitives.Add(_intermediateBuffer3, 1f, _intermediateBuffer3);
         TensorPrimitives.Multiply(
             _transformStore.ScaleX, _intermediateBuffer3, _localTransformM11
         );
 
-        // Phase 2: Compute rotation matrix element r21 = 2(xy + wz), then scale by X
-        TensorPrimitives.Multiply(
-            _transformStore.RotationX, _transformStore.RotationY, _intermediateBuffer1
-        ); // xy
-        TensorPrimitives.Multiply(
-            _intermediateBuffer1, 2f, _intermediateBuffer1
-        ); // 2*xy
-        TensorPrimitives.Multiply(
-            _transformStore.RotationW, _transformStore.RotationZ, _intermediateBuffer2
-        ); // wz
-        TensorPrimitives.Multiply(
-            _intermediateBuffer2, 2f, _intermediateBuffer2
-        ); // 2*wz
+        // Phase 3: Compute rotation matrix element r21 = 2(xy + wz), then scale by X
+        TensorPrimitives.Multiply(_quatProductXY, 2f, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_quatProductWZ, 2f, _intermediateBuffer2);
         TensorPrimitives.Add(
             _intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer3
-        ); // r21 = 2(xy + wz)
+        );
         TensorPrimitives.Multiply(
             _transformStore.ScaleX, _intermediateBuffer3, _localTransformM12
         );
 
-        // Phase 3: Compute rotation matrix element r31 = 2(xz - wy), then scale by X
-        TensorPrimitives.Multiply(
-            _transformStore.RotationX, _transformStore.RotationZ, _intermediateBuffer1
-        ); // xz
-        TensorPrimitives.Multiply(
-            _intermediateBuffer1, 2f, _intermediateBuffer1
-        ); // 2*xz
-        TensorPrimitives.Multiply(
-            _transformStore.RotationW, _transformStore.RotationY, _intermediateBuffer2
-        ); // wy
-        TensorPrimitives.Multiply(
-            _intermediateBuffer2, 2f, _intermediateBuffer2
-        ); // 2*wy
+        // Phase 4: Compute rotation matrix element r31 = 2(xz - wy), then scale by X
+        TensorPrimitives.Multiply(_quatProductXZ, 2f, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_quatProductWY, 2f, _intermediateBuffer2);
         TensorPrimitives.Subtract(
             _intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer3
-        ); // r31 = 2(xz - wy)
+        );
         TensorPrimitives.Multiply(
             _transformStore.ScaleX, _intermediateBuffer3, _localTransformM13
         );
 
-        // Phase 4: Compute rotation matrix element r12 = 2(xy - wz), then scale by Y
-        TensorPrimitives.Multiply(
-            _transformStore.RotationX, _transformStore.RotationY, _intermediateBuffer1
-        ); // xy
-        TensorPrimitives.Multiply(
-            _intermediateBuffer1, 2f, _intermediateBuffer1
-        ); // 2*xy
-        TensorPrimitives.Multiply(
-            _transformStore.RotationW, _transformStore.RotationZ, _intermediateBuffer2
-        ); // wz
-        TensorPrimitives.Multiply(
-            _intermediateBuffer2, 2f, _intermediateBuffer2
-        ); // 2*wz
+        // Phase 5: Compute rotation matrix element r12 = 2(xy - wz), then scale by Y
+        TensorPrimitives.Multiply(_quatProductXY, 2f, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_quatProductWZ, 2f, _intermediateBuffer2);
         TensorPrimitives.Subtract(
             _intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer3
-        ); // r12 = 2(xy - wz)
+        );
         TensorPrimitives.Multiply(
             _transformStore.ScaleY, _intermediateBuffer3, _localTransformM21
         );
 
-        // Phase 5: Compute rotation matrix element r22 = 1 - 2(x² + z²), then scale by Y
-        TensorPrimitives.Multiply(
-            _transformStore.RotationX, _transformStore.RotationX, _intermediateBuffer1
-        ); // xx
-        TensorPrimitives.Multiply(
-            _intermediateBuffer1, 2f, _intermediateBuffer1
-        ); // 2*xx
-        TensorPrimitives.Multiply(
-            _transformStore.RotationZ, _transformStore.RotationZ, _intermediateBuffer2
-        ); // zz
-        TensorPrimitives.Multiply(
-            _intermediateBuffer2, 2f, _intermediateBuffer2
-        ); // 2*zz
+        // Phase 6: Compute rotation matrix element r22 = 1 - 2(x² + z²), then scale by Y
+        TensorPrimitives.Multiply(_quatProductXX, 2f, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_quatProductZZ, 2f, _intermediateBuffer2);
         TensorPrimitives.Add(
             _intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer3
-        ); // 2*xx + 2*zz
-        TensorPrimitives.Negate(
-            _intermediateBuffer3, _intermediateBuffer3
         );
-        TensorPrimitives.Add(
-            _intermediateBuffer3, 1f, _intermediateBuffer3
-        ); // r22 = 1 - 2(xx + zz)
+        TensorPrimitives.Negate(_intermediateBuffer3, _intermediateBuffer3);
+        TensorPrimitives.Add(_intermediateBuffer3, 1f, _intermediateBuffer3);
         TensorPrimitives.Multiply(
             _transformStore.ScaleY, _intermediateBuffer3, _localTransformM22
         );
 
-        // Phase 6: Compute rotation matrix element r32 = 2(yz + wx), then scale by Y
-        TensorPrimitives.Multiply(
-            _transformStore.RotationY, _transformStore.RotationZ, _intermediateBuffer1
-        ); // yz
-        TensorPrimitives.Multiply(
-            _intermediateBuffer1, 2f, _intermediateBuffer1
-        ); // 2*yz
-        TensorPrimitives.Multiply(
-            _transformStore.RotationW, _transformStore.RotationX, _intermediateBuffer2
-        ); // wx
-        TensorPrimitives.Multiply(
-            _intermediateBuffer2, 2f, _intermediateBuffer2
-        ); // 2*wx
+        // Phase 7: Compute rotation matrix element r32 = 2(yz + wx), then scale by Y
+        TensorPrimitives.Multiply(_quatProductYZ, 2f, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_quatProductWX, 2f, _intermediateBuffer2);
         TensorPrimitives.Add(
             _intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer3
-        ); // r32 = 2(yz + wx)
+        );
         TensorPrimitives.Multiply(
             _transformStore.ScaleY, _intermediateBuffer3, _localTransformM23
         );
 
-        // Phase 7: Compute rotation matrix element r13 = 2(xz + wy), then scale by Z
-        TensorPrimitives.Multiply(
-            _transformStore.RotationX, _transformStore.RotationZ, _intermediateBuffer1
-        ); // xz
-        TensorPrimitives.Multiply(
-            _intermediateBuffer1, 2f, _intermediateBuffer1
-        ); // 2*xz
-        TensorPrimitives.Multiply(
-            _transformStore.RotationW, _transformStore.RotationY, _intermediateBuffer2
-        ); // wy
-        TensorPrimitives.Multiply(
-            _intermediateBuffer2, 2f, _intermediateBuffer2
-        ); // 2*wy
+        // Phase 8: Compute rotation matrix element r13 = 2(xz + wy), then scale by Z
+        TensorPrimitives.Multiply(_quatProductXZ, 2f, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_quatProductWY, 2f, _intermediateBuffer2);
         TensorPrimitives.Add(
             _intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer3
-        ); // r13 = 2(xz + wy)
+        );
         TensorPrimitives.Multiply(
             _transformStore.ScaleZ, _intermediateBuffer3, _localTransformM31
         );
 
-        // Phase 8: Compute rotation matrix element r23 = 2(yz - wx), then scale by Z
-        TensorPrimitives.Multiply(
-            _transformStore.RotationY, _transformStore.RotationZ, _intermediateBuffer1
-        ); // yz
-        TensorPrimitives.Multiply(
-            _intermediateBuffer1, 2f, _intermediateBuffer1
-        ); // 2*yz
-        TensorPrimitives.Multiply(
-            _transformStore.RotationW, _transformStore.RotationX, _intermediateBuffer2
-        ); // wx
-        TensorPrimitives.Multiply(
-            _intermediateBuffer2, 2f, _intermediateBuffer2
-        ); // 2*wx
+        // Phase 9: Compute rotation matrix element r23 = 2(yz - wx), then scale by Z
+        TensorPrimitives.Multiply(_quatProductYZ, 2f, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_quatProductWX, 2f, _intermediateBuffer2);
         TensorPrimitives.Subtract(
             _intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer3
-        ); // r23 = 2(yz - wx)
+        );
         TensorPrimitives.Multiply(
             _transformStore.ScaleZ, _intermediateBuffer3, _localTransformM32
         );
 
-        // Phase 9: Compute rotation matrix element r33 = 1 - 2(x² + y²), then scale by Z
-        TensorPrimitives.Multiply(
-            _transformStore.RotationX, _transformStore.RotationX, _intermediateBuffer1
-        ); // xx
-        TensorPrimitives.Multiply(
-            _intermediateBuffer1, 2f, _intermediateBuffer1
-        ); // 2*xx
-        TensorPrimitives.Multiply(
-            _transformStore.RotationY, _transformStore.RotationY, _intermediateBuffer2
-        ); // yy
-        TensorPrimitives.Multiply(
-            _intermediateBuffer2, 2f, _intermediateBuffer2
-        ); // 2*yy
+        // Phase 10: Compute rotation matrix element r33 = 1 - 2(x² + y²), then scale by Z
+        TensorPrimitives.Multiply(_quatProductXX, 2f, _intermediateBuffer1);
+        TensorPrimitives.Multiply(_quatProductYY, 2f, _intermediateBuffer2);
         TensorPrimitives.Add(
             _intermediateBuffer1, _intermediateBuffer2, _intermediateBuffer3
-        ); // 2*xx + 2*yy
-        TensorPrimitives.Negate(
-            _intermediateBuffer3, _intermediateBuffer3
         );
-        TensorPrimitives.Add(
-            _intermediateBuffer3, 1f, _intermediateBuffer3
-        ); // r33 = 1 - 2(xx + yy)
+        TensorPrimitives.Negate(_intermediateBuffer3, _intermediateBuffer3);
+        TensorPrimitives.Add(_intermediateBuffer3, 1f, _intermediateBuffer3);
         TensorPrimitives.Multiply(
             _transformStore.ScaleZ, _intermediateBuffer3, _localTransformM33
         );
 
-        // Phase 10: Compute translation with anchor transformation
+        // Phase 11: Compute translation with anchor transformation
         // transformedAnchorX = M11*anchorX + M21*anchorY + M31*anchorZ
         TensorPrimitives.Multiply(
             _localTransformM11, _transformStore.AnchorX, _intermediateBuffer1
@@ -322,7 +261,7 @@ public sealed class TransformRegistry :
         );
         TensorPrimitives.Add(
             _intermediateBuffer4, _intermediateBuffer3, _intermediateBuffer4
-        ); // transformedAnchorX
+        );
         TensorPrimitives.Add(
             _transformStore.PositionX, _transformStore.AnchorX, _intermediateBuffer5
         );
@@ -345,7 +284,7 @@ public sealed class TransformRegistry :
         );
         TensorPrimitives.Add(
             _intermediateBuffer4, _intermediateBuffer3, _intermediateBuffer4
-        ); // transformedAnchorY
+        );
         TensorPrimitives.Add(
             _transformStore.PositionY, _transformStore.AnchorY, _intermediateBuffer5
         );
@@ -368,7 +307,7 @@ public sealed class TransformRegistry :
         );
         TensorPrimitives.Add(
             _intermediateBuffer4, _intermediateBuffer3, _intermediateBuffer4
-        ); // transformedAnchorZ
+        );
         TensorPrimitives.Add(
             _transformStore.PositionZ, _transformStore.AnchorZ, _intermediateBuffer5
         );
