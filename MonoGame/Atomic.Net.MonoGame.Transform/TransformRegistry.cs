@@ -28,9 +28,9 @@ public sealed class TransformRegistry :
 
     public static TransformRegistry Instance { get; private set; } = null!;
 
-    private readonly SparseArray<bool> _dirty = new(Constants.MaxEntities);
+    private SparseArray<bool> _dirty = new(Constants.MaxEntities);
+    private SparseArray<bool> _nextDirty = new(Constants.MaxEntities);
     private readonly SparseArray<bool> _worldTransformUpdated = new(Constants.MaxEntities);
-    private readonly List<ushort> _dirtyIndices = new(Constants.MaxEntities);
 
     public void OnEvent(InitializeEvent _)
     {
@@ -43,82 +43,83 @@ public sealed class TransformRegistry :
         EventBus<PreBehaviorRemovedEvent<Parent>>.Register(this);
     }
 
+    private Vector3 _localAnchorNegV = default;
+    private Matrix _localAnchorNeg = default;
+    private Matrix _localScale = default;
+    private Matrix _localRotation = default;
+    private Matrix _localAnchor = default;
+    private Matrix _localpos = default;
+    private Matrix _localTransform = default;
+
     public void Recalculate()
     {
-        if (_dirty.Count == 0)
+        // Infinite loop protection
+        const int maxIterations = 100;
+        for(var iterations = 1; iterations <= maxIterations; iterations++)
         {
-            return;
-        }
-
-        _worldTransformUpdated.Clear();
-
-        // Collect all dirty entities
-        _dirtyIndices.Clear();
-        foreach (var (index, _) in _dirty)
-        {
-            _dirtyIndices.Add(index);
-            _worldTransformUpdated.Set(index, true);
-        }
-        _dirty.Clear();
-
-        // Process each dirty entity using MonoGame Matrix helpers
-        foreach (var entityIndex in _dirtyIndices)
-        {
-            var entity = EntityRegistry.Instance[entityIndex];
-
-            if (!BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var transform))
+            foreach(var (entityIndex, _) in _dirty)
             {
-                continue;
-            }
+                var entity = EntityRegistry.Instance[entityIndex];
 
-            // Build local transform using MonoGame's Matrix.Create* methods
-            // Order: translate to origin → scale → rotate → translate back to anchor → translate to position
-            var localTransform =
-                Matrix.CreateTranslation(-transform.Value.Anchor) *
-                Matrix.CreateScale(transform.Value.Scale) *
-                Matrix.CreateFromQuaternion(transform.Value.Rotation) *
-                Matrix.CreateTranslation(transform.Value.Anchor) *
-                Matrix.CreateTranslation(transform.Value.Position);
-
-            // Get parent world transform
-            Matrix parentWorldTransform = Matrix.Identity;
-            if (entity.TryGetParent(out var parent))
-            {
-                if (BehaviorRegistry<WorldTransformBehavior>.Instance.TryGetBehavior(parent.Value, out var parentWorld))
+                if (!BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var transform))
                 {
-                    parentWorldTransform = parentWorld.Value.Value;
+                    continue;
                 }
+
+                var anchor = transform.Value.Anchor;
+                var scale = transform.Value.Scale;
+                var rotation = transform.Value.Rotation;
+                var position = transform.Value.Position;
+
+                Vector3.Multiply(ref anchor, -1, out _localAnchorNegV);
+
+                Matrix.CreateTranslation(ref _localAnchorNegV, out _localAnchorNeg);
+                Matrix.CreateScale(ref scale, out _localScale);
+                Matrix.CreateFromQuaternion(ref rotation, out _localRotation);
+                Matrix.CreateTranslation(ref anchor, out _localAnchor);
+                Matrix.CreateTranslation(ref position, out _localpos);
+
+                Matrix.Multiply(ref _localAnchorNeg, ref _localScale, out _localTransform);
+                Matrix.Multiply(ref _localTransform, ref _localRotation, out _localTransform);
+                Matrix.Multiply(ref _localTransform, ref _localAnchor, out _localTransform);
+                Matrix.Multiply(ref _localTransform, ref _localpos, out _localTransform);
+
+                // Get parent world transform
+                Matrix parentWorldTransform = Matrix.Identity;
+                if (entity.TryGetParent(out var parent))
+                {
+                    if (parent.Value.TryGetBehavior<WorldTransformBehavior>(out var parentWorld))
+                    {
+                        parentWorldTransform = parentWorld.Value.Value;
+                    }
+                }
+
+                // Update world transform behavior
+                entity.SetBehavior<WorldTransformBehavior>(
+                    (ref wt) => Matrix.Multiply(
+                        ref _localTransform, ref parentWorldTransform, out wt.Value
+                    )
+                );
+
+                foreach(var child in entity.GetChildren())
+                {
+                    _nextDirty.Set(child.Index, true);
+                }
+
+                _worldTransformUpdated.Set(entityIndex, true);
             }
 
-            // Compute world transform
-            var worldTransform = localTransform * parentWorldTransform;
+            if (_nextDirty.Count <= 0)
+            {
+                break;
+            }
 
-            // Update world transform behavior
-            BehaviorRegistry<WorldTransformBehavior>.Instance.SetBehavior(
-                entity,
-                (ref WorldTransformBehavior wt) => wt.Value = worldTransform
-            );
+            _dirty.Clear();
+            (_dirty, _nextDirty) = (_nextDirty, _dirty);
         }
 
         // Fire bulk events
         FireBulkEvents();
-    }
-
-    private void ScatterToChildren(List<ushort> parentIndices)
-    {
-        foreach (var parentIndex in parentIndices)
-        {
-            var children = HierarchyRegistry.Instance.GetChildrenArray(parentIndex);
-            if (children == null)
-            {
-                continue;
-            }
-
-            foreach (var (childIndex, _) in children)
-            {
-                _dirty.Set(childIndex, true);
-            }
-        }
     }
 
     private void FireBulkEvents()
@@ -141,7 +142,7 @@ public sealed class TransformRegistry :
     {
         BehaviorRegistry<WorldTransformBehavior>.Instance.SetBehavior(
             e.Entity,
-            (ref WorldTransformBehavior _) => { }
+            (ref _) => { }
         );
         MarkDirty(e.Entity);
     }

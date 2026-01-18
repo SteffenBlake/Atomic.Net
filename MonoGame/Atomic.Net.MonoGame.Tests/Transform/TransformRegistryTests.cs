@@ -148,6 +148,45 @@ public sealed class TransformRegistryTests : IDisposable
     }
 
     [Fact]
+    public void DirtyParent_UpdatesChildToo()
+    {
+        // Step 1: Compute expected using XNA
+        var expectedMatrix = Matrix.CreateScale(2f, 2f, 2f);
+
+        // Step 2: Setup entity and compute using TransformRegistry
+        var parent = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = Vector3.Zero;
+                t.Rotation = Quaternion.Identity;
+                t.Scale = new Vector3(1f, 1f, 1f);
+                t.Anchor = Vector3.Zero;
+            });
+        var child = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = Vector3.Zero;
+                t.Rotation = Quaternion.Identity;
+                t.Scale = new Vector3(1f, 1f, 1f);
+                t.Anchor = Vector3.Zero;
+            })
+            .WithParent(parent);
+
+        // Recalc once to make everyone not dirty
+        TransformRegistry.Instance.Recalculate();
+
+        // Dirty only the parent
+        parent.SetBehavior<TransformBehavior>((ref t) =>
+                t.Scale = new Vector3(2f, 2f, 2f)
+        );
+        TransformRegistry.Instance.Recalculate();
+
+        // Step 3: Compare, child should get updated too
+        AssertMatricesEqual(expectedMatrix, child);
+    }
+
+
+    [Fact]
     public void RotationOnly_MatchesXnaRotation()
     {
         // Step 1: Compute expected using XNA
