@@ -50,11 +50,6 @@ public sealed class TransformRegistry :
     private Matrix _localAnchor = default;
     private Matrix _localpos = default;
     private Matrix _localTransform = default;
-    
-    // Reusable out parameters to avoid allocations
-    private TransformBehavior? _transform;
-    private Entity? _parent;
-    private WorldTransformBehavior? _parentWorld;
 
     public void Recalculate()
     {
@@ -72,7 +67,7 @@ public sealed class TransformRegistry :
                     continue;
                 }
 
-                if (!BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out _transform))
+                if (!BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var _transform))
                 {
                     continue;
                 }
@@ -97,9 +92,9 @@ public sealed class TransformRegistry :
 
                 // Get parent world transform
                 Matrix parentWorldTransform = Matrix.Identity;
-                if (entity.TryGetParent(out _parent))
+                if (entity.TryGetParent(out var _parent))
                 {
-                    if (_parent.Value.TryGetBehavior<WorldTransformBehavior>(out _parentWorld))
+                    if (_parent.Value.TryGetBehavior<WorldTransformBehavior>(out var _parentWorld))
                     {
                         parentWorldTransform = _parentWorld.Value.Value;
                     }
@@ -141,7 +136,7 @@ public sealed class TransformRegistry :
     private bool HasDirtyAncestor(Entity entity)
     {
         var current = entity;
-        while (current.TryGetParent(out _parent))
+        while (current.TryGetParent(out var _parent))
         {
             if (_dirty.HasValue(_parent.Value.Index))
             {
