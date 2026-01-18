@@ -131,24 +131,12 @@ public sealed class TransformBenchmarkTests : IDisposable
             var entity = EntityRegistry.Instance.Activate();
             var data = transformData[i];
 
-            entity.WithTransform((ref readonly t) =>
+            entity.WithTransform((ref t) =>
             {
-                t.Position.X.Value = data.Position.X;
-                t.Position.Y.Value = data.Position.Y;
-                t.Position.Z.Value = data.Position.Z;
-
-                t.Rotation.X.Value = data.Rotation.X;
-                t.Rotation.Y.Value = data.Rotation.Y;
-                t.Rotation.Z.Value = data.Rotation.Z;
-                t.Rotation.W.Value = data.Rotation.W;
-
-                t.Scale.X.Value = data.Scale.X;
-                t.Scale.Y.Value = data.Scale.Y;
-                t.Scale.Z.Value = data.Scale.Z;
-
-                t.Anchor.X.Value = data.Anchor.X;
-                t.Anchor.Y.Value = data.Anchor.Y;
-                t.Anchor.Z.Value = data.Anchor.Z;
+                t.Position = data.Position;
+                t.Rotation = data.Rotation;
+                t.Scale = data.Scale;
+                t.Anchor = data.Anchor;
             });
 
             if (parentIndices[i] >= 0)
@@ -166,12 +154,12 @@ public sealed class TransformBenchmarkTests : IDisposable
             var entityIndex = (ushort)(Constants.MaxLoadingEntities + i);
             var entity = EntityRegistry.Instance[entityIndex];
 
-            var hasTransform = RefBehaviorRegistry<WorldTransformBehavior>.Instance
+            var hasTransform = BehaviorRegistry<WorldTransformBehavior>.Instance
                 .TryGetBehavior(entity, out var worldTransform);
 
             Assert.True(hasTransform);
 
-            var simdMatrix = worldTransform!.Value.Value.AsMatrix();
+            var simdMatrix = worldTransform!.Value.Value;
             var manualMatrix = manualResults[i];
 
             AssertMatricesEqual(manualMatrix, simdMatrix, Tolerance);
@@ -240,20 +228,21 @@ public sealed class TransformBenchmarkTests : IDisposable
                 (float)(random.NextDouble() * MathHelper.TwoPi)
             );
 
-            entity.WithTransform((ref readonly t) =>
+            entity.WithTransform((ref t) =>
             {
-                t.Position. X. Value = (float)(random.NextDouble() * 100);
-                t.Position.Y.Value = (float)(random.NextDouble() * 100);
-                t.Position.Z.Value = (float)(random.NextDouble() * 100);
+                t.Position = new Vector3(
+                    (float)(random.NextDouble() * 100),
+                    (float)(random.NextDouble() * 100),
+                    (float)(random.NextDouble() * 100));
                 
-                t.Rotation.X. Value = rotation.X;
-                t. Rotation.Y.Value = rotation. Y;
-                t.Rotation.Z.Value = rotation.Z;
-                t.Rotation.W.Value = rotation.W;
+                t.Rotation = rotation;
                 
-                t.Scale.X. Value = (float)(random.NextDouble() * 2 + 0.5f);
-                t.Scale.Y.Value = (float)(random.NextDouble() * 2 + 0.5f);
-                t.Scale.Z.Value = (float)(random.NextDouble() * 2 + 0.5f);
+                t.Scale = new Vector3(
+                    (float)(random.NextDouble() * 2 + 0.5f),
+                    (float)(random.NextDouble() * 2 + 0.5f),
+                    (float)(random.NextDouble() * 2 + 0.5f));
+                
+                t.Anchor = Vector3.Zero;
             });
 
             if (parentIndex >= 0)

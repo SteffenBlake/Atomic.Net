@@ -6,12 +6,8 @@ public static class TransformSystem
 {
     public static void Initialize()
     {
-        RefBehaviorRegistry<TransformBehavior>.Initialize();
-        RefBehaviorRegistry<WorldTransformBehavior>.Initialize();
-
-        TransformStore.Initialize();
-        WorldTransformStore.Initialize();
-        ParentWorldTransformStore.Initialize();
+        BehaviorRegistry<TransformBehavior>.Initialize();
+        BehaviorRegistry<WorldTransformBehavior>.Initialize();
 
         TransformRegistry.Initialize();
     }

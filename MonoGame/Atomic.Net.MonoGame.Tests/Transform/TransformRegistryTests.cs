@@ -39,7 +39,7 @@ public sealed class TransformRegistryTests : IDisposable
 
     private static void AssertMatricesEqual(Matrix expected, Entity entity)
     {
-        var hasTransform = RefBehaviorRegistry<WorldTransformBehavior>.Instance
+        var hasTransform = BehaviorRegistry<WorldTransformBehavior>.Instance
             .TryGetBehavior(entity, out var worldTransform);
 
         Assert.True(hasTransform, "Entity should have a WorldTransformBehavior behavior");
@@ -57,10 +57,10 @@ public sealed class TransformRegistryTests : IDisposable
         
         var actualArray = new float[]
         {
-            actual.M11.Value, actual.M12.Value, actual.M13.Value, actual.M14.Value,
-            actual.M21.Value, actual.M22.Value, actual.M23.Value, actual. M24.Value,
-            actual.M31.Value, actual. M32.Value, actual.M33.Value, actual.M34.Value,
-            actual.M41.Value, actual.M42.Value, actual.M43.Value, actual.M44.Value
+            actual.M11, actual.M12, actual.M13, actual.M14,
+            actual.M21, actual.M22, actual.M23, actual. M24,
+            actual.M31, actual. M32, actual.M33, actual.M34,
+            actual.M41, actual.M42, actual.M43, actual.M44
         };
         
         var labels = new[]
@@ -112,11 +112,11 @@ public sealed class TransformRegistryTests : IDisposable
 
         // Step 2: Setup entity and compute using TransformRegistry
         var entity = CreateEntity()
-            .WithTransform((ref readonly t) =>
+            .WithTransform((ref t) =>
             {
-                t.Position.X.Value = 10f;
-                t.Position.Y.Value = 0f;
-                t.Position.Z.Value = 0f;
+                t.Position = new Vector3(10f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
             });
 
         TransformRegistry.Instance.Recalculate();
@@ -133,11 +133,12 @@ public sealed class TransformRegistryTests : IDisposable
 
         // Step 2: Setup entity and compute using TransformRegistry
         var entity = CreateEntity()
-            .WithTransform((ref readonly t) =>
+            .WithTransform((ref t) =>
             {
-                t.Scale.X.Value = 2f;
-                t.Scale.Y.Value = 2f;
-                t.Scale.Z.Value = 2f;
+                t.Position = Vector3.Zero;
+                t.Rotation = Quaternion.Identity;
+                t.Scale = new Vector3(2f, 2f, 2f);
+                t.Anchor = Vector3.Zero;
             });
 
         TransformRegistry.Instance.Recalculate();
@@ -155,12 +156,12 @@ public sealed class TransformRegistryTests : IDisposable
 
         // Step 2: Setup entity and compute using TransformRegistry
         var entity = CreateEntity()
-            .WithTransform((ref readonly t) =>
+            .WithTransform((ref t) =>
             {
-                t.Rotation.X.Value = rotation.X;
-                t.Rotation.Y.Value = rotation.Y;
-                t.Rotation.Z.Value = rotation.Z;
-                t.Rotation.W.Value = rotation.W;
+                t.Position = Vector3.Zero;
+                t.Rotation = rotation;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
             });
 
         TransformRegistry.Instance.Recalculate();
@@ -182,15 +183,21 @@ public sealed class TransformRegistryTests : IDisposable
 
         // Step 2: Setup entities and compute using TransformRegistry
         var parent = CreateEntity()
-            .WithTransform((ref readonly t) =>
+            .WithTransform((ref t) =>
             {
-                t.Position.X.Value = 100f;
+                t.Position = new Vector3(100f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
             });
 
         var child = CreateEntity()
-            .WithTransform((ref readonly t) =>
+            .WithTransform((ref t) =>
             {
-                t.Position.X.Value = 10f;
+                t.Position = new Vector3(10f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
             })
             .WithParent(parent);
 
@@ -211,18 +218,21 @@ public sealed class TransformRegistryTests : IDisposable
 
         // Step 2: Setup entities and compute using TransformRegistry
         var parent = CreateEntity()
-            .WithTransform((ref readonly t) =>
+            .WithTransform((ref t) =>
             {
-                t.Rotation.X.Value = rotation.X;
-                t.Rotation.Y.Value = rotation.Y;
-                t.Rotation.Z.Value = rotation.Z;
-                t.Rotation.W.Value = rotation.W;
+                t.Position = Vector3.Zero;
+                t.Rotation = rotation;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
             });
 
         var child = CreateEntity()
-            .WithTransform((ref readonly t) =>
+            .WithTransform((ref t) =>
             {
-                t.Position.X.Value = 10f;
+                t.Position = new Vector3(10f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
             })
             .WithParent(parent);
 
@@ -245,22 +255,21 @@ public sealed class TransformRegistryTests : IDisposable
 
         // Step 2: Setup entities and compute using TransformRegistry
         var parent = CreateEntity()
-            .WithTransform((ref readonly t) =>
+            .WithTransform((ref t) =>
             {
-                t.Rotation.X.Value = rotation.X;
-                t.Rotation.Y.Value = rotation.Y;
-                t.Rotation.Z.Value = rotation.Z;
-                t.Rotation.W.Value = rotation.W;
+                t.Position = Vector3.Zero;
+                t.Rotation = rotation;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
             });
 
         var child = CreateEntity()
-            .WithTransform((ref readonly t) =>
+            .WithTransform((ref t) =>
             {
-                t.Position.X.Value = 10f;
-                t.Rotation.X.Value = rotation.X;
-                t.Rotation.Y.Value = rotation.Y;
-                t.Rotation.Z.Value = rotation.Z;
-                t.Rotation.W.Value = rotation.W;
+                t.Position = new Vector3(10f, 0f, 0f);
+                t.Rotation = rotation;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
             })
             .WithParent(parent);
 
@@ -291,13 +300,12 @@ public sealed class TransformRegistryTests : IDisposable
 
         // Step 2: Setup entity and compute using TransformRegistry
         var entity = CreateEntity()
-            .WithTransform((ref readonly t) =>
+            .WithTransform((ref t) =>
             {
-                t.Anchor.X.Value = 5f;
-                t.Rotation.X.Value = rotation.X;
-                t.Rotation.Y.Value = rotation.Y;
-                t.Rotation.Z.Value = rotation.Z;
-                t.Rotation.W.Value = rotation.W;
+                t.Position = Vector3.Zero;
+                t.Rotation = rotation;
+                t.Scale = Vector3.One;
+                t.Anchor = new Vector3(5f, 0f, 0f);
             });
 
         TransformRegistry.Instance.Recalculate();
@@ -324,23 +332,23 @@ public sealed class TransformRegistryTests : IDisposable
     {
         // Step 1: Create entity with rotation (potential polluter)
         var entity1 = CreateEntity();
-        entity1.WithTransform((ref readonly t) =>
+        entity1.WithTransform((ref t) =>
         {
             var rotation = Rotation90DegreesAroundZ();
-            t.Rotation.X.Value = rotation.X;
-            t.Rotation.Y.Value = rotation.Y;
-            t.Rotation.Z.Value = rotation.Z;
-            t.Rotation.W.Value = rotation.W;
+            t.Position = Vector3.Zero;
+            t.Rotation = rotation;
+            t.Scale = Vector3.One;
+            t.Anchor = Vector3.Zero;
         });
         TransformRegistry.Instance.Recalculate();
         
         // Verify it has rotation (not identity)
-        var hasTransform1 = RefBehaviorRegistry<WorldTransformBehavior>.Instance
+        var hasTransform1 = BehaviorRegistry<WorldTransformBehavior>.Instance
             .TryGetBehavior(entity1, out var wt1);
 
         Assert.True(hasTransform1);
 
-        var m11_before = wt1!.Value.Value.M11.Value;
+        var m11_before = wt1!.Value.Value.M11;
         // M11 should NOT be 1.0 (it should be ~0 due to 90 degree rotation)
         Assert.False(
             MathF.Abs(m11_before - 1.0f) < Tolerance, 
@@ -371,13 +379,12 @@ public sealed class TransformRegistryTests : IDisposable
         // Step 1: Create entity with complex transform (rotation + position)
         var rotation = Rotation90DegreesAroundZ();
         var entity1 = CreateEntity();
-        entity1.WithTransform((ref readonly t) =>
+        entity1.WithTransform((ref t) =>
         {
-            t.Position.X.Value = 100f;
-            t.Rotation.X.Value = rotation.X;
-            t.Rotation.Y.Value = rotation.Y;
-            t.Rotation.Z.Value = rotation.Z;
-            t.Rotation.W.Value = rotation.W;
+            t.Position = new Vector3(100f, 0f, 0f);
+            t.Rotation = rotation;
+            t.Scale = Vector3.One;
+            t.Anchor = Vector3.Zero;
         });
         TransformRegistry.Instance.Recalculate();
         
@@ -386,9 +393,12 @@ public sealed class TransformRegistryTests : IDisposable
         
         // Step 3: Create new entity with ONLY position (no rotation)
         var entity2 = EntityRegistry.Instance.Activate();
-        entity2.WithTransform((ref readonly t) =>
+        entity2.WithTransform((ref t) =>
         {
-            t.Position.X.Value = 10f;
+            t.Position = new Vector3(10f, 0f, 0f);
+            t.Rotation = Quaternion.Identity;
+            t.Scale = Vector3.One;
+            t.Anchor = Vector3.Zero;
         });
         TransformRegistry.Instance.Recalculate();
         
@@ -411,12 +421,12 @@ public sealed class TransformRegistryTests : IDisposable
             Matrix.CreateTranslation(anchor);
 
         var entity = CreateEntity()
-            .WithTransform((ref readonly t) =>
+            .WithTransform((ref t) =>
             {
-                t.Anchor.X.Value = 3f;
-                t.Scale.X.Value = 2f;
-                t.Scale.Y.Value = 2f;
-                t.Scale.Z.Value = 2f;
+                t.Position = Vector3.Zero;
+                t.Rotation = Quaternion.Identity;
+                t.Scale = new Vector3(2f, 2f, 2f);
+                t.Anchor = new Vector3(3f, 0f, 0f);
             });
 
         TransformRegistry.Instance.Recalculate();
@@ -440,16 +450,12 @@ public sealed class TransformRegistryTests : IDisposable
             Matrix.CreateTranslation(anchor);
 
         var entity = CreateEntity()
-            .WithTransform((ref readonly t) =>
+            .WithTransform((ref t) =>
             {
-                t.Anchor.X.Value = 4f;
-                t.Anchor.Y.Value = 2f;
-                t.Rotation.X.Value = rotation.X;
-                t.Rotation.Y.Value = rotation.Y;
-                t.Rotation.Z.Value = rotation.Z;
-                t.Rotation.W.Value = rotation.W;
-                t.Scale.X.Value = 1.5f;
-                t.Scale.Y.Value = 1.5f;
+                t.Position = Vector3.Zero;
+                t.Rotation = rotation;
+                t.Scale = new Vector3(1.5f, 1.5f, 1f);
+                t.Anchor = new Vector3(4f, 2f, 0f);
             });
 
         TransformRegistry.Instance.Recalculate();
@@ -473,15 +479,12 @@ public sealed class TransformRegistryTests : IDisposable
             Matrix.CreateTranslation(position);
 
         var entity = CreateEntity()
-            .WithTransform((ref readonly t) =>
+            .WithTransform((ref t) =>
             {
-                t.Position.X.Value = 10f;
-                t.Position.Y.Value = 5f;
-                t.Anchor.X.Value = 3f;
-                t.Rotation.X.Value = rotation.X;
-                t.Rotation.Y.Value = rotation.Y;
-                t.Rotation.Z.Value = rotation.Z;
-                t.Rotation.W.Value = rotation.W;
+                t.Position = new Vector3(10f, 5f, 0f);
+                t.Rotation = rotation;
+                t.Scale = Vector3.One;
+                t.Anchor = new Vector3(3f, 0f, 0f);
             });
 
         TransformRegistry.Instance.Recalculate();
@@ -507,19 +510,12 @@ public sealed class TransformRegistryTests : IDisposable
             Matrix.CreateTranslation(position);
 
         var entity = CreateEntity()
-            .WithTransform((ref readonly t) =>
+            .WithTransform((ref t) =>
             {
-                t.Position.X.Value = 8f;
-                t.Position.Y.Value = -3f;
-                t.Position.Z.Value = 2f;
-                t.Anchor.X.Value = 2f;
-                t.Anchor.Y.Value = 1f;
-                t.Rotation.X.Value = rotation.X;
-                t.Rotation.Y.Value = rotation.Y;
-                t.Rotation.Z.Value = rotation.Z;
-                t.Rotation.W.Value = rotation.W;
-                t.Scale.X.Value = 2f;
-                t.Scale.Y.Value = 3f;
+                t.Position = new Vector3(8f, -3f, 2f);
+                t.Rotation = rotation;
+                t.Scale = new Vector3(2f, 3f, 1f);
+                t.Anchor = new Vector3(2f, 1f, 0f);
             });
 
         TransformRegistry.Instance.Recalculate();
@@ -534,11 +530,12 @@ public sealed class TransformRegistryTests : IDisposable
         var expectedMatrix = Matrix.CreateScale(2f, 3f, 0.5f);
 
         var entity = CreateEntity()
-            .WithTransform((ref readonly t) =>
+            .WithTransform((ref t) =>
             {
-                t.Scale.X.Value = 2f;
-                t.Scale.Y.Value = 3f;
-                t.Scale.Z.Value = 0.5f;
+                t.Position = Vector3.Zero;
+                t.Rotation = Quaternion.Identity;
+                t.Scale = new Vector3(2f, 3f, 0.5f);
+                t.Anchor = Vector3.Zero;
             });
 
         TransformRegistry.Instance.Recalculate();
