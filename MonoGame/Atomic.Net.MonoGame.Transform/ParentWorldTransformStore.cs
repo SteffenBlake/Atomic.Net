@@ -7,7 +7,8 @@ namespace Atomic.Net.MonoGame.Transform;
 /// </summary>
 public sealed class ParentWorldTransformStore : 
     ISingleton<ParentWorldTransformStore>,
-    IEventHandler<ResetEvent>
+    IEventHandler<InitializeEvent>,
+    IEventHandler<PostEntityDeactivatedEvent>
 {
     internal static void Initialize()
     {
@@ -17,6 +18,7 @@ public sealed class ParentWorldTransformStore :
         }
 
         Instance ??= new();
+        EventBus<InitializeEvent>.Register<TransformStore>();
     }
 
     public static ParentWorldTransformStore Instance { get; private set; } = null!;
@@ -38,26 +40,31 @@ public sealed class ParentWorldTransformStore :
     public readonly float[] M43 = new float[Constants.MaxEntities];
     public readonly float[] M44 = [.. Enumerable.Repeat(1f, Constants.MaxEntities)];
 
-    public void OnEvent(ResetEvent e)
+    public void OnEvent(InitializeEvent e)
     {
-        Array.Fill(M11, 1f);
-        Array.Fill(M12, 0f);
-        Array.Fill(M13, 0f);
-        Array.Fill(M14, 0f);
+        EventBus<PostEntityDeactivatedEvent>.Register<ParentWorldTransformStore>();
+    }
 
-        Array.Fill(M21, 0f);
-        Array.Fill(M22, 1f);
-        Array.Fill(M23, 0f);
-        Array.Fill(M24, 0f);
+    public void OnEvent(PostEntityDeactivatedEvent e)
+    {
+        M11[e.Entity.Index] = 1f;
+        M12[e.Entity.Index] = 0f;
+        M13[e.Entity.Index] = 0f;
+        M14[e.Entity.Index] = 0f;
 
-        Array.Fill(M31, 0f);
-        Array.Fill(M32, 0f);
-        Array.Fill(M33, 1f);
-        Array.Fill(M34, 0f);
+        M21[e.Entity.Index] = 0f;
+        M22[e.Entity.Index] = 1f;
+        M23[e.Entity.Index] = 0f;
+        M24[e.Entity.Index] = 0f;
+        
+        M31[e.Entity.Index] = 0f;
+        M32[e.Entity.Index] = 0f;
+        M33[e.Entity.Index] = 1f;
+        M34[e.Entity.Index] = 0f;
 
-        Array.Fill(M41, 0f);
-        Array.Fill(M42, 0f);
-        Array.Fill(M43, 1f);
-        Array.Fill(M44, 0f);
+        M41[e.Entity.Index] = 0f;
+        M42[e.Entity.Index] = 0f;
+        M43[e.Entity.Index] = 0f;
+        M44[e.Entity.Index] = 1f;
     }
 }

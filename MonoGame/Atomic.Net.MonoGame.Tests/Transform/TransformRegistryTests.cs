@@ -320,7 +320,7 @@ public sealed class TransformRegistryTests : IDisposable
     }
 
     [Fact]
-    public void ResetPreventsPollution()
+    public void ResetPreventsPollution_InGeneral()
     {
         // Step 1: Create entity with rotation (potential polluter)
         var entity1 = CreateEntity();

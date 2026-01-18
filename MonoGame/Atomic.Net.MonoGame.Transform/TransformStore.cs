@@ -6,7 +6,10 @@ namespace Atomic.Net.MonoGame.Transform;
 /// <summary>
 /// SIMD-friendly backing storage for all transform inputs.
 /// </summary>
-public sealed class TransformStore : ISingleton<TransformStore>
+public sealed class TransformStore : 
+    ISingleton<TransformStore>,
+    IEventHandler<InitializeEvent>,
+    IEventHandler<PostEntityDeactivatedEvent>
 {
     internal static void Initialize()
     {
@@ -16,6 +19,7 @@ public sealed class TransformStore : ISingleton<TransformStore>
         }
 
         Instance ??= new();
+        EventBus<InitializeEvent>.Register<TransformStore>();
     }
 
     public static TransformStore Instance { get; private set; } = null!;
@@ -67,5 +71,30 @@ public sealed class TransformStore : ISingleton<TransformStore>
                 AnchorZ.BackedFor(idx)
             )
         );
+    }
+
+    public void OnEvent(InitializeEvent _)
+    {
+        EventBus<PostEntityDeactivatedEvent>.Register<WorldTransformStore>();
+    }
+
+    public void OnEvent(PostEntityDeactivatedEvent e)
+    {
+        PositionX[e.Entity.Index] = 0f;
+        PositionY[e.Entity.Index] = 0f;
+        PositionZ[e.Entity.Index] = 0f;
+        
+        RotationX[e.Entity.Index] = 0f;
+        RotationY[e.Entity.Index] = 0f;
+        RotationZ[e.Entity.Index] = 0f;
+        RotationW[e.Entity.Index] = 1f;
+        
+        ScaleX[e.Entity.Index] = 1f;
+        ScaleY[e.Entity.Index] = 1f;
+        ScaleZ[e.Entity.Index] = 1f;
+
+        AnchorX[e.Entity.Index] = 0f;
+        AnchorY[e.Entity.Index] = 0f;
+        AnchorZ[e.Entity.Index] = 0f;
     }
 }
