@@ -186,7 +186,7 @@ public class TransformBenchmark
     }
 
     [Benchmark]
-    public void SIMD_EntitySystem()
+    public void EntitySystem()
     {
         TransformRegistry.Instance.Recalculate();
     }
