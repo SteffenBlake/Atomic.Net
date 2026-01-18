@@ -18,7 +18,7 @@ public sealed class ParentWorldTransformStore :
         }
 
         Instance ??= new();
-        EventBus<InitializeEvent>.Register<TransformStore>();
+        EventBus<InitializeEvent>.Register<ParentWorldTransformStore>();
     }
 
     public static ParentWorldTransformStore Instance { get; private set; } = null!;
@@ -40,7 +40,7 @@ public sealed class ParentWorldTransformStore :
     public readonly float[] M43 = new float[Constants.MaxEntities];
     public readonly float[] M44 = [.. Enumerable.Repeat(1f, Constants.MaxEntities)];
 
-    public void OnEvent(InitializeEvent e)
+    public void OnEvent(InitializeEvent _)
     {
         EventBus<PostEntityDeactivatedEvent>.Register<ParentWorldTransformStore>();
     }

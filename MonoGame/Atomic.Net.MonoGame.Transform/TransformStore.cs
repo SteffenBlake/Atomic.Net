@@ -75,7 +75,7 @@ public sealed class TransformStore :
 
     public void OnEvent(InitializeEvent _)
     {
-        EventBus<PostEntityDeactivatedEvent>.Register<WorldTransformStore>();
+        EventBus<PostEntityDeactivatedEvent>.Register<TransformStore>();
     }
 
     public void OnEvent(PostEntityDeactivatedEvent e)
