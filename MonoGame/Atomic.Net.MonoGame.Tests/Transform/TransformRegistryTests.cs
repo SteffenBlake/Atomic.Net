@@ -581,4 +581,366 @@ public sealed class TransformRegistryTests : IDisposable
 
         AssertMatricesEqual(expectedMatrix, entity);
     }
+
+    [Fact]
+    public void PartialDirtyTree_OnlyDirtyGrandchild_UpdatesCorrectly()
+    {
+        // Create hierarchy: grandparent -> parent -> child
+        var grandparent = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(100f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            });
+
+        var parent = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(10f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            })
+            .WithParent(grandparent);
+
+        var child = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(1f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            })
+            .WithParent(parent);
+
+        // Initial recalculation - everyone is dirty
+        TransformRegistry.Instance.Recalculate();
+
+        // Now update ONLY the child (leaf node)
+        child.SetBehavior<TransformBehavior>((ref t) =>
+            t.Position = new Vector3(2f, 0f, 0f)
+        );
+
+        // Recalculate with only child dirty
+        TransformRegistry.Instance.Recalculate();
+
+        // Expected: grandparent(100) + parent(10) + child(2) = 112
+        var expectedMatrix = Matrix.CreateTranslation(112f, 0f, 0f);
+        AssertMatricesEqual(expectedMatrix, child);
+    }
+
+    [Fact]
+    public void PartialDirtyTree_OnlyDirtyMiddleNode_UpdatesChildrenCorrectly()
+    {
+        // Create hierarchy: grandparent -> parent -> child
+        var grandparent = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(100f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            });
+
+        var parent = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(10f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            })
+            .WithParent(grandparent);
+
+        var child = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(1f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            })
+            .WithParent(parent);
+
+        // Initial recalculation
+        TransformRegistry.Instance.Recalculate();
+
+        // Now update ONLY the parent (middle node)
+        parent.SetBehavior<TransformBehavior>((ref t) =>
+            t.Position = new Vector3(20f, 0f, 0f)
+        );
+
+        // Recalculate with only parent dirty - child should be updated too
+        TransformRegistry.Instance.Recalculate();
+
+        // Expected: grandparent(100) + parent(20) + child(1) = 121
+        var expectedMatrix = Matrix.CreateTranslation(121f, 0f, 0f);
+        AssertMatricesEqual(expectedMatrix, child);
+    }
+
+    [Fact]
+    public void PartialDirtyTree_DirtyRootWithMultipleLevels_UpdatesAllDescendants()
+    {
+        // Create hierarchy: root -> child1 -> grandchild1
+        //                        -> child2 -> grandchild2
+        var root = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(100f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            });
+
+        var child1 = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(10f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            })
+            .WithParent(root);
+
+        var grandchild1 = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(1f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            })
+            .WithParent(child1);
+
+        var child2 = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(20f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            })
+            .WithParent(root);
+
+        var grandchild2 = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(2f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            })
+            .WithParent(child2);
+
+        // Initial recalculation
+        TransformRegistry.Instance.Recalculate();
+
+        // Update ONLY the root
+        root.SetBehavior<TransformBehavior>((ref t) =>
+            t.Position = new Vector3(200f, 0f, 0f)
+        );
+
+        // Recalculate - all descendants should update
+        TransformRegistry.Instance.Recalculate();
+
+        // Expected results
+        var expectedGrandchild1 = Matrix.CreateTranslation(211f, 0f, 0f); // 200 + 10 + 1
+        var expectedGrandchild2 = Matrix.CreateTranslation(222f, 0f, 0f); // 200 + 20 + 2
+
+        AssertMatricesEqual(expectedGrandchild1, grandchild1);
+        AssertMatricesEqual(expectedGrandchild2, grandchild2);
+    }
+
+    [Fact]
+    public void PartialDirtyTree_MultipleRecalculations_MaintainsCorrectState()
+    {
+        // Create hierarchy: parent -> child
+        var parent = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(100f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            });
+
+        var child = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(10f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            })
+            .WithParent(parent);
+
+        // Initial recalculation
+        TransformRegistry.Instance.Recalculate();
+        var expectedAfterInit = Matrix.CreateTranslation(110f, 0f, 0f);
+        AssertMatricesEqual(expectedAfterInit, child);
+
+        // Update parent - recalculate
+        parent.SetBehavior<TransformBehavior>((ref t) =>
+            t.Position = new Vector3(200f, 0f, 0f)
+        );
+        TransformRegistry.Instance.Recalculate();
+        var expectedAfterFirst = Matrix.CreateTranslation(210f, 0f, 0f);
+        AssertMatricesEqual(expectedAfterFirst, child);
+
+        // Update child - recalculate
+        child.SetBehavior<TransformBehavior>((ref t) =>
+            t.Position = new Vector3(20f, 0f, 0f)
+        );
+        TransformRegistry.Instance.Recalculate();
+        var expectedAfterSecond = Matrix.CreateTranslation(220f, 0f, 0f);
+        AssertMatricesEqual(expectedAfterSecond, child);
+
+        // Update parent again - recalculate
+        parent.SetBehavior<TransformBehavior>((ref t) =>
+            t.Position = new Vector3(300f, 0f, 0f)
+        );
+        TransformRegistry.Instance.Recalculate();
+        var expectedAfterThird = Matrix.CreateTranslation(320f, 0f, 0f);
+        AssertMatricesEqual(expectedAfterThird, child);
+    }
+
+    [Fact]
+    public void PartialDirtyTree_DeepHierarchyWithDirtyMiddleNodes_UpdatesCorrectly()
+    {
+        // Create deep hierarchy: root -> n1 -> n2 -> n3 -> n4 -> n5
+        var root = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(1000f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            });
+
+        var n1 = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(100f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            })
+            .WithParent(root);
+
+        var n2 = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(10f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            })
+            .WithParent(n1);
+
+        var n3 = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(1f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            })
+            .WithParent(n2);
+
+        var n4 = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(0.1f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            })
+            .WithParent(n3);
+
+        var n5 = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(0.01f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            })
+            .WithParent(n4);
+
+        // Initial recalculation
+        TransformRegistry.Instance.Recalculate();
+
+        // Update n2 (middle node) - all descendants should update
+        n2.SetBehavior<TransformBehavior>((ref t) =>
+            t.Position = new Vector3(20f, 0f, 0f)
+        );
+
+        TransformRegistry.Instance.Recalculate();
+
+        // Expected: 1000 + 100 + 20 + 1 + 0.1 + 0.01 = 1121.11
+        var expectedMatrix = Matrix.CreateTranslation(1121.11f, 0f, 0f);
+        AssertMatricesEqual(expectedMatrix, n5);
+    }
+
+    [Fact]
+    public void PartialDirtyTree_SiblingsDontAffectEachOther()
+    {
+        // Create hierarchy with siblings:
+        //     root
+        //    /    \
+        //  child1  child2
+        var root = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(100f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            });
+
+        var child1 = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(10f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            })
+            .WithParent(root);
+
+        var child2 = CreateEntity()
+            .WithTransform((ref t) =>
+            {
+                t.Position = new Vector3(20f, 0f, 0f);
+                t.Rotation = Quaternion.Identity;
+                t.Scale = Vector3.One;
+                t.Anchor = Vector3.Zero;
+            })
+            .WithParent(root);
+
+        // Initial recalculation
+        TransformRegistry.Instance.Recalculate();
+
+        // Store child2's expected position
+        var expectedChild2Before = Matrix.CreateTranslation(120f, 0f, 0f);
+        AssertMatricesEqual(expectedChild2Before, child2);
+
+        // Update ONLY child1
+        child1.SetBehavior<TransformBehavior>((ref t) =>
+            t.Position = new Vector3(15f, 0f, 0f)
+        );
+
+        TransformRegistry.Instance.Recalculate();
+
+        // child2 should remain unchanged
+        var expectedChild2After = Matrix.CreateTranslation(120f, 0f, 0f);
+        AssertMatricesEqual(expectedChild2After, child2);
+
+        // child1 should have new position
+        var expectedChild1After = Matrix.CreateTranslation(115f, 0f, 0f);
+        AssertMatricesEqual(expectedChild1After, child1);
+    }
 }
+
