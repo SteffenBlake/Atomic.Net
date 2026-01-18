@@ -208,5 +208,66 @@ public sealed class TransformBenchmarkTests : IDisposable
     private readonly record struct TransformData(
         Vector3 Position, Quaternion Rotation, Vector3 Scale, Vector3 Anchor
     );
+
+#if BENCH_TRANSFORM
+    const string? BenchTransform = null;
+#else
+    const string? BenchTransform = "Performance profiling only - run via -p:DefineConstants=BENCH_TRANSFORM";
+#endif
+
+    private const int EntityCount = 8000;
+
+    [Fact(Skip = BenchTransform)]
+    public void ProfileTransformRecalculation()
+    {
+        var random = new Random(42);
+
+        // Setup hierarchy with 8000 entities
+        for (int i = 0; i < EntityCount; i++)
+        {
+            int parentIndex = i == 0 ? -1 
+                : i <= 8 ? 0 
+                : (i - 9) % 8 + 1;
+
+            var entity = EntityRegistry.Instance. Activate();
+            
+            var rotation = Quaternion.CreateFromAxisAngle(
+                Vector3.Normalize(new Vector3(
+                    (float)random.NextDouble(),
+                    (float)random.NextDouble(),
+                    (float)random.NextDouble()
+                )),
+                (float)(random.NextDouble() * MathHelper.TwoPi)
+            );
+
+            entity.WithTransform((ref readonly t) =>
+            {
+                t.Position. X. Value = (float)(random.NextDouble() * 100);
+                t.Position.Y.Value = (float)(random.NextDouble() * 100);
+                t.Position.Z.Value = (float)(random.NextDouble() * 100);
+                
+                t.Rotation.X. Value = rotation.X;
+                t. Rotation.Y.Value = rotation. Y;
+                t.Rotation.Z.Value = rotation.Z;
+                t.Rotation.W.Value = rotation.W;
+                
+                t.Scale.X. Value = (float)(random.NextDouble() * 2 + 0.5f);
+                t.Scale.Y.Value = (float)(random.NextDouble() * 2 + 0.5f);
+                t.Scale.Z.Value = (float)(random.NextDouble() * 2 + 0.5f);
+            });
+
+            if (parentIndex >= 0)
+            {
+                ushort parentEntityIndex = (ushort)(Constants.MaxLoadingEntities + parentIndex);
+                entity.WithParent(EntityRegistry.Instance[parentEntityIndex]);
+            }
+        }
+
+        // THE HOTSPOT: Run multiple iterations to get good profiling data
+        for (int iteration = 0; iteration < 100; iteration++)
+        {
+            TransformRegistry.Instance.Recalculate();
+        }
+    }
 }
 
