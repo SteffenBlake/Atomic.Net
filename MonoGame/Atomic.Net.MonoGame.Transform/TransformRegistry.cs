@@ -50,6 +50,11 @@ public sealed class TransformRegistry :
     private Matrix _localAnchor = default;
     private Matrix _localpos = default;
     private Matrix _localTransform = default;
+    
+    // Reusable out parameters to avoid allocations
+    private TransformBehavior? _transform;
+    private Entity? _parent;
+    private WorldTransformBehavior? _parentWorld;
 
     public void Recalculate()
     {
@@ -67,16 +72,15 @@ public sealed class TransformRegistry :
                     continue;
                 }
 
-                TransformBehavior? transform;
-                if (!BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out transform))
+                if (!BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out _transform))
                 {
                     continue;
                 }
 
-                var anchor = transform.Value.Anchor;
-                var scale = transform.Value.Scale;
-                var rotation = transform.Value.Rotation;
-                var position = transform.Value.Position;
+                var anchor = _transform.Value.Anchor;
+                var scale = _transform.Value.Scale;
+                var rotation = _transform.Value.Rotation;
+                var position = _transform.Value.Position;
 
                 Vector3.Multiply(ref anchor, -1, out _localAnchorNegV);
 
@@ -93,13 +97,11 @@ public sealed class TransformRegistry :
 
                 // Get parent world transform
                 Matrix parentWorldTransform = Matrix.Identity;
-                Entity? parent;
-                if (entity.TryGetParent(out parent))
+                if (entity.TryGetParent(out _parent))
                 {
-                    WorldTransformBehavior? parentWorld;
-                    if (parent.Value.TryGetBehavior<WorldTransformBehavior>(out parentWorld))
+                    if (_parent.Value.TryGetBehavior<WorldTransformBehavior>(out _parentWorld))
                     {
-                        parentWorldTransform = parentWorld.Value.Value;
+                        parentWorldTransform = _parentWorld.Value.Value;
                     }
                 }
 
@@ -139,14 +141,13 @@ public sealed class TransformRegistry :
     private bool HasDirtyAncestor(Entity entity)
     {
         var current = entity;
-        Entity? parent;
-        while (current.TryGetParent(out parent))
+        while (current.TryGetParent(out _parent))
         {
-            if (_dirty.HasValue(parent.Value.Index))
+            if (_dirty.HasValue(_parent.Value.Index))
             {
                 return true;
             }
-            current = parent.Value;
+            current = _parent.Value;
         }
         return false;
     }
