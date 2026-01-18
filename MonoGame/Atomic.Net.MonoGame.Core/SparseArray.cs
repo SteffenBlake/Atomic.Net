@@ -75,7 +75,7 @@ public sealed class SparseArray<T>(ushort capacity) : IEnumerable<(ushort Index,
             _sparse[index] = value;
         }
         
-        return new SparseRef<T>(_sparse, index, () => SyncDense(index));
+        return new SparseRef<T>(_sparse, index, this);
     }
 
     /// <summary>

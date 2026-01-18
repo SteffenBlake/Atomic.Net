@@ -52,6 +52,23 @@ public static class EntityBehaviorExtensions
     }
 
     /// <summary>
+    /// Sets or replaces a regular (non-backed) behavior.
+    /// </summary>
+    /// <typeparam name="TBehavior">The behavior type.</typeparam>
+    /// <param name="entity">The entity.</param>
+    /// <param name="mutate">Action to mutate the behavior by reference.</param>
+    /// <returns>The entity for fluent chaining.</returns>
+    public static Entity SetBehavior<TBehavior, THelper>(
+        this Entity entity, ref readonly THelper helper, RefInAction<TBehavior, THelper> mutate
+    )
+        where TBehavior : struct
+    {
+        BehaviorRegistry<TBehavior>.Instance.SetBehavior(entity, in helper, mutate);
+        return entity;
+    }
+
+
+    /// <summary>
     /// Removes a behavior from this entity.
     /// </summary>
     /// <typeparam name="TBehavior">The behavior type.</typeparam>

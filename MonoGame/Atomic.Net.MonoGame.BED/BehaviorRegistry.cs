@@ -68,6 +68,41 @@ public class BehaviorRegistry<TBehavior> :
         }
     }
 
+
+    /// <summary>
+    /// Sets or replaces a regular (non-backed) behavior.
+    /// </summary>
+    /// <param name="entity">The target entity.</param>
+    /// <param name="mutate">Action to mutate the behavior by reference.</param>
+    public void SetBehavior<THelper>(
+        Entity entity, ref readonly THelper helper, RefInAction<TBehavior, THelper> mutate
+    )
+    {
+        if (!entity.Active)
+        {
+            throw new InvalidOperationException(
+                $"Attempted to set behavior '{typeof(TBehavior)}' for inactive entity with id: {entity.Index}."
+            );
+        }
+        var wasBehaviorActive = _behaviors.HasValue(entity.Index);
+        if (wasBehaviorActive)
+        {
+            EventBus<PreBehaviorUpdatedEvent<TBehavior>>.Push(new(entity));
+        }
+
+        using var behaviorRef = _behaviors.GetMut(entity.Index);
+        mutate(in helper, ref behaviorRef.Value);
+
+        if (wasBehaviorActive)
+        {
+            EventBus<PostBehaviorUpdatedEvent<TBehavior>>.Push(new(entity));
+        }
+        else
+        {
+            EventBus<BehaviorAddedEvent<TBehavior>>.Push(new(entity));
+        }
+    }
+
     /// <summary>
     /// Removes (deactivates) a behavior for the given entity.
     /// </summary>

@@ -6,3 +6,8 @@ namespace Atomic.Net.MonoGame.BED;
 /// Delegate for mutating a behavior value by reference.
 /// </summary>
 public delegate void RefAction<T>(ref T value);
+
+/// <summary>
+/// Delegate for mutating a behavior value by reference with helper input.
+/// </summary>
+public delegate void RefInAction<T, THelper>(ref readonly THelper input, ref T value);

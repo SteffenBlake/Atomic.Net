@@ -100,11 +100,11 @@ public sealed class TransformRegistry :
                     }
                 }
 
+                var worldTransform = _localTransform * parentWorldTransform;
                 // Update world transform behavior
-                entity.SetBehavior<WorldTransformBehavior>(
-                    (ref wt) => Matrix.Multiply(
-                        ref _localTransform, ref parentWorldTransform, out wt.Value
-                    )
+                entity.SetBehavior<WorldTransformBehavior, Matrix>(
+                    in worldTransform,
+                    (ref readonly input, ref wt) => wt.Value = input
                 );
 
                 // Use GetChildrenArray for allocation-free iteration
