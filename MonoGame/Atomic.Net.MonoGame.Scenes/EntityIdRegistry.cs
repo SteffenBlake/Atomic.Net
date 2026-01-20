@@ -9,6 +9,7 @@ namespace Atomic.Net.MonoGame.Scenes;
 /// </summary>
 public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
     IEventHandler<BehaviorAddedEvent<EntityId>>,
+    IEventHandler<PostBehaviorUpdatedEvent<EntityId>>,
     IEventHandler<PreEntityDeactivatedEvent>,
     IEventHandler<ResetEvent>,
     IEventHandler<ShutdownEvent>
@@ -21,6 +22,7 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
     private EntityIdRegistry()
     {
         EventBus<BehaviorAddedEvent<EntityId>>.Register(this);
+        EventBus<PostBehaviorUpdatedEvent<EntityId>>.Register(this);
         EventBus<PreEntityDeactivatedEvent>.Register(this);
         EventBus<ResetEvent>.Register(this);
         EventBus<ShutdownEvent>.Register(this);
@@ -60,6 +62,20 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
         // test-architect: Stub - To be implemented by #senior-dev
         // senior-dev: When EntityId behavior is added, register it in the lookup
         // senior-dev: Need to get the actual EntityId behavior to read the ID string
+        if (BehaviorRegistry<EntityId>.Instance.TryGetBehavior(e.Entity, out var entityId))
+        {
+            TryRegister(e.Entity, entityId.Value.Id);
+        }
+    }
+
+    public void OnEvent(PostBehaviorUpdatedEvent<EntityId> e)
+    {
+        // senior-dev: FINDING: BehaviorRegistry<EntityId> is initialized AFTER InitializeEvent fires
+        // senior-dev: This means it never registers for PreEntityDeactivatedEvent in OnEvent(InitializeEvent)
+        // senior-dev: So when ResetEvent deactivates entities, EntityId behaviors are NOT removed
+        // senior-dev: On second scene load, SetBehavior sees existing behavior and fires UpdatedEvent instead of AddedEvent
+        // senior-dev: Solution: Also listen to PostBehaviorUpdatedEvent to handle this case
+        // senior-dev: This ensures entity IDs are registered even when behavior is updated instead of added
         if (BehaviorRegistry<EntityId>.Instance.TryGetBehavior(e.Entity, out var entityId))
         {
             TryRegister(e.Entity, entityId.Value.Id);
