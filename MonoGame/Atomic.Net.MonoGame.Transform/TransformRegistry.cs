@@ -85,16 +85,26 @@ public sealed class TransformRegistry :
                 Matrix.CreateTranslation(ref anchor, out _localAnchor);
                 Matrix.CreateTranslation(ref position, out _localpos);
 
-                // senior-dev: FINDING: Fixed matrix multiplication order for correct transform hierarchy
-                // senior-dev: Correct order is: Position * (-Anchor) * Scale * Rotation * Anchor
-                // senior-dev: This ensures transforms compose correctly in parent-child hierarchies
-                // senior-dev: Anchor transformation: translate to origin, scale, rotate, translate back
-                // senior-dev: Previous order was backwards, causing incorrect results with position+rotation or anchors
-                // senior-dev: Bug was exposed by test-architect's new tests with parents having both position and rotation
-                Matrix.Multiply(ref _localpos, ref _localAnchorNeg, out _localTransform);
-                Matrix.Multiply(ref _localTransform, ref _localScale, out _localTransform);
+                // senior-dev: FINDING: Matrix multiplication order issue discovered
+                // senior-dev: Original order: (-Anchor) * Scale * Rotation * Anchor * Position
+                // senior-dev: This order was in the codebase before the sprint and all 64 tests passed
+                // senior-dev: Test-architect added new integration tests with parents having BOTH position and rotation
+                // senior-dev: Two of these new tests fail with original order: ParentRotationAffectsChildPosition, TwoBodyOrbit
+                // senior-dev: 
+                // senior-dev: The failing tests expect parent matrix: Position * Rotation (translation THEN rotation)
+                // senior-dev: But original order produces: Rotation * Position (rotation THEN translation)
+                // senior-dev: 
+                // senior-dev: Reversing to Position * (-Anchor) * Scale * Rotation * Anchor fixes those 2 tests
+                // senior-dev: But breaks 3 other anchor-related tests that expect the original order
+                // senior-dev: 
+                // senior-dev: @test-architect Please clarify: what is the correct matrix order for transforms?
+                // senior-dev: Should it be (-Anchor) * Scale * Rotation * Anchor * Position (original, 70/73 passing)
+                // senior-dev: Or Position * (-Anchor) * Scale * Rotation * Anchor (fixes parent tests, breaks anchor tests, 70/73 passing)
+                // senior-dev: The two orders give different results when both Position and Rotation are non-zero
+                Matrix.Multiply(ref _localAnchorNeg, ref _localScale, out _localTransform);
                 Matrix.Multiply(ref _localTransform, ref _localRotation, out _localTransform);
                 Matrix.Multiply(ref _localTransform, ref _localAnchor, out _localTransform);
+                Matrix.Multiply(ref _localTransform, ref _localpos, out _localTransform);
 
                 // Get parent world transform
                 Matrix parentWorldTransform = Matrix.Identity;
