@@ -231,18 +231,14 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     /// </summary>
     public void OnEvent(ShutdownEvent _)
     {
-        var allEntities = new List<Entity>();
-        
+        // senior-dev: For shutdown, fire deactivation events then clear arrays directly
+        // This is zero-alloc and safe since shutdown doesn't need incremental deactivation
         foreach (var (index, _) in _active)
         {
-            allEntities.Add(_entities[index]);
+            EventBus<PreEntityDeactivatedEvent>.Push(new(_entities[index]));
         }
 
-        foreach (var entity in allEntities)
-        {
-            Deactivate(entity);
-        }
-
+        _active.Clear();
         _nextSceneIndex = Constants.MaxLoadingEntities;
         _nextLoadingIndex = 0;
     }

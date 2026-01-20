@@ -8,6 +8,8 @@ public static class BEDSystem
         BehaviorRegistry<Parent>.Initialize();
         BehaviorRegistry<IdBehavior>.Initialize();
 
+        // senior-dev: EntityIdRegistry is a core behavior registry, must initialize here
+        EntityIdRegistry.Initialize();
         HierarchyRegistry.Initialize();
     }
 }

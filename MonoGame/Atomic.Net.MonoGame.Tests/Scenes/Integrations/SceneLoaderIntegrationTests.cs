@@ -289,4 +289,31 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         Assert.Equal(Microsoft.Xna.Framework.Quaternion.Identity, transform2.Value.Rotation);
         Assert.Equal(Microsoft.Xna.Framework.Vector3.One, transform2.Value.Scale);
     }
+
+    [Fact]
+    public void EntityIdRegistry_WhenIdBehaviorChanges_UpdatesRegistryCorrectly()
+    {
+        // Arrange: Create entity with initial ID
+        var entity = EntityRegistry.Instance.Activate();
+        BehaviorRegistry<IdBehavior>.Instance.SetBehavior(entity, (ref IdBehavior behavior) => 
+            behavior = new IdBehavior("initial-id"));
+        
+        // Assert: Initial ID resolves
+        var initialResolve = EntityIdRegistry.Instance.TryResolve("initial-id", out var resolvedEntity1);
+        Assert.True(initialResolve, "initial-id should be registered");
+        Assert.Equal(entity.Index, resolvedEntity1.Index);
+
+        // Act: Change the ID
+        BehaviorRegistry<IdBehavior>.Instance.SetBehavior(entity, (ref IdBehavior behavior) => 
+            behavior = new IdBehavior("new-id"));
+        
+        // Assert: Old ID no longer resolves
+        var oldIdResolve = EntityIdRegistry.Instance.TryResolve("initial-id", out _);
+        Assert.False(oldIdResolve, "initial-id should be removed from registry");
+        
+        // Assert: New ID resolves to same entity
+        var newIdResolve = EntityIdRegistry.Instance.TryResolve("new-id", out var resolvedEntity2);
+        Assert.True(newIdResolve, "new-id should be registered");
+        Assert.Equal(entity.Index, resolvedEntity2.Index);
+    }
 }

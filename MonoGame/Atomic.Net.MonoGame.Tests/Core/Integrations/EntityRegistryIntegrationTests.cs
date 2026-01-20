@@ -1,4 +1,5 @@
 using Xunit;
+using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Scenes;
 

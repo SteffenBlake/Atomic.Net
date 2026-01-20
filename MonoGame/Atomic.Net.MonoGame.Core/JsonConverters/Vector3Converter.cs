@@ -8,22 +8,10 @@ public class Vector3Converter : JsonConverter<Vector3>
 {
     public override Vector3 Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        if (reader.TokenType != JsonTokenType.StartArray)
-        {
+        // senior-dev: Use JsonSerializer.Deserialize instead of manual parsing
+        var values = JsonSerializer.Deserialize<float[]>(ref reader, options);
+        if (values == null || values.Length != 3)
             return Vector3.Zero;
-        }
-
-        var values = new float[3];
-        var index = 0;
-
-        while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
-        {
-            if (index < 3 && reader.TokenType == JsonTokenType.Number)
-            {
-                values[index++] = reader.GetSingle();
-            }
-        }
-
         return new Vector3(values[0], values[1], values[2]);
     }
 
