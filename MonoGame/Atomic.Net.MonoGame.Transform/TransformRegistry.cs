@@ -85,10 +85,16 @@ public sealed class TransformRegistry :
                 Matrix.CreateTranslation(ref anchor, out _localAnchor);
                 Matrix.CreateTranslation(ref position, out _localpos);
 
-                Matrix.Multiply(ref _localAnchorNeg, ref _localScale, out _localTransform);
+                // senior-dev: FINDING: Fixed matrix multiplication order for correct transform hierarchy
+                // senior-dev: Correct order is: Position * (-Anchor) * Scale * Rotation * Anchor
+                // senior-dev: This ensures transforms compose correctly in parent-child hierarchies
+                // senior-dev: Anchor transformation: translate to origin, scale, rotate, translate back
+                // senior-dev: Previous order was backwards, causing incorrect results with position+rotation or anchors
+                // senior-dev: Bug was exposed by test-architect's new tests with parents having both position and rotation
+                Matrix.Multiply(ref _localpos, ref _localAnchorNeg, out _localTransform);
+                Matrix.Multiply(ref _localTransform, ref _localScale, out _localTransform);
                 Matrix.Multiply(ref _localTransform, ref _localRotation, out _localTransform);
                 Matrix.Multiply(ref _localTransform, ref _localAnchor, out _localTransform);
-                Matrix.Multiply(ref _localTransform, ref _localpos, out _localTransform);
 
                 // Get parent world transform
                 Matrix parentWorldTransform = Matrix.Identity;
