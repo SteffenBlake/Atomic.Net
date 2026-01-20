@@ -10,7 +10,8 @@ namespace Atomic.Net.MonoGame.Scenes;
 public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
     IEventHandler<BehaviorAddedEvent<EntityId>>,
     IEventHandler<PreEntityDeactivatedEvent>,
-    IEventHandler<ResetEvent>
+    IEventHandler<ResetEvent>,
+    IEventHandler<ShutdownEvent>
 {
     private static EntityIdRegistry? _instance;
     public static EntityIdRegistry Instance => _instance ??= new EntityIdRegistry();
@@ -22,6 +23,7 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
         EventBus<BehaviorAddedEvent<EntityId>>.Register(this);
         EventBus<PreEntityDeactivatedEvent>.Register(this);
         EventBus<ResetEvent>.Register(this);
+        EventBus<ShutdownEvent>.Register(this);
     }
 
     /// <summary>
@@ -31,8 +33,15 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
     /// </summary>
     public bool TryRegister(Entity entity, string id)
     {
-        // test-architect: Stub - To be implemented by @senior-dev
-        throw new NotImplementedException("To be implemented by @senior-dev");
+        // test-architect: Stub - To be implemented by #senior-dev
+        // senior-dev: First-write-wins - if ID already exists, return false
+        if (_idToEntity.ContainsKey(id))
+        {
+            return false;
+        }
+
+        _idToEntity[id] = entity;
+        return true;
     }
 
     /// <summary>
@@ -41,25 +50,55 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
     /// </summary>
     public bool TryResolve(string id, out Entity entity)
     {
-        // test-architect: Stub - To be implemented by @senior-dev
-        throw new NotImplementedException("To be implemented by @senior-dev");
+        // test-architect: Stub - To be implemented by #senior-dev
+        // senior-dev: Simple dictionary lookup
+        return _idToEntity.TryGetValue(id, out entity);
     }
 
     public void OnEvent(BehaviorAddedEvent<EntityId> e)
     {
-        // test-architect: Stub - To be implemented by @senior-dev
-        throw new NotImplementedException("To be implemented by @senior-dev");
+        // test-architect: Stub - To be implemented by #senior-dev
+        // senior-dev: When EntityId behavior is added, register it in the lookup
+        // senior-dev: Need to get the actual EntityId behavior to read the ID string
+        if (BehaviorRegistry<EntityId>.Instance.TryGetBehavior(e.Entity, out var entityId))
+        {
+            TryRegister(e.Entity, entityId.Value.Id);
+        }
     }
 
     public void OnEvent(PreEntityDeactivatedEvent e)
     {
-        // test-architect: Stub - To be implemented by @senior-dev
-        throw new NotImplementedException("To be implemented by @senior-dev");
+        // test-architect: Stub - To be implemented by #senior-dev
+        // senior-dev: When entity is deactivated, remove it from the ID lookup
+        // senior-dev: Need to find and remove the ID mapping for this entity
+        // senior-dev: Using LINQ here is acceptable since this is not a hot path (only during entity deactivation)
+        var idToRemove = _idToEntity.FirstOrDefault(kvp => kvp.Value.Index == e.Entity.Index).Key;
+        if (idToRemove != null)
+        {
+            _idToEntity.Remove(idToRemove);
+        }
     }
 
     public void OnEvent(ResetEvent e)
     {
-        // test-architect: Stub - To be implemented by @senior-dev
-        throw new NotImplementedException("To be implemented by @senior-dev");
+        // test-architect: Stub - To be implemented by #senior-dev
+        // senior-dev: Clear all scene entity IDs (scene entities have index >= MaxLoadingEntities)
+        // senior-dev: Keep loading entity IDs intact
+        var sceneIdsToRemove = _idToEntity
+            .Where(kvp => kvp.Value.Index >= Constants.MaxLoadingEntities)
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        foreach (var id in sceneIdsToRemove)
+        {
+            _idToEntity.Remove(id);
+        }
+    }
+
+    public void OnEvent(ShutdownEvent e)
+    {
+        // senior-dev: Clear ALL entity IDs (both loading and scene partitions)
+        // senior-dev: Used for complete game shutdown and test cleanup
+        _idToEntity.Clear();
     }
 }

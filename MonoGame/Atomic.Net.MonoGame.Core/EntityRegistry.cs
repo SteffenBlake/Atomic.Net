@@ -4,7 +4,7 @@ namespace Atomic.Net.MonoGame.Core;
 /// <summary>
 /// Central registry for entity lifecycle management.
 /// </summary>
-public class EntityRegistry : IEventHandler<ResetEvent>
+public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEvent>
 {
     internal static void Initialize()
     {
@@ -15,6 +15,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>
 
         Instance ??= new();
         EventBus<ResetEvent>.Register(Instance);
+        EventBus<ShutdownEvent>.Register(Instance);
     }
 
     public static EntityRegistry Instance { get; private set; } = null!;
@@ -222,5 +223,26 @@ public class EntityRegistry : IEventHandler<ResetEvent>
         }
 
         _nextSceneIndex = Constants.MaxLoadingEntities;
+    }
+
+    /// <summary>
+    /// Handle shutdown event by deactivating ALL entities (both loading and scene).
+    /// Used for complete game shutdown and test cleanup.
+    /// </summary>
+    public void OnEvent(ShutdownEvent _)
+    {
+        // senior-dev: Deactivate ALL active entities (both loading and scene partitions)
+        var allEntities = _active
+            .Select(a => _entities[a.Index])
+            .ToList();
+
+        foreach (var entity in allEntities)
+        {
+            Deactivate(entity);
+        }
+
+        // senior-dev: Reset both partition indices
+        _nextSceneIndex = Constants.MaxLoadingEntities;
+        _nextLoadingIndex = 0;
     }
 }

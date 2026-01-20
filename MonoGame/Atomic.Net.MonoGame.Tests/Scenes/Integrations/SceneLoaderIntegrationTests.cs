@@ -25,8 +25,8 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
 
     public void Dispose()
     {
-        // Clean up scene entities between tests
-        EventBus<ResetEvent>.Push(new());
+        // Clean up ALL entities (both loading and scene) between tests
+        EventBus<ShutdownEvent>.Push(new());
     }
 
     [Fact]
