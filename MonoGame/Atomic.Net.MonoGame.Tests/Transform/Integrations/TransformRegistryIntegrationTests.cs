@@ -24,7 +24,8 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
     public void Dispose()
     {
-        EventBus<ResetEvent>.Push(new());
+        // Clean up ALL entities (both loading and scene) between tests
+        EventBus<ShutdownEvent>.Push(new());
     }
 
     private static void AssertMatricesEqual(Matrix expected, Entity entity)

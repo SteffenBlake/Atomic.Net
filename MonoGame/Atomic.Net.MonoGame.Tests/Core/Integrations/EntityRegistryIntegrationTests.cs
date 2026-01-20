@@ -16,8 +16,8 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
 
     public void Dispose()
     {
-        // Fire reset event to clean up scene entities between tests
-        EventBus<ResetEvent>.Push(new());
+        // Clean up ALL entities (both loading and scene) between tests
+        EventBus<ShutdownEvent>.Push(new());
     }
 
     [Fact]
