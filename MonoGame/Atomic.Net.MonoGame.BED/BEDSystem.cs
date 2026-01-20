@@ -6,6 +6,7 @@ public static class BEDSystem
     public static void Initialize()
     {
         BehaviorRegistry<Parent>.Initialize();
+        BehaviorRegistry<IdBehavior>.Initialize();
 
         HierarchyRegistry.Initialize();
     }

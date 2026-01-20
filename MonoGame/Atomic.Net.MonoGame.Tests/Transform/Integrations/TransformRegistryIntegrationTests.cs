@@ -36,6 +36,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         AtomicSystem.Initialize();
         BEDSystem.Initialize();
         TransformSystem.Initialize();
+        SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
 

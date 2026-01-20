@@ -11,6 +11,7 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
     public EntityRegistryIntegrationTests()
     {
         AtomicSystem.Initialize();
+        SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
 

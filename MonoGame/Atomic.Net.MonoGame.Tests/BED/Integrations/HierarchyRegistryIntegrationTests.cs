@@ -14,6 +14,7 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
     {
         AtomicSystem.Initialize();
         BEDSystem.Initialize();
+        SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
 

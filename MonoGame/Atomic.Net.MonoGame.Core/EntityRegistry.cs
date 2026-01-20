@@ -231,17 +231,18 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     /// </summary>
     public void OnEvent(ShutdownEvent _)
     {
-        // senior-dev: Deactivate ALL active entities (both loading and scene partitions)
-        var allEntities = _active
-            .Select(a => _entities[a.Index])
-            .ToList();
+        var allEntities = new List<Entity>();
+        
+        foreach (var (index, _) in _active)
+        {
+            allEntities.Add(_entities[index]);
+        }
 
         foreach (var entity in allEntities)
         {
             Deactivate(entity);
         }
 
-        // senior-dev: Reset both partition indices
         _nextSceneIndex = Constants.MaxLoadingEntities;
         _nextLoadingIndex = 0;
     }

@@ -20,6 +20,7 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         // Arrange: Initialize systems before each test
         AtomicSystem.Initialize();
         BEDSystem.Initialize();
+        SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
 
