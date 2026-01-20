@@ -1,18 +1,27 @@
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
+using Atomic.Net.MonoGame.Core.JsonConverters;
 using Microsoft.Xna.Framework;
+using System.Text.Json.Serialization;
 
 namespace Atomic.Net.MonoGame.Transform;
 
 /// <summary>
 /// Stores all transform inputs: position, rotation, scale, anchor.
 /// </summary>
-public struct TransformBehavior : IBehavior<TransformBehavior>
+public record struct TransformBehavior : IBehavior<TransformBehavior>
 {
-    public Vector3 Position;
-    public Quaternion Rotation;
-    public Vector3 Scale;
-    public Vector3 Anchor;
+    [JsonConverter(typeof(Vector3Converter))]
+    public Vector3 Position { get; set; }
+    
+    [JsonConverter(typeof(QuaternionConverter))]
+    public Quaternion Rotation { get; set; }
+    
+    [JsonConverter(typeof(Vector3Converter))]
+    public Vector3 Scale { get; set; }
+    
+    [JsonConverter(typeof(Vector3Converter))]
+    public Vector3 Anchor { get; set; }
 
     public TransformBehavior()
     {

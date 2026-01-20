@@ -8,9 +8,7 @@ namespace Atomic.Net.MonoGame.BED;
 public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
     IEventHandler<InitializeEvent>,
     IEventHandler<BehaviorAddedEvent<IdBehavior>>,
-    IEventHandler<PreBehaviorUpdatedEvent<IdBehavior>>,
-    IEventHandler<PostBehaviorUpdatedEvent<IdBehavior>>,
-    IEventHandler<PreEntityDeactivatedEvent>,
+    IEventHandler<PreBehaviorRemovedEvent<IdBehavior>>,
     IEventHandler<ResetEvent>,
     IEventHandler<ShutdownEvent>
 {
@@ -63,9 +61,7 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
     public void OnEvent(InitializeEvent _)
     {
         EventBus<BehaviorAddedEvent<IdBehavior>>.Register(this);
-        EventBus<PreBehaviorUpdatedEvent<IdBehavior>>.Register(this);
-        EventBus<PostBehaviorUpdatedEvent<IdBehavior>>.Register(this);
-        EventBus<PreEntityDeactivatedEvent>.Register(this);
+        EventBus<PreBehaviorRemovedEvent<IdBehavior>>.Register(this);
         EventBus<ResetEvent>.Register(this);
         EventBus<ShutdownEvent>.Register(this);
     }
@@ -78,25 +74,8 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
         }
     }
 
-    // senior-dev: Remove old ID from mapping before ID change
-    public void OnEvent(PreBehaviorUpdatedEvent<IdBehavior> e)
-    {
-        if (_entityToId.TryGetValue(e.Entity.Index, out var oldId))
-        {
-            _idToEntity.Remove(oldId);
-            _entityToId.Remove(e.Entity.Index);
-        }
-    }
-
-    public void OnEvent(PostBehaviorUpdatedEvent<IdBehavior> e)
-    {
-        if (BehaviorRegistry<IdBehavior>.Instance.TryGetBehavior(e.Entity, out var idBehavior))
-        {
-            TryRegister(e.Entity, idBehavior.Value.Id);
-        }
-    }
-
-    public void OnEvent(PreEntityDeactivatedEvent e)
+    // senior-dev: Clean up ID mapping when IdBehavior is removed (entity deactivation or explicit removal)
+    public void OnEvent(PreBehaviorRemovedEvent<IdBehavior> e)
     {
         if (_entityToId.TryGetValue(e.Entity.Index, out var id))
         {
@@ -127,6 +106,7 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
         }
     }
 
+    // senior-dev: Clean up all mappings on shutdown
     public void OnEvent(ShutdownEvent e)
     {
         _idToEntity.Clear();

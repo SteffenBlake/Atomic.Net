@@ -7,7 +7,6 @@ public static class SceneSystem
 {
     public static void Initialize()
     {
-        // senior-dev: EntityIdRegistry now initialized in BEDSystem (core behavior registry)
         SceneLoader.Initialize();
     }
 }

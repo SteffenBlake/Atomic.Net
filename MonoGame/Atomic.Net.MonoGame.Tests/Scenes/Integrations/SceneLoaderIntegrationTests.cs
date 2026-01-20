@@ -303,7 +303,8 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         Assert.True(initialResolve, "initial-id should be registered");
         Assert.Equal(entity.Index, resolvedEntity1.Index);
 
-        // Act: Change the ID
+        // Act: Change the ID by removing and re-adding the behavior
+        BehaviorRegistry<IdBehavior>.Instance.Remove(entity);
         BehaviorRegistry<IdBehavior>.Instance.SetBehavior(entity, (ref IdBehavior behavior) => 
             behavior = new IdBehavior("new-id"));
         

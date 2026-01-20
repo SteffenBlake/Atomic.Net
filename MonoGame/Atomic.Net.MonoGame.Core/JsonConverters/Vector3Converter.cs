@@ -8,7 +8,6 @@ public class Vector3Converter : JsonConverter<Vector3>
 {
     public override Vector3 Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        // senior-dev: Use JsonSerializer.Deserialize instead of manual parsing
         var values = JsonSerializer.Deserialize<float[]>(ref reader, options);
         if (values == null || values.Length != 3)
             return Vector3.Zero;

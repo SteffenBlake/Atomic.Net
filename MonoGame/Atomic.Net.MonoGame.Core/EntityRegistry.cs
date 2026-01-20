@@ -229,16 +229,31 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     /// Handle shutdown event by deactivating ALL entities (both loading and scene).
     /// Used for complete game shutdown and test cleanup.
     /// </summary>
-    public void OnEvent(ShutdownEvent _)
+    public void OnEvent(ShutdownEvent e)
     {
-        // senior-dev: For shutdown, fire deactivation events then clear arrays directly
-        // This is zero-alloc and safe since shutdown doesn't need incremental deactivation
+        // senior-dev: Collect all indices first to avoid collection modification during iteration
+        var indices = new ushort[_active.Count];
+        var count = 0;
         foreach (var (index, _) in _active)
         {
-            EventBus<PreEntityDeactivatedEvent>.Push(new(_entities[index]));
+            indices[count++] = index;
         }
 
+        // Fire Pre events while entities are still active
+        for (var i = 0; i < count; i++)
+        {
+            EventBus<PreEntityDeactivatedEvent>.Push(new(_entities[indices[i]]));
+        }
+
+        // Clear active set
         _active.Clear();
+
+        // Fire Post events after entities are deactivated
+        for (var i = 0; i < count; i++)
+        {
+            EventBus<PostEntityDeactivatedEvent>.Push(new(_entities[indices[i]]));
+        }
+
         _nextSceneIndex = Constants.MaxLoadingEntities;
         _nextLoadingIndex = 0;
     }

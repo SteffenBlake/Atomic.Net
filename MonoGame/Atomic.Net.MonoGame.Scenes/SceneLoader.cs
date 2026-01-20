@@ -4,7 +4,6 @@ using Atomic.Net.MonoGame.BED.Hierarchy;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Scenes.JsonModels;
 using Atomic.Net.MonoGame.Transform;
-using Atomic.Net.MonoGame.Transform.JsonConverters;
 
 namespace Atomic.Net.MonoGame.Scenes;
 
@@ -31,18 +30,6 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
     // senior-dev: Pre-allocated SparseReferenceArray for parent-child mappings (zero-alloc iteration)
     private readonly SparseReferenceArray<string> _childToParents = new(Constants.MaxEntities);
-    
-    // senior-dev: Reusable JSON options with attribute-based converters
-    private readonly JsonSerializerOptions _jsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true,
-        Converters = 
-        { 
-            new Core.JsonConverters.Vector3Converter(),
-            new Core.JsonConverters.QuaternionConverter(),
-            new Transform.JsonConverters.TransformBehaviorConverter()
-        }
-    };
 
     /// <summary>
     /// Loads a game scene from JSON file.
@@ -51,13 +38,12 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     /// </summary>
     public void LoadGameScene(string scenePath)
     {
-        var scene = ParseSceneFile(scenePath);
-        if (scene == null)
+        if (!TryParseSceneFile(scenePath, out var scene))
         {
             return;
         }
 
-        LoadSceneInternal(scene, useLoadingPartition: false);
+        LoadSceneInternal(scene!, useLoadingPartition: false);
         
         // senior-dev: GC after scene goes out of scope
         GC.Collect();
@@ -71,13 +57,12 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     /// </summary>
     public void LoadLoadingScene(string scenePath = "Content/Scenes/loading.json")
     {
-        var scene = ParseSceneFile(scenePath);
-        if (scene == null)
+        if (!TryParseSceneFile(scenePath, out var scene))
         {
             return;
         }
 
-        LoadSceneInternal(scene, useLoadingPartition: true);
+        LoadSceneInternal(scene!, useLoadingPartition: true);
         
         // senior-dev: GC after scene goes out of scope
         GC.Collect();
@@ -85,23 +70,28 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     }
 
     // senior-dev: Separate method for parsing JSON to ensure proper scoping for GC
-    private JsonScene? ParseSceneFile(string scenePath)
+    private bool TryParseSceneFile(string scenePath, out JsonScene? scene)
     {
+        scene = null;
+        
         if (!File.Exists(scenePath))
         {
             EventBus<ErrorEvent>.Push(new($"Scene file not found: {scenePath}"));
-            return null;
+            return false;
         }
 
+        var jsonText = File.ReadAllText(scenePath);
+        
         try
         {
-            var jsonText = File.ReadAllText(scenePath);
-            return JsonSerializer.Deserialize<JsonScene>(jsonText, _jsonOptions) ?? new JsonScene();
+            scene = JsonSerializer.Deserialize<JsonScene>(jsonText, JsonSerializerOptions.Web);
+            scene ??= new JsonScene();
+            return true;
         }
         catch (JsonException ex)
         {
             EventBus<ErrorEvent>.Push(new($"Failed to parse JSON scene file: {scenePath} - {ex.Message}"));
-            return null;
+            return false;
         }
     }
 

@@ -8,7 +8,6 @@ public class QuaternionConverter : JsonConverter<Quaternion>
 {
     public override Quaternion Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        // senior-dev: Use JsonSerializer.Deserialize instead of manual parsing
         var values = JsonSerializer.Deserialize<float[]>(ref reader, options);
         if (values == null || values.Length != 4)
             return Quaternion.Identity;
