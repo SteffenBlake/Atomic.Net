@@ -257,4 +257,35 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         var afterReset = EntityIdRegistry.Instance.TryResolve("root-container", out _);
         Assert.False(afterReset, "ID should be cleared after reset");
     }
+
+    [Fact]
+    public void ResetEvent_DoesNotPollute_SceneLoading()
+    {
+        // Arrange: Load scene first time
+        var scenePath = "Scenes/Fixtures/basic-scene.json";
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        
+        var firstResolve = EntityIdRegistry.Instance.TryResolve("root-container", out var entity1);
+        Assert.True(firstResolve, "root-container should resolve on first load");
+        var firstIndex = entity1.Index;
+        
+        var firstHasTransform = BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity1, out var transform1);
+        Assert.True(firstHasTransform, "root-container should have transform on first load");
+
+        // Act: Reset and reload
+        EventBus<ResetEvent>.Push(new());
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        
+        // Assert: Second load should work identically
+        var secondResolve = EntityIdRegistry.Instance.TryResolve("root-container", out var entity2);
+        Assert.True(secondResolve, "root-container should resolve on second load");
+        Assert.Equal(firstIndex, entity2.Index);
+        
+        var secondHasTransform = BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity2, out var transform2);
+        Assert.True(secondHasTransform, "root-container should have transform on second load");
+        Assert.NotNull(transform2);
+        Assert.Equal(new Microsoft.Xna.Framework.Vector3(0, 0, 0), transform2.Value.Position);
+        Assert.Equal(Microsoft.Xna.Framework.Quaternion.Identity, transform2.Value.Rotation);
+        Assert.Equal(Microsoft.Xna.Framework.Vector3.One, transform2.Value.Scale);
+    }
 }
