@@ -16,6 +16,22 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Atomic.Net.MonoGame.Transform\Atomic.Net.MonoGame.Transform.csproj" />
+    <ProjectReference Include="..\Atomic.Net.MonoGame.Scenes\Atomic.Net.MonoGame.Scenes.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Scenes\Fixtures\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Core\Fixtures\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="BED\Fixtures\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Transform\Fixtures\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

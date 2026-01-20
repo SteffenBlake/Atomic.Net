@@ -169,13 +169,14 @@
 - [ ] Implement parent reference resolution with error events for unresolved IDs
 
 ### Integration Tests
-- [ ] @test-architect Migrate all existing tests to integration tests
-- [ ] @test-architect Create integration test that loads a JSON file with 2-3 entities
-- [ ] @test-architect Verify entities spawn with correct behaviors (Transform, Parent, EntityId)
-- [ ] @test-architect Verify parent-child relationships are established correctly
-- [ ] @test-architect Test error handling (missing file, invalid JSON, unresolved references)
-- [ ] @test-architect Test first-write-wins for duplicate entity IDs
-- [ ] @test-architect Test `LoadGameScene` vs `LoadLoadingScene` (different entity partitions)
+- [x] #test-architect Migrate all existing tests to integration tests
+- [x] #test-architect Create integration test that loads a JSON file with 2-3 entities
+- [x] #test-architect Verify entities spawn with correct behaviors (Transform, Parent, EntityId)
+- [x] #test-architect Verify parent-child relationships are established correctly
+- [x] #test-architect Test error handling (missing file, invalid JSON, unresolved references)
+- [x] #test-architect Test first-write-wins for duplicate entity IDs
+- [x] #test-architect Test `LoadGameScene` vs `LoadLoadingScene` (different entity partitions)
+
 
 ### Documentation
 - [ ] Add XML doc comments to public APIs
