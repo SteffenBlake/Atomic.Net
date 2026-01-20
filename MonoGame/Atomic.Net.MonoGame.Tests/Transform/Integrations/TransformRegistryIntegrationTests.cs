@@ -8,6 +8,23 @@ using Atomic.Net.MonoGame.Scenes;
 
 namespace Atomic.Net.MonoGame.Tests.Transform;
 
+// ================================================================================
+// DISCOVERY: Transform Matrix Multiplication Order (Sprint 001 - January 2026)
+// ================================================================================
+//
+// CRITICAL: The correct MonoGame/XNA matrix order is:
+//   (-Anchor) * Scale * Rotation * Anchor * Position
+//
+// When anchor is zero (default): Scale * Rotation * Position
+//
+// LESSON LEARNED: Tests with position=0 can hide matrix order bugs because
+// Rotation*Translation(0,0,0) equals Translation(0,0,0)*Rotation (both are
+// just the rotation matrix). Always use NON-ZERO test values!
+//
+// See: /TRANSFORM_TEST_INVESTIGATION.md for full investigation details
+// See: .github/agents/DISCOVERIES.md for discovery summary
+// ================================================================================
+
 [Collection("NonParallel")]
 [Trait("Category", "Integration")]
 public sealed class TransformRegistryIntegrationTests : IDisposable
@@ -194,9 +211,18 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         // Arrange
         var scenePath = "Transform/Fixtures/parent-rotation-affects-child.json";
         
-        // test-architect: CORRECTED - Parent transform should be Rotation * Position (not Position * Rotation)
-        // test-architect: This matches the anchor test order: (-Anchor)*Scale*Rotation*Anchor*Position
-        // test-architect: When anchor=0, this becomes: Rotation*Position
+        // ========================================================================
+        // DISCOVERY NOTE: Matrix order is Rotation * Position (NOT Position * Rotation)
+        // ========================================================================
+        // This test originally had INCORRECT expectations (Position*Rotation) which
+        // were masked when parent position was zero. With non-zero position, the bug
+        // was exposed during Sprint 001.
+        //
+        // CORRECT order matches anchor tests: (-Anchor)*Scale*Rotation*Anchor*Position
+        // When anchor=0, this simplifies to: Rotation*Position
+        //
+        // See: /TRANSFORM_TEST_INVESTIGATION.md for detailed investigation
+        // ========================================================================
         var parentTransform = Matrix.CreateFromQuaternion(Rotation90DegreesAroundZ()) * 
                              Matrix.CreateTranslation(100f, 0f, 0f);
         var localChild = Matrix.CreateTranslation(50f, 0f, 0f);
@@ -220,9 +246,18 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         // Arrange
         var scenePath = "Transform/Fixtures/two-body-orbit.json";
         
-        // test-architect: CORRECTED - Earth transform should be Rotation * Position (not Position * Rotation)
-        // test-architect: This matches the anchor test order: (-Anchor)*Scale*Rotation*Anchor*Position
-        // test-architect: When anchor=0, this becomes: Rotation*Position
+        // ========================================================================
+        // DISCOVERY NOTE: Matrix order is Rotation * Position (NOT Position * Rotation)
+        // ========================================================================
+        // This test originally had INCORRECT expectations (Position*Rotation) which
+        // were masked when parent position was zero. With non-zero position, the bug
+        // was exposed during Sprint 001.
+        //
+        // CORRECT order matches anchor tests: (-Anchor)*Scale*Rotation*Anchor*Position
+        // When anchor=0, this simplifies to: Rotation*Position
+        //
+        // See: /TRANSFORM_TEST_INVESTIGATION.md for detailed investigation
+        // ========================================================================
         var sunTransform = Matrix.Identity;
         var earthLocal = Matrix.CreateFromQuaternion(Rotation90DegreesAroundZ()) * 
                         Matrix.CreateTranslation(100f, 0f, 0f);

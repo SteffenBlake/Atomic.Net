@@ -1,5 +1,14 @@
 # Transform Matrix Order Investigation
 
+**STATUS: RESOLVED - Discovery comments added to codebase**
+
+See discovery documentation in:
+- `.github/agents/DISCOVERIES.md` - Discovery entry for quick reference
+- `MonoGame/Atomic.Net.MonoGame.Transform/TransformRegistry.cs` (lines 88-110) - Detailed inline documentation
+- `MonoGame/Atomic.Net.MonoGame.Tests/Transform/Integrations/TransformRegistryIntegrationTests.cs` - Test-level discovery notes
+
+---
+
 ## Problem Summary
 
 Two Transform integration tests were failing:

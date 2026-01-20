@@ -85,23 +85,34 @@ public sealed class TransformRegistry :
                 Matrix.CreateTranslation(ref anchor, out _localAnchor);
                 Matrix.CreateTranslation(ref position, out _localpos);
 
-                // test-architect: #senior-dev (responding to ping)
-                // test-architect: RESOLUTION: The original order (-Anchor)*Scale*Rotation*Anchor*Position is CORRECT
-                // test-architect: 
-                // test-architect: INVESTIGATION RESULTS:
-                // test-architect: - Anchor tests (3 tests) expect: (-Anchor)*Scale*Rotation*Anchor*Position ✓ CORRECT
-                // test-architect: - Complete transform test expects: (-Anchor)*Scale*Rotation*Anchor*Position ✓ CORRECT
-                // test-architect: - Parent rotation tests (2 tests) INCORRECTLY expected: Position*Rotation ✗ WRONG
-                // test-architect: 
-                // test-architect: ROOT CAUSE: I made an error when migrating tests from unit to integration tests.
-                // test-architect: - Old tests: Parents had position=0, so Rotation*Position == Position*Rotation (both equal Identity)
-                // test-architect: - New tests: Parents have non-zero position, exposing the incorrect expectation
-                // test-architect: 
-                // test-architect: FIX APPLIED: Updated test expectations in ParentRotationAffectsChildPosition and TwoBodyOrbit
-                // test-architect: - Changed from: Translation(pos) * Rotation (WRONG)
-                // test-architect: - Changed to: Rotation * Translation(pos) (CORRECT)
-                // test-architect: 
-                // test-architect: RESULT: All 73 tests now pass (72 passed, 1 skipped benchmark)
+                // ========================================================================
+                // DISCOVERY: Transform Matrix Multiplication Order (Sprint 001 - Jan 2026)
+                // ========================================================================
+                // 
+                // This matrix order is CORRECT for MonoGame/XNA hierarchical transforms:
+                //   (-Anchor) * Scale * Rotation * Anchor * Position
+                //
+                // When anchor is zero (default), this simplifies to:
+                //   Scale * Rotation * Position
+                //
+                // WHY THIS ORDER MATTERS:
+                // For a parent at position (100,0,0) rotated 90° with child at local (50,0,0):
+                //   ✓ CORRECT: Rotate child (50,0,0) → (0,50,0), add parent pos → (100,50,0)
+                //   ✗ WRONG:   Translate first then rotate → nonsensical positioning
+                //
+                // CRITICAL LESSON: When position is zero, Rotation*Translation(0,0,0) equals
+                // Translation(0,0,0)*Rotation (both are just the rotation matrix). This can
+                // hide matrix order bugs! Always test with NON-ZERO values.
+                //
+                // INVESTIGATION: During Sprint 001, integration tests appeared to fail due to
+                // "matrix order bug". Investigation revealed the Transform system was CORRECT.
+                // The test expectations were wrong (they expected Position*Rotation instead of
+                // Rotation*Position). Fixed by correcting 2 test expectations, no production
+                // code changes needed.
+                //
+                // See: /TRANSFORM_TEST_INVESTIGATION.md for detailed analysis
+                // See: .github/agents/DISCOVERIES.md for discovery entry
+                // ========================================================================
                 Matrix.Multiply(ref _localAnchorNeg, ref _localScale, out _localTransform);
                 Matrix.Multiply(ref _localTransform, ref _localRotation, out _localTransform);
                 Matrix.Multiply(ref _localTransform, ref _localAnchor, out _localTransform);
