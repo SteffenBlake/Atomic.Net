@@ -1,0 +1,24 @@
+{
+  "entities": [
+    {
+      "id": "root",
+      "transform": {
+        "position": [10, 0, 0]
+      }
+    },
+    {
+      "id": "left-child",
+      "parent": "#root",
+      "transform": {
+        "position": [20, 10, 0]
+      }
+    },
+    {
+      "id": "right-child",
+      "parent": "#root",
+      "transform": {
+        "position": [20, -10, 0]
+      }
+    }
+  ]
+}

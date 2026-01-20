@@ -1,0 +1,12 @@
+{
+  "entities": [
+    {
+      "id": "entity",
+      "transform": {
+        "anchor": [5, -5, 0],
+        "scale": [2, 2, 2],
+        "rotation": [0, 0, 0.7071068, 0.7071068]
+      }
+    }
+  ]
+}

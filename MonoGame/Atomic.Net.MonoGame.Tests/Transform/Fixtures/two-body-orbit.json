@@ -1,0 +1,25 @@
+{
+  "entities": [
+    {
+      "id": "sun",
+      "transform": {
+        "position": [0, 0, 0]
+      }
+    },
+    {
+      "id": "earth",
+      "parent": "#sun",
+      "transform": {
+        "position": [100, 0, 0],
+        "rotation": [0, 0, 0.7071068, 0.7071068]
+      }
+    },
+    {
+      "id": "moon",
+      "parent": "#earth",
+      "transform": {
+        "position": [20, 0, 0]
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "entities": [
+    {
+      "id": "entity",
+      "transform": {
+        "anchor": [10, 20, 30],
+        "scale": [2, 3, 4]
+      }
+    }
+  ]
+}
