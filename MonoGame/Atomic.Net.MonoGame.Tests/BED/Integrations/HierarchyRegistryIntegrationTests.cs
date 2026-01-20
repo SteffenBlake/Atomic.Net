@@ -8,9 +8,9 @@ namespace Atomic.Net.MonoGame.Tests.BED;
 
 [Collection("NonParallel")]
 [Trait("Category", "Integration")]
-public sealed class HierarchyRegistryTests : IDisposable
+public sealed class HierarchyRegistryIntegrationTests : IDisposable
 {
-    public HierarchyRegistryTests()
+    public HierarchyRegistryIntegrationTests()
     {
         AtomicSystem.Initialize();
         BEDSystem.Initialize();
@@ -22,7 +22,7 @@ public sealed class HierarchyRegistryTests : IDisposable
         EventBus<ResetEvent>.Push(new());
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void LoadScene_WithParent_SetsParentChildRelationship()
     {
         // Arrange
@@ -40,7 +40,7 @@ public sealed class HierarchyRegistryTests : IDisposable
         Assert.Equal(parent.Index, retrievedParent.Value.Index);
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void LoadScene_WithMultipleChildren_ReturnsChildEntities()
     {
         // Arrange
@@ -64,7 +64,7 @@ public sealed class HierarchyRegistryTests : IDisposable
         Assert.Contains(child3, children);
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void RemoveParent_ClearsParentRelationship()
     {
         // Arrange
@@ -81,7 +81,7 @@ public sealed class HierarchyRegistryTests : IDisposable
         Assert.False(child.TryGetParent(out _));
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void ParentDeactivation_OrphansChildren()
     {
         // Arrange
@@ -103,7 +103,7 @@ public sealed class HierarchyRegistryTests : IDisposable
         Assert.False(child2.TryGetParent(out _));
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void ChildDeactivation_RemovesFromParentChildren()
     {
         // Arrange
@@ -126,7 +126,7 @@ public sealed class HierarchyRegistryTests : IDisposable
         Assert.DoesNotContain(child1, children);
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void ResetEvent_ClearsSceneEntityHierarchy()
     {
         // Arrange
@@ -147,7 +147,7 @@ public sealed class HierarchyRegistryTests : IDisposable
         Assert.False(EntityRegistry.Instance.IsActive(sceneChild));
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void ResetEvent_PreservesLoadingEntityHierarchy()
     {
         // Arrange
@@ -171,7 +171,7 @@ public sealed class HierarchyRegistryTests : IDisposable
         Assert.Single(loadingParent.GetChildren());
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void ResetEvent_DoesNotPolluteHierarchy()
     {
         // Arrange
@@ -200,7 +200,7 @@ public sealed class HierarchyRegistryTests : IDisposable
         Assert.Single(parent2.GetChildren());
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void TryGetParent_ReturnsFalseWhenNoParent()
     {
         // Arrange
@@ -217,7 +217,7 @@ public sealed class HierarchyRegistryTests : IDisposable
         Assert.Null(parent);
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void GetChildren_ReturnsEmptyWhenNoChildren()
     {
         // Arrange
@@ -233,7 +233,7 @@ public sealed class HierarchyRegistryTests : IDisposable
         Assert.Empty(children);
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void NestedHierarchy_WorksCorrectly()
     {
         // Arrange
@@ -263,7 +263,7 @@ public sealed class HierarchyRegistryTests : IDisposable
         Assert.Single(grandparentChildren);
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void WithParent_FiresBehaviorAddedEvent()
     {
         // Arrange
@@ -283,7 +283,7 @@ public sealed class HierarchyRegistryTests : IDisposable
         Assert.NotEqual(default, childEvent);
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void RemoveParent_FiresBehaviorRemovedEvent()
     {
         // Arrange

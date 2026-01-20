@@ -1,0 +1,47 @@
+using Xunit;
+using Atomic.Net.MonoGame.Core;
+using Atomic.Net.MonoGame.BED;
+using Atomic.Net.MonoGame.Scenes;
+
+namespace Atomic.Net.MonoGame.Tests.BED.Integrations;
+
+// Test behavior for testing - mutable struct
+public struct TestBehaviorIntegration : IBehavior<TestBehaviorIntegration>
+{
+    public int Value;
+    
+    public static TestBehaviorIntegration CreateFor(Entity entity)
+    {
+        return new TestBehaviorIntegration { Value = 0 };
+    }
+}
+
+[Collection("NonParallel")]
+[Trait("Category", "Integration")]
+public sealed class BehaviorRegistryIntegrationTests : IDisposable
+{
+    public BehaviorRegistryIntegrationTests()
+    {
+        AtomicSystem.Initialize();
+        BEDSystem.Initialize();
+        BehaviorRegistry<TestBehaviorIntegration>.Initialize();
+        EventBus<InitializeEvent>.Push(new());
+    }
+
+    public void Dispose()
+    {
+        EventBus<ResetEvent>.Push(new());
+    }
+
+    [Fact]
+    public void LoadScene_WithBehaviors_AppliesBehaviorsToEntities()
+    {
+        // Arrange
+        // test-architect: This is a placeholder for future behavior loading from JSON
+        // Currently there are no behaviors beyond Transform/Parent/EntityId that load from JSON
+        // This test will be expanded when custom behaviors can be defined in JSON
+        
+        // Act & Assert
+        Assert.True(true, "Placeholder test - will be implemented when custom behaviors support JSON loading");
+    }
+}

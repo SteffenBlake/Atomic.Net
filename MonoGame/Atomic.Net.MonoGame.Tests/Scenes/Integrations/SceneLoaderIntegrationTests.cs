@@ -13,9 +13,9 @@ namespace Atomic.Net.MonoGame.Tests.Scenes;
 /// </summary>
 [Collection("NonParallel")]
 [Trait("Category", "Integration")]
-public sealed class SceneLoaderTests : IDisposable
+public sealed class SceneLoaderIntegrationTests : IDisposable
 {
-    public SceneLoaderTests()
+    public SceneLoaderIntegrationTests()
     {
         // Arrange: Initialize systems before each test
         AtomicSystem.Initialize();
@@ -29,7 +29,7 @@ public sealed class SceneLoaderTests : IDisposable
         EventBus<ResetEvent>.Push(new());
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader.LoadGameScene")]
+    [Fact]
     public void LoadGameScene_WithBasicEntities_SpawnsEntitiesInScenePartition()
     {
         // Arrange
@@ -50,7 +50,7 @@ public sealed class SceneLoaderTests : IDisposable
                 $"Entity {entity.Index} should be in scene partition (>= {Constants.MaxLoadingEntities})"));
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader.LoadLoadingScene")]
+    [Fact]
     public void LoadLoadingScene_WithBasicEntities_SpawnsEntitiesInLoadingPartition()
     {
         // Arrange
@@ -71,7 +71,7 @@ public sealed class SceneLoaderTests : IDisposable
                 $"Entity {entity.Index} should be in loading partition (< {Constants.MaxLoadingEntities})"));
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader and EntityIdRegistry")]
+    [Fact]
     public void LoadGameScene_WithEntityIds_RegistersEntitiesById()
     {
         // Arrange
@@ -92,7 +92,7 @@ public sealed class SceneLoaderTests : IDisposable
         Assert.True(buttonEntity.Index >= Constants.MaxLoadingEntities);
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void LoadGameScene_WithTransformBehavior_AppliesTransformToEntities()
     {
         // Arrange
@@ -125,7 +125,7 @@ public sealed class SceneLoaderTests : IDisposable
         Assert.Equal(Microsoft.Xna.Framework.Vector3.One, buttonTransform.Value.Scale);
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void LoadGameScene_WithParentReferences_EstablishesParentChildRelationships()
     {
         // Arrange
@@ -151,7 +151,7 @@ public sealed class SceneLoaderTests : IDisposable
         Assert.Contains(buttonEntity, rootChildren);
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void LoadGameScene_WithDuplicateIds_FirstWriteWins()
     {
         // Arrange
@@ -171,7 +171,7 @@ public sealed class SceneLoaderTests : IDisposable
         Assert.Equal(new Microsoft.Xna.Framework.Vector3(0, 0, 0), transform.Value.Position);
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void LoadGameScene_WithUnresolvedParent_FiresErrorEvent()
     {
         // Arrange
@@ -195,7 +195,7 @@ public sealed class SceneLoaderTests : IDisposable
         Assert.False(hasParent, "orphan should not have parent since reference failed");
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void LoadGameScene_WithMissingFile_FiresErrorEvent()
     {
         // Arrange
@@ -217,7 +217,7 @@ public sealed class SceneLoaderTests : IDisposable
         Assert.Empty(activeEntities);
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void LoadGameScene_WithInvalidJson_FiresErrorEvent()
     {
         // Arrange
@@ -239,7 +239,7 @@ public sealed class SceneLoaderTests : IDisposable
         Assert.Empty(activeEntities);
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement EntityIdRegistry cleanup")]
+    [Fact]
     public void ResetEvent_ClearsEntityIdRegistry()
     {
         // Arrange

@@ -6,9 +6,9 @@ namespace Atomic.Net.MonoGame.Tests.Core;
 
 [Collection("NonParallel")]
 [Trait("Category", "Integration")]
-public sealed class EntityRegistryTests : IDisposable
+public sealed class EntityRegistryIntegrationTests : IDisposable
 {
-    public EntityRegistryTests()
+    public EntityRegistryIntegrationTests()
     {
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
@@ -20,7 +20,7 @@ public sealed class EntityRegistryTests : IDisposable
         EventBus<ResetEvent>.Push(new());
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void LoadGameScene_AllocatesSceneEntity()
     {
         // Arrange
@@ -40,7 +40,7 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.True(entity.Enabled);
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void LoadLoadingScene_AllocatesLoadingEntity()
     {
         // Arrange
@@ -80,7 +80,7 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.Equal((ushort)0, root.Index);
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void LoadGameScene_AllocatesSequentialIndices()
     {
         // Arrange
@@ -99,7 +99,7 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.Equal(entity2.Index + 1, entity3.Index);
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void LoadLoadingScene_AllocatesSequentialIndices()
     {
         // Arrange
@@ -118,7 +118,7 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.Equal(entity2.Index + 1, entity3.Index);
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void Deactivate_MarksEntityInactive()
     {
         // Arrange
@@ -135,7 +135,7 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.False(EntityRegistry.Instance.IsEnabled(entity));
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void Disable_MarksEntityDisabled()
     {
         // Arrange
@@ -152,7 +152,7 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.True(EntityRegistry.Instance.IsActive(entity));
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void Enable_MarksEntityEnabled()
     {
         // Arrange
@@ -169,7 +169,7 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.True(EntityRegistry.Instance.IsEnabled(entity));
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void Deactivate_FiresEntityDeactivatedEvent()
     {
         // Arrange
@@ -186,7 +186,7 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.Equal(entity.Index, listener.ReceivedEvents[0].Entity.Index);
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void Enable_FiresEntityEnabledEvent()
     {
         // Arrange
@@ -205,7 +205,7 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.Equal(entity.Index, listener.ReceivedEvents[0].Entity.Index);
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void Disable_FiresEntityDisabledEvent()
     {
         // Arrange
@@ -222,7 +222,7 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.Equal(entity.Index, listener.ReceivedEvents[0].Entity.Index);
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void ResetEvent_DeactivatesOnlySceneEntities()
     {
         // Arrange
@@ -246,7 +246,7 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.False(EntityRegistry.Instance.IsActive(sceneEntity));
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void ResetEvent_AllowsSceneEntityReuse()
     {
         // Arrange
@@ -265,7 +265,7 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.True(EntityRegistry.Instance.IsActive(entity2));
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void ResetEvent_DoesNotPollute_BasicCheck()
     {
         // Arrange
@@ -287,7 +287,7 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.True(EntityRegistry.Instance.IsEnabled(entity2));
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void GetActiveEntities_ReturnsOnlyActiveEntities()
     {
         // Arrange
@@ -309,7 +309,7 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.Contains(entity3, activeEntities);
     }
 
-    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    [Fact]
     public void GetEnabledEntities_ReturnsOnlyEnabledEntities()
     {
         // Arrange
