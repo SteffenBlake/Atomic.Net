@@ -194,8 +194,11 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         // Arrange
         var scenePath = "Transform/Fixtures/parent-rotation-affects-child.json";
         
-        var parentTransform = Matrix.CreateTranslation(100f, 0f, 0f) * 
-                             Matrix.CreateFromQuaternion(Rotation90DegreesAroundZ());
+        // test-architect: CORRECTED - Parent transform should be Rotation * Position (not Position * Rotation)
+        // test-architect: This matches the anchor test order: (-Anchor)*Scale*Rotation*Anchor*Position
+        // test-architect: When anchor=0, this becomes: Rotation*Position
+        var parentTransform = Matrix.CreateFromQuaternion(Rotation90DegreesAroundZ()) * 
+                             Matrix.CreateTranslation(100f, 0f, 0f);
         var localChild = Matrix.CreateTranslation(50f, 0f, 0f);
         var expectedChild = localChild * parentTransform;
 
@@ -217,9 +220,12 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         // Arrange
         var scenePath = "Transform/Fixtures/two-body-orbit.json";
         
+        // test-architect: CORRECTED - Earth transform should be Rotation * Position (not Position * Rotation)
+        // test-architect: This matches the anchor test order: (-Anchor)*Scale*Rotation*Anchor*Position
+        // test-architect: When anchor=0, this becomes: Rotation*Position
         var sunTransform = Matrix.Identity;
-        var earthLocal = Matrix.CreateTranslation(100f, 0f, 0f) * 
-                        Matrix.CreateFromQuaternion(Rotation90DegreesAroundZ());
+        var earthLocal = Matrix.CreateFromQuaternion(Rotation90DegreesAroundZ()) * 
+                        Matrix.CreateTranslation(100f, 0f, 0f);
         var earthWorld = earthLocal * sunTransform;
         var moonLocal = Matrix.CreateTranslation(20f, 0f, 0f);
         var expectedMoon = moonLocal * earthWorld;
