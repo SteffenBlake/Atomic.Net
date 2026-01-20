@@ -6,6 +6,7 @@ using Atomic.Net.MonoGame.BED.Hierarchy;
 namespace Atomic.Net.MonoGame.Tests.BED;
 
 [Collection("NonParallel")]
+[Trait("Category", "Integration")]
 public sealed class HierarchyRegistryTests : IDisposable
 {
     public HierarchyRegistryTests()

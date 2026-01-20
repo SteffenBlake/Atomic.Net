@@ -8,6 +8,7 @@ using Atomic.Net.MonoGame.Transform;
 namespace Atomic.Net.MonoGame.Tests.Transform;
 
 [Collection("NonParallel")]
+[Trait("Category", "Integration")]
 public sealed class TransformRegistryTests : IDisposable
 {
     private const float Tolerance = 0.0001f;

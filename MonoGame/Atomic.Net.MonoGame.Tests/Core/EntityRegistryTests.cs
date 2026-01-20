@@ -4,6 +4,7 @@ using Atomic.Net.MonoGame.Core;
 namespace Atomic.Net.MonoGame.Tests.Core;
 
 [Collection("NonParallel")]
+[Trait("Category", "Integration")]
 public sealed class EntityRegistryTests : IDisposable
 {
     public EntityRegistryTests()

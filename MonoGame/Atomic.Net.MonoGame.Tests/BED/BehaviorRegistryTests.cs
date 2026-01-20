@@ -16,6 +16,7 @@ public struct TestBehavior : IBehavior<TestBehavior>
 }
 
 [Collection("NonParallel")]
+[Trait("Category", "Integration")]
 public sealed class BehaviorRegistryTests : IDisposable
 {
     public BehaviorRegistryTests()

@@ -8,6 +8,7 @@ using Xunit;
 namespace Atomic.Net.MonoGame.Tests.Transform;
 
 [Collection("NonParallel")]
+[Trait("Category", "Integration")]
 public sealed class TransformBenchmarkTests : IDisposable
 {
     private const float Tolerance = 0.001f;
