@@ -34,89 +34,99 @@
 
 ### Architecture
 
-#### 1. JSON Data Model (`JsonEntity` and related types)
+#### 1. JSON Data Model
 - **File:** `Atomic.Net.MonoGame.Scenes/JsonModels/JsonEntity.cs`
   - Reference type class (big object, allocation at load time only)
-  - Properties: `string? Id`, `JsonTransform? Transform`, `string? Parent`
+  - Properties: `string? Id`, `TransformBehavior? Transform`, `string? Parent`
   - All behavior properties are nullable (optional in JSON)
-
-- **File:** `Atomic.Net.MonoGame.Scenes/JsonModels/JsonTransform.cs`
-  - Reference type class for transform data
-  - Properties: `float[]? Position`, `float[]? Rotation`, `float[]? Scale`
-  - All arrays nullable (defaults: [0,0,0], [0,0,0,1], [1,1,1])
+  - Uses actual behavior structs directly (no separate JSON models)
 
 - **File:** `Atomic.Net.MonoGame.Scenes/JsonModels/JsonScene.cs`
   - Root container for scene JSON
   - Property: `List<JsonEntity> Entities`
 
 #### 2. JSON Converters
-- **File:** `Atomic.Net.MonoGame.Scenes/JsonConverters/JsonTransformConverter.cs`
-  - Custom `System.Text.Json.JsonConverter<JsonTransform>`
-  - Handles array parsing for Position/Rotation/Scale
-  - Validates array lengths (3 for Position/Scale, 4 for Rotation)
-  - Returns null on invalid data (graceful degradation)
+- **File:** `Atomic.Net.MonoGame.Scenes/JsonConverters/TransformBehaviorConverter.cs`
+  - Custom `System.Text.Json.JsonConverter<TransformBehavior>`
+  - Deserializes transform data directly into TransformBehavior struct
+  - Handles Position (Vector3), Rotation (Quaternion), Scale (Vector3), Anchor (Vector3)
+  - Missing fields use C# defaults (Position/Anchor: Zero, Rotation: Identity, Scale: One)
+  - Returns default behavior on invalid data (graceful degradation)
 
-#### 3. Scene Loader System
+#### 3. Entity ID Registry
+- **File:** `Atomic.Net.MonoGame.Scenes/EntityId.cs`
+  - `readonly record struct EntityId(string Id)` - behavior for entity ID tracking
+  - Implements `IBehavior<EntityId>`
+
+- **File:** `Atomic.Net.MonoGame.Scenes/EntityIdRegistry.cs`
+  - Singleton pattern via `ISingleton<EntityIdRegistry>`
+  - Maintains `Dictionary<string, Entity>` for ID-to-Entity lookup
+  - Method: `TryRegister(Entity entity, string id)` - returns true if registered (first-write-wins)
+  - Method: `TryResolve(string id, out Entity entity)` - lookup entity by ID
+  - Handles `BehaviorAddedEvent<EntityId>` to track IDs
+  - Handles `PreEntityDeactivatedEvent` to clean up IDs
+  - Handles `ResetEvent` to clear scene entity IDs
+
+#### 4. Scene Loader System
 - **File:** `Atomic.Net.MonoGame.Scenes/SceneLoader.cs`
   - Singleton pattern via `ISingleton<SceneLoader>`
-  - Method: `LoadScene(string scenePath)` - loads JSON from file path
-  - Maintains `Dictionary<string, Entity>` for entity ID tracking (first-write-wins)
+  - Method: `LoadGameScene(string scenePath)` - loads game scene JSON (uses `EntityRegistry.Activate()`)
+  - Method: `LoadLoadingScene(string scenePath)` - loads loading scene JSON (uses `EntityRegistry.ActivateLoading()`)
   - Two-pass loading:
-    - **Pass 1:** Create all entities, apply non-reference behaviors (Transform), track IDs
+    - **Pass 1:** Create all entities, apply behaviors (Transform, EntityId)
     - **Pass 2:** Resolve parent references, fire error events for unresolved IDs
-  - Clear ID dictionary after loading completes (no persistent state)
+  - Forces GC after loading completes (prevents lag in game scene)
 
-- **File:** `Atomic.Net.MonoGame.Scenes/EntityFactory.cs`
-  - Static helper methods for creating entities from JSON
-  - Method: `CreateEntity(JsonEntity jsonEntity)` - creates Entity, applies Transform behavior
-  - Method: `ApplyTransform(Entity entity, JsonTransform transform)` - sets TransformBehavior
-  - Uses `BehaviorRegistry<TransformBehavior>.Instance.SetBehavior()`
+#### 5. Error Events
+- **File:** `Atomic.Net.MonoGame.Core/ErrorEvent.cs`
+  - `readonly record struct ErrorEvent(string Message, Exception? Exception)`
+  - General-purpose error event (not scene-specific)
+  - Fired for: file not found, JSON parse errors, unresolved references, invalid data
+  - Users register handlers via `EventBus<ErrorEvent>`
 
-#### 4. Error Events
-- **File:** `Atomic.Net.MonoGame.Scenes/SceneLoadErrorEvent.cs`
-  - `readonly record struct SceneLoadErrorEvent(string Message, Exception? Exception)`
-  - Fired for: file not found, JSON parse errors, unresolved references
-  - Users register handlers via `EventBus<SceneLoadErrorEvent>`
-
-#### 5. Integration with Existing Systems
-- Uses `EntityRegistry.Instance.Activate()` to spawn scene entities
-- Uses `BehaviorRegistry<TransformBehavior>` to apply transforms
-- Uses `BehaviorRegistry<Parent>` to set parent relationships
-- Uses `EventBus<SceneLoadErrorEvent>` for error handling
+#### 6. Integration with Existing Systems
+- Uses `EntityRegistry.Instance.Activate()` for game scene entities (indices ≥32)
+- Uses `EntityRegistry.Instance.ActivateLoading()` for loading scene entities (indices <32)
+- Uses `BehaviorRegistry<TransformBehavior>.Instance.SetBehavior()` to apply transforms
+- Uses `BehaviorRegistry<Parent>.Instance.SetBehavior()` to set parent relationships
+- Uses `BehaviorRegistry<EntityId>.Instance.SetBehavior()` to track entity IDs
+- Uses `EventBus<ErrorEvent>` for error handling
 
 ### Integration Points
 
 #### Event Flow
-1. User calls `SceneLoader.Instance.LoadScene("Content/scenes/main-menu.json")`
-2. SceneLoader reads file, deserializes JSON
+1. User calls `SceneLoader.Instance.LoadGameScene("Content/scenes/main-menu.json")` or `LoadLoadingScene(...)`
+2. SceneLoader reads file, deserializes JSON using `System.Text.Json`
 3. **Pass 1:** For each `JsonEntity`:
-   - Call `EntityRegistry.Instance.Activate()` to spawn entity
-   - If `jsonEntity.Id != null`, store in ID dictionary (first-write-wins)
-   - If `jsonEntity.Transform != null`, call `EntityFactory.ApplyTransform()`
+   - Call `EntityRegistry.Instance.Activate()` (or `ActivateLoading()`) to spawn entity
+   - If `jsonEntity.Transform != null`, call `BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(entity, behavior => behavior = jsonEntity.Transform.Value)`
+   - If `jsonEntity.Id != null`, call `BehaviorRegistry<EntityId>.Instance.SetBehavior(entity, behavior => behavior = new EntityId(jsonEntity.Id))`
 4. **Pass 2:** For each entity with `jsonEntity.Parent != null`:
-   - Lookup parent entity by ID (strip `#` prefix)
-   - If found, call `entity.WithParent(parentEntity)` (uses existing extension method)
-   - If not found, fire `EventBus<SceneLoadErrorEvent>.Push(new("Unresolved parent reference: #id"))`
-5. Clear ID dictionary
+   - Call `EntityIdRegistry.Instance.TryResolve(parentId, out parentEntity)` (strip `#` prefix)
+   - If found, call `BehaviorRegistry<Parent>.Instance.SetBehavior(entity, behavior => behavior = new Parent(parentEntity.Index))`
+   - If not found, fire `EventBus<ErrorEvent>.Push(new("Unresolved parent reference: #id", null))`
+5. Force GC: `GC.Collect()` and `GC.WaitForPendingFinalizers()` to clean up ephemeral JSON objects
 
 #### Registry Interactions
-- **EntityRegistry:** Activates scene entities (indices ≥32)
-- **BehaviorRegistry<TransformBehavior>:** Stores transform data
-- **BehaviorRegistry<Parent>:** Stores parent references
+- **EntityRegistry:** Activates game scene entities (indices ≥32) or loading scene entities (indices <32)
+- **BehaviorRegistry<TransformBehavior>:** Stores transform data via `SetBehavior()`
+- **BehaviorRegistry<Parent>:** Stores parent references via `SetBehavior()`
+- **BehaviorRegistry<EntityId>:** Stores entity ID mappings via `SetBehavior()`
+- **EntityIdRegistry:** Tracks ID-to-Entity lookup (updated via `BehaviorAddedEvent<EntityId>`)
 - **HierarchyRegistry:** Automatically updated via Parent behavior events (no direct interaction)
 
 #### Error Handling
-- **File not found:** Fire `SceneLoadErrorEvent`, return early
-- **Invalid JSON:** Catch `JsonException`, fire `SceneLoadErrorEvent`, return early
-- **Unresolved reference:** Fire `SceneLoadErrorEvent`, continue loading other entities
-- **Invalid transform data:** Skip behavior, fire `SceneLoadErrorEvent`, continue
+- **File not found:** Fire `ErrorEvent`, return early
+- **Invalid JSON:** Catch `JsonException`, fire `ErrorEvent`, return early
+- **Unresolved reference:** Fire `ErrorEvent`, continue loading other entities
+- **Invalid transform data:** Converter returns default behavior, fire `ErrorEvent`, continue
 
 ### Performance Considerations
 
 #### Allocation Strategy
 - All JSON deserialization allocations happen at load time (acceptable)
-- ID dictionary allocated per scene load, cleared after (no persistent overhead)
-- `JsonEntity` objects are ephemeral (GC'd after loading completes)
+- `JsonEntity` objects are ephemeral (GC'd after loading completes via forced GC)
+- `EntityIdRegistry` maintains persistent ID dictionary (cleared on `ResetEvent`)
 - No allocations during gameplay (entities/behaviors already in SparseArrays)
 
 #### Two-Pass Loading
@@ -131,7 +141,9 @@
 
 #### Benchmarking Requests
 - None needed for M1 (loading is not hot path)
-- Future: If scenes become very large (>1000 entities), may need streaming/chunking
+- **M1.5 consideration:** Need background thread loading for non-blocking scene loads (thousands of entities)
+  - Loading must not block game thread (allows loading scene animations to continue)
+  - Defer actual loading to background thread, keep main thread responsive
 
 ---
 
@@ -139,23 +151,31 @@
 
 ### Setup and Infrastructure
 - [ ] Create `Atomic.Net.MonoGame.Scenes` project structure for JSON loading
-- [ ] Add `System.Text.Json` NuGet dependency (if not already present)
-- [ ] Define JSON data model classes (`JsonScene`, `JsonEntity`, `JsonTransform`)
-- [ ] Implement custom JSON converters for transform arrays
+- [ ] Define JSON data model classes (`JsonScene`, `JsonEntity`)
+- [ ] Implement custom JSON converter for `TransformBehavior` struct
+- [ ] Define `ErrorEvent` in Core (general-purpose error event)
+
+### Entity ID System
+- [ ] Define `EntityId` behavior struct
+- [ ] Implement `EntityIdRegistry` singleton with ID-to-Entity lookup
+- [ ] Handle `BehaviorAddedEvent<EntityId>` for tracking
+- [ ] Handle `PreEntityDeactivatedEvent` and `ResetEvent` for cleanup
 
 ### Core Scene Loading Logic
 - [ ] Implement `SceneLoader` singleton with two-pass loading algorithm
-- [ ] Implement `EntityFactory` helper methods for entity creation
-- [ ] Define `SceneLoadErrorEvent` for graceful error handling
-- [ ] Implement entity ID tracking with first-write-wins semantics
+- [ ] Implement `LoadGameScene(string scenePath)` method (spawns game scene entities)
+- [ ] Implement `LoadLoadingScene(string scenePath)` method (spawns loading scene entities)
+- [ ] Force GC after loading completes (`GC.Collect()` + `GC.WaitForPendingFinalizers()`)
 - [ ] Implement parent reference resolution with error events for unresolved IDs
 
 ### Integration Tests
+- [ ] @test-architect Migrate all existing tests to integration tests
 - [ ] @test-architect Create integration test that loads a JSON file with 2-3 entities
-- [ ] @test-architect Verify entities spawn with correct behaviors (Transform, Parent)
+- [ ] @test-architect Verify entities spawn with correct behaviors (Transform, Parent, EntityId)
 - [ ] @test-architect Verify parent-child relationships are established correctly
 - [ ] @test-architect Test error handling (missing file, invalid JSON, unresolved references)
 - [ ] @test-architect Test first-write-wins for duplicate entity IDs
+- [ ] @test-architect Test `LoadGameScene` vs `LoadLoadingScene` (different entity partitions)
 
 ### Documentation
 - [ ] Add XML doc comments to public APIs
@@ -210,9 +230,11 @@
 - **M3+ (Gameplay logic):** Behaviors defined in JSON will reference reusable logic scripts
 
 ### Risks and Mitigations
-- **Risk:** Large JSON files may be slow to parse
-  - **Mitigation:** Accept for M1 (not hot path), revisit if >1000 entities
+- **Risk:** Large JSON files (thousands of entities) may block game thread during loading
+  - **Mitigation:** Accept for M1 (synchronous loading), **M1.5 will add background thread loading**
 - **Risk:** Manual behavior mapping is tedious as behaviors grow
   - **Mitigation:** Accept for M1 (simple hardcoded mapping), auto-reflection in future sprint
 - **Risk:** JSON schema errors are not caught at design time
   - **Mitigation:** Fire error events, designer sees issues in logs (acceptable for M1)
+- **Risk:** Forced GC may cause frame drops if called at wrong time
+  - **Mitigation:** Only call GC at end of loading (before entering game scene), not during gameplay
