@@ -1,0 +1,10 @@
+{
+  "entities": [
+    {
+      "id": "entity",
+      "transform": {
+        "position": [10, 20, 30]
+      }
+    }
+  ]
+}

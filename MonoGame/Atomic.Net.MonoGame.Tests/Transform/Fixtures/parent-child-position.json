@@ -1,0 +1,17 @@
+{
+  "entities": [
+    {
+      "id": "parent",
+      "transform": {
+        "position": [10, 0, 0]
+      }
+    },
+    {
+      "id": "child",
+      "parent": "#parent",
+      "transform": {
+        "position": [5, 0, 0]
+      }
+    }
+  ]
+}

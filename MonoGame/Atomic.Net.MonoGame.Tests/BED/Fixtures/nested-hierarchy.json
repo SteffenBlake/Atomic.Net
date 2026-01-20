@@ -1,0 +1,15 @@
+{
+  "entities": [
+    {
+      "id": "grandparent"
+    },
+    {
+      "id": "parent",
+      "parent": "#grandparent"
+    },
+    {
+      "id": "child",
+      "parent": "#parent"
+    }
+  ]
+}

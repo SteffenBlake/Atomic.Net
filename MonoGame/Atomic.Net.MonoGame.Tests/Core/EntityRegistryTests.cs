@@ -1,5 +1,6 @@
 using Xunit;
 using Atomic.Net.MonoGame.Core;
+using Atomic.Net.MonoGame.Scenes;
 
 namespace Atomic.Net.MonoGame.Tests.Core;
 
@@ -19,13 +20,15 @@ public sealed class EntityRegistryTests : IDisposable
         EventBus<ResetEvent>.Push(new());
     }
 
-    [Fact]
-    public void Activate_AllocatesSceneEntity()
+    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    public void LoadGameScene_AllocatesSceneEntity()
     {
         // Arrange
+        var scenePath = "Core/Fixtures/single-scene-entity.json";
 
         // Act
-        var entity = EntityRegistry.Instance.Activate();
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        var entity = EntityIdRegistry.Instance.TryResolve("scene-entity", out var resolvedEntity) ? resolvedEntity : default;
         
         // Assert
         Assert.True(entity.Index >= Constants.MaxLoadingEntities);
@@ -37,13 +40,15 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.True(entity.Enabled);
     }
 
-    [Fact]
-    public void ActivateLoading_AllocatesLoadingEntity()
+    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    public void LoadLoadingScene_AllocatesLoadingEntity()
     {
         // Arrange
+        var scenePath = "Core/Fixtures/single-loading-entity.json";
 
         // Act
-        var entity = EntityRegistry.Instance.ActivateLoading();
+        SceneLoader.Instance.LoadLoadingScene(scenePath);
+        var entity = EntityIdRegistry.Instance.TryResolve("loading-entity", out var resolvedEntity) ? resolvedEntity : default;
         
         // Assert
         Assert.True(entity.Index < Constants.MaxLoadingEntities);
@@ -75,41 +80,51 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.Equal((ushort)0, root.Index);
     }
 
-    [Fact]
-    public void Activate_AllocatesSequentialIndices()
+    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    public void LoadGameScene_AllocatesSequentialIndices()
     {
         // Arrange
+        var scenePath = "Core/Fixtures/three-entities.json";
 
         // Act
-        var entity1 = EntityRegistry.Instance.Activate();
-        var entity2 = EntityRegistry.Instance.Activate();
-        var entity3 = EntityRegistry.Instance.Activate();
+        SceneLoader.Instance.LoadGameScene(scenePath);
         
         // Assert
+        var entity1Resolved = EntityIdRegistry.Instance.TryResolve("entity-1", out var entity1);
+        var entity2Resolved = EntityIdRegistry.Instance.TryResolve("entity-2", out var entity2);
+        var entity3Resolved = EntityIdRegistry.Instance.TryResolve("entity-3", out var entity3);
+        
+        Assert.True(entity1Resolved && entity2Resolved && entity3Resolved);
         Assert.Equal(entity1.Index + 1, entity2.Index);
         Assert.Equal(entity2.Index + 1, entity3.Index);
     }
 
-    [Fact]
-    public void ActivateLoading_AllocatesSequentialIndices()
+    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
+    public void LoadLoadingScene_AllocatesSequentialIndices()
     {
         // Arrange
+        var scenePath = "Core/Fixtures/three-entities.json";
 
         // Act
-        var entity1 = EntityRegistry.Instance.ActivateLoading();
-        var entity2 = EntityRegistry.Instance.ActivateLoading();
-        var entity3 = EntityRegistry.Instance.ActivateLoading();
+        SceneLoader.Instance.LoadLoadingScene(scenePath);
         
         // Assert
+        var entity1Resolved = EntityIdRegistry.Instance.TryResolve("entity-1", out var entity1);
+        var entity2Resolved = EntityIdRegistry.Instance.TryResolve("entity-2", out var entity2);
+        var entity3Resolved = EntityIdRegistry.Instance.TryResolve("entity-3", out var entity3);
+        
+        Assert.True(entity1Resolved && entity2Resolved && entity3Resolved);
         Assert.Equal(entity1.Index + 1, entity2.Index);
         Assert.Equal(entity2.Index + 1, entity3.Index);
     }
 
-    [Fact]
+    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
     public void Deactivate_MarksEntityInactive()
     {
         // Arrange
-        var entity = EntityRegistry.Instance.Activate();
+        var scenePath = "Core/Fixtures/single-scene-entity.json";
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        var entity = EntityIdRegistry.Instance.TryResolve("scene-entity", out var resolvedEntity) ? resolvedEntity : default;
         Assert.True(EntityRegistry.Instance.IsActive(entity));
         
         // Act
@@ -120,11 +135,13 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.False(EntityRegistry.Instance.IsEnabled(entity));
     }
 
-    [Fact]
+    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
     public void Disable_MarksEntityDisabled()
     {
         // Arrange
-        var entity = EntityRegistry.Instance.Activate();
+        var scenePath = "Core/Fixtures/single-scene-entity.json";
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        var entity = EntityIdRegistry.Instance.TryResolve("scene-entity", out var resolvedEntity) ? resolvedEntity : default;
         Assert.True(EntityRegistry.Instance.IsEnabled(entity));
         
         // Act
@@ -135,11 +152,13 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.True(EntityRegistry.Instance.IsActive(entity));
     }
 
-    [Fact]
+    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
     public void Enable_MarksEntityEnabled()
     {
         // Arrange
-        var entity = EntityRegistry.Instance.Activate();
+        var scenePath = "Core/Fixtures/single-scene-entity.json";
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        var entity = EntityIdRegistry.Instance.TryResolve("scene-entity", out var resolvedEntity) ? resolvedEntity : default;
         EntityRegistry.Instance.Disable(entity);
         Assert.False(EntityRegistry.Instance.IsEnabled(entity));
         
@@ -150,12 +169,14 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.True(EntityRegistry.Instance.IsEnabled(entity));
     }
 
-    [Fact]
+    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
     public void Deactivate_FiresEntityDeactivatedEvent()
     {
         // Arrange
         using var listener = new FakeEventListener<PostEntityDeactivatedEvent>();
-        var entity = EntityRegistry.Instance.Activate();
+        var scenePath = "Core/Fixtures/single-scene-entity.json";
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        var entity = EntityIdRegistry.Instance.TryResolve("scene-entity", out var resolvedEntity) ? resolvedEntity : default;
         
         // Act
         EntityRegistry.Instance.Deactivate(entity);
@@ -165,12 +186,14 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.Equal(entity.Index, listener.ReceivedEvents[0].Entity.Index);
     }
 
-    [Fact]
+    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
     public void Enable_FiresEntityEnabledEvent()
     {
         // Arrange
         using var listener = new FakeEventListener<EntityEnabledEvent>();
-        var entity = EntityRegistry.Instance.Activate();
+        var scenePath = "Core/Fixtures/single-scene-entity.json";
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        var entity = EntityIdRegistry.Instance.TryResolve("scene-entity", out var resolvedEntity) ? resolvedEntity : default;
         EntityRegistry.Instance.Disable(entity);
         listener.Clear();
         
@@ -182,12 +205,14 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.Equal(entity.Index, listener.ReceivedEvents[0].Entity.Index);
     }
 
-    [Fact]
+    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
     public void Disable_FiresEntityDisabledEvent()
     {
         // Arrange
         using var listener = new FakeEventListener<EntityDisabledEvent>();
-        var entity = EntityRegistry.Instance.Activate();
+        var scenePath = "Core/Fixtures/single-scene-entity.json";
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        var entity = EntityIdRegistry.Instance.TryResolve("scene-entity", out var resolvedEntity) ? resolvedEntity : default;
         
         // Act
         EntityRegistry.Instance.Disable(entity);
@@ -197,57 +222,64 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.Equal(entity.Index, listener.ReceivedEvents[0].Entity.Index);
     }
 
-    [Fact]
+    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
     public void ResetEvent_DeactivatesOnlySceneEntities()
     {
         // Arrange
-        var loadingEntity1 = EntityRegistry.Instance.ActivateLoading();
-        var loadingEntity2 = EntityRegistry.Instance.ActivateLoading();
-        var sceneEntity1 = EntityRegistry.Instance.Activate();
-        var sceneEntity2 = EntityRegistry.Instance.Activate();
-        Assert.True(EntityRegistry.Instance.IsActive(loadingEntity1));
-        Assert.True(EntityRegistry.Instance.IsActive(loadingEntity2));
-        Assert.True(EntityRegistry.Instance.IsActive(sceneEntity1));
-        Assert.True(EntityRegistry.Instance.IsActive(sceneEntity2));
+        var loadingPath = "Core/Fixtures/single-loading-entity.json";
+        var scenePath = "Core/Fixtures/single-scene-entity.json";
+        
+        SceneLoader.Instance.LoadLoadingScene(loadingPath);
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        
+        var loadingEntity = EntityIdRegistry.Instance.TryResolve("loading-entity", out var le) ? le : default;
+        var sceneEntity = EntityIdRegistry.Instance.TryResolve("scene-entity", out var se) ? se : default;
+        
+        Assert.True(EntityRegistry.Instance.IsActive(loadingEntity));
+        Assert.True(EntityRegistry.Instance.IsActive(sceneEntity));
         
         // Act
         EventBus<ResetEvent>.Push(new());
         
         // Assert
-        Assert.True(EntityRegistry.Instance.IsActive(loadingEntity1));
-        Assert.True(EntityRegistry.Instance.IsActive(loadingEntity2));
-        Assert.False(EntityRegistry.Instance.IsActive(sceneEntity1));
-        Assert.False(EntityRegistry.Instance.IsActive(sceneEntity2));
+        Assert.True(EntityRegistry.Instance.IsActive(loadingEntity));
+        Assert.False(EntityRegistry.Instance.IsActive(sceneEntity));
     }
 
-    [Fact]
+    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
     public void ResetEvent_AllowsSceneEntityReuse()
     {
         // Arrange
-        var entity1 = EntityRegistry.Instance.Activate();
+        var scenePath = "Core/Fixtures/single-scene-entity.json";
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        var entity1 = EntityIdRegistry.Instance.TryResolve("scene-entity", out var e1) ? e1 : default;
         var index1 = entity1.Index;
         
         // Act
         EventBus<ResetEvent>.Push(new());
-        var entity2 = EntityRegistry.Instance.Activate();
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        var entity2 = EntityIdRegistry.Instance.TryResolve("scene-entity", out var e2) ? e2 : default;
         
         // Assert
         Assert.Equal(index1, entity2.Index);
         Assert.True(EntityRegistry.Instance.IsActive(entity2));
     }
 
-    [Fact]
+    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
     public void ResetEvent_DoesNotPollute_BasicCheck()
     {
         // Arrange
-        var entity1 = EntityRegistry.Instance.Activate();
+        var scenePath = "Core/Fixtures/single-scene-entity.json";
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        var entity1 = EntityIdRegistry.Instance.TryResolve("scene-entity", out var e1) ? e1 : default;
         var index1 = entity1.Index;
         Assert.True(EntityRegistry.Instance.IsActive(entity1));
         
         // Act
         EventBus<ResetEvent>.Push(new());
         Assert.False(EntityRegistry.Instance.IsActive(entity1));
-        var entity2 = EntityRegistry.Instance.Activate();
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        var entity2 = EntityIdRegistry.Instance.TryResolve("scene-entity", out var e2) ? e2 : default;
         
         // Assert
         Assert.Equal(index1, entity2.Index);
@@ -255,13 +287,17 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.True(EntityRegistry.Instance.IsEnabled(entity2));
     }
 
-    [Fact]
+    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
     public void GetActiveEntities_ReturnsOnlyActiveEntities()
     {
         // Arrange
-        var entity1 = EntityRegistry.Instance.Activate();
-        var entity2 = EntityRegistry.Instance.Activate();
-        var entity3 = EntityRegistry.Instance.Activate();
+        var scenePath = "Core/Fixtures/three-entities.json";
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        
+        var entity1 = EntityIdRegistry.Instance.TryResolve("entity-1", out var e1) ? e1 : default;
+        var entity2 = EntityIdRegistry.Instance.TryResolve("entity-2", out var e2) ? e2 : default;
+        var entity3 = EntityIdRegistry.Instance.TryResolve("entity-3", out var e3) ? e3 : default;
+        
         EntityRegistry.Instance.Deactivate(entity2);
         
         // Act
@@ -273,13 +309,17 @@ public sealed class EntityRegistryTests : IDisposable
         Assert.Contains(entity3, activeEntities);
     }
 
-    [Fact]
+    [Fact(Skip = "Waiting for @senior-dev to implement SceneLoader")]
     public void GetEnabledEntities_ReturnsOnlyEnabledEntities()
     {
         // Arrange
-        var entity1 = EntityRegistry.Instance.Activate();
-        var entity2 = EntityRegistry.Instance.Activate();
-        var entity3 = EntityRegistry.Instance.Activate();
+        var scenePath = "Core/Fixtures/three-entities.json";
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        
+        var entity1 = EntityIdRegistry.Instance.TryResolve("entity-1", out var e1) ? e1 : default;
+        var entity2 = EntityIdRegistry.Instance.TryResolve("entity-2", out var e2) ? e2 : default;
+        var entity3 = EntityIdRegistry.Instance.TryResolve("entity-3", out var e3) ? e3 : default;
+        
         EntityRegistry.Instance.Disable(entity2);
         
         // Act

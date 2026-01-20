@@ -1,0 +1,11 @@
+{
+  "entities": [
+    {
+      "id": "parent"
+    },
+    {
+      "id": "child",
+      "parent": "#parent"
+    }
+  ]
+}
