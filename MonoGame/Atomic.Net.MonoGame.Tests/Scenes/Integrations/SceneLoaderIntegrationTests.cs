@@ -5,7 +5,7 @@ using Atomic.Net.MonoGame.BED.Hierarchy;
 using Atomic.Net.MonoGame.Transform;
 using Atomic.Net.MonoGame.Scenes;
 
-namespace Atomic.Net.MonoGame.Tests.Scenes;
+namespace Atomic.Net.MonoGame.Tests.Scenes.Integrations;
 
 /// <summary>
 /// Integration tests for JSON scene loading system.
@@ -255,7 +255,10 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("root-container", out var entity1), "root-container should resolve on first load");
         var firstIndex = entity1.Value.Index;
         
-        Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity1.Value, out var transform1), "root-container should have transform on first load");
+        Assert.True(
+            BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity1.Value, out _), 
+            "root-container should have transform on first load"
+        );
 
         // Act: Reset and reload
         EventBus<ResetEvent>.Push(new());
@@ -277,23 +280,33 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
     {
         // Arrange: Create entity with initial ID
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<IdBehavior>.Instance.SetBehavior(entity, (ref IdBehavior behavior) => 
-            behavior = new IdBehavior("initial-id"));
+        BehaviorRegistry<IdBehavior>.Instance.SetBehavior(
+            entity, (ref behavior) => behavior = new IdBehavior("initial-id")
+        );
         
         // Assert: Initial ID resolves
-        Assert.True(EntityIdRegistry.Instance.TryResolve("initial-id", out var resolvedEntity1), "initial-id should be registered");
+        Assert.True(
+            EntityIdRegistry.Instance.TryResolve("initial-id", out var resolvedEntity1), 
+            "initial-id should be registered"
+        );
         Assert.Equal(entity.Index, resolvedEntity1.Value.Index);
 
         // Act: Change the ID by removing and re-adding the behavior
         BehaviorRegistry<IdBehavior>.Instance.Remove(entity);
-        BehaviorRegistry<IdBehavior>.Instance.SetBehavior(entity, (ref IdBehavior behavior) => 
-            behavior = new IdBehavior("new-id"));
+        BehaviorRegistry<IdBehavior>.Instance.SetBehavior(
+            entity, (ref behavior) => behavior = new IdBehavior("new-id")
+        );
         
         // Assert: Old ID no longer resolves
-        Assert.False(EntityIdRegistry.Instance.TryResolve("initial-id", out _), "initial-id should be removed from registry");
+        Assert.False(
+            EntityIdRegistry.Instance.TryResolve("initial-id", out _), 
+            "initial-id should be removed from registry"
+        );
         
         // Assert: New ID resolves to same entity
-        Assert.True(EntityIdRegistry.Instance.TryResolve("new-id", out var resolvedEntity2), "new-id should be registered");
+        Assert.True(EntityIdRegistry.Instance.TryResolve(
+            "new-id", out var resolvedEntity2), "new-id should be registered"
+        );
         Assert.Equal(entity.Index, resolvedEntity2.Value.Index);
     }
 }

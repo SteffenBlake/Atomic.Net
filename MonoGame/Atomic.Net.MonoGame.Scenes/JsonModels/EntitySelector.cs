@@ -9,7 +9,7 @@ namespace Atomic.Net.MonoGame.Scenes.JsonModels;
 [JsonConverter(typeof(EntitySelectorConverter))]
 public struct EntitySelector()
 {
-    public string? ById = null;
+    public string? ById { get; set; }= null;
 
     public readonly bool TryLocate(
         [NotNullWhen(true)]

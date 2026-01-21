@@ -3,7 +3,7 @@ using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Scenes;
 
-namespace Atomic.Net.MonoGame.Tests.Core;
+namespace Atomic.Net.MonoGame.Tests.Core.Integrations;
 
 [Collection("NonParallel")]
 [Trait("Category", "Integration")]

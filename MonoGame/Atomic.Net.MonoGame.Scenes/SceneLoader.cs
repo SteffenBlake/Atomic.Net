@@ -108,8 +108,6 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         // senior-dev: Clear pre-allocated child-to-parent mapping
         _childToParents.Clear();
         
-        var createdEntities = new SparseArray<bool>(Constants.MaxEntities);
-
         foreach (var jsonEntity in scene.Entities)
         {
             var entity = useLoadingPartition 
@@ -137,8 +135,6 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
                 // senior-dev: Use SparseReferenceArray for zero-alloc parent tracking
                 _childToParents.Set(entity.Index, jsonEntity.Parent.Value);
             }
-
-            createdEntities.Set(entity.Index, true);
         }
 
         // senior-dev: Second pass - resolve parent references using SparseReferenceArray (zero-alloc)

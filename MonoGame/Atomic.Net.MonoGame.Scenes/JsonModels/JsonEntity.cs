@@ -8,21 +8,21 @@ namespace Atomic.Net.MonoGame.Scenes.JsonModels;
 /// Reference type is acceptable as these are ephemeral (load-time only).
 /// All behavior properties are nullable (optional in JSON).
 /// </summary>
-public struct JsonEntity()
+public class JsonEntity
 {
     /// <summary>
     /// Optional entity ID for referencing (e.g., "player", "main-menu").
     /// </summary>
-    public IdBehavior? Id = null;
+    public IdBehavior? Id { get; set; } = null;
 
     /// <summary>
     /// Optional transform behavior.
     /// Missing fields use C# defaults (Position/Anchor: Zero, Rotation: Identity, Scale: One).
     /// </summary>
-    public TransformBehavior? Transform = null;
+    public TransformBehavior? Transform { get; set; } = null;
 
     /// <summary>
     /// Optional parent reference (e.g., "#player" to reference entity with id="player").
     /// </summary>
-    public EntitySelector? Parent = null;
+    public EntitySelector? Parent { get; set; } = null;
 }

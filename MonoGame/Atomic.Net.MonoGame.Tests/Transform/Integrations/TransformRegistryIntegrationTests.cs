@@ -2,11 +2,10 @@ using Xunit;
 using Microsoft.Xna.Framework;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
-using Atomic.Net.MonoGame.BED.Hierarchy;
 using Atomic.Net.MonoGame.Transform;
 using Atomic.Net.MonoGame.Scenes;
 
-namespace Atomic.Net.MonoGame.Tests.Transform;
+namespace Atomic.Net.MonoGame.Tests.Transform.Integrations;
 
 // ================================================================================
 // DISCOVERY: Transform Matrix Multiplication Order (Sprint 001 - January 2026)
@@ -192,7 +191,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out var parent));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out _));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
         
         TransformRegistry.Instance.Recalculate();
@@ -226,7 +225,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out var parent));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out _));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
         
         TransformRegistry.Instance.Recalculate();
@@ -262,8 +261,8 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        Assert.True(EntityIdRegistry.Instance.TryResolve("sun", out var sun));
-        Assert.True(EntityIdRegistry.Instance.TryResolve("earth", out var earth));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("sun", out _));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("earth", out _));
         Assert.True(EntityIdRegistry.Instance.TryResolve("moon", out var moon));
         
         TransformRegistry.Instance.Recalculate();
@@ -319,7 +318,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act - Load scene, modify, reset, load again
         SceneLoader.Instance.LoadGameScene(scenePath);
-        Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out _));
         
         TransformRegistry.Instance.Recalculate();
         
@@ -567,8 +566,8 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        Assert.True(EntityIdRegistry.Instance.TryResolve("root", out var root));
-        Assert.True(EntityIdRegistry.Instance.TryResolve("middle", out var middle));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("root", out _));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("middle", out _));
         Assert.True(EntityIdRegistry.Instance.TryResolve("leaf", out var leaf));
         
         TransformRegistry.Instance.Recalculate();
