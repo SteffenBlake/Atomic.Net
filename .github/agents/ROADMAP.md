@@ -30,12 +30,22 @@ Build a **data-driven, zero runtime allocation game engine** where entire games 
 ---
 
 ### M1: Data Pipeline
-- [ ] Scenes can load from JSON files, the entire game can be defined as a directory of json files
+- [x] Scenes can load from JSON files, the entire game can be defined as a directory of json files
 
 ---
 
 ### Entity References
-- [ ] Entities can reference each other in JSON very efficiently and fast
+- [x] Entities can reference each other in JSON very efficiently and fast
+
+---
+
+### Entity Property Bag
+- [ ] Entities have a generic Property behavior that lets users add arbitrary extra properties to any entity, that dont do anything on their own, but is effectively a dictionary bag
+
+---
+
+### Persist data between scenes
+- [ ] Expand the behavior of the "Loading Scene" partition to do more than just be the loading scene, we need to have other types of stuff persisted between scenes (user inventory, experience points, game state overall, that sort of stuff)
 
 ---
 
@@ -61,6 +71,11 @@ Build a **data-driven, zero runtime allocation game engine** where entire games 
 
 ### State-Based Logic
 - [ ] Can model complex behavior as state graphs (AI, multi-phase encounters)
+
+---
+
+### Sprite loading
+- [ ] We need to start looking into both static textures and animations of sprites for entities that are data driven off behaviors
 
 ---
 

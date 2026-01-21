@@ -1,12 +1,18 @@
 # Agent Instructions
 
+# CRITICAL: DO NOT NEST YOURSELF AS A SUB AGENT
+
+A very common issue I see agents make is spinning a copy of THEMSELF up as a sub agent, which seems to cause a shit tonne of problems with loading up context and info
+
+DO NOT DO THIS, STAY IN YOUR TOP LAYER
+
 ## Before You Start
 
-1. Read `.github/agents/ROADMAP.md` - Current goals + progress checklist
-2. Read `.github/agents/DISCOVERIES.md` - Performance findings (benchmark-backed)
-3. Check active sprint in `.github/agents/sprints/` (if any)
-4. **Run `grep -r "@your-role-name" . `** to find any pings directed at you
-5. Read your role-specific `.agent. md` file for detailed responsibilities
+1. Read your role-specific `.agent.md` file for detailed responsibilities
+2. Read `.github/agents/ROADMAP.md` - Current goals + progress checklist
+3. Read `.github/agents/DISCOVERIES.md` - Performance findings (benchmark-backed)
+4. Check active sprint in `.github/agents/sprints/` (if any)
+5. **Run `grep -r "@your-role-name" . `** to find any pings directed at you
 
 ---
 
@@ -14,10 +20,11 @@
 
 - **Zero allocations during gameplay** (all allocations at load time)
 - **Data-driven everything** (game logic = JSON, not C#)
-- **Entities are indices** (`ushort`, no pointers, no IDs in JSON)
+- **Entities are indices** (`ushort`, no pointers)
 - **Behaviors are structs** (stored in `SparseArray`, cache-friendly)
 - **Events are struct-based** (`EventBus` pattern, no delegates during gameplay)
 - **Test-driven development** (tests define correctness)
+- STAY IN SCOPE, STAY IN YOUR LANE
 
 ---
 
@@ -59,6 +66,35 @@ After:
 The `#` prefix prevents the comment from showing up in future `grep` searches, reducing noise.
 
 **CRITICAL:** Always change `@your-role` → `#your-role` when you answer.   Never leave `@` pings unresolved. This will help avoid polluting your future greps with already answered pings.
+
+### CLEAN UP DISCUSSIONS
+
+Once a discussion is resolved and the issue is sorted out, do not leave a bunch of lingering "ping" comments all over the codebase. CLEAN UP AFTER YOURSELF, only "discovery" based comments should be left behind, everything else should be cleaned up by the end.
+
+### DO NOT GO TOO DEEP DOWN RABBIT HOLES
+THIS IS CRITICAL, WHILE YOU LINGER ON TRYING TO FIGURE SOMETHING OUT MY QUEUED MESSAGES DO NOT GET THROUGH TO YOU
+
+INSTEAD, IF YOU ARE A SUB AGENT, PRACTICE FREQUENTLY REQUESTING THE "PARENT" AGENT TO CHECK IN WITH ME IN CASE MESSAGES ARE QUEUED
+
+COMMIT OFTEN, BUT, MAKE IT ABUNDANTLY CLEAR TO THE PARENT PROCESS THEY WILL PROBABLY NEED TO SPIN YOU BACK UP AGAIN
+
+### WHEN IN DOUBT, ASK THE SUB AGENT
+Anytime you need to ping a sub agent, you can just commit and specifically request the sub agent respond to your request.
+
+MAKE IT EXTREMELY CLEAR TO THEM TO ONLY DO THAT THOUGH SO THEY DONT GO DOWN A RABBIT HOLE
+
+### STICK TO YOUR DAMN SCOPE OF WORK
+I cannot stress this enough, if you get asked to do tasks A and B, DONT GO DOWN A DAMN RABBIT HOLE TRYING TO DO STUFF OUT OF SCOPE
+
+STAY. IN. SCOPE.
+
+### YOU CANT SPIN UP "TEST" AD HOC PROGRAMS
+I have seen many times now agents try and ad hoc make a new program and try and run it standalone... you cant do this, it wont work due to how monogame works.
+
+If you truly need to test out some behaviors in code, either:
+1. Make a unit test for it
+or
+2. Make a benchmark to test for it
 
 ---
 
@@ -141,6 +177,100 @@ When you discover a limitation, constraint, or "gotcha" through trial and error,
 - `where T : struct` for value-type constraints
 - Nullable reference types enabled
 - Avoid `var` only when type unclear
+
+### FORBIDDEN: Allocating Lists/Arrays/Dictionaries/Hashes/Etc "Inline"
+- DO NOT, I REPEAT, DO NOT, ALLOCATE LISTS OR ARRAYS OR DICTIONARIES OR ETC "INLINE" IN FUNCTIONS
+
+DO NOT DO THIS:
+```
+var matches = entities.Select(e => e.Index).ToList(); // THIS ALLOCS
+foreach (var match in matches) ...
+```
+
+DO THIS:
+```
+var matches = entities.Select(static e => e.Index);
+foreach (var match in matches) ...
+```
+
+DO NOT DO THIS (Allocate it every call):
+```
+List<string> results = new();
+foreach (var entity in matches)
+{
+    ...
+    results.Add(foo);
+    ...
+}
+```
+
+DO THIS INSTEAD (Allocate it pre-sized as a readonly private field):
+```
+private readonly SparseArray<string> _results = new(Constants.MaxEntities);
+
+private void SomeMethod()
+{
+    // Now we arent re-allocating the whole list every run
+    _results.Clear(); // Clear if you have to at the start
+    foreach (var entity in matches)
+    {
+        ...
+        _results.Set(index, foo);
+        ...
+    }
+}
+
+```
+
+### Pre-alloc list/dictionary/etc/sparse array sizes
+
+DO NOT DO THIS (Allocs everytime it has to grow and greatly slows things down)
+```
+private readonly List<string> _results = new();
+```
+
+DO THIS INSTEAD (Pre-allocs its size so it doesnt need to dynamically grow)
+```
+private readonly SparseArray<string> _results = new(Constants.MaxEntities);
+```
+
+### TryPattern with [NotNullWhen(true)] Attribute
+
+DO NOT DO THIS (declare unitialized variable out of scope):
+```
+Foo foo;
+if ....
+{
+ .... foo = some value
+}
+```
+
+DO THIS INSTEAD (Try pattern with NotNullWhen(true)), and MAKE SURE THE OUT VAR IS NULLABLE:
+
+```
+private bool TryGetFoo(
+    [NotNullWhen(true)]
+    out Foo? foo
+)
+{
+```
+
+### Assert.True on individual Try's in tests
+
+DO NOT DO THIS ("aggregate" bools together on tries in tests)
+IT WILL NOT INFORM THE LSP/DEBUGGER THEY ARENT NULL AND YOULL GET A BUNCH OF WARNINGS
+AND IT MESSES WITH FIGURING OUT WHICH ONE ACTUALLY FAILED TOO
+```
+var hasFoo = TryGetFoo(out var foo);
+var hasBar = TryGetBar(out var bar);
+Assert.True(hasFoo && hasBar);
+```
+
+DO THIS INSTEAD:
+```
+Assert.True(TryGetFoo(out var foo));
+Assert.True(TryGetBar(out var bar));
+```
 
 ---
 
