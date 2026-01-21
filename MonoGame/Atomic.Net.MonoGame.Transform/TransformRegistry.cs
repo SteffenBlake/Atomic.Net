@@ -85,6 +85,34 @@ public sealed class TransformRegistry :
                 Matrix.CreateTranslation(ref anchor, out _localAnchor);
                 Matrix.CreateTranslation(ref position, out _localpos);
 
+                // ========================================================================
+                // DISCOVERY: Transform Matrix Multiplication Order (Sprint 001 - Jan 2026)
+                // ========================================================================
+                // 
+                // This matrix order is CORRECT for MonoGame/XNA hierarchical transforms:
+                //   (-Anchor) * Scale * Rotation * Anchor * Position
+                //
+                // When anchor is zero (default), this simplifies to:
+                //   Scale * Rotation * Position
+                //
+                // WHY THIS ORDER MATTERS:
+                // For a parent at position (100,0,0) rotated 90° with child at local (50,0,0):
+                //   ✓ CORRECT: Rotate child (50,0,0) → (0,50,0), add parent pos → (100,50,0)
+                //   ✗ WRONG:   Translate first then rotate → nonsensical positioning
+                //
+                // CRITICAL LESSON: When position is zero, Rotation*Translation(0,0,0) equals
+                // Translation(0,0,0)*Rotation (both are just the rotation matrix). This can
+                // hide matrix order bugs! Always test with NON-ZERO values.
+                //
+                // INVESTIGATION: During Sprint 001, integration tests appeared to fail due to
+                // "matrix order bug". Investigation revealed the Transform system was CORRECT.
+                // The test expectations were wrong (they expected Position*Rotation instead of
+                // Rotation*Position). Fixed by correcting 2 test expectations, no production
+                // code changes needed.
+                //
+                // See: /TRANSFORM_TEST_INVESTIGATION.md for detailed analysis
+                // See: .github/agents/DISCOVERIES.md for discovery entry
+                // ========================================================================
                 Matrix.Multiply(ref _localAnchorNeg, ref _localScale, out _localTransform);
                 Matrix.Multiply(ref _localTransform, ref _localRotation, out _localTransform);
                 Matrix.Multiply(ref _localTransform, ref _localAnchor, out _localTransform);

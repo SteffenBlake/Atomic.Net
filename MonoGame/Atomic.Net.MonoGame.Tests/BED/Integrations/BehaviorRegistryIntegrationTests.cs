@@ -1,7 +1,6 @@
 using Xunit;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
-using Atomic.Net.MonoGame.Scenes;
 
 namespace Atomic.Net.MonoGame.Tests.BED.Integrations;
 
@@ -30,7 +29,8 @@ public sealed class BehaviorRegistryIntegrationTests : IDisposable
 
     public void Dispose()
     {
-        EventBus<ResetEvent>.Push(new());
+        // Clean up ALL entities (both loading and scene) between tests
+        EventBus<ShutdownEvent>.Push(new());
     }
 
     [Fact]

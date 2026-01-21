@@ -2,7 +2,7 @@ using Xunit;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
 
-namespace Atomic.Net.MonoGame.Tests.BED;
+namespace Atomic.Net.MonoGame.Tests.BED.Units;
 
 // Test behavior for testing - mutable struct
 public struct TestBehavior : IBehavior<TestBehavior>
@@ -34,7 +34,7 @@ public sealed class BehaviorRegistryUnitTests : IDisposable
 
     public void Dispose()
     {
-        EventBus<ResetEvent>.Push(new());
+        EventBus<ShutdownEvent>.Push(new());
     }
 
     [Fact]

@@ -4,7 +4,7 @@ namespace Atomic.Net.MonoGame.Core;
 /// <summary>
 /// Central registry for entity lifecycle management.
 /// </summary>
-public class EntityRegistry : IEventHandler<ResetEvent>
+public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEvent>
 {
     internal static void Initialize()
     {
@@ -15,6 +15,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>
 
         Instance ??= new();
         EventBus<ResetEvent>.Register(Instance);
+        EventBus<ShutdownEvent>.Register(Instance);
     }
 
     public static EntityRegistry Instance { get; private set; } = null!;
@@ -212,7 +213,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>
     {
         // Deactivate only scene entities (indices >= MaxLoadingEntities)
         var sceneEntities = _active
-            .Where(a => a.Index >= Constants.MaxLoadingEntities)
+            .Where(static a => a.Index >= Constants.MaxLoadingEntities)
             .Select(a => _entities[a.Index])
             .ToList();
 
@@ -222,5 +223,25 @@ public class EntityRegistry : IEventHandler<ResetEvent>
         }
 
         _nextSceneIndex = Constants.MaxLoadingEntities;
+    }
+
+    /// <summary>
+    /// Handle shutdown event by deactivating ALL entities (both loading and scene).
+    /// Used for complete game shutdown and test cleanup.
+    /// </summary>
+    public void OnEvent(ShutdownEvent e)
+    {
+        // Deactivate only all entities (indices >= MaxLoadingEntities)
+        var sceneEntities = _active
+            .Select(a => _entities[a.Index])
+            .ToList();
+
+        foreach (var entity in sceneEntities)
+        {
+            Deactivate(entity);
+        }
+
+        _nextSceneIndex = Constants.MaxLoadingEntities;
+        _nextLoadingIndex = 0;
     }
 }

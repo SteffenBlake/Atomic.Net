@@ -1,6 +1,11 @@
 # Performance Discoveries
 
-This file documents significant performance findings backed by benchmarks.   Only add entries when benchmarks show >10% performance difference or unexpected behavior.
+This file documents significant performance findings backed by benchmarks. Only add entries when benchmarks show >10% performance difference or unexpected behavior.
+
+---
+
+## Transform Matrix Order (Sprint 001)
+**Discovery**: MonoGame transform order is `(-Anchor)*Scale*Rotation*Anchor*Position`. Tests with position=0 hide order bugs (both orders give same result). Always test with non-zero values.
 
 ---
 

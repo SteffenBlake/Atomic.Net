@@ -1,3 +1,4 @@
+using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Transform;
 
 namespace Atomic.Net.MonoGame.Scenes.JsonModels;
@@ -12,16 +13,16 @@ public class JsonEntity
     /// <summary>
     /// Optional entity ID for referencing (e.g., "player", "main-menu").
     /// </summary>
-    public string? Id { get; set; }
+    public IdBehavior? Id { get; set; } = null;
 
     /// <summary>
     /// Optional transform behavior.
     /// Missing fields use C# defaults (Position/Anchor: Zero, Rotation: Identity, Scale: One).
     /// </summary>
-    public TransformBehavior? Transform { get; set; }
+    public TransformBehavior? Transform { get; set; } = null;
 
     /// <summary>
     /// Optional parent reference (e.g., "#player" to reference entity with id="player").
     /// </summary>
-    public string? Parent { get; set; }
+    public EntitySelector? Parent { get; set; } = null;
 }
