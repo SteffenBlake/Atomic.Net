@@ -71,32 +71,36 @@
   - Comparison: Implement `IEquatable<PropertyValue>` for value-based equality
   - Pattern: Struct-based union type (no boxing, cache-friendly)
 
-#### 2. Property Bag Behavior
-- **File:** `Atomic.Net.MonoGame.BED/PropertyBag.cs`
-  - `readonly record struct PropertyBag(int PropertySetIndex)` - behavior for entity property metadata
-  - Implements `IBehavior<PropertyBag>`
-  - Factory: `static PropertyBag CreateFor(Entity entity)` returns `new PropertyBag(-1)` (invalid/unassigned)
-  - Index points into PropertyBagRegistry's dense storage
-  - Pattern: Lightweight behavior (4 bytes) that acts as pointer to actual data
+#### 2. Properties Behavior
+- **File:** `Atomic.Net.MonoGame.BED/PropertiesBehavior.cs`
+  - `readonly record struct PropertiesBehavior` - behavior containing entity property metadata
+  - Contains: `Dictionary<string, PropertyValue> Properties { get; init; }`
+  - Implements `IBehavior<PropertiesBehavior>`
+  - Factory: `static PropertiesBehavior CreateFor(Entity entity)` returns `new PropertiesBehavior(new Dictionary<string, PropertyValue>(StringComparer.OrdinalIgnoreCase))`
+  - Dictionary uses case-insensitive key comparison
+  - Pattern: Behavior directly owns the property dictionary (stored via BehaviorRegistry)
 
-#### 3. Property Storage Registry
-- **File:** `Atomic.Net.MonoGame.BED/PropertyBagRegistry.cs`
-  - Singleton: `ISingleton<PropertyBagRegistry>`
-  - Dense storage for property sets: `List<Dictionary<string, PropertyValue>>` (one dict per entity with properties)
-  - Free list for reuse: `Stack<int>` for recycled indices
-  - Tracks which entities have which property set via `SparseArray<PropertyBag>` (managed by BehaviorRegistry)
-  - Methods:
-    - `int AllocatePropertySet()` - returns index in dense storage (pops from free list or adds new)
-    - `void FreePropertySet(int index)` - clears dict, pushes index to free list
-    - `Dictionary<string, PropertyValue> GetPropertySet(int index)` - direct access to property dict
-  - Event handlers:
-    - `IEventHandler<ResetEvent>` - clear all property sets and free list
-    - `IEventHandler<PreEntityDeactivatedEvent>` - free property set if entity has PropertyBag behavior
-  - Pattern: Dense storage with free list for zero-alloc reuse
+#### 3. Property Value JSON Converter
+- **File:** `Atomic.Net.MonoGame.Scenes/JsonConverters/PropertyValueConverter.cs`
+  - Custom `System.Text.Json.JsonConverter<PropertyValue>`
+  - Deserializes JSON values directly into PropertyValue union type
+  - Handles: `JsonValueKind.String` → `FromString()`, `JsonValueKind.Number` → `FromFloat()`, `JsonValueKind.True/False` → `FromBool()`
+  - `JsonValueKind.Null` → skip (no error)
+  - `JsonValueKind.Array/Object/Undefined` → fire ErrorEvent, throw JsonException
+  - Pattern: Automatic type conversion via System.Text.Json attribute
 
-#### 4. Property Query Registry (Key-Based Lookup)
-- **File:** `Atomic.Net.MonoGame.BED/PropertyQueryRegistry.cs`
-  - Singleton: `ISingleton<PropertyQueryRegistry>`
+#### 4. Properties Behavior JSON Converter
+- **File:** `Atomic.Net.MonoGame.Scenes/JsonConverters/PropertiesBehaviorConverter.cs`
+  - Custom `System.Text.Json.JsonConverter<PropertiesBehavior>`
+  - Deserializes JSON object directly into PropertiesBehavior with Dictionary
+  - Validates: empty/whitespace keys → fire ErrorEvent, throw JsonException
+  - Validates: duplicate keys (case-insensitive) → fire ErrorEvent, throw JsonException
+  - Uses PropertyValueConverter for values
+  - Pattern: Automatic conversion with validation
+
+#### 5. Property Bag Index (Query System)
+- **File:** `Atomic.Net.MonoGame.BED/PropertyBagIndex.cs`
+  - Singleton: `ISingleton<PropertyBagIndex>`
   - Inverted index: `Dictionary<string, SparseArray<bool>>` (key → entities with that key)
     - Key is **case-insensitive** (use `StringComparer.OrdinalIgnoreCase`)
     - Value is `SparseArray<bool>` (entity index → true if entity has this key)
@@ -104,78 +108,62 @@
     - Outer key is case-insensitive
     - Inner dict maps PropertyValue → entities
   - Methods:
-    - `void IndexProperty(Entity entity, string key, PropertyValue value)` - add to both indices
-    - `void RemoveProperty(Entity entity, string key, PropertyValue value)` - remove from both indices
-    - `void RemoveAllProperties(Entity entity)` - full cleanup for entity
+    - `void IndexProperties(Entity entity, Dictionary<string, PropertyValue> properties)` - add all to both indices
+    - `void RemoveProperties(Entity entity, Dictionary<string, PropertyValue> properties)` - remove all from both indices
     - `IEnumerable<Entity> GetEntitiesWithKey(string key)` - iterate key-only index
     - `IEnumerable<Entity> GetEntitiesWithKeyValue(string key, PropertyValue value)` - iterate value-based index
   - Event handlers:
-    - `IEventHandler<BehaviorAddedEvent<PropertyBag>>` - index all properties from newly added PropertyBag
-    - `IEventHandler<PreBehaviorRemovedEvent<PropertyBag>>` - remove all indices for entity
-    - `IEventHandler<ResetEvent>` - clear all indices
+    - `IEventHandler<BehaviorAddedEvent<PropertiesBehavior>>` - index all properties from newly added behavior
+    - `IEventHandler<PreBehaviorUpdatedEvent<PropertiesBehavior>>` - remove old indices before update
+    - `IEventHandler<PostBehaviorUpdatedEvent<PropertiesBehavior>>` - re-index new properties after update
+    - `IEventHandler<PreBehaviorRemovedEvent<PropertiesBehavior>>` - remove all indices for entity
   - Pattern: Inverted index for O(1) key lookup, minimal iteration
+  - Note: No ResetEvent handler needed (entity deactivation → behavior removal handles cleanup)
 
-#### 5. JSON Integration (Extend JsonEntity)
+#### 6. JSON Integration (Extend JsonEntity)
 - **File:** `Atomic.Net.MonoGame.Scenes/JsonModels/JsonEntity.cs` (extend existing)
-  - Add property: `Dictionary<string, JsonElement>? Properties { get; set; }`
-  - Pattern: Use `JsonElement` to dynamically inspect value types during deserialization
+  - Add property: `PropertiesBehavior? Properties { get; set; }`
+  - Uses `[JsonConverter(typeof(PropertiesBehaviorConverter))]` attribute for automatic deserialization
+  - Pattern: Behavior directly on JsonEntity (like Transform, Parent, etc.)
 
 - **File:** `Atomic.Net.MonoGame.Scenes/SceneLoader.cs` (extend existing)
   - **Pass 1 (after Transform, before Parent):**
-    - For each `jsonEntity.Properties`:
-      - Validate key is not empty/whitespace → fire ErrorEvent if invalid
-      - Parse `JsonElement` to `PropertyValue`:
-        - `JsonValueKind.String` → `PropertyValue.FromString()`
-        - `JsonValueKind.Number` → `PropertyValue.FromFloat()` (parse as float)
-        - `JsonValueKind.True/False` → `PropertyValue.FromBool()`
-        - `JsonValueKind.Null` → skip (no error)
-        - `JsonValueKind.Array/Object/Undefined` → fire ErrorEvent, skip
-      - Check for duplicate keys (case-insensitive) → fire ErrorEvent if duplicate
-      - Allocate PropertyBag if not already allocated for entity
-      - Add to `PropertyBagRegistry.GetPropertySet(bag.PropertySetIndex)[key] = value`
-    - Set `BehaviorRegistry<PropertyBag>.SetBehavior()` to attach property bag to entity
-    - `PropertyQueryRegistry` automatically indexes properties via `BehaviorAddedEvent<PropertyBag>`
-  - **Error handling:**
-    - Empty/whitespace key: `ErrorEvent("Property key cannot be empty or whitespace")`
-    - Duplicate key: `ErrorEvent("Duplicate property key 'key-name' in entity 'entity-id'")`
-    - Invalid type: `ErrorEvent("Unsupported property type 'Object/Array' for key 'key-name'")`
+    - If `jsonEntity.Properties != null`, call `BehaviorRegistry<PropertiesBehavior>.SetBehavior(entity, behavior => behavior = jsonEntity.Properties.Value)`
+    - `PropertyBagIndex` automatically indexes properties via `BehaviorAddedEvent<PropertiesBehavior>`
+  - **Error handling:** PropertiesBehaviorConverter fires ErrorEvent for validation failures, throws JsonException to halt entity loading
+  - Pattern: Simplified - JsonConverter handles all parsing and validation
 
 ### Integration Points
 
 #### Event Flow
-1. SceneLoader deserializes JSON with `"properties": { ... }`
-2. For each property entry, SceneLoader:
-   - Validates key/value type
-   - Allocates PropertyBag behavior if needed (first property for entity)
-   - Adds property to `PropertyBagRegistry.GetPropertySet()`
-3. SceneLoader calls `BehaviorRegistry<PropertyBag>.SetBehavior()`
-4. `BehaviorAddedEvent<PropertyBag>` fires → `PropertyQueryRegistry` indexes all properties
-5. During gameplay, systems query via `PropertyQueryRegistry.GetEntitiesWithKey()` or `GetEntitiesWithKeyValue()`
-6. On entity deactivation, `PreEntityDeactivatedEvent` → `PropertyBagRegistry` frees property set
-7. On ResetEvent, both registries clear all data
+1. SceneLoader deserializes JSON with `"properties": { ... }` using PropertiesBehaviorConverter
+2. PropertiesBehaviorConverter validates and creates PropertiesBehavior with Dictionary
+3. SceneLoader calls `BehaviorRegistry<PropertiesBehavior>.SetBehavior()`
+4. `BehaviorAddedEvent<PropertiesBehavior>` fires → `PropertyBagIndex` indexes all properties
+5. During gameplay, systems query via `PropertyBagIndex.GetEntitiesWithKey()` or `GetEntitiesWithKeyValue()`
+6. On entity deactivation → `PreEntityDeactivatedEvent` → `PreBehaviorRemovedEvent<PropertiesBehavior>` → `PropertyBagIndex` removes indices (automatic cleanup)
 
 #### Registry Interactions
-- **BehaviorRegistry<PropertyBag>:** Tracks which entities have property bags (sparse)
-- **PropertyBagRegistry:** Stores actual property dictionaries (dense, free list)
-- **PropertyQueryRegistry:** Maintains inverted indices for fast queries (key/key-value)
+- **BehaviorRegistry<PropertiesBehavior>:** Stores property dictionaries (sparse, owned by behavior)
+- **PropertyBagIndex:** Maintains inverted indices for fast queries (key/key-value)
 - **SceneLoader:** Populates properties during JSON loading (Pass 1)
+- **Note:** Entity deactivation automatically triggers behavior removal, which triggers index cleanup
 
 #### Query API (for Gameplay Systems)
 ```csharp
 // Key-only query (all entities with "faction")
-var entitiesWithFaction = PropertyQueryRegistry.Instance.GetEntitiesWithKey("faction");
+var entitiesWithFaction = PropertyBagIndex.Instance.GetEntitiesWithKey("faction");
 
 // Key-value query (all entities with "faction == 'horde'")
-var hordeEntities = PropertyQueryRegistry.Instance.GetEntitiesWithKeyValue(
+var hordeEntities = PropertyBagIndex.Instance.GetEntitiesWithKeyValue(
     "faction", 
     PropertyValue.FromString("horde")
 );
 
 // Read property value from entity
-if (BehaviorRegistry<PropertyBag>.Instance.TryGetBehavior(entity, out var bag))
+if (BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out var properties))
 {
-    var props = PropertyBagRegistry.Instance.GetPropertySet(bag.PropertySetIndex);
-    if (props.TryGetValue("max-health", out var value))
+    if (properties.Properties.TryGetValue("max-health", out var value))
     {
         float maxHealth = value.AsFloat(); // throws if wrong type
     }
@@ -186,9 +174,9 @@ if (BehaviorRegistry<PropertyBag>.Instance.TryGetBehavior(entity, out var bag))
 
 #### Allocation Strategy
 - **Load time:**
-  - `Dictionary<string, PropertyValue>` allocated per entity with properties (via PropertyBagRegistry)
-  - `SparseArray<bool>` allocated per unique property key (via PropertyQueryRegistry)
-  - All allocations via free list reuse where possible
+  - `Dictionary<string, PropertyValue>` allocated per entity with properties (owned by PropertiesBehavior)
+  - `SparseArray<bool>` allocated per unique property key (via PropertyBagIndex)
+  - Stored in BehaviorRegistry's SparseArray (standard pattern)
 - **Runtime:**
   - Zero allocations (all dictionaries/arrays pre-allocated)
   - Queries return `IEnumerable` with zero-alloc struct enumerators
@@ -222,21 +210,20 @@ if (BehaviorRegistry<PropertyBag>.Instance.TryGetBehavior(entity, out var bag))
 
 ### Core Data Structures
 - [ ] Create `PropertyValue` struct with union type pattern (String/Float/Bool)
-- [ ] Create `PropertyBag` behavior struct (lightweight index wrapper)
-- [ ] Implement `PropertyBagRegistry` singleton with dense storage and free list
-- [ ] Implement `PropertyQueryRegistry` singleton with inverted indices (key and key-value)
+- [ ] Create `PropertiesBehavior` struct with Dictionary<string, PropertyValue> property
+- [ ] Implement `PropertyBagIndex` singleton with inverted indices (key and key-value)
 
 ### JSON Integration
-- [ ] Extend `JsonEntity` with `Dictionary<string, JsonElement>? Properties`
-- [ ] Extend `SceneLoader` to parse and validate property JSON
-- [ ] Implement property validation (empty keys, duplicates, invalid types)
-- [ ] Fire ErrorEvent for all validation failures (no crashes)
+- [ ] Create `PropertyValueConverter` for automatic PropertyValue deserialization
+- [ ] Create `PropertiesBehaviorConverter` for automatic PropertiesBehavior deserialization with validation
+- [ ] Extend `JsonEntity` with `PropertiesBehavior? Properties` (with JsonConverter attribute)
+- [ ] Extend `SceneLoader` to set PropertiesBehavior via BehaviorRegistry
 
 ### Event Handling & Cleanup
-- [ ] Handle `BehaviorAddedEvent<PropertyBag>` in PropertyQueryRegistry (index properties)
-- [ ] Handle `PreBehaviorRemovedEvent<PropertyBag>` in PropertyQueryRegistry (remove indices)
-- [ ] Handle `PreEntityDeactivatedEvent` in PropertyBagRegistry (free property set)
-- [ ] Handle `ResetEvent` in both registries (clear all data)
+- [ ] Handle `BehaviorAddedEvent<PropertiesBehavior>` in PropertyBagIndex (index properties)
+- [ ] Handle `PreBehaviorUpdatedEvent<PropertiesBehavior>` in PropertyBagIndex (remove old indices)
+- [ ] Handle `PostBehaviorUpdatedEvent<PropertiesBehavior>` in PropertyBagIndex (re-index new properties)
+- [ ] Handle `PreBehaviorRemovedEvent<PropertiesBehavior>` in PropertyBagIndex (remove indices)
 
 ### Edge Case Validation
 - [ ] @test-architect Create integration tests for all edge cases listed in requirements
@@ -245,7 +232,7 @@ if (BehaviorRegistry<PropertyBag>.Instance.TryGetBehavior(entity, out var bag))
   - Unsupported types (array/object → ErrorEvent, null → skip)
   - Querying `false`, `0`, empty string values (correct results)
   - Case-insensitive key matching
-  - Registry cleanup on deactivation/ResetEvent (no stale data)
+  - Registry cleanup on deactivation (no stale data, via behavior removal events)
 
 ### Performance Validation
 - [ ] @benchmarker Benchmark property query performance (key-only and key-value on 8k entities)
@@ -311,21 +298,22 @@ if (BehaviorRegistry<PropertyBag>.Instance.TryGetBehavior(entity, out var bag))
 
 ### Design Decisions
 - **Union type for PropertyValue:** Avoids boxing, type-safe, cache-friendly (16 bytes struct)
-- **Dense storage with free list:** Minimizes memory for sparse property bags
+- **PropertiesBehavior owns Dictionary:** Simplifies architecture, uses existing BehaviorRegistry infrastructure
 - **Inverted index for queries:** O(1) lookup instead of scanning all entities
 - **Case-insensitive keys:** Matches designer expectations (JSON keys are often inconsistent)
 - **Dictionary per entity:** Flexible, no pre-defined schema, designer-friendly
+- **JsonConverter pattern:** Automatic deserialization with validation, follows existing pattern
 - **Reject arrays/objects:** Phase 1 simplification (future upgrade path)
 
 ### Integration with Future Sprints
-- **Phase 2 (Arrays/Objects):** Extend PropertyValue with Array/Object types, nested PropertyBag storage
+- **Phase 2 (Arrays/Objects):** Extend PropertyValue with Array/Object types
 - **Query System (Future):** Property bag queries integrate with larger query language
 - **Command System (Future):** Commands can read/write properties at runtime (if we allow mutation)
 - **Reactive Logic (Future):** Triggers can fire when properties match conditions
 
 ### Risks and Mitigations
 - **Risk:** Dictionary allocations per entity may cause memory pressure with 8000+ entities
-  - **Mitigation:** Free list reuse + sparse design (most entities have zero properties)
+  - **Mitigation:** Sparse design (most entities have zero properties), stored in BehaviorRegistry SparseArray
 - **Risk:** Case-insensitive comparisons may be slow
   - **Mitigation:** Use built-in `StringComparer.OrdinalIgnoreCase` (fast, no allocation)
   - **Fallback:** Benchmark and optimize if needed (normalize keys at load time)
