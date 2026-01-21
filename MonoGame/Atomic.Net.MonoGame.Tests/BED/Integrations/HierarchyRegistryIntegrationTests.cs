@@ -51,18 +51,17 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
         
         // Assert
-        var parentResolved = EntityIdRegistry.Instance.TryResolve("parent", out var parent);
-        var child1Resolved = EntityIdRegistry.Instance.TryResolve("child1", out var child1);
-        var child2Resolved = EntityIdRegistry.Instance.TryResolve("child2", out var child2);
-        var child3Resolved = EntityIdRegistry.Instance.TryResolve("child3", out var child3);
-        Assert.True(parentResolved && child1Resolved && child2Resolved && child3Resolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out var parent));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child3", out var child3));
         
-        var children = parent.GetChildren().ToList();
+        var children = parent.Value.GetChildren().ToList();
         
         Assert.Equal(3, children.Count);
-        Assert.Contains(child1, children);
-        Assert.Contains(child2, children);
-        Assert.Contains(child3, children);
+        Assert.Contains(child1.Value, children);
+        Assert.Contains(child2.Value, children);
+        Assert.Contains(child3.Value, children);
     }
 
     [Fact]
@@ -71,15 +70,14 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
         // Arrange
         var scenePath = "BED/Fixtures/parent-child.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var childResolved = EntityIdRegistry.Instance.TryResolve("child", out var child);
-        Assert.True(childResolved);
-        Assert.True(child.TryGetParent(out _));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
+        Assert.True(child.Value.TryGetParent(out _));
         
         // Act
-        BehaviorRegistry<Parent>.Instance.Remove(child);
+        BehaviorRegistry<Parent>.Instance.Remove(child.Value);
         
         // Assert
-        Assert.False(child.TryGetParent(out _));
+        Assert.False(child.Value.TryGetParent(out _));
     }
 
     [Fact]
@@ -89,19 +87,18 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
         var scenePath = "BED/Fixtures/parent-three-children.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
         
-        var parentResolved = EntityIdRegistry.Instance.TryResolve("parent", out var parent);
-        var child1Resolved = EntityIdRegistry.Instance.TryResolve("child1", out var child1);
-        var child2Resolved = EntityIdRegistry.Instance.TryResolve("child2", out var child2);
-        Assert.True(parentResolved && child1Resolved && child2Resolved);
-        Assert.True(child1.TryGetParent(out _));
-        Assert.True(child2.TryGetParent(out _));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out var parent));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
+        Assert.True(child1.Value.TryGetParent(out _));
+        Assert.True(child2.Value.TryGetParent(out _));
         
         // Act
-        EntityRegistry.Instance.Deactivate(parent);
+        EntityRegistry.Instance.Deactivate(parent.Value);
         
         // Assert
-        Assert.False(child1.TryGetParent(out _));
-        Assert.False(child2.TryGetParent(out _));
+        Assert.False(child1.Value.TryGetParent(out _));
+        Assert.False(child2.Value.TryGetParent(out _));
     }
 
     [Fact]
@@ -111,20 +108,19 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
         var scenePath = "BED/Fixtures/parent-three-children.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
         
-        var parentResolved = EntityIdRegistry.Instance.TryResolve("parent", out var parent);
-        var child1Resolved = EntityIdRegistry.Instance.TryResolve("child1", out var child1);
-        var child2Resolved = EntityIdRegistry.Instance.TryResolve("child2", out var child2);
-        Assert.True(parentResolved && child1Resolved && child2Resolved);
-        Assert.Equal(3, parent.GetChildren().Count());
+        Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out var parent));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
+        Assert.Equal(3, parent.Value.GetChildren().Count());
         
         // Act
-        EntityRegistry.Instance.Deactivate(child1);
+        EntityRegistry.Instance.Deactivate(child1.Value);
         
         // Assert
-        var children = parent.GetChildren().ToList();
+        var children = parent.Value.GetChildren().ToList();
         Assert.Equal(2, children.Count);
-        Assert.Contains(child2, children);
-        Assert.DoesNotContain(child1, children);
+        Assert.Contains(child2.Value, children);
+        Assert.DoesNotContain(child1.Value, children);
     }
 
     [Fact]
@@ -134,18 +130,17 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
         var scenePath = "BED/Fixtures/parent-child.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
         
-        var sceneParentResolved = EntityIdRegistry.Instance.TryResolve("parent", out var sceneParent);
-        var sceneChildResolved = EntityIdRegistry.Instance.TryResolve("child", out var sceneChild);
-        Assert.True(sceneParentResolved && sceneChildResolved);
-        Assert.True(sceneChild.TryGetParent(out _));
-        Assert.Single(sceneParent.GetChildren());
+        Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out var sceneParent));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var sceneChild));
+        Assert.True(sceneChild.Value.TryGetParent(out _));
+        Assert.Single(sceneParent.Value.GetChildren());
         
         // Act
         EventBus<ResetEvent>.Push(new());
         
         // Assert
-        Assert.False(EntityRegistry.Instance.IsActive(sceneParent));
-        Assert.False(EntityRegistry.Instance.IsActive(sceneChild));
+        Assert.False(EntityRegistry.Instance.IsActive(sceneParent.Value));
+        Assert.False(EntityRegistry.Instance.IsActive(sceneChild.Value));
     }
 
     [Fact]
@@ -155,21 +150,20 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
         var scenePath = "BED/Fixtures/parent-child.json";
         SceneLoader.Instance.LoadLoadingScene(scenePath);
         
-        var loadingParentResolved = EntityIdRegistry.Instance.TryResolve("parent", out var loadingParent);
-        var loadingChildResolved = EntityIdRegistry.Instance.TryResolve("child", out var loadingChild);
-        Assert.True(loadingParentResolved && loadingChildResolved);
-        Assert.True(loadingChild.TryGetParent(out var parent1));
-        Assert.Equal(loadingParent.Index, parent1.Value.Index);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out var loadingParent));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var loadingChild));
+        Assert.True(loadingChild.Value.TryGetParent(out var parent1));
+        Assert.Equal(loadingParent.Value.Index, parent1.Value.Index);
         
         // Act
         EventBus<ResetEvent>.Push(new());
         
         // Assert
-        Assert.True(EntityRegistry.Instance.IsActive(loadingParent));
-        Assert.True(EntityRegistry.Instance.IsActive(loadingChild));
-        Assert.True(loadingChild.TryGetParent(out var parent2));
-        Assert.Equal(loadingParent.Index, parent2.Value.Index);
-        Assert.Single(loadingParent.GetChildren());
+        Assert.True(EntityRegistry.Instance.IsActive(loadingParent.Value));
+        Assert.True(EntityRegistry.Instance.IsActive(loadingChild.Value));
+        Assert.True(loadingChild.Value.TryGetParent(out var parent2));
+        Assert.Equal(loadingParent.Value.Index, parent2.Value.Index);
+        Assert.Single(loadingParent.Value.GetChildren());
     }
 
     [Fact]
@@ -179,26 +173,24 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
         var scenePath = "BED/Fixtures/parent-child.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
         
-        var parent1Resolved = EntityIdRegistry.Instance.TryResolve("parent", out var parent1);
-        var child1Resolved = EntityIdRegistry.Instance.TryResolve("child", out var child1);
-        Assert.True(parent1Resolved && child1Resolved);
-        Assert.True(child1.TryGetParent(out _));
-        Assert.Single(parent1.GetChildren());
+        Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out var parent1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child1));
+        Assert.True(child1.Value.TryGetParent(out _));
+        Assert.Single(parent1.Value.GetChildren());
         
         // Act
         EventBus<ResetEvent>.Push(new());
         SceneLoader.Instance.LoadGameScene(scenePath);
         
-        var parent2Resolved = EntityIdRegistry.Instance.TryResolve("parent", out var parent2);
-        var child2Resolved = EntityIdRegistry.Instance.TryResolve("child", out var child2);
-        Assert.True(parent2Resolved && child2Resolved);
-        Assert.Equal(parent1.Index, parent2.Index);
-        Assert.Equal(child1.Index, child2.Index);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out var parent2));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child2));
+        Assert.Equal(parent1.Value.Index, parent2.Value.Index);
+        Assert.Equal(child1.Value.Index, child2.Value.Index);
         
         // Assert
-        Assert.True(child2.TryGetParent(out var newParent));
-        Assert.Equal(parent2.Index, newParent.Value.Index);
-        Assert.Single(parent2.GetChildren());
+        Assert.True(child2.Value.TryGetParent(out var newParent));
+        Assert.Equal(parent2.Value.Index, newParent.Value.Index);
+        Assert.Single(parent2.Value.GetChildren());
     }
 
     [Fact]
@@ -207,11 +199,10 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
         // Arrange
         var scenePath = "BED/Fixtures/parent-child.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var parentResolved = EntityIdRegistry.Instance.TryResolve("parent", out var entity);
-        Assert.True(parentResolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out var entity));
         
         // Act
-        var hasParent = entity.TryGetParent(out var parent);
+        var hasParent = entity.Value.TryGetParent(out var parent);
         
         // Assert
         Assert.False(hasParent);
@@ -224,11 +215,10 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
         // Arrange
         var scenePath = "BED/Fixtures/parent-child.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var childResolved = EntityIdRegistry.Instance.TryResolve("child", out var entity);
-        Assert.True(childResolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var entity));
         
         // Act
-        var children = entity.GetChildren();
+        var children = entity.Value.GetChildren();
         
         // Assert
         Assert.Empty(children);
@@ -244,21 +234,20 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
         
         // Assert
-        var grandparentResolved = EntityIdRegistry.Instance.TryResolve("grandparent", out var grandparent);
-        var parentResolved = EntityIdRegistry.Instance.TryResolve("parent", out var parent);
-        var childResolved = EntityIdRegistry.Instance.TryResolve("child", out var child);
-        Assert.True(grandparentResolved && parentResolved && childResolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("grandparent", out var grandparent));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out var parent));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
         
-        child.TryGetParent(out var childParent);
-        parent.TryGetParent(out var parentParent);
-        var hasGrandparentParent = grandparent.TryGetParent(out _);
-        var parentChildren = parent.GetChildren();
-        var grandparentChildren = grandparent.GetChildren();
+        child.Value.TryGetParent(out var childParent);
+        parent.Value.TryGetParent(out var parentParent);
+        var hasGrandparentParent = grandparent.Value.TryGetParent(out _);
+        var parentChildren = parent.Value.GetChildren();
+        var grandparentChildren = grandparent.Value.GetChildren();
         
         Assert.NotNull(childParent);
-        Assert.Equal(parent.Index, childParent.Value.Index);
+        Assert.Equal(parent.Value.Index, childParent.Value.Index);
         Assert.NotNull(parentParent);
-        Assert.Equal(grandparent.Index, parentParent.Value.Index);
+        Assert.Equal(grandparent.Value.Index, parentParent.Value.Index);
         Assert.False(hasGrandparentParent);
         Assert.Single(parentChildren);
         Assert.Single(grandparentChildren);
@@ -275,12 +264,11 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
         
         // Assert
-        var childResolved = EntityIdRegistry.Instance.TryResolve("child", out var child);
-        Assert.True(childResolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
         
         // The event should have been fired during scene load
         Assert.NotEmpty(listener.ReceivedEvents);
-        var childEvent = listener.ReceivedEvents.FirstOrDefault(e => e.Entity.Index == child.Index);
+        var childEvent = listener.ReceivedEvents.FirstOrDefault(e => e.Entity.Index == child.Value.Index);
         Assert.NotEqual(default, childEvent);
     }
 
@@ -292,14 +280,13 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
         var scenePath = "BED/Fixtures/parent-child.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
         
-        var childResolved = EntityIdRegistry.Instance.TryResolve("child", out var child);
-        Assert.True(childResolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
         
         // Act
-        BehaviorRegistry<Parent>.Instance.Remove(child);
+        BehaviorRegistry<Parent>.Instance.Remove(child.Value);
         
         // Assert
         Assert.Single(listener.ReceivedEvents);
-        Assert.Equal(child.Index, listener.ReceivedEvents[0].Entity.Index);
+        Assert.Equal(child.Value.Index, listener.ReceivedEvents[0].Entity.Index);
     }
 }

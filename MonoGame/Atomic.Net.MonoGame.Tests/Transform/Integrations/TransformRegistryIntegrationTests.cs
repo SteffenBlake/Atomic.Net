@@ -115,13 +115,12 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var resolved = EntityIdRegistry.Instance.TryResolve("entity", out var entity);
-        Assert.True(resolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity));
         
         TransformRegistry.Instance.Recalculate();
 
         // Assert
-        AssertMatricesEqual(expectedMatrix, entity);
+        AssertMatricesEqual(expectedMatrix, entity.Value);
     }
 
     [Fact]
@@ -133,13 +132,12 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var resolved = EntityIdRegistry.Instance.TryResolve("entity", out var entity);
-        Assert.True(resolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity));
         
         TransformRegistry.Instance.Recalculate();
 
         // Assert
-        AssertMatricesEqual(expectedMatrix, entity);
+        AssertMatricesEqual(expectedMatrix, entity.Value);
     }
 
     [Fact]
@@ -150,14 +148,13 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var parentResolved = EntityIdRegistry.Instance.TryResolve("parent", out var parent);
-        var childResolved = EntityIdRegistry.Instance.TryResolve("child", out var child);
-        Assert.True(parentResolved && childResolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out var parent));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
         
         TransformRegistry.Instance.Recalculate();
         
         // Modify parent transform to make it dirty
-        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(parent, (ref t) =>
+        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(parent.Value, (ref t) =>
         {
             t.Position = new Vector3(200f, 0f, 0f);
         });
@@ -166,7 +163,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Assert - child should have updated world transform
         var expectedChild = Matrix.CreateTranslation(250f, 0f, 0f);
-        AssertMatricesEqual(expectedChild, child);
+        AssertMatricesEqual(expectedChild, child.Value);
     }
 
     [Fact]
@@ -178,13 +175,12 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var resolved = EntityIdRegistry.Instance.TryResolve("entity", out var entity);
-        Assert.True(resolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity));
         
         TransformRegistry.Instance.Recalculate();
 
         // Assert
-        AssertMatricesEqual(expectedMatrix, entity);
+        AssertMatricesEqual(expectedMatrix, entity.Value);
     }
 
     [Fact]
@@ -196,14 +192,13 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var parentResolved = EntityIdRegistry.Instance.TryResolve("parent", out var parent);
-        var childResolved = EntityIdRegistry.Instance.TryResolve("child", out var child);
-        Assert.True(parentResolved && childResolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out var parent));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
         
         TransformRegistry.Instance.Recalculate();
 
         // Assert
-        AssertMatricesEqual(expectedChild, child);
+        AssertMatricesEqual(expectedChild, child.Value);
     }
 
     [Fact]
@@ -231,14 +226,13 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var parentResolved = EntityIdRegistry.Instance.TryResolve("parent", out var parent);
-        var childResolved = EntityIdRegistry.Instance.TryResolve("child", out var child);
-        Assert.True(parentResolved && childResolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out var parent));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
         
         TransformRegistry.Instance.Recalculate();
 
         // Assert
-        AssertMatricesEqual(expectedChild, child);
+        AssertMatricesEqual(expectedChild, child.Value);
     }
 
     [Fact]
@@ -268,15 +262,14 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var sunResolved = EntityIdRegistry.Instance.TryResolve("sun", out var sun);
-        var earthResolved = EntityIdRegistry.Instance.TryResolve("earth", out var earth);
-        var moonResolved = EntityIdRegistry.Instance.TryResolve("moon", out var moon);
-        Assert.True(sunResolved && earthResolved && moonResolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("sun", out var sun));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("earth", out var earth));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("moon", out var moon));
         
         TransformRegistry.Instance.Recalculate();
 
         // Assert
-        AssertMatricesEqual(expectedMoon, moon);
+        AssertMatricesEqual(expectedMoon, moon.Value);
     }
 
     [Fact]
@@ -293,13 +286,12 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var resolved = EntityIdRegistry.Instance.TryResolve("entity", out var entity);
-        Assert.True(resolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity));
         
         TransformRegistry.Instance.Recalculate();
 
         // Assert
-        AssertMatricesEqual(expected, entity);
+        AssertMatricesEqual(expected, entity.Value);
     }
 
     [Fact]
@@ -311,13 +303,12 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var resolved = EntityIdRegistry.Instance.TryResolve("entity", out var entity);
-        Assert.True(resolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity));
         
         TransformRegistry.Instance.Recalculate();
 
         // Assert
-        AssertMatricesEqual(expectedMatrix, entity);
+        AssertMatricesEqual(expectedMatrix, entity.Value);
     }
 
     [Fact]
@@ -328,22 +319,20 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act - Load scene, modify, reset, load again
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var entity1Resolved = EntityIdRegistry.Instance.TryResolve("entity", out var entity1);
-        Assert.True(entity1Resolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity1));
         
         TransformRegistry.Instance.Recalculate();
         
         EventBus<ResetEvent>.Push(new());
         
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var entity2Resolved = EntityIdRegistry.Instance.TryResolve("entity", out var entity2);
-        Assert.True(entity2Resolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity2));
         
         TransformRegistry.Instance.Recalculate();
 
         // Assert - entity should have clean transform
         var expectedMatrix = Matrix.CreateTranslation(10f, 20f, 30f);
-        AssertMatricesEqual(expectedMatrix, entity2);
+        AssertMatricesEqual(expectedMatrix, entity2.Value);
     }
 
     [Fact]
@@ -354,10 +343,9 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var entity1Resolved = EntityIdRegistry.Instance.TryResolve("entity", out var entity1);
-        Assert.True(entity1Resolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity1));
         
-        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(entity1, (ref t) =>
+        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(entity1.Value, (ref t) =>
         {
             t.Position = new Vector3(999f, 999f, 999f);
         });
@@ -367,14 +355,13 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         EventBus<ResetEvent>.Push(new());
         
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var entity2Resolved = EntityIdRegistry.Instance.TryResolve("entity", out var entity2);
-        Assert.True(entity2Resolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity2));
         
         TransformRegistry.Instance.Recalculate();
 
         // Assert
         var expectedMatrix = Matrix.CreateTranslation(10f, 20f, 30f);
-        AssertMatricesEqual(expectedMatrix, entity2);
+        AssertMatricesEqual(expectedMatrix, entity2.Value);
     }
 
     [Fact]
@@ -391,13 +378,12 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var resolved = EntityIdRegistry.Instance.TryResolve("entity", out var entity);
-        Assert.True(resolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity));
         
         TransformRegistry.Instance.Recalculate();
 
         // Assert
-        AssertMatricesEqual(expected, entity);
+        AssertMatricesEqual(expected, entity.Value);
     }
 
     [Fact]
@@ -416,13 +402,12 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var resolved = EntityIdRegistry.Instance.TryResolve("entity", out var entity);
-        Assert.True(resolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity));
         
         TransformRegistry.Instance.Recalculate();
 
         // Assert
-        AssertMatricesEqual(expected, entity);
+        AssertMatricesEqual(expected, entity.Value);
     }
 
     [Fact]
@@ -441,13 +426,12 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var resolved = EntityIdRegistry.Instance.TryResolve("entity", out var entity);
-        Assert.True(resolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity));
         
         TransformRegistry.Instance.Recalculate();
 
         // Assert
-        AssertMatricesEqual(expected, entity);
+        AssertMatricesEqual(expected, entity.Value);
     }
 
     [Fact]
@@ -469,13 +453,12 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var resolved = EntityIdRegistry.Instance.TryResolve("entity", out var entity);
-        Assert.True(resolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity));
         
         TransformRegistry.Instance.Recalculate();
 
         // Assert
-        AssertMatricesEqual(expected, entity);
+        AssertMatricesEqual(expected, entity.Value);
     }
 
     [Fact]
@@ -487,13 +470,12 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var resolved = EntityIdRegistry.Instance.TryResolve("entity", out var entity);
-        Assert.True(resolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity));
         
         TransformRegistry.Instance.Recalculate();
 
         // Assert
-        AssertMatricesEqual(expectedMatrix, entity);
+        AssertMatricesEqual(expectedMatrix, entity.Value);
     }
 
     [Fact]
@@ -504,15 +486,14 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var rootResolved = EntityIdRegistry.Instance.TryResolve("root", out var root);
-        var middleResolved = EntityIdRegistry.Instance.TryResolve("middle", out var middle);
-        var leafResolved = EntityIdRegistry.Instance.TryResolve("leaf", out var leaf);
-        Assert.True(rootResolved && middleResolved && leafResolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("root", out var root));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("middle", out var middle));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("leaf", out var leaf));
         
         TransformRegistry.Instance.Recalculate();
         
         // Modify only leaf
-        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(leaf, (ref t) =>
+        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(leaf.Value, (ref t) =>
         {
             t.Position = new Vector3(40f, 0f, 0f);
         });
@@ -521,7 +502,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Assert
         var expectedLeaf = Matrix.CreateTranslation(70f, 0f, 0f);
-        AssertMatricesEqual(expectedLeaf, leaf);
+        AssertMatricesEqual(expectedLeaf, leaf.Value);
     }
 
     [Fact]
@@ -532,15 +513,14 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var rootResolved = EntityIdRegistry.Instance.TryResolve("root", out var root);
-        var middleResolved = EntityIdRegistry.Instance.TryResolve("middle", out var middle);
-        var leafResolved = EntityIdRegistry.Instance.TryResolve("leaf", out var leaf);
-        Assert.True(rootResolved && middleResolved && leafResolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("root", out var root));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("middle", out var middle));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("leaf", out var leaf));
         
         TransformRegistry.Instance.Recalculate();
         
         // Modify middle node
-        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(middle, (ref t) =>
+        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(middle.Value, (ref t) =>
         {
             t.Position = new Vector3(25f, 0f, 0f);
         });
@@ -549,7 +529,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Assert
         var expectedLeaf = Matrix.CreateTranslation(65f, 0f, 0f);
-        AssertMatricesEqual(expectedLeaf, leaf);
+        AssertMatricesEqual(expectedLeaf, leaf.Value);
     }
 
     [Fact]
@@ -560,15 +540,14 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var rootResolved = EntityIdRegistry.Instance.TryResolve("root", out var root);
-        var middleResolved = EntityIdRegistry.Instance.TryResolve("middle", out var middle);
-        var leafResolved = EntityIdRegistry.Instance.TryResolve("leaf", out var leaf);
-        Assert.True(rootResolved && middleResolved && leafResolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("root", out var root));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("middle", out var middle));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("leaf", out var leaf));
         
         TransformRegistry.Instance.Recalculate();
         
         // Modify root
-        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(root, (ref t) =>
+        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(root.Value, (ref t) =>
         {
             t.Position = new Vector3(100f, 0f, 0f);
         });
@@ -577,7 +556,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Assert
         var expectedLeaf = Matrix.CreateTranslation(150f, 0f, 0f);
-        AssertMatricesEqual(expectedLeaf, leaf);
+        AssertMatricesEqual(expectedLeaf, leaf.Value);
     }
 
     [Fact]
@@ -588,10 +567,9 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var rootResolved = EntityIdRegistry.Instance.TryResolve("root", out var root);
-        var middleResolved = EntityIdRegistry.Instance.TryResolve("middle", out var middle);
-        var leafResolved = EntityIdRegistry.Instance.TryResolve("leaf", out var leaf);
-        Assert.True(rootResolved && middleResolved && leafResolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("root", out var root));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("middle", out var middle));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("leaf", out var leaf));
         
         TransformRegistry.Instance.Recalculate();
         TransformRegistry.Instance.Recalculate();
@@ -599,7 +577,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Assert - should still be correct after multiple recalculations
         var expectedLeaf = Matrix.CreateTranslation(60f, 0f, 0f);
-        AssertMatricesEqual(expectedLeaf, leaf);
+        AssertMatricesEqual(expectedLeaf, leaf.Value);
     }
 
     [Fact]
@@ -610,15 +588,14 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var rootResolved = EntityIdRegistry.Instance.TryResolve("root", out var root);
-        var level2Resolved = EntityIdRegistry.Instance.TryResolve("level2", out var level2);
-        var level4Resolved = EntityIdRegistry.Instance.TryResolve("level4", out var level4);
-        Assert.True(rootResolved && level2Resolved && level4Resolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("root", out var root));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("level2", out var level2));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("level4", out var level4));
         
         TransformRegistry.Instance.Recalculate();
         
         // Modify level2
-        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(level2, (ref t) =>
+        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(level2.Value, (ref t) =>
         {
             t.Position = new Vector3(20f, 0f, 0f);
         });
@@ -627,7 +604,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Assert
         var expectedLevel4 = Matrix.CreateTranslation(60f, 0f, 0f);
-        AssertMatricesEqual(expectedLevel4, level4);
+        AssertMatricesEqual(expectedLevel4, level4.Value);
     }
 
     [Fact]
@@ -638,15 +615,14 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
-        var rootResolved = EntityIdRegistry.Instance.TryResolve("root", out var root);
-        var leftResolved = EntityIdRegistry.Instance.TryResolve("left-child", out var leftChild);
-        var rightResolved = EntityIdRegistry.Instance.TryResolve("right-child", out var rightChild);
-        Assert.True(rootResolved && leftResolved && rightResolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("root", out var root));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("left-child", out var leftChild));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("right-child", out var rightChild));
         
         TransformRegistry.Instance.Recalculate();
         
         // Modify left child
-        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(leftChild, (ref t) =>
+        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(leftChild.Value, (ref t) =>
         {
             t.Position = new Vector3(100f, 10f, 0f);
         });
@@ -655,6 +631,6 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         // Assert - right child should be unchanged
         var expectedRight = Matrix.CreateTranslation(30f, -10f, 0f);
-        AssertMatricesEqual(expectedRight, rightChild);
+        AssertMatricesEqual(expectedRight, rightChild.Value);
     }
 }

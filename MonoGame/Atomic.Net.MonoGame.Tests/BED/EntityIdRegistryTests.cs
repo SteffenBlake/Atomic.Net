@@ -28,7 +28,7 @@ public sealed class EntityIdRegistryTests : IDisposable
         BehaviorRegistry<IdBehavior>.Instance.SetBehavior(entity, (ref IdBehavior b) => b = new IdBehavior("initial-id"));
         
         Assert.True(EntityIdRegistry.Instance.TryResolve("initial-id", out var resolved1));
-        Assert.Equal(entity.Index, resolved1.Index);
+        Assert.Equal(entity.Index, resolved1.Value.Index);
         
         // Change ID by removing and re-adding the behavior
         BehaviorRegistry<IdBehavior>.Instance.Remove(entity);
@@ -39,6 +39,6 @@ public sealed class EntityIdRegistryTests : IDisposable
         
         // New ID should resolve
         Assert.True(EntityIdRegistry.Instance.TryResolve("changed-id", out var resolved2));
-        Assert.Equal(entity.Index, resolved2.Index);
+        Assert.Equal(entity.Index, resolved2.Value.Index);
     }
 }
