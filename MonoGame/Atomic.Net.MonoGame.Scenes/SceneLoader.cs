@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.BED.Hierarchy;
@@ -29,7 +30,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     public static SceneLoader Instance { get; private set; } = null!;
 
     // senior-dev: Pre-allocated SparseReferenceArray for parent-child mappings (zero-alloc iteration)
-    private readonly SparseReferenceArray<string> _childToParents = new(Constants.MaxEntities);
+    private readonly SparseArray<EntitySelector> _childToParents = new(Constants.MaxEntities);
 
     /// <summary>
     /// Loads a game scene from JSON file.
@@ -43,7 +44,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
             return;
         }
 
-        LoadSceneInternal(scene!, useLoadingPartition: false);
+        LoadSceneInternal(scene, useLoadingPartition: false);
         
         // senior-dev: GC after scene goes out of scope
         GC.Collect();
@@ -62,7 +63,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
             return;
         }
 
-        LoadSceneInternal(scene!, useLoadingPartition: true);
+        LoadSceneInternal(scene, useLoadingPartition: true);
         
         // senior-dev: GC after scene goes out of scope
         GC.Collect();
@@ -70,13 +71,16 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     }
 
     // senior-dev: Separate method for parsing JSON to ensure proper scoping for GC
-    private bool TryParseSceneFile(string scenePath, out JsonScene? scene)
+    private static bool TryParseSceneFile(
+        string scenePath,
+        [NotNullWhen(true)]
+        out JsonScene? scene
+    )
     {
-        scene = null;
-        
         if (!File.Exists(scenePath))
         {
-            EventBus<ErrorEvent>.Push(new($"Scene file not found: {scenePath}"));
+            EventBus<ErrorEvent>.Push(new($"Scene file not found: '{scenePath}'"));
+            scene = null;
             return false;
         }
 
@@ -84,15 +88,19 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         
         try
         {
-            scene = JsonSerializer.Deserialize<JsonScene>(jsonText, JsonSerializerOptions.Web);
-            scene ??= new JsonScene();
+            scene = JsonSerializer.Deserialize<JsonScene>(
+                jsonText, JsonSerializerOptions.Web
+            ) ?? new();
+
             return true;
         }
         catch (JsonException ex)
         {
             EventBus<ErrorEvent>.Push(new($"Failed to parse JSON scene file: {scenePath} - {ex.Message}"));
-            return false;
         }
+
+        scene = null;
+        return false;
     }
 
     private void LoadSceneInternal(JsonScene scene, bool useLoadingPartition)
@@ -112,44 +120,43 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
             {
                 BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(
                     entity, 
-                    (ref TransformBehavior behavior) => behavior = jsonEntity.Transform.Value
+                    (ref behavior) => behavior = jsonEntity.Transform.Value
                 );
             }
 
-            if (!string.IsNullOrEmpty(jsonEntity.Id))
+            if (jsonEntity.Id.HasValue)
             {
                 BehaviorRegistry<IdBehavior>.Instance.SetBehavior(
                     entity, 
-                    (ref IdBehavior behavior) => behavior = new IdBehavior(jsonEntity.Id)
+                    (ref behavior) => behavior = jsonEntity.Id.Value
                 );
             }
 
-            if (!string.IsNullOrEmpty(jsonEntity.Parent))
+            if (jsonEntity.Parent.HasValue)
             {
                 // senior-dev: Use SparseReferenceArray for zero-alloc parent tracking
-                _childToParents[entity.Index] = jsonEntity.Parent;
+                _childToParents.Set(entity.Index, jsonEntity.Parent.Value);
             }
 
             createdEntities.Set(entity.Index, true);
         }
 
         // senior-dev: Second pass - resolve parent references using SparseReferenceArray (zero-alloc)
-        foreach (var (entityIndex, parentRef) in _childToParents)
+        foreach (var (entityIndex, parentSelector) in _childToParents)
         {
-            var parentId = parentRef.TrimStart('#');
-            var entity = EntityRegistry.Instance[entityIndex];
-            
-            if (EntityIdRegistry.Instance.TryResolve(parentId, out var parentEntity))
+            if (!parentSelector.TryLocate(out var parent))
             {
-                BehaviorRegistry<Parent>.Instance.SetBehavior(
-                    entity, 
-                    (ref Parent behavior) => behavior = new Parent(parentEntity.Index)
-                );
+                continue;
             }
-            else
-            {
-                EventBus<ErrorEvent>.Push(new($"Unresolved parent reference: #{parentId}"));
-            }
+
+            var parentIndex  = parent.Value.Index;
+            EntityRegistry.Instance[entityIndex].SetBehavior<Parent, ushort>(
+                in parentIndex,
+                static (ref readonly _parentIndex, ref behavior) => 
+                    behavior = new Parent(_parentIndex)
+            );
         }
+
+        _childToParents.Clear();
     }
 }

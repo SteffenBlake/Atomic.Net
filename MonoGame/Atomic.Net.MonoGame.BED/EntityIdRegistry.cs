@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.BED;
@@ -8,9 +9,9 @@ namespace Atomic.Net.MonoGame.BED;
 public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
     IEventHandler<InitializeEvent>,
     IEventHandler<BehaviorAddedEvent<IdBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<IdBehavior>>,
-    IEventHandler<ResetEvent>,
-    IEventHandler<ShutdownEvent>
+    IEventHandler<PreBehaviorUpdatedEvent<IdBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<IdBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<IdBehavior>>
 {
     internal static void Initialize()
     {
@@ -25,12 +26,8 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
 
     public static EntityIdRegistry Instance { get; private set; } = null!;
 
-    // senior-dev: Pre-sized dictionaries to avoid reallocations during scene loading
     private readonly Dictionary<string, Entity> _idToEntity = new(Constants.MaxEntities);
-    private readonly Dictionary<ushort, string> _entityToId = new(Constants.MaxEntities);
-    
-    // senior-dev: Pre-allocated array for ResetEvent to avoid List allocations
-    private readonly ushort[] _entitiesToRemove = new ushort[Constants.MaxEntities];
+    private readonly SparseReferenceArray<string> _entityToId = new(Constants.MaxEntities);
 
     /// <summary>
     /// Attempts to register an entity with the given ID.
@@ -53,17 +50,29 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
     /// Attempts to resolve an entity by its ID.
     /// Returns true and outputs the entity if found, false otherwise.
     /// </summary>
-    public bool TryResolve(string id, out Entity entity)
+    public bool TryResolve(
+        string id, 
+        [NotNullWhen(true)]
+        out Entity? entity
+    )
     {
-        return _idToEntity.TryGetValue(id, out entity);
+        // Dictionary.TryGetValue doesnt handle nullability of value types
+        if (_idToEntity.TryGetValue(id, out var located))
+        {
+            entity = located;
+            return true;
+        }
+
+        entity = null;
+        return false;
     }
 
     public void OnEvent(InitializeEvent _)
     {
         EventBus<BehaviorAddedEvent<IdBehavior>>.Register(this);
+        EventBus<PreBehaviorUpdatedEvent<IdBehavior>>.Register(this);
+        EventBus<PostBehaviorUpdatedEvent<IdBehavior>>.Register(this);
         EventBus<PreBehaviorRemovedEvent<IdBehavior>>.Register(this);
-        EventBus<ResetEvent>.Register(this);
-        EventBus<ShutdownEvent>.Register(this);
     }
 
     public void OnEvent(BehaviorAddedEvent<IdBehavior> e)
@@ -74,8 +83,7 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
         }
     }
 
-    // senior-dev: Clean up ID mapping when IdBehavior is removed (entity deactivation or explicit removal)
-    public void OnEvent(PreBehaviorRemovedEvent<IdBehavior> e)
+    public void OnEvent(PreBehaviorUpdatedEvent<IdBehavior> e)
     {
         if (_entityToId.TryGetValue(e.Entity.Index, out var id))
         {
@@ -84,32 +92,20 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
         }
     }
 
-    public void OnEvent(ResetEvent e)
+    public void OnEvent(PostBehaviorUpdatedEvent<IdBehavior> e)
     {
-        // senior-dev: Use pre-allocated array to avoid List allocation
-        var removeCount = 0;
-        
-        foreach (var (entityIndex, _) in _entityToId)
+        if (BehaviorRegistry<IdBehavior>.Instance.TryGetBehavior(e.Entity, out var idBehavior))
         {
-            if (entityIndex >= Constants.MaxLoadingEntities)
-            {
-                _entitiesToRemove[removeCount++] = entityIndex;
-            }
-        }
-
-        for (var i = 0; i < removeCount; i++)
-        {
-            var entityIndex = _entitiesToRemove[i];
-            var id = _entityToId[entityIndex];
-            _idToEntity.Remove(id);
-            _entityToId.Remove(entityIndex);
+            TryRegister(e.Entity, idBehavior.Value.Id);
         }
     }
 
-    // senior-dev: Clean up all mappings on shutdown
-    public void OnEvent(ShutdownEvent e)
+    public void OnEvent(PreBehaviorRemovedEvent<IdBehavior> e)
     {
-        _idToEntity.Clear();
-        _entityToId.Clear();
+        if (_entityToId.TryGetValue(e.Entity.Index, out var id))
+        {
+            _idToEntity.Remove(id);
+            _entityToId.Remove(e.Entity.Index);
+        }
     }
 }

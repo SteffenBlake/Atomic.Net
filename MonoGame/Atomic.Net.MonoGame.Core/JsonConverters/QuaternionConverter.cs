@@ -10,7 +10,10 @@ public class QuaternionConverter : JsonConverter<Quaternion>
     {
         var values = JsonSerializer.Deserialize<float[]>(ref reader, options);
         if (values == null || values.Length != 4)
+        {
             return Quaternion.Identity;
+        }
+
         return new Quaternion(values[0], values[1], values[2], values[3]);
     }
 

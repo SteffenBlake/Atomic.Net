@@ -213,7 +213,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     {
         // Deactivate only scene entities (indices >= MaxLoadingEntities)
         var sceneEntities = _active
-            .Where(a => a.Index >= Constants.MaxLoadingEntities)
+            .Where(static a => a.Index >= Constants.MaxLoadingEntities)
             .Select(a => _entities[a.Index])
             .ToList();
 
@@ -231,27 +231,14 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     /// </summary>
     public void OnEvent(ShutdownEvent e)
     {
-        // senior-dev: Collect all indices first to avoid collection modification during iteration
-        var indices = new ushort[_active.Count];
-        var count = 0;
-        foreach (var (index, _) in _active)
-        {
-            indices[count++] = index;
-        }
+        // Deactivate only all entities (indices >= MaxLoadingEntities)
+        var sceneEntities = _active
+            .Select(a => _entities[a.Index])
+            .ToList();
 
-        // Fire Pre events while entities are still active
-        for (var i = 0; i < count; i++)
+        foreach (var entity in sceneEntities)
         {
-            EventBus<PreEntityDeactivatedEvent>.Push(new(_entities[indices[i]]));
-        }
-
-        // Clear active set
-        _active.Clear();
-
-        // Fire Post events after entities are deactivated
-        for (var i = 0; i < count; i++)
-        {
-            EventBus<PostEntityDeactivatedEvent>.Push(new(_entities[indices[i]]));
+            Deactivate(entity);
         }
 
         _nextSceneIndex = Constants.MaxLoadingEntities;

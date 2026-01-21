@@ -9,8 +9,11 @@ public class Vector3Converter : JsonConverter<Vector3>
     public override Vector3 Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var values = JsonSerializer.Deserialize<float[]>(ref reader, options);
-        if (values == null || values.Length != 3)
+        if (values == null || values.Length != 3) 
+        {
             return Vector3.Zero;
+        }
+
         return new Vector3(values[0], values[1], values[2]);
     }
 

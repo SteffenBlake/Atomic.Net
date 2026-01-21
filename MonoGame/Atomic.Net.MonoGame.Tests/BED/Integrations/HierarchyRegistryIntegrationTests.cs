@@ -4,7 +4,7 @@ using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.BED.Hierarchy;
 using Atomic.Net.MonoGame.Scenes;
 
-namespace Atomic.Net.MonoGame.Tests.BED;
+namespace Atomic.Net.MonoGame.Tests.BED.Integrations;
 
 [Collection("NonParallel")]
 [Trait("Category", "Integration")]
@@ -34,12 +34,11 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
         
         // Assert
-        var parentResolved = EntityIdRegistry.Instance.TryResolve("parent", out var parent);
-        var childResolved = EntityIdRegistry.Instance.TryResolve("child", out var child);
-        Assert.True(parentResolved && childResolved);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out var parent));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
         
-        Assert.True(child.TryGetParent(out var retrievedParent));
-        Assert.Equal(parent.Index, retrievedParent.Value.Index);
+        Assert.True(child.Value.TryGetParent(out var retrievedParent));
+        Assert.Equal(parent.Value.Index, retrievedParent.Value.Index);
     }
 
     [Fact]
@@ -123,7 +122,7 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
         
         // Assert
         var children = parent.GetChildren().ToList();
-        Assert.Equal(2, children.Count());
+        Assert.Equal(2, children.Count);
         Assert.Contains(child2, children);
         Assert.DoesNotContain(child1, children);
     }
