@@ -59,10 +59,15 @@ public sealed class PersistenceKeySwapTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity);
+            behavior.Properties["hp"] = 100f;
         });
         DatabaseRegistry.Instance.Flush();
         
         // Act: Modify entity and swap to different key
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
+        {
+            behavior.Properties["hp"] = 75f;
+        });
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("save-slot-2");
@@ -72,11 +77,23 @@ public sealed class PersistenceKeySwapTests : IDisposable
         // test-architect: Current state (HP=75) should write to "save-slot-2"
         // Old "save-slot-1" should still exist in DB with HP=100
         
-        // Assert: Verify save-slot-2 has current state
-        // var slot2Entity = LoadEntityFromDatabase("save-slot-2");
+        // Assert: Verify save-slot-2 has current state (75)
+        var slot2Entity = new Entity(301);
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(slot2Entity, (ref PersistToDiskBehavior behavior) =>
+        {
+            behavior = new PersistToDiskBehavior("save-slot-2");
+        });
+        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(slot2Entity, out var slot2Props));
+        Assert.Equal(75f, slot2Props.Value.Properties["hp"]);
         
-        // test-architect: Verify save-slot-1 still has original state (orphaned)
-        // var slot1Entity = LoadEntityFromDatabase("save-slot-1");
+        // test-architect: Verify save-slot-1 still has original state (100) - orphaned
+        var slot1Entity = new Entity(302);
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(slot1Entity, (ref PersistToDiskBehavior behavior) =>
+        {
+            behavior = new PersistToDiskBehavior("save-slot-1");
+        });
+        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(slot1Entity, out var slot1Props));
+        Assert.Equal(100f, slot1Props.Value.Properties["hp"]);
         
         // Act: Swap back to save-slot-1
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
@@ -85,6 +102,8 @@ public sealed class PersistenceKeySwapTests : IDisposable
         });
         
         // Assert: Entity should load HP=100 from save-slot-1
+        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out var reloadedProps));
+        Assert.Equal(100f, reloadedProps.Value.Properties["hp"]);
     }
 
     [Fact(Skip = "Awaiting implementation by @senior-dev")]
@@ -95,6 +114,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity);
+            behavior.Properties["data"] = "final";
         });
         
         // Act: Rapidly swap between multiple keys in same frame
@@ -122,7 +142,13 @@ public sealed class PersistenceKeySwapTests : IDisposable
         DatabaseRegistry.Instance.Flush();
         
         // Assert: Final key should have final state
-        // var rapid4Entity = LoadEntityFromDatabase("rapid-4");
+        var rapid4Entity = new Entity(301);
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(rapid4Entity, (ref PersistToDiskBehavior behavior) =>
+        {
+            behavior = new PersistToDiskBehavior("rapid-4");
+        });
+        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(rapid4Entity, out var props));
+        Assert.Equal("final", props.Value.Properties["data"]);
         
         // test-architect: FINDING: Rapid swaps in same frame may result in only the final
         // key being written. Intermediate keys may not get written if they're orphaned
@@ -141,21 +167,38 @@ public sealed class PersistenceKeySwapTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity);
+            behavior.Properties["value"] = 50f;
         });
         DatabaseRegistry.Instance.Flush();
         
         // Act: Mutate and swap key in same frame (before Flush)
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
+        {
+            behavior.Properties["value"] = 100f;
+        });
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("swapped-key");
         });
         DatabaseRegistry.Instance.Flush();
         
-        // Assert: New key should have mutated value
-        // var swappedEntity = LoadEntityFromDatabase("swapped-key");
+        // Assert: New key should have mutated value (100)
+        var swappedEntity = new Entity(301);
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(swappedEntity, (ref PersistToDiskBehavior behavior) =>
+        {
+            behavior = new PersistToDiskBehavior("swapped-key");
+        });
+        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(swappedEntity, out var swappedProps));
+        Assert.Equal(100f, swappedProps.Value.Properties["value"]);
         
         // test-architect: Original key should still have old value (50)
-        // var originalEntity = LoadEntityFromDatabase("original-key");
+        var originalEntity = new Entity(302);
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(originalEntity, (ref PersistToDiskBehavior behavior) =>
+        {
+            behavior = new PersistToDiskBehavior("original-key");
+        });
+        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(originalEntity, out var originalProps));
+        Assert.Equal(50f, originalProps.Value.Properties["value"]);
         
         // test-architect: FINDING: Mutations made to "original-key" in the same frame
         // before key swap are DROPPED (niche edge case). This is acceptable as a feature:
@@ -174,6 +217,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity1);
+            behavior.Properties["slot"] = "A";
         });
         DatabaseRegistry.Instance.Flush();
         
@@ -185,6 +229,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity2);
+            behavior.Properties["slot"] = "B";
         });
         DatabaseRegistry.Instance.Flush();
         
@@ -195,8 +240,16 @@ public sealed class PersistenceKeySwapTests : IDisposable
         });
         
         // Assert: entity1 should load data from slot-B (overwriting its current state)
+        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity1, out var entity1Props));
+        Assert.Equal("B", entity1Props.Value.Properties["slot"]);
         
         // test-architect: slot-A should still exist with original data
-        // var slotAEntity = LoadEntityFromDatabase("slot-A");
+        var slotAEntity = new Entity(302);
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(slotAEntity, (ref PersistToDiskBehavior behavior) =>
+        {
+            behavior = new PersistToDiskBehavior("slot-A");
+        });
+        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(slotAEntity, out var slotAProps));
+        Assert.Equal("A", slotAProps.Value.Properties["slot"]);
     }
 }

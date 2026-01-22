@@ -104,6 +104,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity1);
+            behavior.Properties["scene"] = "scene1";
         });
         DatabaseRegistry.Instance.Flush();
         
@@ -119,10 +120,13 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity2);
+            behavior.Properties["scene"] = "scene2";
         });
         
-        // Assert: entity2 should have loaded data from entity1 (overwriting "scene2")
+        // Assert: entity2 should have loaded data from entity1 (overwriting "scene2" with "scene1")
         // test-architect: When PersistToDiskBehavior is added, it loads from DB
+        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity2, out var loadedProps));
+        Assert.Equal("scene1", loadedProps.Value.Properties["scene"]);
     }
 
     [Fact(Skip = "Awaiting implementation by @senior-dev")]
@@ -136,6 +140,11 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity);
+            behavior.Properties["test"] = "value";
+        });
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
+        {
+            behavior = new PersistToDiskBehavior("");
         });
         
         // test-architect: Empty key should fire ErrorEvent
@@ -143,11 +152,18 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         
         // Assert: ErrorEvent should have been fired
         Assert.NotEmpty(errorListener.ReceivedEvents);
-        Assert.Contains(errorListener.ReceivedEvents, e => e.Message.Contains("empty"));
+        Assert.Contains(errorListener.ReceivedEvents, e => e.Message.Contains("empty") || e.Message.Contains("key"));
         
         // test-architect: Entity should NOT be written to database
-        // var loadedEntity = LoadEntityFromDatabase("");
-        // Assert.Null(loadedEntity);
+        // Verify by trying to load with empty key - should not find anything
+        var newEntity = new Entity(301);
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
+        {
+            behavior = new PersistToDiskBehavior("");
+        });
+        // If it loaded from DB, it would have "test" property. Since it shouldn't, it won't have it.
+        Assert.False(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var props) 
+            && props.Value.Properties.ContainsKey("test"));
     }
 
     [Fact(Skip = "Awaiting implementation by @senior-dev")]
@@ -189,6 +205,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity);
+            behavior.Properties["test"] = "whitespace";
         });
         
         // test-architect: Whitespace key should fire ErrorEvent
@@ -196,9 +213,15 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         
         // Assert: ErrorEvent should have been fired
         Assert.NotEmpty(errorListener.ReceivedEvents);
+        Assert.Contains(errorListener.ReceivedEvents, e => e.Message.Contains("whitespace") || e.Message.Contains("key") || e.Message.Contains("empty"));
         
         // test-architect: Entity should NOT be written to database
-        // var loadedEntity = LoadEntityFromDatabase("   ");
-        // Assert.Null(loadedEntity);
+        var newEntity = new Entity(301);
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
+        {
+            behavior = new PersistToDiskBehavior("   ");
+        });
+        Assert.False(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var props) 
+            && props.Value.Properties.ContainsKey("test"));
     }
 }

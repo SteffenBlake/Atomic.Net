@@ -126,6 +126,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity1);
+            behavior.Properties["fromDisk"] = "yes";
         });
         // test-architect: Note - no Transform behavior saved
         DatabaseRegistry.Instance.Flush();
@@ -134,6 +135,11 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         EventBus<ResetEvent>.Push(new());
         
         var entity2 = new Entity(400);
+        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(entity2, (ref TransformBehavior behavior) =>
+        {
+            behavior = TransformBehavior.CreateFor(entity2);
+            behavior.Position = new Microsoft.Xna.Framework.Vector3(50, 75, 0);
+        });
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("partial-key");
@@ -141,7 +147,11 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         
         // Assert: Entity should have loaded Properties from disk
         // test-architect: Disk had Properties, scene added Transform
-        // Assert.Equal(new Vector3(50, 75, 0), entity2.GetPosition()); // From scene
+        Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity2, out var transform));
+        Assert.Equal(new Microsoft.Xna.Framework.Vector3(50, 75, 0), transform.Value.Position);
+        
+        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity2, out var props));
+        Assert.Equal("yes", props.Value.Properties["fromDisk"]);
         
         // test-architect: FINDING: Scene provides defaults, disk overwrites with saved values.
         // Behaviors not in disk persist from scene definition.
