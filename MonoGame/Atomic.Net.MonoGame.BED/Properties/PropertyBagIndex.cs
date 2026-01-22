@@ -21,17 +21,19 @@ public sealed class PropertyBagIndex : ISingleton<PropertyBagIndex>,
             return;
         }
 
-        Instance ??= new();
+        Instance = new();
         EventBus<InitializeEvent>.Register(Instance);
     }
 
     public static PropertyBagIndex Instance { get; private set; } = null!;
 
     // senior-dev: Key-only index: key → entities with that key (case-insensitive)
+    // senior-dev: Future optimization: Consider FrozenDictionary for better read performance if keys are stable after load
     private readonly Dictionary<string, SparseArray<bool>> _keyIndex = 
         new(StringComparer.OrdinalIgnoreCase);
 
     // senior-dev: Key-value index: key → value → entities (outer key is case-insensitive)
+    // senior-dev: Future optimization: Consider FrozenDictionary for outer dict if keys are stable after load
     private readonly Dictionary<string, Dictionary<PropertyValue, SparseArray<bool>>> _keyValueIndex = 
         new(StringComparer.OrdinalIgnoreCase);
 
