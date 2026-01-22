@@ -123,7 +123,6 @@ On `BehaviorAddedEvent<PersistToDiskBehavior>` or `PostBehaviorUpdatedEvent<Pers
 - **Serialization format:** Same as JsonEntity (no outer wrapper)
   ```json
   {
-    "_id": "player-save-slot-1",
     "id": "player",
     "transform": { "position": [10, 20, 0], "rotation": [0, 0, 0, 1], "scale": [1, 1, 1] },
     "properties": { "health": 100, "mana": 50 },
@@ -194,14 +193,15 @@ On `BehaviorAddedEvent<PersistToDiskBehavior>` or `PostBehaviorUpdatedEvent<Pers
 - Pattern: Simpler architecture, removal doesn't need special cases
 
 #### Scene Load Integration
-1. Before `SceneLoader.LoadGameScene()` or `LoadPersistentScene()`:
-   - Call `DatabaseRegistry.Instance.Disable()` (stops dirty tracking)
+1. Before Scene Change (caller code not actually implemented yet):
+   - Will call `DatabaseRegistry.Instance.Disable()` (stops dirty tracking)
 2. SceneLoader loads entities, applies behaviors from JSON
    - **Critical:** Apply `PersistToDiskBehavior` LAST (even after Parent)
    - Add comment: "PersistToDiskBehavior MUST be applied last to prevent unwanted DB loads during scene construction"
-3. After SceneLoader completes:
+3. After Scene Change completes (not implemented yet):
    - Call `DatabaseRegistry.Instance.Enable()` (resumes dirty tracking)
 4. Pattern: Prevents scene load mutations from triggering disk writes
+- Note this means that you have to implement the Disable/Enable functions, but nothing in the domain layer actually invokes them yet, but the Integration Tests should still test these features work, we will implement a SceneManager at a later date to handle Scene Transitions.
 
 #### Registry Interactions
 - **BehaviorRegistry<PersistToDiskBehavior>:** Stores persistence keys (sparse, most entities don't have this)
@@ -253,11 +253,7 @@ On `BehaviorAddedEvent<PersistToDiskBehavior>` or `PostBehaviorUpdatedEvent<Pers
 - [ ] @benchmarker **Test zero-alloc JSON serialization**: Find approach to serialize entity behaviors to JSON with zero allocations
   - Hypothesis: Use `Utf8JsonWriter` with pre-allocated buffers or pooled memory
   - Compare: Standard `JsonSerializer.Serialize()` vs manual `Utf8JsonWriter` with buffer pooling
-- [ ] @benchmarker **Test flush performance**: Measure flush time for varying dirty entity counts (10, 100, 1000)
-  - Hypothesis: Linear scaling, <10ms for 100 entities
-- [ ] @benchmarker **Test LiteDB write throughput**: Measure batch write performance for large entity counts
-  - Hypothesis: File I/O is bottleneck, ~100-1000 entities/sec
-
+  - Consider other options, investigate this to find a way we can do this, as it could vastly speed up our Scene Load times
 ---
 
 ## Tasks
@@ -275,7 +271,7 @@ On `BehaviorAddedEvent<PersistToDiskBehavior>` or `PostBehaviorUpdatedEvent<Pers
 
 ### EntityLoader Utility
 - [ ] Create `EntityLoader` static utility class in Scenes project
-- [ ] Extract entity loading logic from `SceneLoader` into `EntityLoader.LoadEntityFromJson()`
+- [ ] Extract entity loading logic from `SceneLoader` into `EntityLoader.LoadFromJsonEntity()`
 - [ ] Refactor `SceneLoader` to use `EntityLoader` for entity hydration
 - [ ] Use `EntityLoader` in `DatabaseRegistry` for deserialization consistency
 
@@ -292,7 +288,7 @@ On `BehaviorAddedEvent<PersistToDiskBehavior>` or `PostBehaviorUpdatedEvent<Pers
 - [ ] Implement `Shutdown()` method (close LiteDB connection)
 - [ ] Create LiteDB collection `entities` with `_id` index
 - [ ] Implement entity serialization (collect all behaviors from BehaviorRegistry instances, use EntityLoader pattern)
-- [ ] Implement entity deserialization (use `EntityLoader.LoadEntityFromJson()`)
+- [ ] Implement entity deserialization (use `EntityLoader.LoadFromJsonEntity()`)
 
 ### Database Registry (Flush Logic)
 - [ ] Implement `Flush()` method:
@@ -318,6 +314,9 @@ On `BehaviorAddedEvent<PersistToDiskBehavior>` or `PostBehaviorUpdatedEvent<Pers
 - [ ] Update `SceneLoader` to call `DatabaseRegistry.Instance.Enable()` after loading
 - [ ] Apply `PersistToDiskBehavior` LAST in SceneLoader (after Transform, Properties, Parent)
 - [ ] Add comment: "PersistToDiskBehavior MUST be applied last to prevent unwanted DB loads during scene construction"
+
+### Json Serialization
+- [ ] Implement the Write methods on all our JsonConverters now
 
 ### Chaos Testing (27 Edge Cases)
 - [ ] #test-architect Create integration tests for all 27 chaos scenarios:
@@ -360,9 +359,9 @@ On `BehaviorAddedEvent<PersistToDiskBehavior>` or `PostBehaviorUpdatedEvent<Pers
     - Rapid key swapping doesn't corrupt data
 
 ### Performance Validation
-- [ ] @benchmarker Benchmark dirty tracking overhead (`MarkDirty()` cost per mutation)
-- [ ] @benchmarker Benchmark flush performance (varying dirty entity counts)
-- [ ] @benchmarker Benchmark LiteDB write throughput (batch write performance)
+- [ ] @benchmarker Benchmark zero alloc options for fastest way to deserialize from json repeatedly to the same type, but different data
+- [ ] @benchmarker Benchmark zero alloc options for fastest way to serialize to json repeatedly, ideally some way to re-use the same memory you write to over and over, and then write it out to a LiteDB, without allocating at any step, if possible.
+
 
 ### Documentation
 - [ ] Add XML doc comments to `DatabaseRegistry` public APIs
