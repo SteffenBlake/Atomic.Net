@@ -45,11 +45,9 @@ On `BehaviorAddedEvent<PersistToDiskBehavior>` or `PostBehaviorUpdatedEvent<Pers
   - If `oldKey != newKey` → check DB for `newKey` (load if exists, write current state if not)
 
 ### Behavior Removal Handling
-- Add `RemovalReason` enum: `Manual`, `Deactivation`, `Shutdown`
-- Event signature: `PreBehaviorRemovedEvent<T>(Entity entity, RemovalReason reason)`
-- If reason = `Deactivation` or `Shutdown`: do NOT write to disk (entity lifecycle event)
-- If reason = `Manual`: write current state to disk, then stop persisting future mutations
-- If `PersistToDiskBehavior` manually removed: entity becomes normal (no more persistence)
+- If `PersistToDiskBehavior` is removed: entity simply stops persisting to disk
+- No special handling needed - final state will be written on next `Flush()` if entity was dirty
+- Simpler architecture - removal doesn't require special event handling
 
 ### Scene Load Protection
 - Before scene load: `DatabaseRegistry.Disable()` (stops dirty tracking)
@@ -78,29 +76,14 @@ On `BehaviorAddedEvent<PersistToDiskBehavior>` or `PostBehaviorUpdatedEvent<Pers
 ### Architecture
 
 #### 1. PersistToDiskBehavior (New Behavior)
-- **File:** `Atomic.Net.MonoGame.BED/Persistence/PersistToDiskBehavior.cs`
+- **File:** `Atomic.Net.MonoGame.Persistence/PersistToDiskBehavior.cs`
   - `readonly record struct PersistToDiskBehavior(string Key)` — behavior marking entity for disk persistence
   - Implements `IBehavior<PersistToDiskBehavior>`
   - Uses `[JsonConverter(typeof(PersistToDiskBehaviorConverter))]` for JSON deserialization
   - Key is the database pointer (can be any non-empty string)
   - Empty/null keys should fire `ErrorEvent` and skip persistence
 
-#### 2. RemovalReason Enum (Event System Enhancement)
-- **File:** `Atomic.Net.MonoGame.Core/Events/RemovalReason.cs`
-  - `enum RemovalReason { Manual, Deactivation, Shutdown }`
-  - `Manual`: User explicitly removed behavior via `RemoveBehavior()` API
-  - `Deactivation`: Entity deactivated, behaviors auto-removed
-  - `Shutdown`: Engine shutdown, all behaviors cleared
-  - Pattern: Enables different handling based on removal context
-
-#### 3. PreBehaviorRemovedEvent Enhancement
-- **File:** `Atomic.Net.MonoGame.Core/Events/PreBehaviorRemovedEvent.cs` (extend existing)
-  - Add `RemovalReason Reason` property to event
-  - Update all event publishers to pass appropriate reason
-  - **Breaking change**: All `PreBehaviorRemovedEvent<T>` handlers must be updated
-  - Pattern: Contextual information for removal handlers
-
-#### 4. DatabaseRegistry (Central Persistence System)
+#### 2. DatabaseRegistry (Central Persistence System)
 - **File:** `Atomic.Net.MonoGame.Persistence/DatabaseRegistry.cs`
   - Singleton: `ISingleton<DatabaseRegistry>`
   - Responsibilities:
@@ -112,21 +95,18 @@ On `BehaviorAddedEvent<PersistToDiskBehavior>` or `PostBehaviorUpdatedEvent<Pers
     - `bool IsEnabled { get; private set; }` — dirty tracking enabled/disabled
     - `SparseArray<bool> _dirtyFlags` — tracks entities with mutations
   - Methods:
-    - `void MarkDirty(ushort entityIndex)` — set dirty flag (no-op if disabled)
+    - `void MarkDirty(ushort entityIndex)` — set dirty flag (no-op if disabled), called by `BehaviorRegistry<T>.SetBehavior()`
     - `void Flush()` — write dirty + persistent entities to LiteDB, clear flags
     - `void Disable()` — stop dirty tracking (for scene load)
     - `void Enable()` — resume dirty tracking (after scene load)
     - `void Initialize()` — setup LiteDB connection, create indexes
     - `void Shutdown()` — close LiteDB connection
   - Event handlers:
-    - `IEventHandler<PostBehaviorUpdatedEvent<T>>` for ALL behaviors (generic subscription) → call `MarkDirty(entity.Index)` if enabled
     - `IEventHandler<BehaviorAddedEvent<PersistToDiskBehavior>>` → check DB, load if exists, write if not
-    - `IEventHandler<PreBehaviorUpdatedEvent<PersistToDiskBehavior>>` → store old key
-    - `IEventHandler<PostBehaviorUpdatedEvent<PersistToDiskBehavior>>` → compare old/new key, handle key swap
-    - `IEventHandler<PreBehaviorRemovedEvent<PersistToDiskBehavior>>` → if Manual, write to disk; always stop future persistence
-  - Pattern: Generic event handling for zero-alloc dirty tracking across all behavior types
+    - `IEventHandler<PostBehaviorUpdatedEvent<PersistToDiskBehavior>>` → compare old/new key, handle key swap (DB read/write happens here)
+  - Pattern: Dirty tracking via direct method calls in BehaviorRegistry, DB operations via PersistToDiskBehavior events only
 
-#### 5. LiteDB Integration (External Dependency)
+#### 3. LiteDB Integration (External Dependency)
 - **NuGet Package:** Add `LiteDB` to `Atomic.Net.MonoGame.Persistence` project
   - Version: Latest stable (5.x or 6.x as appropriate)
   - LiteDB provides embedded document database (NoSQL, file-based)
@@ -138,26 +118,32 @@ On `BehaviorAddedEvent<PersistToDiskBehavior>` or `PostBehaviorUpdatedEvent<Pers
   - Each document stores JSON array of all behaviors for an entity
 - **Pattern:** Embedded database with JSON document storage (no SQL, no schema)
 
-#### 6. Entity Serialization Strategy
+#### 4. Entity Serialization Strategy
 - **Serializer:** Use existing `System.Text.Json` with behavior converters
-- **Serialization format:**
+- **Serialization format:** Same as JsonEntity (no outer wrapper)
   ```json
   {
     "_id": "player-save-slot-1",
-    "behaviors": {
-      "transform": { "position": [10, 20, 0], ... },
-      "properties": { "health": 100, "mana": 50 },
-      "persistToDisk": { "key": "player-save-slot-1" },
-      "parent": { "parentIndex": 42 }
-    }
+    "id": "player",
+    "transform": { "position": [10, 20, 0], "rotation": [0, 0, 0, 1], "scale": [1, 1, 1] },
+    "properties": { "health": 100, "mana": 50 },
+    "persistToDisk": { "key": "player-save-slot-1" },
+    "parent": "#some-parent-entity"
   }
   ```
-- **Include all behaviors:** Transform, Properties, Parent, PersistToDisk, etc.
+- **Include all behaviors:** Transform, Properties, Parent, PersistToDisk, Id, etc. (flat structure like JsonEntity)
 - **Behavior discovery:** Iterate all `BehaviorRegistry<T>` instances to collect entity's behaviors
-- **Deserialization:** Apply behaviors via `BehaviorRegistry<T>.SetBehavior()` (same as SceneLoader)
-- **Pattern:** Reuse existing JSON infrastructure for consistency
+- **Deserialization:** Create `EntityLoader` utility to extract/reuse SceneLoader's entity loading logic
+- **Pattern:** Reuse existing JSON infrastructure and SceneLoader patterns for consistency
 
-#### 7. Persistence Project Structure
+#### 5. EntityLoader (New Utility)
+- **File:** `Atomic.Net.MonoGame.Scenes/EntityLoader.cs`
+  - Static utility class to extract reusable entity loading logic from SceneLoader
+  - Method: `LoadEntityFromJson(Entity entity, JsonEntity jsonEntity)` - applies all behaviors from JSON to entity
+  - Used by both SceneLoader (scene loading) and DatabaseRegistry (disk persistence)
+  - Pattern: Single responsibility - entity hydration from JSON
+
+#### 6. Persistence Project Structure
 - **New Project:** `Atomic.Net.MonoGame.Persistence` (class library)
   - Depends on: `Atomic.Net.MonoGame.Core`, `Atomic.Net.MonoGame.BED`
   - References: `LiteDB` NuGet package
@@ -167,18 +153,17 @@ On `BehaviorAddedEvent<PersistToDiskBehavior>` or `PostBehaviorUpdatedEvent<Pers
 ### Integration Points
 
 #### Event Flow (Mutation Tracking)
-1. Any behavior updated via `BehaviorRegistry<T>.SetBehavior()` → fires `PostBehaviorUpdatedEvent<T>`
-2. `DatabaseRegistry` listens to generic `PostBehaviorUpdatedEvent<T>` (via reflection or explicit subscriptions)
-3. If `IsEnabled == true`, call `MarkDirty(entity.Index)` (sets `_dirtyFlags[entity.Index] = true`)
-4. At end-of-frame, game calls `DatabaseRegistry.Instance.Flush()`
-5. Flush logic:
+1. Any behavior updated via `BehaviorRegistry<T>.SetBehavior()` → directly calls `DatabaseRegistry.Instance.MarkDirty(entity.Index)`
+2. If `IsEnabled == true`, `MarkDirty()` sets `_dirtyFlags[entity.Index] = true`
+3. At end-of-frame, game calls `DatabaseRegistry.Instance.Flush()`
+4. Flush logic:
    - Get all entities with `PersistToDiskBehavior` (via `BehaviorRegistry<PersistToDiskBehavior>`)
    - Intersect with `_dirtyFlags` to find dirty + persistent entities
    - For each dirty + persistent entity:
-     - Serialize all behaviors to JSON
+     - Serialize all behaviors to JSON (using EntityLoader for consistency)
      - Write to LiteDB with key from `PersistToDiskBehavior.Key`
      - Clear dirty flag
-6. Zero allocations (SparseArray iteration, no LINQ)
+5. Zero allocations (SparseArray iteration, no LINQ, direct method calls instead of events)
 
 #### Event Flow (PersistToDiskBehavior Added)
 1. Entity gets `PersistToDiskBehavior` via `BehaviorRegistry<PersistToDiskBehavior>.SetBehavior()`
@@ -191,24 +176,22 @@ On `BehaviorAddedEvent<PersistToDiskBehavior>` or `PostBehaviorUpdatedEvent<Pers
 
 #### Event Flow (PersistToDiskBehavior Updated / Key Swap)
 1. User updates `PersistToDiskBehavior` with new key via `BehaviorRegistry<PersistToDiskBehavior>.SetBehavior()`
-2. `PreBehaviorUpdatedEvent<PersistToDiskBehavior>` fires → `DatabaseRegistry` stores `oldKey`
-3. `PostBehaviorUpdatedEvent<PersistToDiskBehavior>` fires
-4. `DatabaseRegistry` handler:
+2. `PostBehaviorUpdatedEvent<PersistToDiskBehavior>` fires (this is where DB read/write happens)
+3. `DatabaseRegistry` handler:
+   - Compare `oldBehavior.Key` vs `newBehavior.Key` (both available in PostBehaviorUpdatedEvent)
    - If `oldKey == newKey`: **Skip** (prevents loop when loading from DB)
    - If `oldKey != newKey`:
      - Check if LiteDB has document with `newKey`
-     - If **exists**: Load behaviors from `newKey`, apply to entity
+     - If **exists**: Load behaviors from `newKey`, apply to entity via `EntityLoader`
      - If **not exists**: Serialize current state, write to DB with `newKey`
      - Old `oldKey` document remains in DB (orphaned, can be reused)
+     - **Note:** Any mutations to `oldKey` in the same frame before key swap are dropped (niche edge case, acceptable as feature)
 
 #### Event Flow (PersistToDiskBehavior Removed)
-1. User removes `PersistToDiskBehavior` via `BehaviorRegistry<PersistToDiskBehavior>.RemoveBehavior()`
-2. `PreBehaviorRemovedEvent<PersistToDiskBehavior>` fires with `RemovalReason.Manual`
-3. `DatabaseRegistry` handler:
-   - If `reason == Manual`: Serialize current entity state, write to DB (final save)
-   - If `reason == Deactivation` or `Shutdown`: Skip write (entity lifecycle event)
-   - Stop future dirty tracking for this entity's persistence key
-4. Entity becomes normal (no more automatic disk persistence)
+- **No special handling needed** - behavior removal doesn't require DB writes
+- When `PersistToDiskBehavior` is removed (manual or via deactivation/shutdown), entity simply stops persisting
+- Final state will be written on next `Flush()` if entity was dirty before removal (normal flow)
+- Pattern: Simpler architecture, removal doesn't need special cases
 
 #### Scene Load Integration
 1. Before `SceneLoader.LoadGameScene()` or `LoadPersistentScene()`:
@@ -257,19 +240,19 @@ On `BehaviorAddedEvent<PersistToDiskBehavior>` or `PostBehaviorUpdatedEvent<Pers
 - **Pattern:** Acceptable for end-of-frame batch operation
 
 #### Potential Hotspots
-- **Generic event subscription:** Subscribing to `PostBehaviorUpdatedEvent<T>` for ALL behavior types
-  - **Challenge:** C# doesn't support generic constraints on event handlers easily
-  - **Solution:** Use reflection at startup to subscribe to all known `BehaviorRegistry<T>` types, or explicit subscriptions
-  - **Alternative:** Manual event bus registration per behavior type (more code, but clearer)
+- **Dirty tracking integration:** `BehaviorRegistry<T>.SetBehavior()` calls `DatabaseRegistry.MarkDirty()`
+  - **Implementation:** Add `DatabaseRegistry.MarkDirty(entity.Index)` directly in `BehaviorRegistry<T>.SetBehavior()` method
+  - **Also applies to:** `BehaviorRefRegistry<T>.SetBehavior()` (for reference-type behaviors)
+  - **No event subscription needed:** Direct method call is simpler and faster than event handling
 - **JSON serialization during flush:** May allocate temp strings/buffers
-  - **Mitigation:** Acceptable (batch operation, not hot path)
+  - **Mitigation:** Request benchmarker to find zero-alloc serialization approach
 - **LiteDB file I/O:** Disk writes may stall if file is locked
   - **Mitigation:** Handle exceptions, fire `ErrorEvent`, continue gameplay
 
 #### Benchmarking Requests
-- [ ] @benchmarker **Test dirty tracking overhead**: Measure `MarkDirty()` cost per mutation (should be <1ns)
-  - Hypothesis: Single boolean set is negligible overhead
-  - Compare: Greedy flagging vs conditional check (is entity persistent?)
+- [ ] @benchmarker **Test zero-alloc JSON serialization**: Find approach to serialize entity behaviors to JSON with zero allocations
+  - Hypothesis: Use `Utf8JsonWriter` with pre-allocated buffers or pooled memory
+  - Compare: Standard `JsonSerializer.Serialize()` vs manual `Utf8JsonWriter` with buffer pooling
 - [ ] @benchmarker **Test flush performance**: Measure flush time for varying dirty entity counts (10, 100, 1000)
   - Hypothesis: Linear scaling, <10ms for 100 entities
 - [ ] @benchmarker **Test LiteDB write throughput**: Measure batch write performance for large entity counts
@@ -283,35 +266,39 @@ On `BehaviorAddedEvent<PersistToDiskBehavior>` or `PostBehaviorUpdatedEvent<Pers
 - [ ] Create `Atomic.Net.MonoGame.Persistence` project (class library)
 - [ ] Add `LiteDB` NuGet package to Persistence project
 - [ ] Reference Persistence project from MonoGame application
-- [ ] Define `RemovalReason` enum in Core project
-- [ ] Update `PreBehaviorRemovedEvent<T>` to include `RemovalReason Reason` property
-- [ ] Update all `PreBehaviorRemovedEvent<T>` publishers to pass appropriate `RemovalReason`
 
 ### Core Persistence Behavior
-- [ ] Create `PersistToDiskBehavior` struct with `string Key` property
+- [ ] Create `PersistToDiskBehavior` struct with `string Key` property in Persistence project
 - [ ] Create `PersistToDiskBehaviorConverter` for JSON deserialization
 - [ ] Add `PersistToDiskBehavior?` property to `JsonEntity` (extend existing)
 - [ ] Validate empty/null keys fire `ErrorEvent` and skip persistence
+
+### EntityLoader Utility
+- [ ] Create `EntityLoader` static utility class in Scenes project
+- [ ] Extract entity loading logic from `SceneLoader` into `EntityLoader.LoadEntityFromJson()`
+- [ ] Refactor `SceneLoader` to use `EntityLoader` for entity hydration
+- [ ] Use `EntityLoader` in `DatabaseRegistry` for deserialization consistency
 
 ### Database Registry (Dirty Tracking)
 - [ ] Create `DatabaseRegistry` singleton with `SparseArray<bool> _dirtyFlags`
 - [ ] Implement `MarkDirty(ushort entityIndex)` method (set dirty flag if enabled)
 - [ ] Implement `Disable()` and `Enable()` methods (scene load protection)
-- [ ] Subscribe to `PostBehaviorUpdatedEvent<T>` for all behavior types (generic or explicit)
+- [ ] Add `DatabaseRegistry.MarkDirty()` call to `BehaviorRegistry<T>.SetBehavior()` method
+- [ ] Add `DatabaseRegistry.MarkDirty()` call to `BehaviorRefRegistry<T>.SetBehavior()` method
 - [ ] Implement dirty flag clearing after flush
 
 ### Database Registry (LiteDB Integration)
 - [ ] Implement `Initialize()` method (create/open LiteDB connection to `persistence.db`)
 - [ ] Implement `Shutdown()` method (close LiteDB connection)
 - [ ] Create LiteDB collection `entities` with `_id` index
-- [ ] Implement entity serialization (collect all behaviors from BehaviorRegistry instances)
-- [ ] Implement entity deserialization (apply behaviors via `BehaviorRegistry<T>.SetBehavior()`)
+- [ ] Implement entity serialization (collect all behaviors from BehaviorRegistry instances, use EntityLoader pattern)
+- [ ] Implement entity deserialization (use `EntityLoader.LoadEntityFromJson()`)
 
 ### Database Registry (Flush Logic)
 - [ ] Implement `Flush()` method:
   - Get all entities with `PersistToDiskBehavior`
   - Intersect with `_dirtyFlags` to find dirty + persistent entities
-  - Serialize each dirty entity to JSON
+  - Serialize each dirty entity to JSON (flat structure like JsonEntity)
   - Write to LiteDB with key from `PersistToDiskBehavior.Key`
   - Clear dirty flags
 - [ ] Handle LiteDB exceptions (locked file, disk full, etc.) → fire `ErrorEvent`, continue
@@ -319,18 +306,12 @@ On `BehaviorAddedEvent<PersistToDiskBehavior>` or `PostBehaviorUpdatedEvent<Pers
 ### Database Registry (PersistToDiskBehavior Events)
 - [ ] Handle `BehaviorAddedEvent<PersistToDiskBehavior>`:
   - Check DB for existing document with `behavior.Key`
-  - If exists: Load all behaviors from DB, apply to entity
+  - If exists: Load all behaviors from DB via `EntityLoader`, apply to entity
   - If not exists: Serialize current entity state, write to DB
-- [ ] Handle `PreBehaviorUpdatedEvent<PersistToDiskBehavior>`:
-  - Store `oldKey` for comparison in post-update handler
 - [ ] Handle `PostBehaviorUpdatedEvent<PersistToDiskBehavior>`:
-  - Compare `oldKey` vs `newKey`
+  - Compare `oldBehavior.Key` vs `newBehavior.Key` (both available in event)
   - If equal: Skip (infinite loop prevention)
-  - If different: Check DB for `newKey`, load if exists, write if not
-- [ ] Handle `PreBehaviorRemovedEvent<PersistToDiskBehavior>`:
-  - If `reason == Manual`: Serialize current state, write to DB (final save)
-  - If `reason == Deactivation` or `Shutdown`: Skip write
-  - Stop future dirty tracking for this entity
+  - If different: Check DB for `newKey`, load if exists via `EntityLoader`, write if not
 
 ### SceneLoader Integration
 - [ ] Update `SceneLoader` to call `DatabaseRegistry.Instance.Disable()` before loading
@@ -344,7 +325,7 @@ On `BehaviorAddedEvent<PersistToDiskBehavior>` or `PostBehaviorUpdatedEvent<Pers
     - ResetEvent does NOT delete from disk
     - ShutdownEvent does NOT delete from disk
     - Entity deactivation does NOT delete from disk
-    - Behavior removal DOES persist to disk (if `RemovalReason = Manual`)
+    - Behavior removal stops future persistence (final dirty state written on next Flush)
   - **Mutation & save timing** (3 tests):
     - Rapid mutations don't corrupt save (only last value per frame written)
     - Mutations during scene load are saved (after re-enable)
