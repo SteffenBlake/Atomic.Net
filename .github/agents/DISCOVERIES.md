@@ -40,24 +40,30 @@ ProcessEntities(in multiplier, static (ref readonly m, entity) => ProcessEntity(
 **Solution:** Use `InsertBulk()` to batch all writes in a single transaction
 
 **Performance Improvement:**
-- **10 entities**: 3x faster (378µs vs 1085µs)
-- **100 entities**: 4x faster (2.68ms vs 11.5ms)
-- **1000 entities**: 4.6x faster (12.4ms vs 57.4ms)
+- **10 entities**: 3x faster (364µs vs 1099µs)
+- **100 entities**: 4.5x faster (2.4ms vs 10.9ms)
+- **1000 entities**: 3.5x faster (16.2ms vs 56.7ms)
+
+**Memory Pooling Test Results:**
+- **Utf8JsonWriter with pooled buffers provides NO benefit**
+- 10 entities: 364µs (standard) vs 374µs (pooled) - **3% SLOWER**
+- 100 entities: 2.4ms (standard) vs 2.6ms (pooled) - **8% SLOWER**  
+- 1000 entities: 16.2ms (standard) vs 16.1ms (pooled) - **essentially identical**
+- **Conclusion**: Use standard `JsonSerializer.Serialize()` - simpler and same/better performance
 
 **Key Findings:**
-1. **Individual inserts** (ApproachA/B/C) all perform similarly (~1ms per entity regardless of serialization method)
-2. **Batch insert with JSON** (ApproachD) is fastest for small batches (10-100 entities)
-3. **Bulk insert with direct BSON** (ApproachE) is fastest for large batches (1000+ entities) but only marginally
-4. **Pooled buffers** (Utf8JsonWriter) provide NO benefit - same performance as direct JsonSerializer.Serialize
-5. **Direct BSON building** is slower and more complex - stick with JSON serialization
+1. **Bulk insert is 3-4x faster** than individual inserts
+2. **Memory pooling adds NO benefit** (actually slightly slower in most cases)
+3. **Direct BSON is 22-33% slower** and more complex - avoid
+4. **Upsert is 4-5x slower** than bulk insert - only use for actual updates
 
 **Recommended Approach:**
 ```csharp
-// Batch all dirty entities at end-of-frame
+// Batch all dirty entities at end-of-frame - NO POOLING NEEDED
 var documents = new List<BsonDocument>(dirtyEntityCount);
 foreach (var entity in dirtyEntities)
 {
-    var json = JsonSerializer.Serialize(entity, jsonOptions);
+    var json = JsonSerializer.Serialize(entity, jsonOptions); // Standard serializer
     documents.Add(new BsonDocument
     {
         ["_id"] = entity.PersistKey,
@@ -67,107 +73,67 @@ foreach (var entity in dirtyEntities)
 collection.InsertBulk(documents);
 ```
 
-**Benchmark:** `MonoGame/Atomic.Net.MonoGame.Benchmarks/Persistence/Units/LiteDbJsonBenchmark.cs`
+**Benchmark:** `MonoGame/Atomic.Net.MonoGame.Benchmarks/Persistence/Units/LiteDbWriteBenchmark.cs`
 
 ---
 
-## LiteDB Persistence: Sparse Entity Reads Are Critical
+## LiteDB Persistence: Sparse Entity Reads with Hybrid Approach
 
-**Problem:** Previous benchmarks tested `FindAll()` for bulk reads, but the ACTUAL use case is sparse reads (loading only ~1% of entities by specific keys)
+**Problem:** Need to load only ~1% of entities by specific keys (sparse reads - actual use case)
 
-**Solution:** Use batch query with `Where` clause for multiple entities, or individual `FindById` for very small counts
+**Solution:** Use hybrid approach - `FindById` for ≤5 entities, batch query for more
 
 **Performance Results (1% of entities loaded):**
-- **100 total, 1 read**: Individual FindById 15µs (baseline)
-- **1000 total, 10 read**: Batch query 115µs vs individual 182µs (1.6x faster)
-- **10000 total, 100 read**: Batch query 1.2ms vs individual 2.4ms (2x faster)
+- **100 total, 1 read**: Individual FindById 16µs (optimal)
+- **1000 total, 10 read**: Batch query 118µs vs individual 187µs (37% faster)
+- **10000 total, 100 read**: Batch query 1.2ms vs individual 2.4ms (49% faster)
+
+**Memory Pooling Test Results:**
+- **Utf8JsonReader provides NO meaningful benefit**
+- 100 DB, 1 read: 16.25µs (standard) vs 16.09µs (pooled) - **essentially identical**
+- 1000 DB, 10 reads: 187µs (standard) vs 185µs (pooled) - **1% improvement (negligible)**
+- 10000 DB, 100 reads: 2389µs (standard) vs 2352µs (pooled) - **1.5% improvement (negligible)**
+- **Conclusion**: Use standard `JsonSerializer.Deserialize()` - simpler with same performance
 
 **Key Findings:**
-1. **Individual FindById is fine for small counts** (1-5 entities)
-2. **Batch query with Where is 2x faster** for larger sparse reads (10+ entities)
-3. **Hybrid approach is optimal**: use FindById for ≤5 entities, batch query for more
-4. **Avoid Query.Or chains** - they're 60x slower than batch queries (143ms vs 2.4ms for 100 entities)
+1. **Individual FindById is optimal for ≤5 entities**
+2. **Batch query is 37-49% faster** for larger sparse reads (10+ entities)
+3. **Memory pooling adds NO benefit** (≤1.5% improvement - not worth complexity)
+4. **DirectBson is 25-56% faster** but requires manual field extraction (only use if you don't need full entity)
+5. **Hybrid approach is optimal** - automatically switches strategy based on count
 
 **Recommended Approach:**
 ```csharp
-// When loading entities with PersistToDiskBehavior
+// Hybrid approach - NO POOLING NEEDED
 if (keysToLoad.Length <= 5)
 {
     // Individual lookups for small counts
     foreach (var key in keysToLoad)
     {
         var doc = collection.FindById(key);
-        if (doc != null) LoadEntity(doc);
+        if (doc != null)
+        {
+            var json = doc["data"].AsString;
+            var entity = JsonSerializer.Deserialize<TestEntity>(json); // Standard deserializer
+            LoadEntity(entity);
+        }
     }
 }
 else
 {
-    // Batch query for larger counts
+    // Batch query for larger counts (37-49% faster)
     var keySet = new HashSet<string>(keysToLoad);
     var documents = collection.Find(doc => keySet.Contains(doc["_id"].AsString));
-    foreach (var doc in documents) LoadEntity(doc);
-}
-```
-
-**Benchmark:** `MonoGame/Atomic.Net.MonoGame.Benchmarks/Persistence/Units/LiteDbSparseReadBenchmark.cs`
-
----
-
-## LiteDB Persistence: Upsert for Sparse Updates
-
-**Problem:** `DatabaseRegistry.Flush()` needs to update only dirty entities (typically 1-2% per frame)
-
-**Solution:** Use `Upsert()` instead of checking existence then updating
-
-**Performance Results (2% of entities dirty):**
-- **100 total, 2 dirty**: Upsert 251µs vs check-then-update 422µs (1.7x faster)
-- **1000 total, 20 dirty**: Upsert 2.0ms vs check-then-update 4.2ms (2.1x faster)
-- **10000 total, 200 dirty**: Upsert 18ms vs check-then-update 31ms (1.7x faster)
-
-**Key Findings:**
-1. **Upsert is consistently 1.7-2x faster** than check-then-update
-2. **Upsert allocates 2.3x less memory** (5.6MB vs 13MB for 10k DB with 200 dirty)
-3. **Upsert is simpler** - one operation instead of two
-
-**Recommended Approach:**
-```csharp
-// DatabaseRegistry.Flush() implementation
-foreach (var dirtyEntity in dirtyPersistentEntities)
-{
-    var json = JsonSerializer.Serialize(dirtyEntity);
-    var doc = new BsonDocument
+    foreach (var doc in documents)
     {
-        ["_id"] = dirtyEntity.PersistKey,
-        ["data"] = json
-    };
-    collection.Upsert(doc); // Insert if new, update if exists
+        var json = doc["data"].AsString;
+        var entity = JsonSerializer.Deserialize<TestEntity>(json); // Standard deserializer
+        LoadEntity(entity);
+    }
 }
 ```
 
-**Benchmark:** `MonoGame/Atomic.Net.MonoGame.Benchmarks/Persistence/Units/LiteDbSparseReadBenchmark.cs`
-
----
-
-## LiteDB Round-Trip Performance: JSON Approach Is Optimal
-
-**Problem:** Need to validate complete save/load cycle performance, not just individual read/write
-
-**Solution:** Benchmark full round-trip with database create, write, read, and cleanup
-
-**Performance Results (Round-Trip):**
-- **10 entities**: 922µs (JSON) vs 906µs (BSON) - essentially identical
-- **100 entities**: 2.62ms (JSON) vs 2.66ms (BSON) - JSON slightly faster
-- **1000 entities**: 20.8ms (JSON) vs 22.8ms (BSON) - **JSON 10% faster!**
-
-**Key Findings:**
-1. **JSON approach is simpler AND faster** for round-trips
-2. **Direct BSON** allocates ~5% more memory due to manual LINQ usage in building BsonDocuments
-3. **JSON benefits from System.Text.Json optimizations** that outweigh BSON's theoretical advantages
-4. **Complexity cost** of maintaining BSON serialization is NOT worth the performance penalty
-
-**Recommendation:** Use JSON serialization with `InsertBulk()` for all persistence operations
-
-**Benchmark:** `MonoGame/Atomic.Net.MonoGame.Benchmarks/Persistence/Units/LiteDbOptimalBenchmark.cs`
+**Benchmark:** `MonoGame/Atomic.Net.MonoGame.Benchmarks/Persistence/Units/LiteDbReadBenchmark.cs`
 
 ---
 
@@ -175,16 +141,22 @@ foreach (var dirtyEntity in dirtyPersistentEntities)
 
 **Use this pattern for disk-persisted entities:**
 
-1. **Batch all writes** - collect dirty entities, use `Upsert()` for updates at end-of-frame
-2. **Use JSON serialization** - simpler, faster, works with existing converters
-3. **Sparse reads with hybrid approach** - FindById for ≤5 entities, batch query for more
-4. **Deserialize selectively** - check metadata first, deserialize only when needed
+1. **Batch all writes** - Use `InsertBulk()` for new entities (3-4x faster)
+2. **Use `Upsert()` for updates** - Simple one-operation approach for dirty entities
+3. **Use JSON serialization** - NO memory pooling needed (adds no benefit)
+4. **Sparse reads with hybrid approach** - FindById for ≤5 entities, batch query for more
 5. **Let Dispose() handle flushing** - explicit Checkpoint() not needed
 
 **Expected Performance (realistic scenarios):**
-- **Write (2% dirty)**: 2ms for 1000 entities, 18ms for 10k entities
-- **Read (1% sparse)**: 115µs for 10 entities from 1k DB, 1.2ms for 100 entities from 10k DB
-- **Individual entity lookup**: ~15µs per entity
+- **Write (bulk, 100 entities)**: 2.4ms  
+- **Write (upsert, 100 entities)**: 12.5ms
+- **Read (hybrid, 10 from 1000)**: 116µs
+- **Read (hybrid, 100 from 10000)**: 1.2ms
+
+**Critical Finding: Memory Pooling Is Pointless**
+- **Writes**: Pooling is 3-8% SLOWER for small batches, identical for large
+- **Reads**: Pooling provides ≤1.5% improvement (negligible)
+- **Recommendation**: Use standard `JsonSerializer` - simpler and same/better performance
 
 **This meets performance targets for realistic game scenarios.**
 
