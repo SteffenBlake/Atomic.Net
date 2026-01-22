@@ -3,6 +3,8 @@ using System.Text.Json.Serialization;
 
 namespace Atomic.Net.MonoGame.BED.JsonConverters;
 
+// SteffenBlake: @senior-dev, move this to .Atomic.Net.Monogame.Bed/Id/ sub-dir and namespace
+
 public class IdBehaviorConverter : JsonConverter<IdBehavior>
 {
     public override IdBehavior Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)

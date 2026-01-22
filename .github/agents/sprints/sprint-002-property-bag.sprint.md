@@ -61,36 +61,35 @@
 
 ### Architecture
 
-#### 1. Property Value Type (Union Type Pattern)
-- **File:** `Atomic.Net.MonoGame.BED/PropertyValue.cs`
-  - `readonly record struct PropertyValue` with discriminated union pattern
-  - Fields: `PropertyType Type { get; }`, `string StringValue`, `float FloatValue`, `bool BoolValue`
-  - Enum: `PropertyType { None, String, Float, Bool }`
-  - Factory methods: `PropertyValue.FromString(string)`, `PropertyValue.FromFloat(float)`, `PropertyValue.FromBool(bool)`
-  - Accessors: `string AsString()`, `float AsFloat()`, `bool AsBool()` (throw if wrong type)
-  - Comparison: Implement `IEquatable<PropertyValue>` for value-based equality
+#### 1. Property Value Type (Union Type Pattern) (Complete)
+- **File:** `Atomic.Net.MonoGame.BED/Properties/PropertyValue.cs`
+  - `readonly struct PropertyValue` with discriminated union pattern
   - Pattern: Struct-based union type (no boxing, cache-friendly)
+  - Uses `[JsonConverter(typeof(PropertyValueConverter))]` attribute for automatic deserialization
+  - Uses dotVariant library to source gen the union type
+  - Implicit cast from operators for its union types
+  - "default" returns "empty" type
 
-#### 2. Properties Behavior
-- **File:** `Atomic.Net.MonoGame.BED/PropertiesBehavior.cs`
+#### 2. Properties Behavior (Complete)
+- **File:** `Atomic.Net.MonoGame.BED/Properties/PropertiesBehavior.cs`
   - `readonly record struct PropertiesBehavior` - behavior containing entity property metadata
   - Contains: `Dictionary<string, PropertyValue> Properties { get; init; }`
   - Implements `IBehavior<PropertiesBehavior>`
+  - Uses `[JsonConverter(typeof(PropertiesBehaviorConverter))]` attribute for automatic deserialization
   - Factory: `static PropertiesBehavior CreateFor(Entity entity)` returns `new PropertiesBehavior(new Dictionary<string, PropertyValue>(StringComparer.OrdinalIgnoreCase))`
   - Dictionary uses case-insensitive key comparison
   - Pattern: Behavior directly owns the property dictionary (stored via BehaviorRegistry)
 
-#### 3. Property Value JSON Converter
-- **File:** `Atomic.Net.MonoGame.Scenes/JsonConverters/PropertyValueConverter.cs`
+#### 3. Property Value JSON Converter (Complete)
+- **File:** `Atomic.Net.MonoGame.BED/Properties/PropertyValueConverter.cs`
   - Custom `System.Text.Json.JsonConverter<PropertyValue>`
   - Deserializes JSON values directly into PropertyValue union type
   - Handles: `JsonValueKind.String` → `FromString()`, `JsonValueKind.Number` → `FromFloat()`, `JsonValueKind.True/False` → `FromBool()`
   - `JsonValueKind.Null` → skip (no error)
-  - `JsonValueKind.Array/Object/Undefined` → fire ErrorEvent, throw JsonException
   - Pattern: Automatic type conversion via System.Text.Json attribute
 
-#### 4. Properties Behavior JSON Converter
-- **File:** `Atomic.Net.MonoGame.Scenes/JsonConverters/PropertiesBehaviorConverter.cs`
+#### 4. Properties Behavior JSON Converter (Complete)
+- **File:** `Atomic.Net.MonoGame.BED/Properties/PropertiesBehaviorConverter.cs`
   - Custom `System.Text.Json.JsonConverter<PropertiesBehavior>`
   - Deserializes JSON object directly into PropertiesBehavior with Dictionary
   - Validates: empty/whitespace keys → fire ErrorEvent, throw JsonException
@@ -123,14 +122,12 @@
 #### 6. JSON Integration (Extend JsonEntity)
 - **File:** `Atomic.Net.MonoGame.Scenes/JsonModels/JsonEntity.cs` (extend existing)
   - Add property: `PropertiesBehavior? Properties { get; set; }`
-  - Uses `[JsonConverter(typeof(PropertiesBehaviorConverter))]` attribute for automatic deserialization
   - Pattern: Behavior directly on JsonEntity (like Transform, Parent, etc.)
 
 - **File:** `Atomic.Net.MonoGame.Scenes/SceneLoader.cs` (extend existing)
   - **Pass 1 (after Transform, before Parent):**
-    - If `jsonEntity.Properties != null`, call `BehaviorRegistry<PropertiesBehavior>.SetBehavior(entity, behavior => behavior = jsonEntity.Properties.Value)`
+    - If `jsonEntity.Properties != null`, call `BehaviorRegistry<PropertiesBehavior>.SetBehavior(entity, behavior => behavior = jsonEntity.Properties)`
     - `PropertyBagIndex` automatically indexes properties via `BehaviorAddedEvent<PropertiesBehavior>`
-  - **Error handling:** PropertiesBehaviorConverter fires ErrorEvent for validation failures, throws JsonException to halt entity loading
   - Pattern: Simplified - JsonConverter handles all parsing and validation
 
 ### Integration Points
@@ -165,7 +162,11 @@ if (BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out var
 {
     if (properties.Properties.TryGetValue("max-health", out var value))
     {
-        float maxHealth = value.AsFloat(); // throws if wrong type
+        if (!value.TryMatch(out float valueF))
+        {
+            // throws if wrong type
+        }
+        ... operational logic on valueF here
     }
 }
 ```
@@ -209,13 +210,13 @@ if (BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out var
 ## Tasks
 
 ### Core Data Structures
-- [ ] Create `PropertyValue` struct with union type pattern (String/Float/Bool)
-- [ ] Create `PropertiesBehavior` struct with Dictionary<string, PropertyValue> property
+- [x] Create `PropertyValue` struct with union type pattern (String/Float/Bool)
+- [x] Create `PropertiesBehavior` struct with Dictionary<string, PropertyValue> property
 - [ ] Implement `PropertyBagIndex` singleton with inverted indices (key and key-value)
 
 ### JSON Integration
-- [ ] Create `PropertyValueConverter` for automatic PropertyValue deserialization
-- [ ] Create `PropertiesBehaviorConverter` for automatic PropertiesBehavior deserialization with validation
+- [x] Create `PropertyValueConverter` for automatic PropertyValue deserialization
+- [x] Create `PropertiesBehaviorConverter` for automatic PropertiesBehavior deserialization with validation
 - [ ] Extend `JsonEntity` with `PropertiesBehavior? Properties` (with JsonConverter attribute)
 - [ ] Extend `SceneLoader` to set PropertiesBehavior via BehaviorRegistry
 
@@ -286,7 +287,7 @@ if (BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out var
 ```
 
 **Expected Behavior:**
-- All three entities have PropertyBag behaviors
+- All three entities have PropertyBehaviors
 - Query `GetEntitiesWithKey("faction")` returns `[goblin-1, goblin-boss]`
 - Query `GetEntitiesWithKeyValue("is-boss", true)` returns `[goblin-boss]`
 - Query `GetEntitiesWithKeyValue("loot-tier", 3)` returns `[treasure-chest]`

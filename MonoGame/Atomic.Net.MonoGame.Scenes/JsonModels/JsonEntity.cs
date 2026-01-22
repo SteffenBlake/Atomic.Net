@@ -3,6 +3,8 @@ using Atomic.Net.MonoGame.Transform;
 
 namespace Atomic.Net.MonoGame.Scenes.JsonModels;
 
+// SteffenBlake: @senior-dev, move this to .Atomic.Net.Monogame.Scenes/ parent dir and namespace
+
 /// <summary>
 /// JSON model for a single entity in a scene.
 /// Reference type is acceptable as these are ephemeral (load-time only).
