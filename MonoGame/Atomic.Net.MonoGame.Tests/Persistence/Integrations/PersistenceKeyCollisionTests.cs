@@ -62,6 +62,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity1);
+            behavior.Properties["id"] = "first";
         });
         
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, (ref PersistToDiskBehavior behavior) =>
@@ -71,14 +72,21 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity2);
+            behavior.Properties["id"] = "second";
         });
         
         // Act: Flush both entities
         DatabaseRegistry.Instance.Flush();
         
-        // Assert: Last write should win (entity2)
+        // Assert: Last write should win (entity2 with "second")
         // test-architect: Design decision - either fire ErrorEvent or use last-write-wins
-        // var loadedEntity = LoadEntityFromDatabase("duplicate-key");
+        var newEntity = new Entity(302);
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
+        {
+            behavior = new PersistToDiskBehavior("duplicate-key");
+        });
+        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var loadedProps));
+        Assert.Equal("second", loadedProps.Value.Properties["id"]);
         
         // test-architect: FINDING: Need to decide if duplicate keys should fire ErrorEvent
         // or silently use last-write-wins. Current assumption: last-write-wins.

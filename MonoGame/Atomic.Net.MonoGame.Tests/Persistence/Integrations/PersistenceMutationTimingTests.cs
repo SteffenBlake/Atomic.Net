@@ -60,15 +60,34 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity);
+            behavior.Properties["score"] = 1f;
         });
         
         // Act: Rapidly mutate property multiple times in same "frame" (before Flush)
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
+        {
+            behavior.Properties["score"] = 5f;
+        });
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
+        {
+            behavior.Properties["score"] = 7f;
+        });
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
+        {
+            behavior.Properties["score"] = 10f;
+        });
         
         // test-architect: Only single write should occur (batched)
         DatabaseRegistry.Instance.Flush();
         
         // Assert: Database should have final value (10), not intermediate values
-        // var loadedEntity = LoadEntityFromDatabase("rapid-mutation-key");
+        var newEntity = new Entity(301);
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
+        {
+            behavior = new PersistToDiskBehavior("rapid-mutation-key");
+        });
+        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var loadedProps));
+        Assert.Equal(10f, loadedProps.Value.Properties["score"]);
     }
 
     [Fact(Skip = "Awaiting implementation by @senior-dev")]
@@ -86,6 +105,7 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity);
+            behavior.Properties["counter"] = 500f;
         });
         
         // test-architect: These mutations should NOT be tracked (disabled)
@@ -94,11 +114,22 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         // Re-enable and make additional mutations
         DatabaseRegistry.Instance.Enable();
         
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
+        {
+            behavior.Properties["counter"] = 1000f;
+        });
+        
         // test-architect: This mutation SHOULD be tracked (enabled)
         DatabaseRegistry.Instance.Flush();
         
         // Assert: Database should have post-enable value (1000)
-        // var loadedEntity = LoadEntityFromDatabase("scene-load-mutation-key");
+        var newEntity = new Entity(301);
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
+        {
+            behavior = new PersistToDiskBehavior("scene-load-mutation-key");
+        });
+        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var loadedProps));
+        Assert.Equal(1000f, loadedProps.Value.Properties["counter"]);
     }
 
     [Fact(Skip = "Awaiting implementation by @senior-dev")]
@@ -112,6 +143,7 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity);
+            behavior.Properties["value"] = 999f;
         });
         
         // test-architect: Now add PersistToDiskBehavior (still disabled)
@@ -127,7 +159,13 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         DatabaseRegistry.Instance.Flush();
         
         // Assert: Verify entity was written with its current state
-        // var loadedEntity = LoadEntityFromDatabase("pre-behavior-key");
+        var newEntity = new Entity(301);
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
+        {
+            behavior = new PersistToDiskBehavior("pre-behavior-key");
+        });
+        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var loadedProps));
+        Assert.Equal(999f, loadedProps.Value.Properties["value"]);
         
         // test-architect: FINDING: This test validates that mutations during disabled period
         // don't get tracked, but the entity's final state is written when PersistToDiskBehavior is added.
@@ -145,6 +183,7 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity);
+            behavior.Properties["data"] = 42f;
         });
         
         // Act: First flush writes entity
@@ -154,7 +193,13 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         DatabaseRegistry.Instance.Flush();
         
         // Assert: Entity should still be in database with correct value
-        // var loadedEntity = LoadEntityFromDatabase("no-mutation-key");
+        var newEntity = new Entity(301);
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
+        {
+            behavior = new PersistToDiskBehavior("no-mutation-key");
+        });
+        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var loadedProps));
+        Assert.Equal(42f, loadedProps.Value.Properties["data"]);
         
         // test-architect: FINDING: This validates that dirty flags are cleared after flush,
         // preventing redundant disk writes.

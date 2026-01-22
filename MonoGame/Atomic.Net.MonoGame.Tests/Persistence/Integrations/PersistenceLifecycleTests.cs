@@ -61,7 +61,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity);
-            behavior.Properties["health"] = 100;
+            behavior.Properties["health"] = 100f;
         });
         
         // Act: Flush to write to disk, then fire ResetEvent
@@ -71,10 +71,17 @@ public sealed class PersistenceLifecycleTests : IDisposable
         // Assert: Entity should be deactivated in-memory
         Assert.False(entity.Active);
         
-        // test-architect: Verify database still contains the entity
-        // var loadedEntity = LoadEntityFromDatabase("reset-test-key");
-        // Assert.NotNull(loadedEntity);
-        // Assert.Equal(100, loadedEntity.GetProperty<int>("health"));
+        // test-architect: Verify database still contains the entity by creating a new entity
+        // and adding PersistToDiskBehavior with same key - it should load health=100 from disk
+        var newEntity = new Entity(300);
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
+        {
+            behavior = new PersistToDiskBehavior("reset-test-key");
+        });
+        
+        // Verify the entity loaded properties from disk
+        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var loadedProps));
+        Assert.Equal(100f, loadedProps.Value.Properties["health"]);
     }
 
     [Fact(Skip = "Awaiting implementation by @senior-dev")]
@@ -89,7 +96,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity);
-            behavior.Properties["mana"] = 50;
+            behavior.Properties["mana"] = 50f;
         });
         
         // Act: Flush to write to disk, then fire ShutdownEvent
@@ -100,13 +107,21 @@ public sealed class PersistenceLifecycleTests : IDisposable
         var activeEntities = EntityRegistry.Instance.GetActiveEntities().ToList();
         Assert.Empty(activeEntities);
         
-        // test-architect: Verify database still contains the entity
-        // Restart system and verify data persists
-        // AtomicSystem.Initialize();
-        // BEDSystem.Initialize();
-        // DatabaseRegistry.Instance.Initialize(_dbPath);
-        // var loadedEntity = LoadEntityFromDatabase("shutdown-test-key");
-        // Assert.NotNull(loadedEntity);
+        // test-architect: Verify database still contains the entity by restarting systems
+        // and creating entity with same key - it should load from disk
+        AtomicSystem.Initialize();
+        BEDSystem.Initialize();
+        SceneSystem.Initialize();
+        EventBus<InitializeEvent>.Push(new());
+        
+        var newEntity = new Entity(300);
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
+        {
+            behavior = new PersistToDiskBehavior("shutdown-test-key");
+        });
+        
+        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var loadedProps));
+        Assert.Equal(50f, loadedProps.Value.Properties["mana"]);
     }
 
     [Fact(Skip = "Awaiting implementation by @senior-dev")]
@@ -121,18 +136,26 @@ public sealed class PersistenceLifecycleTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity);
-            behavior.Properties["level"] = 10;
+            behavior.Properties["level"] = 10f;
         });
         DatabaseRegistry.Instance.Flush();
         
         // Act: Deactivate entity
+        entity.Deactivate();
         
         // Assert: Entity should be inactive
         Assert.False(entity.Active);
         
         // test-architect: Verify database still contains the entity
-        // var loadedEntity = LoadEntityFromDatabase("deactivate-test-key");
-        // Assert.NotNull(loadedEntity);
+        // Create new entity with same key and verify it loads from disk
+        var newEntity = new Entity(300);
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
+        {
+            behavior = new PersistToDiskBehavior("deactivate-test-key");
+        });
+        
+        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var loadedProps));
+        Assert.Equal(10f, loadedProps.Value.Properties["level"]);
     }
 
     [Fact(Skip = "Awaiting implementation by @senior-dev")]
@@ -147,21 +170,43 @@ public sealed class PersistenceLifecycleTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity);
-            behavior.Properties["experience"] = 5000;
+            behavior.Properties["experience"] = 5000f;
         });
         DatabaseRegistry.Instance.Flush();
         
-        // Act: Modify entity and manually remove PersistToDiskBehavior
+        // Act: Modify entity, remove PersistToDiskBehavior, then flush
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
+        {
+            behavior.Properties["experience"] = 10000f;
+        });
+        entity.RemoveBehavior<PersistToDiskBehavior>();
         
-        // test-architect: Final dirty state should be written on next Flush
+        // test-architect: Final dirty state (10000) should be written on next Flush
         DatabaseRegistry.Instance.Flush();
         
-        // Assert: Database should have final state (10000), but entity no longer persists future changes
-        // var loadedEntity = LoadEntityFromDatabase("removal-test-key");
+        // Assert: Database should have final state (10000)
+        var newEntity1 = new Entity(301);
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity1, (ref PersistToDiskBehavior behavior) =>
+        {
+            behavior = new PersistToDiskBehavior("removal-test-key");
+        });
+        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity1, out var props1));
+        Assert.Equal(10000f, props1.Value.Properties["experience"]);
         
-        // test-architect: Modify entity again and flush - should NOT update disk
+        // test-architect: Modify entity again and flush - should NOT update disk (no PersistToDiskBehavior)
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
+        {
+            behavior.Properties["experience"] = 20000f;
+        });
         DatabaseRegistry.Instance.Flush();
         
-        // var reloadedEntity = LoadEntityFromDatabase("removal-test-key");
+        // Verify disk still has 10000 (not 20000)
+        var newEntity2 = new Entity(302);
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity2, (ref PersistToDiskBehavior behavior) =>
+        {
+            behavior = new PersistToDiskBehavior("removal-test-key");
+        });
+        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity2, out var props2));
+        Assert.Equal(10000f, props2.Value.Properties["experience"]);
     }
 }
