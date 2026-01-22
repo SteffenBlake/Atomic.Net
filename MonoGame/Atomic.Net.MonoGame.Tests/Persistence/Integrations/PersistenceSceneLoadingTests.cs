@@ -2,7 +2,7 @@ using Xunit;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.BED.Properties;
-using Atomic.Net.MonoGame.BED.Persistence;
+using Atomic.Net.MonoGame.Scenes.Persistence;
 using Atomic.Net.MonoGame.Scenes;
 using Atomic.Net.MonoGame.Transform;
 
@@ -33,7 +33,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
         
-        // DatabaseRegistry.Instance.Initialize(_dbPath);
+        // DatabaseRegistry.Instance.InitializeDatabase(_dbPath);
     }
 
     public void Dispose()

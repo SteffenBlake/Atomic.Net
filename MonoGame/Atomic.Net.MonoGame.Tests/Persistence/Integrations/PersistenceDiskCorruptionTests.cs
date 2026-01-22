@@ -2,7 +2,7 @@ using Xunit;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.BED.Properties;
-using Atomic.Net.MonoGame.BED.Persistence;
+using Atomic.Net.MonoGame.Scenes.Persistence;
 using Atomic.Net.MonoGame.Scenes;
 using Atomic.Net.MonoGame.Tests;
 using Atomic.Net.MonoGame.Transform;
@@ -35,7 +35,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
         
-        // DatabaseRegistry.Instance.Initialize(_dbPath);
+        // DatabaseRegistry.Instance.InitializeDatabase(_dbPath);
     }
 
     public void Dispose()
@@ -67,7 +67,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
                 ["data"] = "{ invalid json syntax }"  // Malformed JSON that will fail to deserialize
             });
         }
-        DatabaseRegistry.Instance.Initialize();
+        DatabaseRegistry.Instance.InitializeDatabase();
         
         // Act: Try to load entity with corrupt JSON - should fire ErrorEvent when deserializing
         var entity = EntityRegistry.Instance.Activate();
@@ -97,7 +97,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         }
         
         // Act: Try to load entity from non-existent database
-        DatabaseRegistry.Instance.Initialize();
+        DatabaseRegistry.Instance.InitializeDatabase();
         
         var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
@@ -171,7 +171,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         using var fileLock = new FileStream(_dbPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
         
         // Try to reinitialize DatabaseRegistry while file is locked - should fail
-        DatabaseRegistry.Instance.Initialize();
+        DatabaseRegistry.Instance.InitializeDatabase();
         
         // Act: Try to flush while database is locked - should fire ErrorEvent
         var entity = EntityRegistry.Instance.Activate();

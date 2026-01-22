@@ -1,5 +1,6 @@
 using Atomic.Net.MonoGame.Transform;
-using Atomic.Net.MonoGame.BED.Persistence;
+using Atomic.Net.MonoGame.Scenes.Persistence;
+using Atomic.Net.MonoGame.BED;
 
 namespace Atomic.Net.MonoGame.Scenes;
 
@@ -14,9 +15,10 @@ public static class SceneSystem
         TransformSystem.Initialize();
         SceneLoader.Initialize();
         
-        // senior-dev: Register serialization delegates with DatabaseRegistry
-        // This allows DatabaseRegistry (in BED) to serialize/deserialize entities without depending on Scenes
-        DatabaseRegistry.Instance.SerializeEntity = SceneLoader.SerializeEntityToJson;
-        DatabaseRegistry.Instance.DeserializeEntity = SceneLoader.DeserializeEntityFromJson;
+        // senior-dev: Initialize PersistToDiskBehavior registry
+        BehaviorRegistry<PersistToDiskBehavior>.Initialize();
+        
+        // senior-dev: Initialize DatabaseRegistry to register for events
+        DatabaseRegistry.Initialize();
     }
 }

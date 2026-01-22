@@ -6,7 +6,7 @@ using Atomic.Net.MonoGame.BED.Properties;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Scenes.JsonModels;
 using Atomic.Net.MonoGame.Transform;
-using Atomic.Net.MonoGame.BED.Persistence;
+using Atomic.Net.MonoGame.Scenes.Persistence;
 
 namespace Atomic.Net.MonoGame.Scenes;
 
@@ -31,11 +31,14 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
     public static SceneLoader Instance { get; private set; } = null!;
 
-    // senior-dev: Pre-allocated SparseReferenceArray for parent-child mappings (zero-alloc iteration)
+    // senior-dev: Pre-allocated SparseArray for parent-child mappings (zero-alloc iteration)
     private readonly SparseArray<EntitySelector> _childToParents = new(Constants.MaxEntities);
     
-    // senior-dev: Pre-allocated list for PersistToDiskBehavior queue (zero-alloc scene loading)
-    private readonly List<(Entity, PersistToDiskBehavior)> _persistToDiskQueue = new(Constants.MaxEntities);
+    // senior-dev: Pre-allocated SparseArray for PersistToDiskBehavior queue (zero-alloc scene loading)
+    private readonly SparseArray<PersistToDiskBehavior> _persistToDiskQueue = new(Constants.MaxEntities);
+    
+    // senior-dev: Pre-allocated JsonEntity to reduce allocations during serialization
+    private readonly JsonEntity _jsonEntity = new();
 
     /// <summary>
     /// Loads a game scene from JSON file.
@@ -110,10 +113,6 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
     private void LoadSceneInternal(JsonScene scene, bool usePersistentPartition)
     {
-        // senior-dev: Disable dirty tracking during scene load to prevent unwanted disk writes
-        // Note: Tests will call this manually, but in the future SceneManager will handle this
-        DatabaseRegistry.Instance.Disable();
-        
         // senior-dev: Clear pre-allocated child-to-parent mapping
         _childToParents.Clear();
         
@@ -158,7 +157,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
             if (jsonEntity.Parent.HasValue)
             {
-                // senior-dev: Use SparseReferenceArray for zero-alloc parent tracking
+                // senior-dev: Use SparseArray for zero-alloc parent tracking
                 _childToParents.Set(entity.Index, jsonEntity.Parent.Value);
             }
             
@@ -167,11 +166,11 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
             // to prevent unwanted DB loads during scene construction
             if (jsonEntity.PersistToDisk.HasValue)
             {
-                _persistToDiskQueue.Add((entity, jsonEntity.PersistToDisk.Value));
+                _persistToDiskQueue.Set(entity.Index, jsonEntity.PersistToDisk.Value);
             }
         }
 
-        // senior-dev: Second pass - resolve parent references using SparseReferenceArray (zero-alloc)
+        // senior-dev: Second pass - resolve parent references using SparseArray (zero-alloc)
         foreach (var (entityIndex, parentSelector) in _childToParents)
         {
             if (!parentSelector.TryLocate(out var parent))
@@ -194,8 +193,9 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         // senior-dev: Third pass - apply PersistToDiskBehavior LAST (after Parent and all other behaviors)
         // CRITICAL: This order is enforced to prevent DB loads from overwriting scene construction
         // Future maintainers: DO NOT change this order without understanding infinite loop prevention
-        foreach (var (entity, persistToDisk) in _persistToDiskQueue)
+        foreach (var (entityIndex, persistToDisk) in _persistToDiskQueue)
         {
+            var entity = EntityRegistry.Instance[entityIndex];
             var input = persistToDisk;
             entity.SetBehavior<PersistToDiskBehavior, PersistToDiskBehavior>(
                 in input,
@@ -205,9 +205,6 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         
         // senior-dev: Clear queue for next scene load (zero-alloc)
         _persistToDiskQueue.Clear();
-        
-        // senior-dev: Re-enable dirty tracking after scene load completes
-        DatabaseRegistry.Instance.Enable();
     }
     
     /// <summary>
@@ -216,28 +213,21 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     /// </summary>
     public static string SerializeEntityToJson(Entity entity)
     {
-        var jsonEntity = new JsonEntity();
+        // senior-dev: Use pre-allocated JsonEntity to reduce allocations
+        var jsonEntity = Instance._jsonEntity;
 
         // senior-dev: Collect all behaviors from their respective registries
-        if (BehaviorRegistry<IdBehavior>.Instance.TryGetBehavior(entity, out var id))
-        {
-            jsonEntity.Id = id;
-        }
+        jsonEntity.Id = BehaviorRegistry<IdBehavior>.Instance.TryGetBehavior(entity, out var id) 
+            ? id : null;
 
-        if (BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var transform))
-        {
-            jsonEntity.Transform = transform;
-        }
+        jsonEntity.Transform = BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var transform) 
+            ? transform : null;
 
-        if (BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out var properties))
-        {
-            jsonEntity.Properties = properties;
-        }
+        jsonEntity.Properties = BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out var properties) 
+            ? properties : null;
 
-        if (BehaviorRegistry<PersistToDiskBehavior>.Instance.TryGetBehavior(entity, out var persistToDisk))
-        {
-            jsonEntity.PersistToDisk = persistToDisk;
-        }
+        jsonEntity.PersistToDisk = BehaviorRegistry<PersistToDiskBehavior>.Instance.TryGetBehavior(entity, out var persistToDisk) 
+            ? persistToDisk : null;
 
         // senior-dev: Handle Parent (stored in BehaviorRegistry<Parent>)
         if (BehaviorRegistry<Parent>.Instance.TryGetBehavior(entity, out var parent))
@@ -248,6 +238,14 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
             {
                 jsonEntity.Parent = new EntitySelector { ById = parentId.Value.Id };
             }
+            else
+            {
+                jsonEntity.Parent = null;
+            }
+        }
+        else
+        {
+            jsonEntity.Parent = null;
         }
 
         return JsonSerializer.Serialize(jsonEntity, JsonSerializerOptions.Web);

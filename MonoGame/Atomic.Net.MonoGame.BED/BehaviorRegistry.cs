@@ -58,9 +58,6 @@ public class BehaviorRegistry<TBehavior> :
         using var behaviorRef = _behaviors.GetMut(entity.Index);
         mutate(ref behaviorRef.Value);
 
-        // senior-dev: Invoke global mutation callback if registered (used by DatabaseRegistry)
-        BehaviorMutationTracker.OnEntityMutated?.Invoke(entity.Index);
-
         if (wasBehaviorActive)
         {
             EventBus<PostBehaviorUpdatedEvent<TBehavior>>.Push(new(entity));
@@ -95,9 +92,6 @@ public class BehaviorRegistry<TBehavior> :
 
         using var behaviorRef = _behaviors.GetMut(entity.Index);
         mutate(in helper, ref behaviorRef.Value);
-
-        // senior-dev: Invoke global mutation callback if registered (used by DatabaseRegistry)
-        BehaviorMutationTracker.OnEntityMutated?.Invoke(entity.Index);
 
         if (wasBehaviorActive)
         {

@@ -1,6 +1,9 @@
 using Atomic.Net.MonoGame.Core;
+using Atomic.Net.MonoGame.BED;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
-namespace Atomic.Net.MonoGame.BED.Persistence;
+namespace Atomic.Net.MonoGame.Scenes.Persistence;
 
 /// <summary>
 /// Behavior that marks an entity for disk persistence using LiteDB.

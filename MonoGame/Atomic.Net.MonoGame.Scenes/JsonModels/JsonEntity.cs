@@ -1,7 +1,7 @@
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.BED.Properties;
 using Atomic.Net.MonoGame.Transform;
-using Atomic.Net.MonoGame.BED.Persistence;
+using Atomic.Net.MonoGame.Scenes.Persistence;
 
 namespace Atomic.Net.MonoGame.Scenes.JsonModels;
 
