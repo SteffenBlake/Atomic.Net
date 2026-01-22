@@ -359,8 +359,23 @@ On `BehaviorAddedEvent<PersistToDiskBehavior>` or `PostBehaviorUpdatedEvent<Pers
     - Rapid key swapping doesn't corrupt data
 
 ### Performance Validation
-- [ ] @benchmarker Benchmark zero alloc options for fastest way to deserialize from json repeatedly to the same type, but different data
-- [ ] @benchmarker Benchmark zero alloc options for fastest way to serialize to json repeatedly, ideally some way to re-use the same memory you write to over and over, and then write it out to a LiteDB, without allocating at any step, if possible.
+- [x] @benchmarker Benchmark zero alloc options for fastest way to deserialize from json repeatedly to the same type, but different data
+  - **Finding**: Memory pooling (Utf8JsonReader) provides NO meaningful benefit (≤1.5% improvement)
+  - **Sparse reads (ACTUAL use case)**: Hybrid approach (FindById for ≤5, batch query for more)
+    - 100 entities in DB, read 1: 16µs (FindById optimal)
+    - 1000 entities in DB, read 10: 118µs (batch query, 37% faster than individual)
+    - 10000 entities in DB, read 100: 1.2ms (batch query, 49% faster than individual)
+  - **Recommendation**: Use standard `JsonSerializer.Deserialize()` - simpler, same performance
+  - **Benchmark**: `LiteDbReadBenchmark.cs` + `READ_RESULTS.md`
+- [x] @benchmarker Benchmark zero alloc options for fastest way to serialize to json repeatedly, ideally some way to re-use the same memory you write to over and over, and then write it out to a LiteDB, without allocating at any step, if possible.
+  - **Finding**: Memory pooling (Utf8JsonWriter) provides NO benefit - actually 3-8% SLOWER for small batches
+  - **Bulk insert is 3-4x faster** than individual inserts
+    - 10 entities: 364µs (bulk) vs 1099µs (individual) = 3x faster
+    - 100 entities: 2.4ms (bulk) vs 10.9ms (individual) = 4.5x faster
+    - 1000 entities: 16.2ms (bulk) vs 56.7ms (individual) = 3.5x faster
+  - **Upsert is 4-5x slower** than bulk insert - only use for updates
+  - **Recommendation**: Use standard `JsonSerializer.Serialize()` with `InsertBulk()` - simpler, faster
+  - **Benchmark**: `LiteDbWriteBenchmark.cs` + `WRITE_RESULTS.md`
 
 
 ### Documentation
