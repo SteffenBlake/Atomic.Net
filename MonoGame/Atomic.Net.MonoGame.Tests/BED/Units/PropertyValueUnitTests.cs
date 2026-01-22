@@ -194,4 +194,29 @@ public sealed class PropertyValueUnitTests
         // Assert
         Assert.False(result);
     }
+
+
+    [Fact]
+    public void GetHashCode_IsConsistent()
+    {
+        // Arrange
+        PropertyValue stringValueA = "123";
+        PropertyValue floatValueA = 123f;
+        PropertyValue boolValueA = true;
+
+        PropertyValue stringValueB = "123";
+        PropertyValue floatValueB = 123f;
+        PropertyValue boolValueB = true;
+
+        HashSet<PropertyValue> hashSet = [stringValueA, floatValueA, boolValueA];
+
+        // Act & Assert
+        Assert.Equal(stringValueA.GetHashCode(), stringValueB.GetHashCode());
+        Assert.Equal(floatValueA.GetHashCode(), floatValueB.GetHashCode());
+        Assert.Equal(boolValueA.GetHashCode(), boolValueB.GetHashCode());
+
+        Assert.Contains(stringValueB, hashSet);
+        Assert.Contains(floatValueB, hashSet);
+        Assert.Contains(boolValueB, hashSet);
+    }
 }

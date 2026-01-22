@@ -30,7 +30,24 @@ public static class Constants
     /// Entities with indices less than MaxLoadingEntities are loading entities.
     /// Entities with indices greater than or equal to MaxLoadingEntities are scene entities.
     /// </summary>
-    public const ushort MaxLoadingEntities = 32;
+    public const ushort MaxLoadingEntities = 256;
 #endif
+
+#if DEFAULT_ALLOC_PROPERTYBAG 
+    /// <summary>
+    /// Partition point between loading and scene entities.
+    /// Entities with indices less than MaxLoadingEntities are loading entities.
+    /// Entities with indices greater than or equal to MaxLoadingEntities are scene entities.
+    /// </summary>
+    public const ushort DefaultAllocPropertyBag = DEFAULT_ALLOC_PROPERTYBAG;
+#else
+    /// <summary>
+    /// Partition point between loading and scene entities.
+    /// Entities with indices less than MaxLoadingEntities are loading entities.
+    /// Entities with indices greater than or equal to MaxLoadingEntities are scene entities.
+    /// </summary>
+    public const ushort DefaultAllocPropertyBag = 32;
+#endif
+
 }
 

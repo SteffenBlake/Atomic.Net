@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.BED.Properties;
@@ -30,12 +29,12 @@ public sealed class PropertyBagIndex : ISingleton<PropertyBagIndex>,
     // senior-dev: Key-only index: key → entities with that key (case-insensitive)
     // senior-dev: Future optimization: Consider FrozenDictionary for better read performance if keys are stable after load
     private readonly Dictionary<string, SparseArray<bool>> _keyIndex = 
-        new(StringComparer.OrdinalIgnoreCase);
+        new(Constants.DefaultAllocPropertyBag, StringComparer.OrdinalIgnoreCase);
 
     // senior-dev: Key-value index: key → value → entities (outer key is case-insensitive)
     // senior-dev: Future optimization: Consider FrozenDictionary for outer dict if keys are stable after load
     private readonly Dictionary<string, Dictionary<PropertyValue, SparseArray<bool>>> _keyValueIndex = 
-        new(StringComparer.OrdinalIgnoreCase);
+        new(Constants.DefaultAllocPropertyBag, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Indexes all properties for an entity.
@@ -55,7 +54,7 @@ public sealed class PropertyBagIndex : ISingleton<PropertyBagIndex>,
             // senior-dev: Add to key-value index
             if (!_keyValueIndex.TryGetValue(key, out var valueDict))
             {
-                valueDict = new Dictionary<PropertyValue, SparseArray<bool>>();
+                valueDict = [];
                 _keyValueIndex[key] = valueDict;
             }
 
@@ -99,17 +98,10 @@ public sealed class PropertyBagIndex : ISingleton<PropertyBagIndex>,
     {
         if (!_keyIndex.TryGetValue(key, out var keyEntities))
         {
-            yield break;
+            return [];
         }
 
-        // senior-dev: Zero-alloc iteration over SparseArray (returns struct enumerator)
-        foreach (var (entityIndex, hasKey) in keyEntities)
-        {
-            if (hasKey)
-            {
-                yield return EntityRegistry.Instance[entityIndex];
-            }
-        }
+        return keyEntities.Select(static e => EntityRegistry.Instance[e.Index]);
     }
 
     /// <summary>
@@ -119,22 +111,15 @@ public sealed class PropertyBagIndex : ISingleton<PropertyBagIndex>,
     {
         if (!_keyValueIndex.TryGetValue(key, out var valueDict))
         {
-            yield break;
+            return [];
         }
 
         if (!valueDict.TryGetValue(value, out var valueEntities))
         {
-            yield break;
+            return [];
         }
 
-        // senior-dev: Zero-alloc iteration over SparseArray (returns struct enumerator)
-        foreach (var (entityIndex, hasValue) in valueEntities)
-        {
-            if (hasValue)
-            {
-                yield return EntityRegistry.Instance[entityIndex];
-            }
-        }
+        return valueEntities.Select(static e => EntityRegistry.Instance[e.Index]);
     }
 
     public void OnEvent(InitializeEvent _)
