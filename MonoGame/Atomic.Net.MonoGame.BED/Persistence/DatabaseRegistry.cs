@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Atomic.Net.MonoGame.Core;
 using LiteDB;
 
@@ -164,7 +163,7 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
                 }
                 
                 // senior-dev: Serialize entity to JSON using caller-provided delegate
-                var serializer = SerializeEntity!; // Null-forgiving: checked at top of method
+                var serializer = SerializeEntity; // Null-forgiving: checked at top of method
                 var json = serializer(entity);
                 
                 // senior-dev: Create LiteDB document (key = PersistToDiskBehavior.Key)

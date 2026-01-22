@@ -27,31 +27,16 @@ public class PropertyValueConverter : JsonConverter<PropertyValue>
         return default;
     }
 
-    public override void Write(Utf8JsonWriter writer, PropertyValue value, JsonSerializerOptions options)
+    public override void Write(
+        Utf8JsonWriter writer, PropertyValue value, JsonSerializerOptions options
+    )
     {
-        // senior-dev: FINDING: PropertyValue doesn't provide clean API to extract underlying value
-        // Since PropertyValue has implicit conversions FROM string/float/bool, we need to check
-        // the internal state. The Read method shows it can be Number, String, or Bool.
-        // We'll mirror that logic for Write by checking object equality with default values
-        
-        // Check if it's a number by comparing with a known float
-        // This is hacky but necessary given PropertyValue's API limitations
-        PropertyValue testFloat = 0f;
-        PropertyValue testBool = false;
-        PropertyValue testString = "";
-        
-        // Try to determine the type by process of elimination
-        // If it's not null/default and equals a value we set, write that
-        try
-        {
-            // For now, just write as number if it looks numeric, bool if boolean, string otherwise
-            // This needs a better solution but will work for basic cases
-            writer.WriteNullValue(); // Placeholder - this is complex to solve properly
-        }
-        catch (Exception ex)
-        {
-            throw new JsonException($"Failed to write PropertyValue: {ex.Message}", ex);
-        }
+        value.Visit(
+            s => JsonSerializer.Serialize(writer, s, options),
+            f => JsonSerializer.Serialize(writer, f, options),
+            b => JsonSerializer.Serialize(writer, b, options),
+            writer.WriteNullValue
+        );
     }
 }
 
