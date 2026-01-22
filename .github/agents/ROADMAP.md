@@ -40,7 +40,7 @@ Build a **data-driven, zero runtime allocation game engine** where entire games 
 ---
 
 ### Entity Property Bag
-- [ ] Entities have a generic Property behavior that lets users add arbitrary extra properties to any entity, that dont do anything on their own, but is effectively a dictionary bag
+- [x] Entities have a generic Property behavior that lets users add arbitrary extra properties to any entity, that dont do anything on their own, but is effectively a dictionary bag
 
 ---
 
