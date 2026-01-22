@@ -111,16 +111,19 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         // Act: Simulate scene transition (reset + reload)
         EventBus<ResetEvent>.Push(new());
         
-        // Create new entity with same key in second "scene"
+        // Create new entity with different data (scene2) FIRST, THEN add PersistToDiskBehavior
+        // PersistToDiskBehavior should load from DB and overwrite the scene2 data with scene1 data
         var entity2 = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, (ref PersistToDiskBehavior behavior) =>
-        {
-            behavior = new PersistToDiskBehavior("cross-scene-key");
-        });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity2);
-            behavior.Properties["scene"] = "scene2";
+            behavior.Properties["scene"] = "scene2";  // This will be overwritten by DB load
+        });
+        
+        // Adding PersistToDiskBehavior should trigger DB load, overwriting scene2 with scene1
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, (ref PersistToDiskBehavior behavior) =>
+        {
+            behavior = new PersistToDiskBehavior("cross-scene-key");
         });
         
         // Assert: entity2 should have loaded data from entity1 (overwriting "scene2" with "scene1")

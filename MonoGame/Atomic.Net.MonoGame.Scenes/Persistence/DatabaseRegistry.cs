@@ -114,10 +114,19 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
 
     /// <summary>
     /// Initializes LiteDB connection.
-    /// Called explicitly by tests or application code.
+    /// Called by OnEvent(InitializeEvent) with default path, or explicitly by tests with custom path.
+    /// Can be called multiple times to reinitialize with different path.
     /// </summary>
-    public void InitializeDatabase(string dbPath = "persistence.db")
+    public void InitializeDatabase(string dbPath)
     {
+        // senior-dev: Close existing connection if re-initializing
+        if (_database != null)
+        {
+            _database.Dispose();
+            _database = null;
+            _collection = null;
+        }
+        
         try
         {
             _database = new LiteDatabase(dbPath);

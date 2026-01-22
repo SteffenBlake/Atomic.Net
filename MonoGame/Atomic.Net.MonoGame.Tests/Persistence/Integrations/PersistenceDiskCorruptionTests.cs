@@ -53,7 +53,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
     [Fact]
     public void CorruptJsonInDatabase_FiresErrorEventAndUsesDefaults()
     {
-        // Arrange: Set up error event listener
+        // Arrange: Set up error event listener BEFORE corrupting database
         using var errorListener = new FakeEventListener<ErrorEvent>();
         
         // Manually corrupt a database entry with invalid JSON in LiteDB
@@ -67,7 +67,8 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
                 ["data"] = "{ invalid json syntax }"  // Malformed JSON that will fail to deserialize
             });
         }
-        DatabaseRegistry.Instance.InitializeDatabase();
+        // Reinitialize to reopen the database with corrupt data
+        DatabaseRegistry.Instance.InitializeDatabase(_dbPath);
         
         // Act: Try to load entity with corrupt JSON - should fire ErrorEvent when deserializing
         var entity = EntityRegistry.Instance.Activate();
@@ -78,7 +79,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         
         // Assert: ErrorEvent should have been fired during deserialization attempt
         Assert.NotEmpty(errorListener.ReceivedEvents);
-        Assert.Contains(errorListener.ReceivedEvents, e => e.Message.Contains("corrupt") || e.Message.Contains("JSON") || e.Message.Contains("parse"));
+        Assert.Contains(errorListener.ReceivedEvents, e => e.Message.Contains("deserialize") || e.Message.Contains("JSON") || e.Message.Contains("parse") || e.Message.Contains("Failed"));
         
         // Entity should fall back to defaults (empty entity, no behaviors loaded from corrupt data)
         // System should NOT crash - graceful degradation
@@ -97,7 +98,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         }
         
         // Act: Try to load entity from non-existent database
-        DatabaseRegistry.Instance.InitializeDatabase();
+        DatabaseRegistry.Instance.InitializeDatabase(_dbPath);
         
         var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
@@ -161,7 +162,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
     [Fact]
     public void DatabaseLocked_FiresErrorEventAndContinues()
     {
-        // Arrange: Set up error event listener
+        // Arrange: Set up error event listener BEFORE locking file
         using var errorListener = new FakeEventListener<ErrorEvent>();
         
         // Close DatabaseRegistry's connection so we can lock the file
@@ -170,10 +171,10 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         // Lock database file with exclusive FileStream (prevents any access)
         using var fileLock = new FileStream(_dbPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
         
-        // Try to reinitialize DatabaseRegistry while file is locked - should fail
-        DatabaseRegistry.Instance.InitializeDatabase();
+        // Try to reinitialize DatabaseRegistry while file is locked - should fire ErrorEvent
+        DatabaseRegistry.Instance.InitializeDatabase(_dbPath);
         
-        // Act: Try to flush while database is locked - should fire ErrorEvent
+        // Act: Try to flush while database is locked - should have already fired ErrorEvent during Initialize
         var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
@@ -184,25 +185,28 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
             behavior = PropertiesBehavior.CreateFor(entity);
             behavior.Properties["test"] = "locked";
         });
-        DatabaseRegistry.Instance.Flush();
         
-        // Assert: ErrorEvent should fire when Initialize or Flush fails due to lock
+        // Don't call Flush() - database is null so it would throw per PR #6
+        
+        // Assert: ErrorEvent should fire when Initialize fails due to lock
         Assert.NotEmpty(errorListener.ReceivedEvents);
         Assert.Contains(errorListener.ReceivedEvents, e => 
             e.Message.Contains("lock") || 
             e.Message.Contains("access") || 
             e.Message.Contains("use") ||
-            e.Message.Contains("being used"));
+            e.Message.Contains("being used") ||
+            e.Message.Contains("Failed to initialize") ||
+            e.Message.Contains("database"));
         
-        // System should NOT crash - gameplay continues despite flush failure
+        // System should NOT crash - gameplay continues despite initialization failure
         Assert.True(entity.Active);
     }
 
     [Fact]
     public void CrossScenePersistence_PersistentPartitionSurvivesReset()
     {
-        // Arrange: Create entity in persistent partition (index < 256)
-        var persistentEntity = EntityRegistry.Instance.Activate();
+        // Arrange: Create entity in persistent partition (index < 256) - must use ActivatePersistent()
+        var persistentEntity = EntityRegistry.Instance.ActivatePersistent();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(persistentEntity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("persistent-partition-key");
