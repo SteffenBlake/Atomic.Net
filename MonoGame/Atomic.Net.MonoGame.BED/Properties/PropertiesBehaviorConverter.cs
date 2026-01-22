@@ -7,8 +7,6 @@ public class PropertiesBehaviorConverter : JsonConverter<PropertiesBehavior>
 {
     public override PropertiesBehavior Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        reader.Read();
-
         return reader.TokenType switch
         {
             JsonTokenType.StartObject => ReadDictionary(ref reader, options),
@@ -22,8 +20,8 @@ public class PropertiesBehaviorConverter : JsonConverter<PropertiesBehavior>
     {
         // Try parse a dictionary, fallback to an empty dict
         var value = JsonSerializer
-            .Deserialize<Dictionary<string, PropertiesBehavior>>(ref reader, options)
-            ?? [];
+            .Deserialize<Dictionary<string, PropertyValue>>(ref reader, options)
+            ?? new Dictionary<string, PropertyValue>(StringComparer.OrdinalIgnoreCase);
 
         return new(value);
     }

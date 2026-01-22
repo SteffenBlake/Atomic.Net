@@ -5,12 +5,12 @@ namespace Atomic.Net.MonoGame.BED.Properties;
 
 [JsonConverter(typeof(PropertiesBehaviorConverter))]
 public readonly record struct PropertiesBehavior(
-    Dictionary<string, PropertiesBehavior> Value
-) :IBehavior<PropertiesBehavior>
+    Dictionary<string, PropertyValue> Properties
+) : IBehavior<PropertiesBehavior>
 {
     public static PropertiesBehavior CreateFor(Entity entity)
     {
-        return new([]);
+        return new(new Dictionary<string, PropertyValue>(StringComparer.OrdinalIgnoreCase));
     }
 }
 

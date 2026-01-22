@@ -7,8 +7,6 @@ public class PropertyValueConverter : JsonConverter<PropertyValue>
 {
     public override PropertyValue Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        reader.Read();
-
         return reader.TokenType switch
         {
             JsonTokenType.Number => reader.GetSingle(),
