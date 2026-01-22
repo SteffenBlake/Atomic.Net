@@ -57,3 +57,4 @@ Leave a comment requesting benchmarking:
 - Ensure code follows patterns in AGENTS.md
 - Leave comments explaining any non-obvious logic
 - Respond to all `@senior-dev` pings
+- Have subagent `code-reviewer` perform an extensive code review of all your changes.
