@@ -66,6 +66,9 @@ public class RefBehaviorRegistry<TBehavior> :
         }
         mutate(ref behaviorRef.Value);
 
+        // senior-dev: Invoke global mutation callback if registered (used by DatabaseRegistry)
+        BehaviorMutationTracker.OnEntityMutated?.Invoke(entity.Index);
+
         if (isNew)
         {
             EventBus<BehaviorAddedEvent<TBehavior>>.Push(new(entity));

@@ -6,6 +6,7 @@ using Atomic.Net.MonoGame.BED.Properties;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Scenes.JsonModels;
 using Atomic.Net.MonoGame.Transform;
+using Atomic.Net.MonoGame.BED.Persistence;
 
 namespace Atomic.Net.MonoGame.Scenes;
 
@@ -106,8 +107,15 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
     private void LoadSceneInternal(JsonScene scene, bool usePersistentPartition)
     {
+        // senior-dev: Disable dirty tracking during scene load to prevent unwanted disk writes
+        // Note: Tests will call this manually, but in the future SceneManager will handle this
+        DatabaseRegistry.Instance.Disable();
+        
         // senior-dev: Clear pre-allocated child-to-parent mapping
         _childToParents.Clear();
+        
+        // senior-dev: Store entities that need PersistToDiskBehavior (apply LAST)
+        var persistToDiskQueue = new List<(Entity, PersistToDiskBehavior)>();
         
         foreach (var jsonEntity in scene.Entities)
         {
@@ -150,6 +158,14 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
                 // senior-dev: Use SparseReferenceArray for zero-alloc parent tracking
                 _childToParents.Set(entity.Index, jsonEntity.Parent.Value);
             }
+            
+            // senior-dev: Queue PersistToDiskBehavior to be applied LAST
+            // CRITICAL: This MUST be applied after all other behaviors (including Parent)
+            // to prevent unwanted DB loads during scene construction
+            if (jsonEntity.PersistToDisk.HasValue)
+            {
+                persistToDiskQueue.Add((entity, jsonEntity.PersistToDisk.Value));
+            }
         }
 
         // senior-dev: Second pass - resolve parent references using SparseReferenceArray (zero-alloc)
@@ -171,5 +187,120 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         }
 
         _childToParents.Clear();
+        
+        // senior-dev: Third pass - apply PersistToDiskBehavior LAST (after Parent and all other behaviors)
+        // CRITICAL: This order is enforced to prevent DB loads from overwriting scene construction
+        // Future maintainers: DO NOT change this order without understanding infinite loop prevention
+        foreach (var (entity, persistToDisk) in persistToDiskQueue)
+        {
+            var input = persistToDisk;
+            entity.SetBehavior<PersistToDiskBehavior, PersistToDiskBehavior>(
+                in input,
+                (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+        
+        // senior-dev: Re-enable dirty tracking after scene load completes
+        DatabaseRegistry.Instance.Enable();
+    }
+    
+    /// <summary>
+    /// Serializes an entity to JSON string for disk persistence.
+    /// Used by DatabaseRegistry to save entity state to LiteDB.
+    /// </summary>
+    public static string SerializeEntityToJson(Entity entity)
+    {
+        var jsonEntity = new JsonEntity();
+
+        // senior-dev: Collect all behaviors from their respective registries
+        if (BehaviorRegistry<IdBehavior>.Instance.TryGetBehavior(entity, out var id))
+        {
+            jsonEntity.Id = id;
+        }
+
+        if (BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var transform))
+        {
+            jsonEntity.Transform = transform;
+        }
+
+        if (BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out var properties))
+        {
+            jsonEntity.Properties = properties;
+        }
+
+        if (BehaviorRegistry<PersistToDiskBehavior>.Instance.TryGetBehavior(entity, out var persistToDisk))
+        {
+            jsonEntity.PersistToDisk = persistToDisk;
+        }
+
+        // senior-dev: Handle Parent (stored in BehaviorRegistry<Parent>)
+        if (BehaviorRegistry<Parent>.Instance.TryGetBehavior(entity, out var parent))
+        {
+            // senior-dev: Get parent entity's ID if it exists
+            var parentEntity = EntityRegistry.Instance[parent.Value.ParentIndex];
+            if (BehaviorRegistry<IdBehavior>.Instance.TryGetBehavior(parentEntity, out var parentId))
+            {
+                jsonEntity.Parent = new EntitySelector { ById = parentId.Value.Id };
+            }
+        }
+
+        return JsonSerializer.Serialize(jsonEntity, JsonSerializerOptions.Web);
+    }
+    
+    /// <summary>
+    /// Deserializes JSON string and applies behaviors to an entity.
+    /// Used by DatabaseRegistry to load entity state from LiteDB.
+    /// </summary>
+    public static void DeserializeEntityFromJson(Entity entity, string json)
+    {
+        var jsonEntity = JsonSerializer.Deserialize<JsonEntity>(json, JsonSerializerOptions.Web);
+        if (jsonEntity == null)
+        {
+            return;
+        }
+
+        // senior-dev: Apply all behaviors from JSON (in specific order per sprint requirements)
+        // Transform, Properties, Id applied first, then Parent
+        // PersistToDiskBehavior is NOT applied here (already set by caller)
+        
+        if (jsonEntity.Transform.HasValue)
+        {
+            var input = jsonEntity.Transform.Value;
+            entity.SetBehavior<TransformBehavior, TransformBehavior>(
+                in input,
+                (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (jsonEntity.Properties.HasValue)
+        {
+            var input = jsonEntity.Properties.Value;
+            entity.SetBehavior<PropertiesBehavior, PropertiesBehavior>(
+                in input,
+                (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (jsonEntity.Id.HasValue)
+        {
+            var input = jsonEntity.Id.Value;
+            entity.SetBehavior<IdBehavior, IdBehavior>(
+                in input,
+                (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        // senior-dev: Parent is handled if referenced entity exists
+        if (jsonEntity.Parent.HasValue)
+        {
+            if (jsonEntity.Parent.Value.TryLocate(out var parentEntity))
+            {
+                var input = parentEntity.Value.Index;
+                entity.SetBehavior<Parent, ushort>(
+                    in input,
+                    (ref readonly _input, ref behavior) => behavior = new(_input)
+                );
+            }
+        }
     }
 }

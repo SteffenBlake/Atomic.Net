@@ -2,7 +2,7 @@ using Xunit;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.BED.Properties;
-using Atomic.Net.MonoGame.Persistence;
+using Atomic.Net.MonoGame.BED.Persistence;
 using Atomic.Net.MonoGame.Scenes;
 using Atomic.Net.MonoGame.Transform;
 

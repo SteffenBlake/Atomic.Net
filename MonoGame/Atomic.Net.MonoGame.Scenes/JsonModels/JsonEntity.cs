@@ -1,6 +1,7 @@
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.BED.Properties;
 using Atomic.Net.MonoGame.Transform;
+using Atomic.Net.MonoGame.BED.Persistence;
 
 namespace Atomic.Net.MonoGame.Scenes.JsonModels;
 
@@ -33,4 +34,10 @@ public class JsonEntity
     /// Optional properties behavior (arbitrary key-value metadata).
     /// </summary>
     public PropertiesBehavior? Properties { get; set; } = null;
+
+    /// <summary>
+    /// Optional disk persistence behavior (marks entity for saving to LiteDB).
+    /// senior-dev: MUST be applied LAST in SceneLoader to prevent unwanted DB loads during scene construction
+    /// </summary>
+    public PersistToDiskBehavior? PersistToDisk { get; set; } = null;
 }
