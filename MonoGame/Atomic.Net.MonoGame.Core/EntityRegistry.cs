@@ -27,8 +27,8 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
 
     private readonly SparseArray<bool> _active = new(Constants.MaxEntities);
     private readonly SparseArray<bool> _enabled = new(Constants.MaxEntities);
-    private ushort _nextSceneIndex = Constants.MaxLoadingEntities;
-    private ushort _nextLoadingIndex = 0;
+    private ushort _nextSceneIndex = Constants.MaxPersistentEntities;
+    private ushort _nextPersistentIndex = 0;
 
     public Entity this[ushort index]
     {
@@ -39,12 +39,12 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     }
 
     /// <summary>
-    /// Activate the next available scene entity (index greater than or equal to MaxLoadingEntities).
+    /// Activate the next available scene entity (index greater than or equal to MaxPersistentEntities).
     /// </summary>
     /// <returns>The activated entity.</returns>
     public Entity Activate()
     {
-        for (ushort offset = 0; offset < Constants.MaxEntities - Constants.MaxLoadingEntities; offset++)
+        for (ushort offset = 0; offset < Constants.MaxEntities - Constants.MaxPersistentEntities; offset++)
         {
             ushort i = GetNextSceneIndex(offset);
             
@@ -58,7 +58,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
             _nextSceneIndex = (ushort)(i + 1);
             if (_nextSceneIndex >= Constants.MaxEntities)
             {
-                _nextSceneIndex = Constants.MaxLoadingEntities;
+                _nextSceneIndex = Constants.MaxPersistentEntities;
             }
 
             return new(i);
@@ -68,14 +68,14 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     }
 
     /// <summary>
-    /// Activate the next available loading entity (index less than MaxLoadingEntities).
+    /// Activate the next available persistent entity (index less than MaxPersistentEntities).
     /// </summary>
     /// <returns>The activated entity.</returns>
-    public Entity ActivateLoading()
+    public Entity ActivatePersistent()
     {
-        for (ushort offset = 0; offset < Constants.MaxLoadingEntities; offset++)
+        for (ushort offset = 0; offset < Constants.MaxPersistentEntities; offset++)
         {
-            ushort i = (ushort)((_nextLoadingIndex + offset) % Constants.MaxLoadingEntities);
+            ushort i = (ushort)((_nextPersistentIndex + offset) % Constants.MaxPersistentEntities);
             
             if (_active[i])
             {
@@ -84,32 +84,32 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
 
             _active.Set(i, true);
             _enabled.Set(i, true);
-            _nextLoadingIndex = (ushort)((i + 1) % Constants.MaxLoadingEntities);
+            _nextPersistentIndex = (ushort)((i + 1) % Constants.MaxPersistentEntities);
 
             return new(i);
         }
 
-        throw new InvalidOperationException("MaxLoadingEntities reached");
+        throw new InvalidOperationException("MaxPersistentEntities reached");
     }
 
     private ushort GetNextSceneIndex(ushort offset)
     {
-        return (ushort)(Constants.MaxLoadingEntities + 
-            ((_nextSceneIndex - Constants.MaxLoadingEntities + offset) % 
-            (Constants.MaxEntities - Constants.MaxLoadingEntities)));
+        return (ushort)(Constants.MaxPersistentEntities + 
+            ((_nextSceneIndex - Constants.MaxPersistentEntities + offset) % 
+            (Constants.MaxEntities - Constants.MaxPersistentEntities)));
     }
 
     /// <summary>
-    /// Get the first scene entity (index MaxLoadingEntities).
+    /// Get the first scene entity (index MaxPersistentEntities).
     /// </summary>
     /// <returns>The scene root entity.</returns>
-    public Entity GetSceneRoot() => _entities[Constants.MaxLoadingEntities];
+    public Entity GetSceneRoot() => _entities[Constants.MaxPersistentEntities];
 
     /// <summary>
-    /// Get the first loading entity (index 0).
+    /// Get the first persistent entity (index 0).
     /// </summary>
-    /// <returns>The loading root entity.</returns>
-    public Entity GetLoadingRoot() => _entities[0];
+    /// <returns>The persistent root entity.</returns>
+    public Entity GetPersistentRoot() => _entities[0];
 
     /// <summary>
     /// Deactivate an entity by index.
@@ -211,9 +211,9 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     /// </summary>
     public void OnEvent(ResetEvent _)
     {
-        // Deactivate only scene entities (indices >= MaxLoadingEntities)
+        // Deactivate only scene entities (indices >= MaxPersistentEntities)
         var sceneEntities = _active
-            .Where(static a => a.Index >= Constants.MaxLoadingEntities)
+            .Where(static a => a.Index >= Constants.MaxPersistentEntities)
             .Select(a => _entities[a.Index])
             .ToList();
 
@@ -222,16 +222,16 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
             Deactivate(entity);
         }
 
-        _nextSceneIndex = Constants.MaxLoadingEntities;
+        _nextSceneIndex = Constants.MaxPersistentEntities;
     }
 
     /// <summary>
-    /// Handle shutdown event by deactivating ALL entities (both loading and scene).
+    /// Handle shutdown event by deactivating ALL entities (both persistent and scene).
     /// Used for complete game shutdown and test cleanup.
     /// </summary>
     public void OnEvent(ShutdownEvent e)
     {
-        // Deactivate only all entities (indices >= MaxLoadingEntities)
+        // Deactivate only all entities (indices >= MaxPersistentEntities)
         var sceneEntities = _active
             .Select(a => _entities[a.Index])
             .ToList();
@@ -241,7 +241,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
             Deactivate(entity);
         }
 
-        _nextSceneIndex = Constants.MaxLoadingEntities;
-        _nextLoadingIndex = 0;
+        _nextSceneIndex = Constants.MaxPersistentEntities;
+        _nextPersistentIndex = 0;
     }
 }

@@ -35,7 +35,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
     /// <summary>
     /// Loads a game scene from JSON file.
-    /// Spawns entities using EntityRegistry.Activate() (indices ≥32).
+    /// Spawns entities using EntityRegistry.Activate() (indices ≥256).
     /// Fires ErrorEvent for file not found, invalid JSON, or unresolved references.
     /// </summary>
     public void LoadGameScene(string scenePath)
@@ -45,7 +45,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
             return;
         }
 
-        LoadSceneInternal(scene, useLoadingPartition: false);
+        LoadSceneInternal(scene, usePersistentPartition: false);
         
         // senior-dev: GC after scene goes out of scope
         GC.Collect();
@@ -53,18 +53,18 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     }
 
     /// <summary>
-    /// Loads a loading scene from JSON file.
-    /// Spawns entities using EntityRegistry.ActivateLoading() (indices &lt;32).
+    /// Loads a persistent scene from JSON file.
+    /// Spawns entities using EntityRegistry.ActivatePersistent() (indices &lt;256).
     /// Fires ErrorEvent for file not found, invalid JSON, or unresolved references.
     /// </summary>
-    public void LoadLoadingScene(string scenePath = "Content/Scenes/loading.json")
+    public void LoadPersistentScene(string scenePath = "Content/Scenes/loading.json")
     {
         if (!TryParseSceneFile(scenePath, out var scene))
         {
             return;
         }
 
-        LoadSceneInternal(scene, useLoadingPartition: true);
+        LoadSceneInternal(scene, usePersistentPartition: true);
         
         // senior-dev: GC after scene goes out of scope
         GC.Collect();
@@ -104,15 +104,15 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         return false;
     }
 
-    private void LoadSceneInternal(JsonScene scene, bool useLoadingPartition)
+    private void LoadSceneInternal(JsonScene scene, bool usePersistentPartition)
     {
         // senior-dev: Clear pre-allocated child-to-parent mapping
         _childToParents.Clear();
         
         foreach (var jsonEntity in scene.Entities)
         {
-            var entity = useLoadingPartition 
-                ? EntityRegistry.Instance.ActivateLoading() 
+            var entity = usePersistentPartition 
+                ? EntityRegistry.Instance.ActivatePersistent() 
                 : EntityRegistry.Instance.Activate();
 
             if (jsonEntity.Transform.HasValue)
