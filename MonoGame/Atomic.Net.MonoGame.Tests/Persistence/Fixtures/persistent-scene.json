@@ -1,0 +1,41 @@
+{
+  "entities": [
+    {
+      "id": "persistent-player",
+      "transform": {
+        "position": [100, 200, 0],
+        "rotation": [0, 0, 0, 1],
+        "scale": [1, 1, 1]
+      },
+      "properties": {
+        "health": 100,
+        "mana": 50,
+        "level": 5,
+        "experience": 1000
+      },
+      "persistToDisk": {
+        "key": "player-save-slot-1"
+      }
+    },
+    {
+      "id": "inventory-manager",
+      "properties": {
+        "gold": 500,
+        "inventory-slots": 20,
+        "items": "sword,shield,potion"
+      },
+      "persistToDisk": {
+        "key": "inventory-persistent"
+      }
+    },
+    {
+      "id": "non-persistent-entity",
+      "transform": {
+        "position": [50, 75, 0]
+      },
+      "properties": {
+        "temporary": "this-entity-does-not-persist"
+      }
+    }
+  ]
+}
