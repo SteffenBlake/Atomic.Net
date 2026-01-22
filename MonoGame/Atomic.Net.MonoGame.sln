@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Atomic.Net.MonoGame.Tests",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Atomic.Net.MonoGame.Scenes", "Atomic.Net.MonoGame.Scenes\Atomic.Net.MonoGame.Scenes.csproj", "{5C294339-3F06-46F6-8699-D5FABCC57E81}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Atomic.Net.MonoGame.Persistence", "Atomic.Net.MonoGame.Persistence\Atomic.Net.MonoGame.Persistence.csproj", "{43DD7ABA-7D1B-46D8-94DA-DD9F8D9FAC5A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -111,6 +113,18 @@ Global
 		{5C294339-3F06-46F6-8699-D5FABCC57E81}.Release|x64.Build.0 = Release|Any CPU
 		{5C294339-3F06-46F6-8699-D5FABCC57E81}.Release|x86.ActiveCfg = Release|Any CPU
 		{5C294339-3F06-46F6-8699-D5FABCC57E81}.Release|x86.Build.0 = Release|Any CPU
+		{43DD7ABA-7D1B-46D8-94DA-DD9F8D9FAC5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43DD7ABA-7D1B-46D8-94DA-DD9F8D9FAC5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43DD7ABA-7D1B-46D8-94DA-DD9F8D9FAC5A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{43DD7ABA-7D1B-46D8-94DA-DD9F8D9FAC5A}.Debug|x64.Build.0 = Debug|Any CPU
+		{43DD7ABA-7D1B-46D8-94DA-DD9F8D9FAC5A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{43DD7ABA-7D1B-46D8-94DA-DD9F8D9FAC5A}.Debug|x86.Build.0 = Debug|Any CPU
+		{43DD7ABA-7D1B-46D8-94DA-DD9F8D9FAC5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43DD7ABA-7D1B-46D8-94DA-DD9F8D9FAC5A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{43DD7ABA-7D1B-46D8-94DA-DD9F8D9FAC5A}.Release|x64.ActiveCfg = Release|Any CPU
+		{43DD7ABA-7D1B-46D8-94DA-DD9F8D9FAC5A}.Release|x64.Build.0 = Release|Any CPU
+		{43DD7ABA-7D1B-46D8-94DA-DD9F8D9FAC5A}.Release|x86.ActiveCfg = Release|Any CPU
+		{43DD7ABA-7D1B-46D8-94DA-DD9F8D9FAC5A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
