@@ -36,12 +36,19 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     // senior-dev: Dirty tracking sparse array (zero-alloc flagging)
     private readonly SparseArray<bool> _dirtyFlags = new(Constants.MaxEntities);
     
-    // senior-dev: LiteDB connection (null until InitializeDatabase() is called)
+    // senior-dev: LiteDB connection (null until initialized in OnEvent(InitializeEvent))
     private LiteDatabase? _database = null;
     private ILiteCollection<BsonDocument>? _collection = null;
     
     // senior-dev: Track old keys for infinite loop prevention
     private readonly SparseReferenceArray<string> _oldKeys = new(Constants.MaxEntities);
+
+    // senior-dev: CRITICAL: Database path is a COMPILATION CONSTANT ONLY
+    // NEVER add runtime configuration, environment variables, or any other mechanism to override this
+    // The ONLY way to change the path is via compilation constant:
+    //   dotnet build -p:DefineConstants=ATOMIC_PERSISTENCE_DB_PATH=\"/custom/path.db\"
+    // This is intentional - persistence configuration is compile-time, not runtime
+    // DO NOT add SetDatabasePath() or any other runtime override mechanism
 
     /// <summary>
     /// Gets whether dirty tracking is currently enabled.
@@ -57,7 +64,9 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     /// <param name="entityIndex">Index of the entity to mark dirty.</param>
     public void MarkDirty(ushort entityIndex)
     {
-        // senior-dev: Only mark dirty if tracking is enabled (not during scene load)
+        // senior-dev: CRITICAL: NEVER bypass this IsEnabled check
+        // IsEnabled controls dirty tracking globally - when false, NO entities should be marked dirty
+        // This prevents scene construction from triggering disk writes
         if (!IsEnabled)
         {
             return;
@@ -101,8 +110,9 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
         EventBus<PreBehaviorUpdatedEvent<PersistToDiskBehavior>>.Register(this);
         EventBus<PreBehaviorRemovedEvent<PersistToDiskBehavior>>.Register(this);
         
-        // senior-dev: Initialize database with path from Constants (PR comment #5)
-        // Tests override path via: dotnet test -p:DefineConstants=ATOMIC_PERSISTENCE_DB_PATH=\"/tmp/test.db\"
+        // senior-dev: Initialize database with path from Constants (COMPILATION CONSTANT ONLY)
+        // NEVER add runtime configuration - path is set at compile time via:
+        //   dotnet build -p:DefineConstants=ATOMIC_PERSISTENCE_DB_PATH=\"/custom/path.db\"
         try
         {
             _database = new LiteDatabase(Constants.DefaultPersistenceDatabasePath);
@@ -111,6 +121,14 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
         }
         catch (LiteException ex)
         {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Failed to initialize persistence database: {ex.Message}"
+            ));
+            // Leave _database and _collection as null (graceful degradation)
+        }
+        catch (IOException ex)
+        {
+            // senior-dev: Catch IO exceptions (file locked, access denied, etc.)
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Failed to initialize persistence database: {ex.Message}"
             ));
@@ -340,8 +358,8 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
         if (!TryLoadFromDatabase(key, out var json))
         {
             // senior-dev: Key doesn't exist in DB - mark dirty for first write
-            // Always mark dirty when adding PersistToDiskBehavior, even if disabled
-            _dirtyFlags.Set(entity.Index, true);
+            // CRITICAL: NEVER bypass IsEnabled check - always use MarkDirty() which respects IsEnabled
+            MarkDirty(entity.Index);
             return;
         }
         

@@ -25,16 +25,12 @@ public sealed class PersistenceMutationTimingTests : IDisposable
     public PersistenceMutationTimingTests()
     {
         // Arrange: Initialize systems with clean database
-        _dbPath = Path.Combine(Path.GetTempPath(), $"persistence_mutation_{Guid.NewGuid()}.db");
-        
+        _dbPath = "persistence.db";
 
         AtomicSystem.Initialize();
         BEDSystem.Initialize();
         SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
-        
-        // test-architect: Initialize DatabaseRegistry with test database path
-        // Database initialized via environment variable
     }
 
     public void Dispose()
@@ -147,7 +143,7 @@ public sealed class PersistenceMutationTimingTests : IDisposable
             behavior.Properties["value"] = 999f;
         });
         
-        // test-architect: Now add PersistToDiskBehavior (still disabled)
+        // test-architect: Now add PersistToDiskBehavior (still disabled - entity NOT marked dirty)
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("pre-behavior-key");
@@ -156,19 +152,19 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         // Re-enable tracking
         DatabaseRegistry.Instance.Enable();
         
-        // test-architect: Flush should write current state (999 is already there)
+        // test-architect: Flush should NOT write anything (entity not dirty)
         DatabaseRegistry.Instance.Flush();
         
-        // Assert: Verify entity was written with its current state
+        // Assert: Verify entity was NOT written (no data in DB for this key)
         var newEntity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("pre-behavior-key");
         });
-        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var loadedProps));
-        Assert.Equal(999f, loadedProps.Value.Properties["value"]);
+        // test-architect: Since no data in DB, entity should NOT have PropertiesBehavior loaded
+        Assert.False(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out _));
         
         // test-architect: FINDING: This test validates that mutations during disabled period
-        // don't get tracked, but the entity's final state is written when PersistToDiskBehavior is added.
+        // don't get tracked, and entities added during disabled are NOT marked dirty.
     }
 }

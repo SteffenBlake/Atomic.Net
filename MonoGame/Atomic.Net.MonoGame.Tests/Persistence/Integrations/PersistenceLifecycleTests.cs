@@ -25,16 +25,12 @@ public sealed class PersistenceLifecycleTests : IDisposable
     public PersistenceLifecycleTests()
     {
         // Arrange: Initialize systems and set up clean database
-        _dbPath = Path.Combine(Path.GetTempPath(), $"persistence_lifecycle_{Guid.NewGuid()}.db");
-        
+        _dbPath = "persistence.db";
 
         AtomicSystem.Initialize();
         BEDSystem.Initialize();
         SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
-        
-        // test-architect: Initialize DatabaseRegistry with test database path
-        // Database initialized via environment variable
     }
 
     public void Dispose()

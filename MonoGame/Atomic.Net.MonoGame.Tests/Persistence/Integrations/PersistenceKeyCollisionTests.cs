@@ -26,15 +26,12 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
     public PersistenceKeyCollisionTests()
     {
         // Arrange: Initialize systems with clean database
-        _dbPath = Path.Combine(Path.GetTempPath(), $"persistence_collision_{Guid.NewGuid()}.db");
-        
+        _dbPath = "persistence.db";
 
         AtomicSystem.Initialize();
         BEDSystem.Initialize();
         SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
-        
-        // Database initialized via environment variable
     }
 
     public void Dispose()
