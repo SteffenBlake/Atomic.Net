@@ -1,0 +1,15 @@
+{
+  "entities": [
+    {
+      "id": "entity-with-nulls",
+      "transform": {
+        "position": [0, 0, 0]
+      },
+      "properties": {
+        "valid-key": "value",
+        "null-key": null,
+        "another-valid": 123
+      }
+    }
+  ]
+}

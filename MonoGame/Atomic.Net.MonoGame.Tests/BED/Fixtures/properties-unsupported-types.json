@@ -1,0 +1,16 @@
+{
+  "entities": [
+    {
+      "id": "entity-with-unsupported",
+      "transform": {
+        "position": [0, 0, 0]
+      },
+      "properties": {
+        "valid-string": "value",
+        "array-prop": [1, 2, 3],
+        "object-prop": {"nested": "value"},
+        "valid-number": 42
+      }
+    }
+  ]
+}

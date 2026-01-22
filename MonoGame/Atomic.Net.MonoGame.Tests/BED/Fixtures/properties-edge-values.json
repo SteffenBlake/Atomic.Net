@@ -1,0 +1,17 @@
+{
+  "entities": [
+    {
+      "id": "entity-with-edge-cases",
+      "transform": {
+        "position": [0, 0, 0]
+      },
+      "properties": {
+        "empty-string": "",
+        "zero-number": 0,
+        "false-bool": false,
+        "negative-number": -42.5,
+        "large-number": 999999.99
+      }
+    }
+  ]
+}

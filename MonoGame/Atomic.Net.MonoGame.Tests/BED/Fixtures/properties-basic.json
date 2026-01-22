@@ -1,0 +1,47 @@
+{
+  "entities": [
+    {
+      "id": "goblin-1",
+      "transform": {
+        "position": [10, 20, 0]
+      },
+      "properties": {
+        "enemy-type": "goblin",
+        "faction": "horde",
+        "max-health": 100,
+        "is-boss": false,
+        "loot-tier": 2
+      }
+    },
+    {
+      "id": "goblin-boss",
+      "transform": {
+        "position": [50, 50, 0]
+      },
+      "properties": {
+        "enemy-type": "goblin",
+        "faction": "horde",
+        "max-health": 500,
+        "is-boss": true,
+        "loot-tier": 5,
+        "special-ability": "summon-minions"
+      }
+    },
+    {
+      "id": "treasure-chest",
+      "transform": {
+        "position": [100, 100, 0]
+      },
+      "properties": {
+        "loot-tier": 3,
+        "locked": true
+      }
+    },
+    {
+      "id": "no-properties",
+      "transform": {
+        "position": [200, 200, 0]
+      }
+    }
+  ]
+}
