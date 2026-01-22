@@ -63,7 +63,6 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         {
             behavior = PropertiesBehavior.CreateFor(entity1);
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity1.SetProperty("source", "entity1");
         
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, (ref PersistToDiskBehavior behavior) =>
         {
@@ -73,7 +72,6 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         {
             behavior = PropertiesBehavior.CreateFor(entity2);
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity2.SetProperty("source", "entity2");
         
         // Act: Flush both entities
         DatabaseRegistry.Instance.Flush();
@@ -81,7 +79,6 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         // Assert: Last write should win (entity2)
         // test-architect: Design decision - either fire ErrorEvent or use last-write-wins
         // var loadedEntity = LoadEntityFromDatabase("duplicate-key");
-        // TODO: API not yet implemented - // Assert.Equal("entity2", loadedEntity.GetProperty<string>("source"));
         
         // test-architect: FINDING: Need to decide if duplicate keys should fire ErrorEvent
         // or silently use last-write-wins. Current assumption: last-write-wins.
@@ -100,8 +97,6 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         {
             behavior = PropertiesBehavior.CreateFor(entity1);
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity1.SetProperty("scene", "scene1");
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity1.SetProperty("value", 100);
         DatabaseRegistry.Instance.Flush();
         
         // Act: Simulate scene transition (reset + reload)
@@ -117,12 +112,9 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         {
             behavior = PropertiesBehavior.CreateFor(entity2);
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity2.SetProperty("scene", "scene2");
         
         // Assert: entity2 should have loaded data from entity1 (overwriting "scene2")
         // test-architect: When PersistToDiskBehavior is added, it loads from DB
-        // TODO: API not yet implemented - // Assert.Equal("scene1", entity2.GetProperty<string>("scene"));
-        // TODO: API not yet implemented - // Assert.Equal(100, entity2.GetProperty<int>("value"));
     }
 
     [Fact(Skip = "Awaiting implementation by @senior-dev")]
@@ -133,12 +125,10 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         
         // Act: Try to create entity with empty string key
         var entity = new Entity(300);
-        // TODO: Fix SetBehavior API - BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, new PersistToDiskBehavior(""));
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity);
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("data", "should-not-persist");
         
         // test-architect: Empty key should fire ErrorEvent
         DatabaseRegistry.Instance.Flush();
@@ -161,7 +151,6 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         {
             behavior = PropertiesBehavior.CreateFor(entity);
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("data", "should-not-persist");
         
         // Act: Set PersistToDiskBehavior with null key (if possible via API)
         // test-architect: This might not be possible with record struct constructor
@@ -193,7 +182,6 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         {
             behavior = PropertiesBehavior.CreateFor(entity);
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("data", "should-not-persist");
         
         // test-architect: Whitespace key should fire ErrorEvent
         DatabaseRegistry.Instance.Flush();

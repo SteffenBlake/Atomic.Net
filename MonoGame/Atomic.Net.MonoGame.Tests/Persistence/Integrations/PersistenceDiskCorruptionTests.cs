@@ -96,7 +96,6 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         }
         
         // Act: Try to load entity from non-existent database
-        // TODO: API signature - DatabaseRegistry.Instance.Initialize(_dbPath);
         DatabaseRegistry.Instance.Initialize();
         
         var entity = new Entity(300);
@@ -108,10 +107,8 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         {
             behavior = PropertiesBehavior.CreateFor(entity);
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("default-value", 42);
         
         // Assert: Entity should use scene defaults (no error)
-        // TODO: API not yet implemented - Assert.Equal(42, entity.GetProperty<int>("default-value"));
         
         // test-architect: System should create new database file
         Assert.True(File.Exists(_dbPath));
@@ -130,7 +127,6 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         {
             behavior = PropertiesBehavior.CreateFor(entity1);
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity1.SetProperty("health", 100);
         // test-architect: Note - no Transform behavior saved
         DatabaseRegistry.Instance.Flush();
         
@@ -138,8 +134,6 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         EventBus<ResetEvent>.Push(new());
         
         var entity2 = new Entity(400);
-        // TODO: Fix SetBehavior API - BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(entity2, TransformBehavior.CreateFor(entity2));
-        // TODO: API not yet implemented - entity2.SetPosition(new(50, 75, 0));
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("partial-key");
@@ -147,7 +141,6 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         
         // Assert: Entity should have loaded Properties from disk
         // test-architect: Disk had Properties, scene added Transform
-        // TODO: API not yet implemented - // Assert.Equal(100, entity2.GetProperty<int>("health")); // From disk
         // Assert.Equal(new Vector3(50, 75, 0), entity2.GetPosition()); // From scene
         
         // test-architect: FINDING: Scene provides defaults, disk overwrites with saved values.
@@ -174,7 +167,6 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         {
             behavior = PropertiesBehavior.CreateFor(entity);
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("data", "should-not-write");
         
         // DatabaseRegistry.Instance.Flush();
         
@@ -200,7 +192,6 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         {
             behavior = PropertiesBehavior.CreateFor(persistentEntity);
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - persistentEntity.SetProperty("persistent-value", 999);
         DatabaseRegistry.Instance.Flush();
         
         // Act: Fire ResetEvent (should NOT deactivate persistent partition)
@@ -208,11 +199,9 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         
         // Assert: Entity should still be active in-memory
         Assert.True(persistentEntity.Active);
-        // TODO: API not yet implemented - Assert.Equal(999, persistentEntity.GetProperty<int>("persistent-value"));
         
         // test-architect: Disk should also have the entity
         // var loadedEntity = LoadEntityFromDatabase("persistent-partition-key");
-        // TODO: API not yet implemented - // Assert.Equal(999, loadedEntity.GetProperty<int>("persistent-value"));
     }
 
     [Fact(Skip = "Awaiting implementation by @senior-dev")]
@@ -228,7 +217,6 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         {
             behavior = PropertiesBehavior.CreateFor(sceneEntity);
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - sceneEntity.SetProperty("scene-value", 777);
         DatabaseRegistry.Instance.Flush();
         
         // Act: Fire ResetEvent (should deactivate scene partition)
@@ -239,7 +227,6 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         
         // test-architect: But disk should still have the entity (can be reloaded)
         // var loadedEntity = LoadEntityFromDatabase("scene-partition-key");
-        // TODO: API not yet implemented - // Assert.Equal(777, loadedEntity.GetProperty<int>("scene-value"));
         
         // test-architect: FINDING: This validates that persistent partition vs disk persistence
         // are completely separate concepts. Disk persistence works in EITHER partition.

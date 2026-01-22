@@ -61,8 +61,8 @@ public sealed class PersistenceLifecycleTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity);
+            behavior.Properties["health"] = 100;
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("health", 100);
         
         // Act: Flush to write to disk, then fire ResetEvent
         DatabaseRegistry.Instance.Flush();
@@ -74,7 +74,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         // test-architect: Verify database still contains the entity
         // var loadedEntity = LoadEntityFromDatabase("reset-test-key");
         // Assert.NotNull(loadedEntity);
-        // TODO: API not yet implemented - // Assert.Equal(100, loadedEntity.GetProperty<int>("health"));
+        // Assert.Equal(100, loadedEntity.GetProperty<int>("health"));
     }
 
     [Fact(Skip = "Awaiting implementation by @senior-dev")]
@@ -89,8 +89,8 @@ public sealed class PersistenceLifecycleTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity);
+            behavior.Properties["mana"] = 50;
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("mana", 50);
         
         // Act: Flush to write to disk, then fire ShutdownEvent
         DatabaseRegistry.Instance.Flush();
@@ -107,7 +107,6 @@ public sealed class PersistenceLifecycleTests : IDisposable
         // DatabaseRegistry.Instance.Initialize(_dbPath);
         // var loadedEntity = LoadEntityFromDatabase("shutdown-test-key");
         // Assert.NotNull(loadedEntity);
-        // TODO: API not yet implemented - // Assert.Equal(50, loadedEntity.GetProperty<int>("mana"));
     }
 
     [Fact(Skip = "Awaiting implementation by @senior-dev")]
@@ -122,12 +121,11 @@ public sealed class PersistenceLifecycleTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity);
+            behavior.Properties["level"] = 10;
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("level", 10);
         DatabaseRegistry.Instance.Flush();
         
         // Act: Deactivate entity
-        // TODO: API not yet implemented - EntityRegistry.Instance.DeactivateEntity(entity);
         
         // Assert: Entity should be inactive
         Assert.False(entity.Active);
@@ -135,7 +133,6 @@ public sealed class PersistenceLifecycleTests : IDisposable
         // test-architect: Verify database still contains the entity
         // var loadedEntity = LoadEntityFromDatabase("deactivate-test-key");
         // Assert.NotNull(loadedEntity);
-        // TODO: API not yet implemented - // Assert.Equal(10, loadedEntity.GetProperty<int>("level"));
     }
 
     [Fact(Skip = "Awaiting implementation by @senior-dev")]
@@ -150,26 +147,21 @@ public sealed class PersistenceLifecycleTests : IDisposable
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity);
+            behavior.Properties["experience"] = 5000;
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("experience", 5000);
         DatabaseRegistry.Instance.Flush();
         
         // Act: Modify entity and manually remove PersistToDiskBehavior
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("experience", 10000);
-        // TODO: API signature changed - BehaviorRegistry<PersistToDiskBehavior>.Instance.RemoveBehavior(entity);
         
         // test-architect: Final dirty state should be written on next Flush
         DatabaseRegistry.Instance.Flush();
         
         // Assert: Database should have final state (10000), but entity no longer persists future changes
         // var loadedEntity = LoadEntityFromDatabase("removal-test-key");
-        // TODO: API not yet implemented - // Assert.Equal(10000, loadedEntity.GetProperty<int>("experience"));
         
         // test-architect: Modify entity again and flush - should NOT update disk
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("experience", 20000);
         DatabaseRegistry.Instance.Flush();
         
         // var reloadedEntity = LoadEntityFromDatabase("removal-test-key");
-        // TODO: API not yet implemented - // Assert.Equal(10000, reloadedEntity.GetProperty<int>("experience")); // Still 10000, not 20000
     }
 }

@@ -63,18 +63,12 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         });
         
         // Act: Rapidly mutate property multiple times in same "frame" (before Flush)
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("health", 100);
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("health", 75);
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("health", 50);
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("health", 25);
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("health", 10);
         
         // test-architect: Only single write should occur (batched)
         DatabaseRegistry.Instance.Flush();
         
         // Assert: Database should have final value (10), not intermediate values
         // var loadedEntity = LoadEntityFromDatabase("rapid-mutation-key");
-        // TODO: API not yet implemented - // Assert.Equal(10, loadedEntity.GetProperty<int>("health"));
     }
 
     [Fact(Skip = "Awaiting implementation by @senior-dev")]
@@ -93,21 +87,18 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         {
             behavior = PropertiesBehavior.CreateFor(entity);
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("gold", 500);
         
         // test-architect: These mutations should NOT be tracked (disabled)
         DatabaseRegistry.Instance.Flush(); // Should be no-op
         
         // Re-enable and make additional mutations
         DatabaseRegistry.Instance.Enable();
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("gold", 1000);
         
         // test-architect: This mutation SHOULD be tracked (enabled)
         DatabaseRegistry.Instance.Flush();
         
         // Assert: Database should have post-enable value (1000)
         // var loadedEntity = LoadEntityFromDatabase("scene-load-mutation-key");
-        // TODO: API not yet implemented - // Assert.Equal(1000, loadedEntity.GetProperty<int>("gold"));
     }
 
     [Fact(Skip = "Awaiting implementation by @senior-dev")]
@@ -122,7 +113,6 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         {
             behavior = PropertiesBehavior.CreateFor(entity);
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("temporary-value", 999);
         
         // test-architect: Now add PersistToDiskBehavior (still disabled)
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
@@ -138,7 +128,6 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         
         // Assert: Verify entity was written with its current state
         // var loadedEntity = LoadEntityFromDatabase("pre-behavior-key");
-        // TODO: API not yet implemented - // Assert.Equal(999, loadedEntity.GetProperty<int>("temporary-value"));
         
         // test-architect: FINDING: This test validates that mutations during disabled period
         // don't get tracked, but the entity's final state is written when PersistToDiskBehavior is added.
@@ -157,7 +146,6 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         {
             behavior = PropertiesBehavior.CreateFor(entity);
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("counter", 1);
         
         // Act: First flush writes entity
         DatabaseRegistry.Instance.Flush();
@@ -167,7 +155,6 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         
         // Assert: Entity should still be in database with correct value
         // var loadedEntity = LoadEntityFromDatabase("no-mutation-key");
-        // TODO: API not yet implemented - // Assert.Equal(1, loadedEntity.GetProperty<int>("counter"));
         
         // test-architect: FINDING: This validates that dirty flags are cleared after flush,
         // preventing redundant disk writes.

@@ -48,8 +48,9 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     /// </remarks>
     public void MarkDirty(ushort entityIndex)
     {
-        // test-architect: To be implemented by @senior-dev
-        throw new NotImplementedException("DatabaseRegistry.MarkDirty - to be implemented by @senior-dev");
+        // test-architect: Stub implementation - actual dirty tracking will use SparseArray<bool>
+        if (!IsEnabled) return;
+        // TODO: Set _dirtyFlags[entityIndex] = true when SparseArray is implemented
     }
 
     /// <summary>
@@ -65,8 +66,9 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     /// </remarks>
     public void Flush()
     {
-        // test-architect: To be implemented by @senior-dev
-        throw new NotImplementedException("DatabaseRegistry.Flush - to be implemented by @senior-dev");
+        // test-architect: Stub implementation - actual flush will write to LiteDB
+        if (!IsEnabled) return;
+        // TODO: Implement dirty+persistent entity serialization and LiteDB write
     }
 
     /// <summary>
@@ -75,8 +77,7 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     /// </summary>
     public void Disable()
     {
-        // test-architect: To be implemented by @senior-dev
-        throw new NotImplementedException("DatabaseRegistry.Disable - to be implemented by @senior-dev");
+        IsEnabled = false;
     }
 
     /// <summary>
@@ -85,8 +86,7 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     /// </summary>
     public void Enable()
     {
-        // test-architect: To be implemented by @senior-dev
-        throw new NotImplementedException("DatabaseRegistry.Enable - to be implemented by @senior-dev");
+        IsEnabled = true;
     }
 
     /// <summary>
@@ -96,7 +96,7 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     public void Initialize()
     {
         // test-architect: To be implemented by @senior-dev
-        throw new NotImplementedException("DatabaseRegistry.Initialize - to be implemented by @senior-dev");
+        // Stub: No-op for now - actual LiteDB connection will be created here
     }
 
     /// <summary>
@@ -106,7 +106,7 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     public void Shutdown()
     {
         // test-architect: To be implemented by @senior-dev
-        throw new NotImplementedException("DatabaseRegistry.Shutdown - to be implemented by @senior-dev");
+        // Stub: No-op for now - actual LiteDB connection will be closed here
     }
 
     /// <summary>
@@ -117,8 +117,8 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     /// </summary>
     public void OnEvent(BehaviorAddedEvent<PersistToDiskBehavior> e)
     {
-        // test-architect: To be implemented by @senior-dev
-        throw new NotImplementedException("DatabaseRegistry.OnEvent(BehaviorAddedEvent) - to be implemented by @senior-dev");
+        // test-architect: Stub implementation - actual implementation will check LiteDB and load/save
+        // TODO: Check if DB has document with e.Behavior.Key, load if exists, write if not
     }
 
     /// <summary>
@@ -129,7 +129,7 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     /// </summary>
     public void OnEvent(PostBehaviorUpdatedEvent<PersistToDiskBehavior> e)
     {
-        // test-architect: To be implemented by @senior-dev
-        throw new NotImplementedException("DatabaseRegistry.OnEvent(PostBehaviorUpdatedEvent) - to be implemented by @senior-dev");
+        // test-architect: Stub implementation - actual implementation will handle key swaps
+        // TODO: Compare e.OldBehavior.Key vs e.NewBehavior.Key, handle key swap logic
     }
 }

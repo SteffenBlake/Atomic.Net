@@ -60,11 +60,9 @@ public sealed class PersistenceKeySwapTests : IDisposable
         {
             behavior = PropertiesBehavior.CreateFor(entity);
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("health", 100);
         DatabaseRegistry.Instance.Flush();
         
         // Act: Modify entity and swap to different key
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("health", 75);
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("save-slot-2");
@@ -76,11 +74,9 @@ public sealed class PersistenceKeySwapTests : IDisposable
         
         // Assert: Verify save-slot-2 has current state
         // var slot2Entity = LoadEntityFromDatabase("save-slot-2");
-        // TODO: API not yet implemented - // Assert.Equal(75, slot2Entity.GetProperty<int>("health"));
         
         // test-architect: Verify save-slot-1 still has original state (orphaned)
         // var slot1Entity = LoadEntityFromDatabase("save-slot-1");
-        // TODO: API not yet implemented - // Assert.Equal(100, slot1Entity.GetProperty<int>("health"));
         
         // Act: Swap back to save-slot-1
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
@@ -89,7 +85,6 @@ public sealed class PersistenceKeySwapTests : IDisposable
         });
         
         // Assert: Entity should load HP=100 from save-slot-1
-        // TODO: API not yet implemented - // Assert.Equal(100, entity.GetProperty<int>("health"));
     }
 
     [Fact(Skip = "Awaiting implementation by @senior-dev")]
@@ -103,25 +98,21 @@ public sealed class PersistenceKeySwapTests : IDisposable
         });
         
         // Act: Rapidly swap between multiple keys in same frame
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("counter", 1);
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("rapid-1");
         });
         
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("counter", 2);
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("rapid-2");
         });
         
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("counter", 3);
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("rapid-3");
         });
         
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("counter", 4);
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("rapid-4");
@@ -132,7 +123,6 @@ public sealed class PersistenceKeySwapTests : IDisposable
         
         // Assert: Final key should have final state
         // var rapid4Entity = LoadEntityFromDatabase("rapid-4");
-        // TODO: API not yet implemented - // Assert.Equal(4, rapid4Entity.GetProperty<int>("counter"));
         
         // test-architect: FINDING: Rapid swaps in same frame may result in only the final
         // key being written. Intermediate keys may not get written if they're orphaned
@@ -152,11 +142,9 @@ public sealed class PersistenceKeySwapTests : IDisposable
         {
             behavior = PropertiesBehavior.CreateFor(entity);
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("value", 50);
         DatabaseRegistry.Instance.Flush();
         
         // Act: Mutate and swap key in same frame (before Flush)
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity.SetProperty("value", 100);
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("swapped-key");
@@ -165,11 +153,9 @@ public sealed class PersistenceKeySwapTests : IDisposable
         
         // Assert: New key should have mutated value
         // var swappedEntity = LoadEntityFromDatabase("swapped-key");
-        // TODO: API not yet implemented - // Assert.Equal(100, swappedEntity.GetProperty<int>("value"));
         
         // test-architect: Original key should still have old value (50)
         // var originalEntity = LoadEntityFromDatabase("original-key");
-        // TODO: API not yet implemented - // Assert.Equal(50, originalEntity.GetProperty<int>("value"));
         
         // test-architect: FINDING: Mutations made to "original-key" in the same frame
         // before key swap are DROPPED (niche edge case). This is acceptable as a feature:
@@ -189,8 +175,6 @@ public sealed class PersistenceKeySwapTests : IDisposable
         {
             behavior = PropertiesBehavior.CreateFor(entity1);
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity1.SetProperty("name", "SaveA");
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity1.SetProperty("score", 1000);
         DatabaseRegistry.Instance.Flush();
         
         var entity2 = new Entity(301);
@@ -202,8 +186,6 @@ public sealed class PersistenceKeySwapTests : IDisposable
         {
             behavior = PropertiesBehavior.CreateFor(entity2);
         });
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity2.SetProperty("name", "SaveB");
-        // TODO: API not yet implemented - // TODO: Move to PropertiesBehavior callback - entity2.SetProperty("score", 2000);
         DatabaseRegistry.Instance.Flush();
         
         // Act: Swap entity1 to slot-B (which already exists)
@@ -213,12 +195,8 @@ public sealed class PersistenceKeySwapTests : IDisposable
         });
         
         // Assert: entity1 should load data from slot-B (overwriting its current state)
-        // TODO: API not yet implemented - // Assert.Equal("SaveB", entity1.GetProperty<string>("name"));
-        // TODO: API not yet implemented - // Assert.Equal(2000, entity1.GetProperty<int>("score"));
         
         // test-architect: slot-A should still exist with original data
         // var slotAEntity = LoadEntityFromDatabase("slot-A");
-        // TODO: API not yet implemented - // Assert.Equal("SaveA", slotAEntity.GetProperty<string>("name"));
-        // TODO: API not yet implemented - // Assert.Equal(1000, slotAEntity.GetProperty<int>("score"));
     }
 }
