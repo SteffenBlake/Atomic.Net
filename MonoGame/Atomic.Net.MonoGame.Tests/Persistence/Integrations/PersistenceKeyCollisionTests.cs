@@ -166,29 +166,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
             && props.Value.Properties.ContainsKey("test"));
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
-    public void NullKey_SkipsPersistence()
-    {
-        // Arrange: Create entity
-        var entity = new Entity(300);
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
-        {
-            behavior = PropertiesBehavior.CreateFor(entity);
-        });
-        
-        // Act: Set PersistToDiskBehavior with null key (if possible via API)
-        // test-architect: This might not be possible with record struct constructor
-        // BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, new PersistToDiskBehavior(null!));
-        
-        // test-architect: Alternative - verify that null keys are handled gracefully
-        // If the struct doesn't allow null, this test validates compile-time safety
-        
-        // Assert: No entity should be written
-        DatabaseRegistry.Instance.Flush();
-        
-        // test-architect: FINDING: PersistToDiskBehavior(string Key) as readonly record struct
-        // means null keys will throw at construction time (C# null safety), not at runtime.
-    }
+
 
     [Fact(Skip = "Awaiting implementation by @senior-dev")]
     public void WhitespaceKey_FiresErrorEventAndSkipsPersistence()

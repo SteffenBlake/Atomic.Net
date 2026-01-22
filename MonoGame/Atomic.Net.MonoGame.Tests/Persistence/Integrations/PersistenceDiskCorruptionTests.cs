@@ -56,33 +56,34 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         // Arrange: Set up error event listener
         using var errorListener = new FakeEventListener<ErrorEvent>();
         
-        // test-architect: Manually corrupt a database entry with invalid JSON
-        // DatabaseRegistry.Instance.Shutdown();
-        // using (var db = new LiteDatabase(_dbPath))
-        // {
-        //     var collection = db.GetCollection("entities");
-        //     collection.Insert(new BsonDocument
-        //     {
-        //         ["_id"] = "corrupt-key",
-        //         ["data"] = "{ invalid json syntax }"
-        //     });
-        // }
-        // DatabaseRegistry.Instance.Initialize(_dbPath);
+        // Manually corrupt a database entry with invalid JSON in LiteDB
+        DatabaseRegistry.Instance.Shutdown();
+        using (var db = new LiteDatabase(_dbPath))
+        {
+            var collection = db.GetCollection("entities");
+            collection.Insert(new BsonDocument
+            {
+                ["_id"] = "corrupt-key",
+                ["data"] = "{ invalid json syntax }"  // Malformed JSON that will fail to deserialize
+            });
+        }
+        DatabaseRegistry.Instance.Initialize();
         
-        // Act: Try to load entity with corrupt JSON
+        // Act: Try to load entity with corrupt JSON - should fire ErrorEvent when deserializing
         var entity = new Entity(300);
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("corrupt-key");
         });
         
-        // Assert: ErrorEvent should have been fired
+        // Assert: ErrorEvent should have been fired during deserialization attempt
         Assert.NotEmpty(errorListener.ReceivedEvents);
-        Assert.Contains(errorListener.ReceivedEvents, e => e.Message.Contains("corrupt") || e.Message.Contains("JSON"));
+        Assert.Contains(errorListener.ReceivedEvents, e => e.Message.Contains("corrupt") || e.Message.Contains("JSON") || e.Message.Contains("parse"));
         
-        // test-architect: Entity should fall back to defaults (empty entity)
-        // System should NOT crash
+        // Entity should fall back to defaults (empty entity, no behaviors loaded from corrupt data)
+        // System should NOT crash - graceful degradation
         Assert.True(entity.Active);
+        Assert.False(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out _));
     }
 
     [Fact(Skip = "Awaiting implementation by @senior-dev")]
@@ -163,11 +164,10 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         // Arrange: Set up error event listener
         using var errorListener = new FakeEventListener<ErrorEvent>();
         
-        // test-architect: Lock database file by opening it externally
-        // This is platform-specific and may not be testable in all environments
-        // using var externalDb = new LiteDatabase(_dbPath);
+        // Lock database file by opening it with exclusive access
+        using var externalDb = new LiteDatabase(_dbPath);
         
-        // Act: Try to flush while database is locked
+        // Act: Try to flush while database is locked - should fire ErrorEvent
         var entity = new Entity(300);
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
@@ -180,14 +180,12 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         });
         DatabaseRegistry.Instance.Flush();
         
-        // Assert: ErrorEvent may fire if database is locked (platform-dependent)
-        // test-architect: System should NOT crash, gameplay continues
-        // If lock fails to trigger, test still passes (platform differences acceptable)
-        Assert.True(entity.Active); // System continues, doesn't crash
+        // Assert: ErrorEvent should fire when flush fails due to lock
+        Assert.NotEmpty(errorListener.ReceivedEvents);
+        Assert.Contains(errorListener.ReceivedEvents, e => e.Message.Contains("lock") || e.Message.Contains("access"));
         
-        // test-architect: FINDING: This test may be platform-specific.
-        // On some systems, LiteDB may wait or throw, on others it may succeed.
-        // Error handling should be defensive.
+        // System should NOT crash - gameplay continues despite flush failure
+        Assert.True(entity.Active);
     }
 
     [Fact(Skip = "Awaiting implementation by @senior-dev")]

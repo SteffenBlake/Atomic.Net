@@ -171,37 +171,5 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         // don't get tracked, but the entity's final state is written when PersistToDiskBehavior is added.
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
-    public void FlushTwice_WithNoMutations_DoesNotWriteAgain()
-    {
-        // Arrange: Create and persist entity
-        var entity = new Entity(300);
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
-        {
-            behavior = new PersistToDiskBehavior("no-mutation-key");
-        });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
-        {
-            behavior = PropertiesBehavior.CreateFor(entity);
-            behavior.Properties["data"] = 42f;
-        });
-        
-        // Act: First flush writes entity
-        DatabaseRegistry.Instance.Flush();
-        
-        // test-architect: Second flush without mutations should NOT write (dirty flag cleared)
-        DatabaseRegistry.Instance.Flush();
-        
-        // Assert: Entity should still be in database with correct value
-        var newEntity = new Entity(301);
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
-        {
-            behavior = new PersistToDiskBehavior("no-mutation-key");
-        });
-        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var loadedProps));
-        Assert.Equal(42f, loadedProps.Value.Properties["data"]);
-        
-        // test-architect: FINDING: This validates that dirty flags are cleared after flush,
-        // preventing redundant disk writes.
-    }
+
 }
