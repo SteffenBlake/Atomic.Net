@@ -74,6 +74,9 @@ public class RefBehaviorRegistry<TBehavior> :
         {
             EventBus<PostBehaviorUpdatedEvent<TBehavior>>.Push(new(entity));
         }
+        
+        // senior-dev: Fire generic EntityMutatedEvent for DatabaseRegistry dirty tracking
+        EventBus<EntityMutatedEvent>.Push(new(entity));
     }
 
     /// <summary>

@@ -45,5 +45,9 @@ public static class Constants
     public const ushort DefaultAllocPropertyBag = 32;
 #endif
 
+    /// <summary>
+    /// Default path for LiteDB persistence database.
+    /// </summary>
+    public const string DefaultPersistenceDatabasePath = "persistence.db";
 }
 
