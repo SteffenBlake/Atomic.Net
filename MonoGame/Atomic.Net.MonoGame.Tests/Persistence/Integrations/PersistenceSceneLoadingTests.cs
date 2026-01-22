@@ -143,7 +143,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         Assert.True(BehaviorRegistry<PersistToDiskBehavior>.Instance.TryGetBehavior(playerEntity.Value, out var persistKey));
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
         {
-            behavior = persistKey.Value;
+            behavior = new PersistToDiskBehavior(persistKey.Value.Key);
         });
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var props));
         Assert.False(props.Value.Properties.ContainsKey("duringDisabled")); // Not persisted
