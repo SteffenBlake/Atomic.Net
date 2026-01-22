@@ -231,7 +231,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     /// </summary>
     public void OnEvent(ShutdownEvent e)
     {
-        // Deactivate only all entities (indices >= MaxPersistentEntities)
+        // Deactivate all entities
         var sceneEntities = _active
             .Select(a => _entities[a.Index])
             .ToList();
