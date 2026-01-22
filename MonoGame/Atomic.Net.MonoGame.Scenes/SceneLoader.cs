@@ -2,10 +2,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.BED.Hierarchy;
-using Atomic.Net.MonoGame.BED.Properties;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Scenes.JsonModels;
-using Atomic.Net.MonoGame.Transform;
 using Atomic.Net.MonoGame.Scenes.Persistence;
 
 namespace Atomic.Net.MonoGame.Scenes;
@@ -183,7 +181,9 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
             DatabaseRegistry.Instance.Enable();
         }
     }
-    
+  
+    // Static instance to write to, to avoid alloc'ing a new one each time
+    private static JsonEntity _jsonInstance = new();
     /// <summary>
     /// Serializes an entity to JSON string for disk persistence.
     /// Used by DatabaseRegistry to save entity state to LiteDB.
@@ -191,8 +191,8 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     public static string SerializeEntityToJson(Entity entity)
     {
         // Use JsonEntity.FromEntity() to eliminate duplicate logic
-        var jsonEntity = JsonEntity.FromEntity(entity);
-        return JsonSerializer.Serialize(jsonEntity, JsonSerializerOptions.Web);
+        JsonEntity.ReadFromEntity(entity, ref _jsonInstance);
+        return JsonSerializer.Serialize(_jsonInstance, JsonSerializerOptions.Web);
     }
     
     /// <summary>
@@ -201,6 +201,25 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     /// </summary>
     public static void DeserializeEntityFromJson(Entity entity, string json)
     {
+        // SteffenBlake: @benchmarker please take a very close look at this code below, and ALL
+        // OF THE LOGIC INVOLVED WITHIN IT, specifically the fact that doing this allocates a new
+        // instance of a JsonEntity class every single time it gets called, only for us to then just
+        // write it to the entity
+        //
+        // I am 10000% confident we can optimize this to use a Memory pool and Utf8JsonWriter
+        // To instead combine these two functions into one
+        // Where we stream over the json and then serialize out the individual properties
+        // and write them directly to the entity, that way we never actually alloc a JsonEntity inbetween
+        // each step
+        //
+        // Please compare doing it this way below to the proposed way above in various methods
+        // And see if you can figure out how much of a performance impact it makes
+        // My gut says it will be a non negligable speed up to "Stream" over the json instead with
+        // a re-used memory buffer
+        //
+        // This will be an integration test, so you can use some of these methods to some degree.
+        // I believe you'll need to use the normal JsonConverters on the Behaviors themselves at least
+        // You just are avoiding serializing the outer class itself
         var jsonEntity = JsonSerializer.Deserialize<JsonEntity>(json, JsonSerializerOptions.Web);
         if (jsonEntity == null)
         {

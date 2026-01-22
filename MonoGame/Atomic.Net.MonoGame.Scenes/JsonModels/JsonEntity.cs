@@ -4,7 +4,6 @@ using Atomic.Net.MonoGame.Transform;
 using Atomic.Net.MonoGame.Scenes.Persistence;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED.Hierarchy;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Atomic.Net.MonoGame.Scenes.JsonModels;
 
@@ -48,22 +47,24 @@ public class JsonEntity
     /// Creates a JsonEntity from an existing entity by reading all its behaviors.
     /// Used for serialization to disk.
     /// </summary>
-    public static JsonEntity FromEntity(Entity entity)
+    public static void ReadFromEntity(Entity entity, ref JsonEntity jsonEntity)
     {
-        var jsonEntity = new JsonEntity();
-        
         // Collect all behaviors from their respective registries
-        jsonEntity.Id = BehaviorRegistry<IdBehavior>.Instance.TryGetBehavior(entity, out var id) 
-            ? id : null;
+        jsonEntity.Id = BehaviorRegistry<IdBehavior>.Instance.TryGetBehavior(
+            entity, out var id
+        ) ? id : null;
 
-        jsonEntity.Transform = BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var transform) 
-            ? transform : null;
+        jsonEntity.Transform = BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(
+            entity, out var transform
+        ) ? transform : null;
 
-        jsonEntity.Properties = BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out var properties) 
-            ? properties : null;
+        jsonEntity.Properties = BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(
+            entity, out var properties
+        ) ? properties : null;
 
-        jsonEntity.PersistToDisk = BehaviorRegistry<PersistToDiskBehavior>.Instance.TryGetBehavior(entity, out var persistToDisk) 
-            ? persistToDisk : null;
+        jsonEntity.PersistToDisk = BehaviorRegistry<PersistToDiskBehavior>.Instance.TryGetBehavior(
+            entity, out var persistToDisk
+        ) ? persistToDisk : null;
 
         // Handle Parent (stored in BehaviorRegistry<Parent>)
         if (BehaviorRegistry<Parent>.Instance.TryGetBehavior(entity, out var parent))
@@ -75,8 +76,6 @@ public class JsonEntity
                 jsonEntity.Parent = new EntitySelector { ById = parentId.Value.Id };
             }
         }
-        
-        return jsonEntity;
     }
     
     /// <summary>

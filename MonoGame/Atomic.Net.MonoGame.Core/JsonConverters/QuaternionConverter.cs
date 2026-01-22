@@ -19,6 +19,7 @@ public class QuaternionConverter : JsonConverter<Quaternion>
 
     public override void Write(Utf8JsonWriter writer, Quaternion value, JsonSerializerOptions options)
     {
+        // Manually perform the writes in order to avoid allocating an array
         writer.WriteStartArray();
         writer.WriteNumberValue(value.X);
         writer.WriteNumberValue(value.Y);

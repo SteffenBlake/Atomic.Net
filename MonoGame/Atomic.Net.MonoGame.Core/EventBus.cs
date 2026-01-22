@@ -17,16 +17,6 @@ public static class EventBus<TEvent>
     /// Registers a singleton handler for this event type.
     /// </summary>
     /// <typeparam name="THandler">The handler type.</typeparam>
-    public static void Register<THandler>()
-        where THandler : ISingleton<THandler>, IEventHandler<TEvent>
-    {
-        Register(THandler.Instance);
-    }
-
-    /// <summary>
-    /// Registers a singleton handler for this event type.
-    /// </summary>
-    /// <typeparam name="THandler">The handler type.</typeparam>
     public static void Register<THandler>(THandler handler)
         where THandler : IEventHandler<TEvent>
     {
