@@ -1,4 +1,5 @@
 using Atomic.Net.MonoGame.BED.Hierarchy;
+using Atomic.Net.MonoGame.BED.Properties;
 
 namespace Atomic.Net.MonoGame.BED;
 public static class BEDSystem
@@ -7,9 +8,11 @@ public static class BEDSystem
     {
         BehaviorRegistry<Parent>.Initialize();
         BehaviorRegistry<IdBehavior>.Initialize();
+        BehaviorRegistry<PropertiesBehavior>.Initialize();
 
         // senior-dev: EntityIdRegistry is a core behavior registry, must initialize here
         EntityIdRegistry.Initialize();
         HierarchyRegistry.Initialize();
+        PropertyBagIndex.Initialize();
     }
 }

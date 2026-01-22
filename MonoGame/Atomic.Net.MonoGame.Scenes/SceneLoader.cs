@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.BED.Hierarchy;
+using Atomic.Net.MonoGame.BED.Properties;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Scenes.JsonModels;
 using Atomic.Net.MonoGame.Transform;
@@ -119,6 +120,14 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
                 BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(
                     entity, 
                     (ref behavior) => behavior = jsonEntity.Transform.Value
+                );
+            }
+
+            if (jsonEntity.Properties.HasValue)
+            {
+                BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(
+                    entity, 
+                    (ref behavior) => behavior = jsonEntity.Properties.Value
                 );
             }
 
