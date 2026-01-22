@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.BED.Hierarchy;
+using Atomic.Net.MonoGame.BED.Properties;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Scenes.JsonModels;
 using Atomic.Net.MonoGame.Transform;
@@ -116,17 +117,31 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
             if (jsonEntity.Transform.HasValue)
             {
-                BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(
-                    entity, 
-                    (ref behavior) => behavior = jsonEntity.Transform.Value
+                // Closure avoidance
+                var input = jsonEntity.Transform.Value;
+                entity.SetBehavior<TransformBehavior, TransformBehavior>(
+                    in input,
+                    (ref readonly _input, ref behavior) => behavior = _input
+                );
+            }
+
+            if (jsonEntity.Properties.HasValue)
+            {
+                // Closure avoidance
+                var input = jsonEntity.Properties.Value;
+                entity.SetBehavior<PropertiesBehavior, PropertiesBehavior>(
+                    in input,
+                    (ref readonly _input, ref behavior) => behavior = _input
                 );
             }
 
             if (jsonEntity.Id.HasValue)
             {
-                BehaviorRegistry<IdBehavior>.Instance.SetBehavior(
-                    entity, 
-                    (ref behavior) => behavior = jsonEntity.Id.Value
+                // Closure avoidance
+                var input = jsonEntity.Id.Value;
+                entity.SetBehavior<IdBehavior, IdBehavior>(
+                    in input,
+                    (ref readonly _input, ref behavior) => behavior = _input
                 );
             }
 
@@ -145,11 +160,13 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
                 continue;
             }
 
-            var parentIndex  = parent.Value.Index;
-            EntityRegistry.Instance[entityIndex].SetBehavior<Parent, ushort>(
-                in parentIndex,
-                static (ref readonly _parentIndex, ref behavior) => 
-                    behavior = new Parent(_parentIndex)
+            var entity = EntityRegistry.Instance[entityIndex];
+
+            // Closure avoidance
+            var input = parent.Value.Index;
+            entity.SetBehavior<Parent, ushort>(
+                in input,
+                (ref readonly _input, ref behavior) => behavior = new(_input)
             );
         }
 

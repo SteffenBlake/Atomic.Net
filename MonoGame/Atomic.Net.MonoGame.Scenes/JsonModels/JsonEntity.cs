@@ -1,4 +1,5 @@
 using Atomic.Net.MonoGame.BED;
+using Atomic.Net.MonoGame.BED.Properties;
 using Atomic.Net.MonoGame.Transform;
 
 namespace Atomic.Net.MonoGame.Scenes.JsonModels;
@@ -27,4 +28,9 @@ public class JsonEntity
     /// Optional parent reference (e.g., "#player" to reference entity with id="player").
     /// </summary>
     public EntitySelector? Parent { get; set; } = null;
+
+    /// <summary>
+    /// Optional properties behavior (arbitrary key-value metadata).
+    /// </summary>
+    public PropertiesBehavior? Properties { get; set; } = null;
 }
