@@ -165,3 +165,29 @@ else
 - Data persists correctly without explicit `Checkpoint()` calls
 - Verified by write → dispose → reopen → read test (2.47ms for 100 entities)
 - Explicit `Checkpoint()` provides no performance benefit (2.43ms vs 2.47ms - identical)
+
+---
+
+## JsonSerializer is Faster Than Streaming for Entity Deserialization
+
+**Problem:** Assumption that streaming JSON with Utf8JsonReader + memory pooling would be faster than standard JsonSerializer by avoiding intermediate JsonEntity allocation
+
+**Solution:** Benchmark revealed the current approach (Deserialize<JsonEntity>) is optimal
+
+**Performance Results:**
+- **Standard JsonSerializer is 20-21% FASTER** than Utf8JsonReader streaming approach
+- **Memory pooling provides NO benefit** (1-7% more allocations, no speed improvement)
+- **Intermediate JsonEntity allocation is negligible** (~32 bytes, less than 2% of total allocation)
+
+**Key Insights:**
+1. JsonSerializer is heavily optimized by Microsoft - manual token parsing is slower
+2. Most allocations come from actual data (Properties dictionary, Transform arrays, strings) not the wrapper object
+3. Memory pooling adds overhead (rent/return calls, GetBytes conversion) without reducing allocations
+4. Simpler code is faster - avoid premature optimization
+
+**Recommendation:** Keep using standard `JsonSerializer.Deserialize<T>()` for entity deserialization
+
+**Benchmark:** `MonoGame/Atomic.Net.MonoGame.Benchmarks/Persistence/Units/JsonEntityDeserializationBenchmark.cs`  
+**Results:** `MonoGame/Atomic.Net.MonoGame.Benchmarks/Persistence/Units/JSON_ENTITY_DESERIALIZATION_RESULTS.md`
+
+---

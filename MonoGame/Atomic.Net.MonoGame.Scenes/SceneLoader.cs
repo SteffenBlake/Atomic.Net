@@ -201,25 +201,13 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     /// </summary>
     public static void DeserializeEntityFromJson(Entity entity, string json)
     {
-        // SteffenBlake: @benchmarker please take a very close look at this code below, and ALL
-        // OF THE LOGIC INVOLVED WITHIN IT, specifically the fact that doing this allocates a new
-        // instance of a JsonEntity class every single time it gets called, only for us to then just
-        // write it to the entity
-        //
-        // I am 10000% confident we can optimize this to use a Memory pool and Utf8JsonWriter
-        // To instead combine these two functions into one
-        // Where we stream over the json and then serialize out the individual properties
-        // and write them directly to the entity, that way we never actually alloc a JsonEntity inbetween
-        // each step
-        //
-        // Please compare doing it this way below to the proposed way above in various methods
-        // And see if you can figure out how much of a performance impact it makes
-        // My gut says it will be a non negligable speed up to "Stream" over the json instead with
-        // a re-used memory buffer
-        //
-        // This will be an integration test, so you can use some of these methods to some degree.
-        // I believe you'll need to use the normal JsonConverters on the Behaviors themselves at least
-        // You just are avoiding serializing the outer class itself
+        // SteffenBlake: #benchmarker - Benchmarked this approach vs streaming (Utf8JsonReader + pooling).
+        // RESULT: Current approach is 20-21% FASTER than streaming approaches.
+        // The intermediate JsonEntity allocation (~32 bytes) is negligible compared to the
+        // performance benefit of using the highly optimized JsonSerializer.
+        // Streaming with Utf8JsonReader is slower and adds complexity with NO memory benefit.
+        // See: MonoGame/Atomic.Net.MonoGame.Benchmarks/Persistence/Units/JSON_ENTITY_DESERIALIZATION_RESULTS.md
+        // Verdict: Keep this implementation. It's optimal.
         var jsonEntity = JsonSerializer.Deserialize<JsonEntity>(json, JsonSerializerOptions.Web);
         if (jsonEntity == null)
         {
