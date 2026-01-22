@@ -44,23 +44,21 @@ Build a **data-driven, zero runtime allocation game engine** where entire games 
 
 ---
 
-### Persist data between scenes
-- [ ] Expand the behavior of the "Persistent" partition to do more than just store persistent entities. We need to have other types of stuff persisted between scenes (user inventory, experience points, game state overall, that sort of stuff)
+### Persist data between scenes and game runs
+- [x] Expand the behavior of the "Persistent" partition to do more than just store persistent entities. We need to have other types of stuff persisted between scenes (user inventory, experience points, game state overall, that sort of stuff)
+- [x] Save and persist data into a LiteDB database between games (Save data) 
 
 ---
 
-### Query System
+### Query + Command System
 - [ ] Can query entity state from data (distances, properties, etc.)
-
----
-
-### Command System
 - [ ] Can modify entity state from data (change scenes, fire events, etc.)
-
----
-
-### Reactive Logic
 - [ ] Can connect queries to commands in data ("when X, do Y")
+
+This is the big and hard one, this will likely require us to develop an entire sql-esque or css-esque language to select from one
+selector, and then pass that to an operator
+
+This should HEAVILY be cooked on to really hash out a very performance approach. This is THE engine, a LOT of our work has been leading to this feature, this is what we have been laying down all the groundwork for.
 
 ---
 
@@ -78,6 +76,13 @@ Build a **data-driven, zero runtime allocation game engine** where entire games 
 - [ ] We need to start looking into both static textures and animations of sprites for entities that are data driven off behaviors
 
 ---
+
+### Physics
+- [ ] With all the pieces in place, we will want to make at least a half decent physics engine to go with everything, we can start with fairly basic RigidBody stuff, we can add more stuff later as needed but we can just start with things like making groups of entities into a whole body, anchoring joints and etc from 1 entity to another, the sort of basic stuff that is important for physics to baseline work
+- [ ] We should be able to now actually make our first game using all the above!
+
+---
+
 
 ## Success Criteria
 
