@@ -27,8 +27,6 @@ public sealed class PersistenceKeySwapTests : IDisposable
         // Arrange: Initialize systems with clean database
         _dbPath = Path.Combine(Path.GetTempPath(), $"persistence_keyswap_{Guid.NewGuid()}.db");
         
-        // senior-dev: Set database path via environment variable (per PR #5)
-        Environment.SetEnvironmentVariable("ATOMIC_PERSISTENCE_DB_PATH", _dbPath);
 
         AtomicSystem.Initialize();
         BEDSystem.Initialize();

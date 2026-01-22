@@ -45,9 +45,18 @@ public static class Constants
     public const ushort DefaultAllocPropertyBag = 32;
 #endif
 
+#if ATOMIC_PERSISTENCE_DB_PATH
     /// <summary>
     /// Default path for LiteDB persistence database.
+    /// Can be overridden at compile time via -p:DefineConstants=ATOMIC_PERSISTENCE_DB_PATH="path"
+    /// </summary>
+    public const string DefaultPersistenceDatabasePath = ATOMIC_PERSISTENCE_DB_PATH;
+#else
+    /// <summary>
+    /// Default path for LiteDB persistence database.
+    /// Can be overridden at compile time via -p:DefineConstants=ATOMIC_PERSISTENCE_DB_PATH="path"
     /// </summary>
     public const string DefaultPersistenceDatabasePath = "persistence.db";
+#endif
 }
 

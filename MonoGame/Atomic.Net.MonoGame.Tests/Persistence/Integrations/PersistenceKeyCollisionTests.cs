@@ -28,8 +28,6 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         // Arrange: Initialize systems with clean database
         _dbPath = Path.Combine(Path.GetTempPath(), $"persistence_collision_{Guid.NewGuid()}.db");
         
-        // senior-dev: Set database path via environment variable (per PR #5)
-        Environment.SetEnvironmentVariable("ATOMIC_PERSISTENCE_DB_PATH", _dbPath);
 
         AtomicSystem.Initialize();
         BEDSystem.Initialize();
@@ -168,8 +166,6 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         Assert.False(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var props) 
             && props.Value.Properties.ContainsKey("test"));
     }
-
-
 
     [Fact]
     public void WhitespaceKey_FiresErrorEventAndSkipsPersistence()

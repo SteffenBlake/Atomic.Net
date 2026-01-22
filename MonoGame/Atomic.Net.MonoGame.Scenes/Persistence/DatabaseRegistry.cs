@@ -88,7 +88,7 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
 
     /// <summary>
     /// Handles InitializeEvent - registers for behavior events and initializes database.
-    /// Database path from environment variable ATOMIC_PERSISTENCE_DB_PATH or default.
+    /// Database path from Constants.DefaultPersistenceDatabasePath (can be overridden at compile time).
     /// </summary>
     public void OnEvent(InitializeEvent e)
     {
@@ -101,14 +101,11 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
         EventBus<PreBehaviorUpdatedEvent<PersistToDiskBehavior>>.Register(this);
         EventBus<PreBehaviorRemovedEvent<PersistToDiskBehavior>>.Register(this);
         
-        // senior-dev: Initialize database with path from environment variable or default (PR comment #5)
-        // Tests specify path via: dotnet test -e ATOMIC_PERSISTENCE_DB_PATH=/path/to/db
-        var dbPath = Environment.GetEnvironmentVariable("ATOMIC_PERSISTENCE_DB_PATH") 
-                     ?? Constants.DefaultPersistenceDatabasePath;
-        
+        // senior-dev: Initialize database with path from Constants (PR comment #5)
+        // Tests override path via: dotnet test -p:DefineConstants=ATOMIC_PERSISTENCE_DB_PATH=\"/tmp/test.db\"
         try
         {
-            _database = new LiteDatabase(dbPath);
+            _database = new LiteDatabase(Constants.DefaultPersistenceDatabasePath);
             _collection = _database.GetCollection<BsonDocument>("entities");
             _collection.EnsureIndex("_id");
         }

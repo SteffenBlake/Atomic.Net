@@ -30,11 +30,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         // Arrange: Initialize systems with clean database
         _dbPath = Path.Combine(Path.GetTempPath(), $"persistence_corruption_{Guid.NewGuid()}.db");
         
-        // senior-dev: Set database path via environment variable (per PR #5)
-        Environment.SetEnvironmentVariable("ATOMIC_PERSISTENCE_DB_PATH", _dbPath);
         
-        // senior-dev: Set database path via environment variable (per PR #5)
-        Environment.SetEnvironmentVariable("ATOMIC_PERSISTENCE_DB_PATH", _dbPath);
 
         AtomicSystem.Initialize();
         BEDSystem.Initialize();
@@ -205,8 +201,8 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
     [Fact]
     public void CrossScenePersistence_PersistentPartitionSurvivesReset()
     {
-        // Arrange: Create entity in persistent partition (index < 256)
-        var persistentEntity = EntityRegistry.Instance.Activate();
+        // Arrange: Create entity in persistent partition (index < 256) - must use ActivatePersistent()
+        var persistentEntity = EntityRegistry.Instance.ActivatePersistent();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(persistentEntity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("persistent-partition-key");

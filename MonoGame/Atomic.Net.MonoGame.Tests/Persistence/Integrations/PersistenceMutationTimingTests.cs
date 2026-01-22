@@ -27,8 +27,6 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         // Arrange: Initialize systems with clean database
         _dbPath = Path.Combine(Path.GetTempPath(), $"persistence_mutation_{Guid.NewGuid()}.db");
         
-        // senior-dev: Set database path via environment variable (per PR #5)
-        Environment.SetEnvironmentVariable("ATOMIC_PERSISTENCE_DB_PATH", _dbPath);
 
         AtomicSystem.Initialize();
         BEDSystem.Initialize();
@@ -173,6 +171,4 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         // test-architect: FINDING: This test validates that mutations during disabled period
         // don't get tracked, but the entity's final state is written when PersistToDiskBehavior is added.
     }
-
-
 }

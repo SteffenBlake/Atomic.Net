@@ -27,8 +27,6 @@ public sealed class PersistenceLifecycleTests : IDisposable
         // Arrange: Initialize systems and set up clean database
         _dbPath = Path.Combine(Path.GetTempPath(), $"persistence_lifecycle_{Guid.NewGuid()}.db");
         
-        // senior-dev: Set database path via environment variable (per PR #5)
-        Environment.SetEnvironmentVariable("ATOMIC_PERSISTENCE_DB_PATH", _dbPath);
 
         AtomicSystem.Initialize();
         BEDSystem.Initialize();
@@ -112,8 +110,6 @@ public sealed class PersistenceLifecycleTests : IDisposable
         
         // test-architect: Verify database still contains the entity by restarting systems
         // and creating entity with same key - it should load from disk
-        // senior-dev: Set database path via environment variable (per PR #5)
-        Environment.SetEnvironmentVariable("ATOMIC_PERSISTENCE_DB_PATH", _dbPath);
 
         AtomicSystem.Initialize();
         BEDSystem.Initialize();
