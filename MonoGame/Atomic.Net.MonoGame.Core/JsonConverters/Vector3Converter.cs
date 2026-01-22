@@ -19,6 +19,11 @@ public class Vector3Converter : JsonConverter<Vector3>
 
     public override void Write(Utf8JsonWriter writer, Vector3 value, JsonSerializerOptions options)
     {
-        throw new NotImplementedException("Write not needed for M1");
+        // Manually perform the writes in order to avoid allocating an array
+        writer.WriteStartArray();
+        writer.WriteNumberValue(value.X);
+        writer.WriteNumberValue(value.Y);
+        writer.WriteNumberValue(value.Z);
+        writer.WriteEndArray();
     }
 }

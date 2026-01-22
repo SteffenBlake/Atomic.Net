@@ -10,7 +10,6 @@ public static class BEDSystem
         BehaviorRegistry<IdBehavior>.Initialize();
         BehaviorRegistry<PropertiesBehavior>.Initialize();
 
-        // senior-dev: EntityIdRegistry is a core behavior registry, must initialize here
         EntityIdRegistry.Initialize();
         HierarchyRegistry.Initialize();
         PropertyBagIndex.Initialize();

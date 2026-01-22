@@ -2,7 +2,7 @@ using Xunit;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.BED.Properties;
-using Atomic.Net.MonoGame.Persistence;
+using Atomic.Net.MonoGame.Scenes.Persistence;
 using Atomic.Net.MonoGame.Scenes;
 
 namespace Atomic.Net.MonoGame.Tests.Persistence.Integrations;
@@ -25,15 +25,12 @@ public sealed class PersistenceLifecycleTests : IDisposable
     public PersistenceLifecycleTests()
     {
         // Arrange: Initialize systems and set up clean database
-        _dbPath = Path.Combine(Path.GetTempPath(), $"persistence_lifecycle_{Guid.NewGuid()}.db");
-        
+        _dbPath = "persistence.db";
+
         AtomicSystem.Initialize();
         BEDSystem.Initialize();
         SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
-        
-        // test-architect: Initialize DatabaseRegistry with test database path
-        // DatabaseRegistry.Instance.Initialize(_dbPath); // To be implemented by @senior-dev
     }
 
     public void Dispose()
@@ -41,19 +38,19 @@ public sealed class PersistenceLifecycleTests : IDisposable
         // Clean up ALL entities and shutdown database between tests
         EventBus<ShutdownEvent>.Push(new());
         
-        // test-architect: Clean up database file
-        // DatabaseRegistry.Instance.Shutdown(); // To be implemented by @senior-dev
+        // Clean up database file (Shutdown now implemented)
+        DatabaseRegistry.Instance.Shutdown();
         if (File.Exists(_dbPath))
         {
             File.Delete(_dbPath);
         }
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void ResetEvent_WithPersistentEntity_DoesNotDeleteFromDisk()
     {
         // Arrange: Create entity with PersistToDiskBehavior in scene partition
-        var entity = new Entity(300); // Scene partition
+        var entity = EntityRegistry.Instance.Activate(); // Fixed - entities must be activated first
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("reset-test-key");
@@ -73,7 +70,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         
         // test-architect: Verify database still contains the entity by creating a new entity
         // and adding PersistToDiskBehavior with same key - it should load health=100 from disk
-        var newEntity = new Entity(300);
+        var newEntity = EntityRegistry.Instance.Activate(); // Fixed - entities must be activated first
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("reset-test-key");
@@ -84,11 +81,11 @@ public sealed class PersistenceLifecycleTests : IDisposable
         Assert.Equal(100f, loadedProps.Value.Properties["health"]);
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void ShutdownEvent_WithPersistentEntity_DoesNotDeleteFromDisk()
     {
         // Arrange: Create entity with PersistToDiskBehavior
-        var entity = new Entity(300);
+        var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("shutdown-test-key");
@@ -109,12 +106,13 @@ public sealed class PersistenceLifecycleTests : IDisposable
         
         // test-architect: Verify database still contains the entity by restarting systems
         // and creating entity with same key - it should load from disk
+
         AtomicSystem.Initialize();
         BEDSystem.Initialize();
         SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
         
-        var newEntity = new Entity(300);
+        var newEntity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("shutdown-test-key");
@@ -124,11 +122,11 @@ public sealed class PersistenceLifecycleTests : IDisposable
         Assert.Equal(50f, loadedProps.Value.Properties["mana"]);
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void EntityDeactivation_WithPersistToDiskBehavior_DoesNotDeleteFromDisk()
     {
         // Arrange: Create and persist entity
-        var entity = new Entity(300);
+        var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("deactivate-test-key");
@@ -148,7 +146,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         
         // test-architect: Verify database still contains the entity
         // Create new entity with same key and verify it loads from disk
-        var newEntity = new Entity(300);
+        var newEntity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("deactivate-test-key");
@@ -158,11 +156,11 @@ public sealed class PersistenceLifecycleTests : IDisposable
         Assert.Equal(10f, loadedProps.Value.Properties["level"]);
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void BehaviorRemoval_Manual_WritesFinalStateToDisk()
     {
         // Arrange: Create entity with persistence
-        var entity = new Entity(300);
+        var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("removal-test-key");
@@ -185,7 +183,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         DatabaseRegistry.Instance.Flush();
         
         // Assert: Database should have final state (10000)
-        var newEntity1 = new Entity(301);
+        var newEntity1 = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity1, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("removal-test-key");
@@ -201,7 +199,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         DatabaseRegistry.Instance.Flush();
         
         // Verify disk still has 10000 (not 20000)
-        var newEntity2 = new Entity(302);
+        var newEntity2 = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity2, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("removal-test-key");

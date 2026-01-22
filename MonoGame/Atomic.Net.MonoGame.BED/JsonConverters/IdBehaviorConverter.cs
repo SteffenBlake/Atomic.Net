@@ -23,7 +23,6 @@ public class IdBehaviorConverter : JsonConverter<IdBehavior>
 
     public override void Write(Utf8JsonWriter writer, IdBehavior value, JsonSerializerOptions options)
     {
-        throw new NotImplementedException();
+        writer.WriteStringValue(value.Id);
     }
 }
-

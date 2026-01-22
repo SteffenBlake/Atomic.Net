@@ -27,9 +27,16 @@ public class PropertyValueConverter : JsonConverter<PropertyValue>
         return default;
     }
 
-    public override void Write(Utf8JsonWriter writer, PropertyValue value, JsonSerializerOptions options)
+    public override void Write(
+        Utf8JsonWriter writer, PropertyValue value, JsonSerializerOptions options
+    )
     {
-        throw new NotImplementedException();
+        value.Visit(
+            s => JsonSerializer.Serialize(writer, s, options),
+            f => JsonSerializer.Serialize(writer, f, options),
+            b => JsonSerializer.Serialize(writer, b, options),
+            writer.WriteNullValue
+        );
     }
 }
 

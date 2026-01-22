@@ -64,7 +64,7 @@ public class PropertiesBehaviorConverter : JsonConverter<PropertiesBehavior>
 
             // test-architect: Per requirements, null values are skipped (not added to dictionary)
             // PropertyValue default is "empty" type, which means null was encountered
-            if (value.Equals(default(PropertyValue)))
+            if (value.Equals(default))
             {
                 continue;
             }
@@ -77,7 +77,7 @@ public class PropertiesBehaviorConverter : JsonConverter<PropertiesBehavior>
 
     public override void Write(Utf8JsonWriter writer, PropertiesBehavior value, JsonSerializerOptions options)
     {
-        throw new NotImplementedException();
+        JsonSerializer.Serialize(writer, value.Properties, options);
     }
 }
 

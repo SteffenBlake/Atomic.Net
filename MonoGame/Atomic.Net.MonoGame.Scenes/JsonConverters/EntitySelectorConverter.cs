@@ -33,8 +33,14 @@ public class EntitySelectorConverter : JsonConverter<EntitySelector>
 
     public override void Write(Utf8JsonWriter writer, EntitySelector value, JsonSerializerOptions options)
     {
-        // TODO: Write capability
-        throw new NotImplementedException();
+        if (!string.IsNullOrEmpty(value.ById))
+        {
+            writer.WriteStringValue($"#{value.ById}");
+        }
+        else
+        {
+            writer.WriteNullValue();
+        }
     }
 }
 

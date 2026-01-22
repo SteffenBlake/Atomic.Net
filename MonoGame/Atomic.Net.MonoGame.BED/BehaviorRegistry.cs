@@ -23,7 +23,7 @@ public class BehaviorRegistry<TBehavior> :
         }
 
         Instance ??= new();
-        EventBus<InitializeEvent>.Register<BehaviorRegistry<TBehavior>>();
+        EventBus<InitializeEvent>.Register(Instance);
     }
 
     /// <summary>
@@ -66,6 +66,8 @@ public class BehaviorRegistry<TBehavior> :
         {
             EventBus<BehaviorAddedEvent<TBehavior>>.Push(new(entity));
         }
+        
+        EventBus<EntityMutatedEvent>.Push(new(entity));
     }
 
 
@@ -101,6 +103,8 @@ public class BehaviorRegistry<TBehavior> :
         {
             EventBus<BehaviorAddedEvent<TBehavior>>.Push(new(entity));
         }
+        
+        EventBus<EntityMutatedEvent>.Push(new(entity));
     }
 
     /// <summary>

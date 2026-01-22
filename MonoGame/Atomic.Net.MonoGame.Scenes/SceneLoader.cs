@@ -2,10 +2,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.BED.Hierarchy;
-using Atomic.Net.MonoGame.BED.Properties;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Scenes.JsonModels;
-using Atomic.Net.MonoGame.Transform;
+using Atomic.Net.MonoGame.Scenes.Persistence;
 
 namespace Atomic.Net.MonoGame.Scenes;
 
@@ -30,8 +29,11 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
     public static SceneLoader Instance { get; private set; } = null!;
 
-    // senior-dev: Pre-allocated SparseReferenceArray for parent-child mappings (zero-alloc iteration)
+    // Pre-allocated SparseArray for parent-child mappings (zero-alloc iteration)
     private readonly SparseArray<EntitySelector> _childToParents = new(Constants.MaxEntities);
+    
+    // Pre-allocated SparseArray for PersistToDiskBehavior queue (zero-alloc scene loading)
+    private readonly SparseArray<PersistToDiskBehavior> _persistToDiskQueue = new(Constants.MaxEntities);
 
     /// <summary>
     /// Loads a game scene from JSON file.
@@ -47,7 +49,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
         LoadSceneInternal(scene, usePersistentPartition: false);
         
-        // senior-dev: GC after scene goes out of scope
+        // GC after scene goes out of scope
         GC.Collect();
         GC.WaitForPendingFinalizers();
     }
@@ -66,12 +68,12 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
         LoadSceneInternal(scene, usePersistentPartition: true);
         
-        // senior-dev: GC after scene goes out of scope
+        // GC after scene goes out of scope
         GC.Collect();
         GC.WaitForPendingFinalizers();
     }
 
-    // senior-dev: Separate method for parsing JSON to ensure proper scoping for GC
+    // Separate method for parsing JSON to ensure proper scoping for GC
     private static bool TryParseSceneFile(
         string scenePath,
         [NotNullWhen(true)]
@@ -106,70 +108,125 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
     private void LoadSceneInternal(JsonScene scene, bool usePersistentPartition)
     {
-        // senior-dev: Clear pre-allocated child-to-parent mapping
-        _childToParents.Clear();
+        // Disable dirty tracking during scene load to prevent unwanted DB writes
+        DatabaseRegistry.Instance.Disable();
         
-        foreach (var jsonEntity in scene.Entities)
+        try
         {
-            var entity = usePersistentPartition 
-                ? EntityRegistry.Instance.ActivatePersistent() 
-                : EntityRegistry.Instance.Activate();
-
-            if (jsonEntity.Transform.HasValue)
+            // Clear pre-allocated child-to-parent mapping
+            _childToParents.Clear();
+            
+            // Clear pre-allocated PersistToDiskBehavior queue (zero-alloc)
+            _persistToDiskQueue.Clear();
+            
+            foreach (var jsonEntity in scene.Entities)
             {
-                // Closure avoidance
-                var input = jsonEntity.Transform.Value;
-                entity.SetBehavior<TransformBehavior, TransformBehavior>(
+                var entity = usePersistentPartition 
+                    ? EntityRegistry.Instance.ActivatePersistent() 
+                    : EntityRegistry.Instance.Activate();
+
+                // Use JsonEntity.WriteToEntity() to eliminate duplicate logic (PR comment #9)
+                // This applies Transform, Properties, and Id behaviors
+                jsonEntity.WriteToEntity(entity);
+
+                if (jsonEntity.Parent.HasValue)
+                {
+                    _childToParents.Set(entity.Index, jsonEntity.Parent.Value);
+                }
+                
+                // CRITICAL: PersistToDiskBehavior MUST be applied after all other behaviors (including Parent)
+                // to prevent unwanted DB loads during scene construction
+                if (jsonEntity.PersistToDisk.HasValue)
+                {
+                    _persistToDiskQueue.Set(entity.Index, jsonEntity.PersistToDisk.Value);
+                }
+            }
+
+            foreach (var (entityIndex, parentSelector) in _childToParents)
+            {
+                if (!parentSelector.TryLocate(out var parent))
+                {
+                    continue;
+                }
+
+                var entity = EntityRegistry.Instance[entityIndex];
+                var input = parent.Value.Index;
+                entity.SetBehavior<Parent, ushort>(
+                    in input,
+                    (ref readonly _input, ref behavior) => behavior = new(_input)
+                );
+            }
+
+            _childToParents.Clear();
+            
+            // CRITICAL: Apply PersistToDiskBehavior LAST (after Parent and all other behaviors)
+            // This order prevents DB loads from overwriting scene construction
+            // Future maintainers: DO NOT change this order without understanding infinite loop prevention
+            foreach (var (entityIndex, persistToDisk) in _persistToDiskQueue)
+            {
+                var entity = EntityRegistry.Instance[entityIndex];
+                var input = persistToDisk;
+                entity.SetBehavior<PersistToDiskBehavior, PersistToDiskBehavior>(
                     in input,
                     (ref readonly _input, ref behavior) => behavior = _input
                 );
             }
-
-            if (jsonEntity.Properties.HasValue)
-            {
-                // Closure avoidance
-                var input = jsonEntity.Properties.Value;
-                entity.SetBehavior<PropertiesBehavior, PropertiesBehavior>(
-                    in input,
-                    (ref readonly _input, ref behavior) => behavior = _input
-                );
-            }
-
-            if (jsonEntity.Id.HasValue)
-            {
-                // Closure avoidance
-                var input = jsonEntity.Id.Value;
-                entity.SetBehavior<IdBehavior, IdBehavior>(
-                    in input,
-                    (ref readonly _input, ref behavior) => behavior = _input
-                );
-            }
-
-            if (jsonEntity.Parent.HasValue)
-            {
-                // senior-dev: Use SparseReferenceArray for zero-alloc parent tracking
-                _childToParents.Set(entity.Index, jsonEntity.Parent.Value);
-            }
+            
+            // Clear queue for next scene load (zero-alloc)
+            _persistToDiskQueue.Clear();
+        }
+        finally
+        {
+            // Re-enable dirty tracking after scene load completes
+            DatabaseRegistry.Instance.Enable();
+        }
+    }
+  
+    // Static instance to write to, to avoid alloc'ing a new one each time
+    private static JsonEntity _jsonInstance = new();
+    /// <summary>
+    /// Serializes an entity to JSON string for disk persistence.
+    /// Used by DatabaseRegistry to save entity state to LiteDB.
+    /// </summary>
+    public static string SerializeEntityToJson(Entity entity)
+    {
+        // Use JsonEntity.FromEntity() to eliminate duplicate logic
+        JsonEntity.ReadFromEntity(entity, ref _jsonInstance);
+        return JsonSerializer.Serialize(_jsonInstance, JsonSerializerOptions.Web);
+    }
+    
+    /// <summary>
+    /// Deserializes JSON string and applies behaviors to an entity.
+    /// Used by DatabaseRegistry to load entity state from LiteDB.
+    /// </summary>
+    public static void DeserializeEntityFromJson(Entity entity, string json)
+    {
+        // SteffenBlake: @benchmarker please take a very close look at this code below, and ALL
+        // OF THE LOGIC INVOLVED WITHIN IT, specifically the fact that doing this allocates a new
+        // instance of a JsonEntity class every single time it gets called, only for us to then just
+        // write it to the entity
+        //
+        // I am 10000% confident we can optimize this to use a Memory pool and Utf8JsonWriter
+        // To instead combine these two functions into one
+        // Where we stream over the json and then serialize out the individual properties
+        // and write them directly to the entity, that way we never actually alloc a JsonEntity inbetween
+        // each step
+        //
+        // Please compare doing it this way below to the proposed way above in various methods
+        // And see if you can figure out how much of a performance impact it makes
+        // My gut says it will be a non negligable speed up to "Stream" over the json instead with
+        // a re-used memory buffer
+        //
+        // This will be an integration test, so you can use some of these methods to some degree.
+        // I believe you'll need to use the normal JsonConverters on the Behaviors themselves at least
+        // You just are avoiding serializing the outer class itself
+        var jsonEntity = JsonSerializer.Deserialize<JsonEntity>(json, JsonSerializerOptions.Web);
+        if (jsonEntity == null)
+        {
+            return;
         }
 
-        // senior-dev: Second pass - resolve parent references using SparseReferenceArray (zero-alloc)
-        foreach (var (entityIndex, parentSelector) in _childToParents)
-        {
-            if (!parentSelector.TryLocate(out var parent))
-            {
-                continue;
-            }
-
-            var entity = EntityRegistry.Instance[entityIndex];
-
-            // Closure avoidance
-            var input = parent.Value.Index;
-            entity.SetBehavior<Parent, ushort>(
-                in input,
-                (ref readonly _input, ref behavior) => behavior = new(_input)
-            );
-        }
-
-        _childToParents.Clear();
+        // Use JsonEntity.WriteToEntity() to eliminate duplicate deserialization logic
+        jsonEntity.WriteToEntity(entity);
     }
 }

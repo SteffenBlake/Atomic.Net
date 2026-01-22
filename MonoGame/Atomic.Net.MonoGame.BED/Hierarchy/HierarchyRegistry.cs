@@ -168,11 +168,11 @@ public class HierarchyRegistry :
 
     public void OnEvent(InitializeEvent e)
     {
-        EventBus<BehaviorAddedEvent<Parent>>.Register<HierarchyRegistry>();
-        EventBus<BehaviorAddedEvent<Parent>>.Register<HierarchyRegistry>();
-        EventBus<PreBehaviorUpdatedEvent<Parent>>.Register<HierarchyRegistry>();
-        EventBus<PostBehaviorUpdatedEvent<Parent>>.Register<HierarchyRegistry>();
-        EventBus<PreBehaviorRemovedEvent<Parent>>.Register<HierarchyRegistry>();
-        EventBus<PreEntityDeactivatedEvent>.Register<HierarchyRegistry>();
+        EventBus<BehaviorAddedEvent<Parent>>.Register(this);
+        EventBus<BehaviorAddedEvent<Parent>>.Register(this);
+        EventBus<PreBehaviorUpdatedEvent<Parent>>.Register(this);
+        EventBus<PostBehaviorUpdatedEvent<Parent>>.Register(this);
+        EventBus<PreBehaviorRemovedEvent<Parent>>.Register(this);
+        EventBus<PreEntityDeactivatedEvent>.Register(this);
     }
 }

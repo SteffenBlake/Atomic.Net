@@ -22,7 +22,7 @@ public class RefBehaviorRegistry<TBehavior> :
         }
 
         Instance ??= new();
-        EventBus<InitializeEvent>.Register<RefBehaviorRegistry<TBehavior>>();
+        EventBus<InitializeEvent>.Register(Instance);
     }
 
     public static RefBehaviorRegistry<TBehavior> Instance { get; private set; } = null!;
@@ -74,6 +74,8 @@ public class RefBehaviorRegistry<TBehavior> :
         {
             EventBus<PostBehaviorUpdatedEvent<TBehavior>>.Push(new(entity));
         }
+        
+        EventBus<EntityMutatedEvent>.Push(new(entity));
     }
 
     /// <summary>
