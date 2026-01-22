@@ -2,6 +2,17 @@
 
 ## Non-Technical Requirements
 
+### IMPORTANT: Partitions vs Disk Persistence
+**These are completely separate concepts:**
+- **Persistent Partition** (indices 0-255): Entities survive **in-memory** across scene transitions (ResetEvent). Has NOTHING to do with disk.
+- **Disk Persistence** (`PersistToDiskBehavior`): Saves entity data to LiteDB database. **Works for entities in EITHER partition** (persistent OR scene).
+
+An entity can be:
+1. Scene partition + no disk persistence (cleared on ResetEvent, not saved to disk)
+2. Scene partition + disk persistence (cleared on ResetEvent, but saved to disk and can be reloaded)
+3. Persistent partition + no disk persistence (survives ResetEvent in-memory, not saved to disk)
+4. Persistent partition + disk persistence (survives ResetEvent in-memory AND saved to disk)
+
 ### Core Behavior
 - `PersistToDiskBehavior(string Key)` marks entity for disk persistence, key is the DB pointer
 - Key changes are supported — changing key swaps entity to different "save slot"
@@ -348,8 +359,8 @@ On `BehaviorAddedEvent<PersistToDiskBehavior>` or `PostBehaviorUpdatedEvent<Pers
     - Missing disk file (use scene defaults, no error)
     - Partial entity save (disk has subset of behaviors, scene provides rest)
   - **Cross-scene persistence** (2 tests):
-    - Persistent partition entity survives ResetEvent
-    - Scene partition entity does NOT survive ResetEvent (but disk does)
+    - Persistent partition entity survives ResetEvent in-memory (regardless of disk persistence)
+    - Scene partition entity with `PersistToDiskBehavior` does NOT survive ResetEvent in-memory, but disk data persists and can be reloaded
   - **Zero-allocation validation** (2 tests):
     - Save operation allocates zero bytes (event handling must be zero-alloc)
     - Load operation allocates only at scene load
