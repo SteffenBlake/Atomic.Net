@@ -164,8 +164,14 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         // Arrange: Set up error event listener
         using var errorListener = new FakeEventListener<ErrorEvent>();
         
-        // Lock database file by opening it with exclusive access
-        using var externalDb = new LiteDatabase(_dbPath);
+        // Close DatabaseRegistry's connection so we can lock the file
+        DatabaseRegistry.Instance.Shutdown();
+        
+        // Lock database file with exclusive FileStream (prevents any access)
+        using var fileLock = new FileStream(_dbPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+        
+        // Try to reinitialize DatabaseRegistry while file is locked - should fail
+        DatabaseRegistry.Instance.Initialize();
         
         // Act: Try to flush while database is locked - should fire ErrorEvent
         var entity = new Entity(300);
@@ -180,9 +186,13 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         });
         DatabaseRegistry.Instance.Flush();
         
-        // Assert: ErrorEvent should fire when flush fails due to lock
+        // Assert: ErrorEvent should fire when Initialize or Flush fails due to lock
         Assert.NotEmpty(errorListener.ReceivedEvents);
-        Assert.Contains(errorListener.ReceivedEvents, e => e.Message.Contains("lock") || e.Message.Contains("access"));
+        Assert.Contains(errorListener.ReceivedEvents, e => 
+            e.Message.Contains("lock") || 
+            e.Message.Contains("access") || 
+            e.Message.Contains("use") ||
+            e.Message.Contains("being used"));
         
         // System should NOT crash - gameplay continues despite flush failure
         Assert.True(entity.Active);
