@@ -17,34 +17,30 @@ public static class Constants
     public const ushort MaxEntities = 8192;
 #endif
 
-#if MAX_LOADING_ENTITIES
+#if MAX_PERSISTENT_ENTITIES
     /// <summary>
-    /// Partition point between loading and scene entities.
-    /// Entities with indices less than MaxLoadingEntities are loading entities.
-    /// Entities with indices greater than or equal to MaxLoadingEntities are scene entities.
+    /// Partition point between persistent and scene entities.
+    /// Entities with indices less than MaxPersistentEntities are persistent entities.
+    /// Entities with indices greater than or equal to MaxPersistentEntities are scene entities.
     /// </summary>
-    public const ushort MaxLoadingEntities = MAX_LOADING_ENTITIES;
+    public const ushort MaxPersistentEntities = MAX_PERSISTENT_ENTITIES;
 #else
     /// <summary>
-    /// Partition point between loading and scene entities.
-    /// Entities with indices less than MaxLoadingEntities are loading entities.
-    /// Entities with indices greater than or equal to MaxLoadingEntities are scene entities.
+    /// Partition point between persistent and scene entities.
+    /// Entities with indices less than MaxPersistentEntities are persistent entities.
+    /// Entities with indices greater than or equal to MaxPersistentEntities are scene entities.
     /// </summary>
-    public const ushort MaxLoadingEntities = 256;
+    public const ushort MaxPersistentEntities = 256;
 #endif
 
 #if DEFAULT_ALLOC_PROPERTYBAG 
     /// <summary>
-    /// Partition point between loading and scene entities.
-    /// Entities with indices less than MaxLoadingEntities are loading entities.
-    /// Entities with indices greater than or equal to MaxLoadingEntities are scene entities.
+    /// Default allocation size for PropertyBag sparse arrays.
     /// </summary>
     public const ushort DefaultAllocPropertyBag = DEFAULT_ALLOC_PROPERTYBAG;
 #else
     /// <summary>
-    /// Partition point between loading and scene entities.
-    /// Entities with indices less than MaxLoadingEntities are loading entities.
-    /// Entities with indices greater than or equal to MaxLoadingEntities are scene entities.
+    /// Default allocation size for PropertyBag sparse arrays.
     /// </summary>
     public const ushort DefaultAllocPropertyBag = 32;
 #endif

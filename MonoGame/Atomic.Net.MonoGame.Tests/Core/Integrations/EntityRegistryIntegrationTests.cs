@@ -18,7 +18,7 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
 
     public void Dispose()
     {
-        // Clean up ALL entities (both loading and scene) between tests
+        // Clean up ALL entities (both persistent and scene) between tests
         EventBus<ShutdownEvent>.Push(new());
     }
 
@@ -33,7 +33,7 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("scene-entity", out var entity));
         
         // Assert
-        Assert.True(entity.Value.Index >= Constants.MaxLoadingEntities);
+        Assert.True(entity.Value.Index >= Constants.MaxPersistentEntities);
         Assert.True(entity.Value.Index < Constants.MaxEntities);
         Assert.True(EntityRegistry.Instance.IsActive(entity.Value));
         Assert.True(EntityRegistry.Instance.IsEnabled(entity.Value));
@@ -43,17 +43,17 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void LoadLoadingScene_AllocatesLoadingEntity()
+    public void LoadPersistentScene_AllocatesPersistentEntity()
     {
         // Arrange
-        var scenePath = "Core/Fixtures/single-loading-entity.json";
+        var scenePath = "Core/Fixtures/single-persistent-entity.json";
 
         // Act
-        SceneLoader.Instance.LoadLoadingScene(scenePath);
-        Assert.True(EntityIdRegistry.Instance.TryResolve("loading-entity", out var entity));
+        SceneLoader.Instance.LoadPersistentScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("persistent-entity", out var entity));
         
         // Assert
-        Assert.True(entity.Value.Index < Constants.MaxLoadingEntities);
+        Assert.True(entity.Value.Index < Constants.MaxPersistentEntities);
         Assert.True(EntityRegistry.Instance.IsActive(entity.Value));
         Assert.True(EntityRegistry.Instance.IsEnabled(entity.Value));
     }
@@ -67,16 +67,16 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
         var root = EntityRegistry.Instance.GetSceneRoot();
         
         // Assert
-        Assert.Equal(Constants.MaxLoadingEntities, root.Index);
+        Assert.Equal(Constants.MaxPersistentEntities, root.Index);
     }
 
     [Fact]
-    public void GetLoadingRoot_ReturnsFirstLoadingEntity()
+    public void GetPersistentRoot_ReturnsFirstPersistentEntity()
     {
         // Arrange
 
         // Act
-        var root = EntityRegistry.Instance.GetLoadingRoot();
+        var root = EntityRegistry.Instance.GetPersistentRoot();
         
         // Assert
         Assert.Equal((ushort)0, root.Index);
@@ -101,13 +101,13 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void LoadLoadingScene_AllocatesSequentialIndices()
+    public void LoadPersistentScene_AllocatesSequentialIndices()
     {
         // Arrange
         var scenePath = "Core/Fixtures/three-entities.json";
 
         // Act
-        SceneLoader.Instance.LoadLoadingScene(scenePath);
+        SceneLoader.Instance.LoadPersistentScene(scenePath);
         
         // Assert
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity-1", out var entity1));
@@ -226,23 +226,23 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
     public void ResetEvent_DeactivatesOnlySceneEntities()
     {
         // Arrange
-        var loadingPath = "Core/Fixtures/single-loading-entity.json";
+        var persistentPath = "Core/Fixtures/single-persistent-entity.json";
         var scenePath = "Core/Fixtures/single-scene-entity.json";
         
-        SceneLoader.Instance.LoadLoadingScene(loadingPath);
+        SceneLoader.Instance.LoadPersistentScene(persistentPath);
         SceneLoader.Instance.LoadGameScene(scenePath);
         
-        Assert.True(EntityIdRegistry.Instance.TryResolve("loading-entity", out var loadingEntity));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("persistent-entity", out var persistentEntity));
         Assert.True(EntityIdRegistry.Instance.TryResolve("scene-entity", out var sceneEntity));
         
-        Assert.True(EntityRegistry.Instance.IsActive(loadingEntity.Value));
+        Assert.True(EntityRegistry.Instance.IsActive(persistentEntity.Value));
         Assert.True(EntityRegistry.Instance.IsActive(sceneEntity.Value));
         
         // Act
         EventBus<ResetEvent>.Push(new());
         
         // Assert
-        Assert.True(EntityRegistry.Instance.IsActive(loadingEntity.Value));
+        Assert.True(EntityRegistry.Instance.IsActive(persistentEntity.Value));
         Assert.False(EntityRegistry.Instance.IsActive(sceneEntity.Value));
     }
 

@@ -45,7 +45,7 @@ Build a **data-driven, zero runtime allocation game engine** where entire games 
 ---
 
 ### Persist data between scenes
-- [ ] Expand the behavior of the "Loading Scene" partition to do more than just be the loading scene, we need to have other types of stuff persisted between scenes (user inventory, experience points, game state overall, that sort of stuff)
+- [ ] Expand the behavior of the "Persistent" partition to do more than just store persistent entities. We need to have other types of stuff persisted between scenes (user inventory, experience points, game state overall, that sort of stuff)
 
 ---
 

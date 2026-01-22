@@ -20,7 +20,7 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
 
     public void Dispose()
     {
-        // Clean up ALL entities (both loading and scene) between tests
+        // Clean up ALL entities (both persistent and scene) between tests
         EventBus<ShutdownEvent>.Push(new());
     }
 
@@ -144,26 +144,26 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void ResetEvent_PreservesLoadingEntityHierarchy()
+    public void ResetEvent_PreservesPersistentEntityHierarchy()
     {
         // Arrange
         var scenePath = "BED/Fixtures/parent-child.json";
-        SceneLoader.Instance.LoadLoadingScene(scenePath);
+        SceneLoader.Instance.LoadPersistentScene(scenePath);
         
-        Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out var loadingParent));
-        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var loadingChild));
-        Assert.True(loadingChild.Value.TryGetParent(out var parent1));
-        Assert.Equal(loadingParent.Value.Index, parent1.Value.Index);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out var persistentParent));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var persistentChild));
+        Assert.True(persistentChild.Value.TryGetParent(out var parent1));
+        Assert.Equal(persistentParent.Value.Index, parent1.Value.Index);
         
         // Act
         EventBus<ResetEvent>.Push(new());
         
         // Assert
-        Assert.True(EntityRegistry.Instance.IsActive(loadingParent.Value));
-        Assert.True(EntityRegistry.Instance.IsActive(loadingChild.Value));
-        Assert.True(loadingChild.Value.TryGetParent(out var parent2));
-        Assert.Equal(loadingParent.Value.Index, parent2.Value.Index);
-        Assert.Single(loadingParent.Value.GetChildren());
+        Assert.True(EntityRegistry.Instance.IsActive(persistentParent.Value));
+        Assert.True(EntityRegistry.Instance.IsActive(persistentChild.Value));
+        Assert.True(persistentChild.Value.TryGetParent(out var parent2));
+        Assert.Equal(persistentParent.Value.Index, parent2.Value.Index);
+        Assert.Single(persistentParent.Value.GetChildren());
     }
 
     [Fact]
