@@ -19,7 +19,6 @@ public class QuaternionConverter : JsonConverter<Quaternion>
 
     public override void Write(Utf8JsonWriter writer, Quaternion value, JsonSerializerOptions options)
     {
-        // senior-dev: Serialize as [x, y, z, w] array
         writer.WriteStartArray();
         writer.WriteNumberValue(value.X);
         writer.WriteNumberValue(value.Y);

@@ -19,7 +19,6 @@ public class Vector3Converter : JsonConverter<Vector3>
 
     public override void Write(Utf8JsonWriter writer, Vector3 value, JsonSerializerOptions options)
     {
-        // senior-dev: Serialize as [x, y, z] array
         writer.WriteStartArray();
         writer.WriteNumberValue(value.X);
         writer.WriteNumberValue(value.Y);

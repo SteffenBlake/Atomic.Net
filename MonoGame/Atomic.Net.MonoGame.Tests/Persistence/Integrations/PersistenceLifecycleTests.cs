@@ -38,7 +38,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         // Clean up ALL entities and shutdown database between tests
         EventBus<ShutdownEvent>.Push(new());
         
-        // senior-dev: Clean up database file (Shutdown now implemented)
+        // Clean up database file (Shutdown now implemented)
         DatabaseRegistry.Instance.Shutdown();
         if (File.Exists(_dbPath))
         {
@@ -50,7 +50,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
     public void ResetEvent_WithPersistentEntity_DoesNotDeleteFromDisk()
     {
         // Arrange: Create entity with PersistToDiskBehavior in scene partition
-        var entity = EntityRegistry.Instance.Activate(); // senior-dev: Fixed - entities must be activated first
+        var entity = EntityRegistry.Instance.Activate(); // Fixed - entities must be activated first
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("reset-test-key");
@@ -70,7 +70,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         
         // test-architect: Verify database still contains the entity by creating a new entity
         // and adding PersistToDiskBehavior with same key - it should load health=100 from disk
-        var newEntity = EntityRegistry.Instance.Activate(); // senior-dev: Fixed - entities must be activated first
+        var newEntity = EntityRegistry.Instance.Activate(); // Fixed - entities must be activated first
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("reset-test-key");

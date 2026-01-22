@@ -28,7 +28,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
     public PersistenceDiskCorruptionTests()
     {
         // Arrange: Initialize systems with clean database
-        // senior-dev: Tests use default "persistence.db" and run sequentially (NonParallel collection)
+        // Tests use default "persistence.db" and run sequentially (NonParallel collection)
         // Each test cleans up in Dispose() to ensure fresh state
         _dbPath = "persistence.db";
 

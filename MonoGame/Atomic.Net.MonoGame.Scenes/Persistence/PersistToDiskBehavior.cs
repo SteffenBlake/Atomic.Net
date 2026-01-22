@@ -14,7 +14,7 @@ public readonly record struct PersistToDiskBehavior(string Key) : IBehavior<Pers
 {
     public static PersistToDiskBehavior CreateFor(Entity entity)
     {
-        // senior-dev: #test-architect CreateFor requires a key parameter, so we return an empty default
+        // #test-architect CreateFor requires a key parameter, so we return an empty default
         // The key must be provided when setting the behavior via SetBehavior
         return new PersistToDiskBehavior(string.Empty);
     }

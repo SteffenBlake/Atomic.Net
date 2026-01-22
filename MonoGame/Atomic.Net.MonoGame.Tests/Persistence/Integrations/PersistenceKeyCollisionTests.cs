@@ -111,7 +111,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         
         // Create new entity with same key in second "scene"
         var entity2 = EntityRegistry.Instance.Activate();
-        // senior-dev: Add PersistToDiskBehavior LAST to prevent it from loading and then being overwritten
+        // Add PersistToDiskBehavior LAST to prevent it from loading and then being overwritten
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity2);

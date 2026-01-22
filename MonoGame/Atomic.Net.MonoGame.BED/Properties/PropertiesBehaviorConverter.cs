@@ -77,7 +77,6 @@ public class PropertiesBehaviorConverter : JsonConverter<PropertiesBehavior>
 
     public override void Write(Utf8JsonWriter writer, PropertiesBehavior value, JsonSerializerOptions options)
     {
-        // senior-dev: Write properties as JSON object
         writer.WriteStartObject();
         
         foreach (var (key, propertyValue) in value.Properties)

@@ -26,13 +26,9 @@ public sealed class PropertyBagIndex : ISingleton<PropertyBagIndex>,
 
     public static PropertyBagIndex Instance { get; private set; } = null!;
 
-    // senior-dev: Key-only index: key → entities with that key (case-insensitive)
-    // senior-dev: Future optimization: Consider FrozenDictionary for better read performance if keys are stable after load
     private readonly Dictionary<string, SparseArray<bool>> _keyIndex = 
         new(Constants.DefaultAllocPropertyBag, StringComparer.OrdinalIgnoreCase);
 
-    // senior-dev: Key-value index: key → value → entities (outer key is case-insensitive)
-    // senior-dev: Future optimization: Consider FrozenDictionary for outer dict if keys are stable after load
     private readonly Dictionary<string, Dictionary<PropertyValue, SparseArray<bool>>> _keyValueIndex = 
         new(Constants.DefaultAllocPropertyBag, StringComparer.OrdinalIgnoreCase);
 
@@ -43,7 +39,6 @@ public sealed class PropertyBagIndex : ISingleton<PropertyBagIndex>,
     {
         foreach (var (key, value) in properties)
         {
-            // senior-dev: Add to key-only index
             if (!_keyIndex.TryGetValue(key, out var keyEntities))
             {
                 keyEntities = new SparseArray<bool>(Constants.MaxEntities);
@@ -51,7 +46,6 @@ public sealed class PropertyBagIndex : ISingleton<PropertyBagIndex>,
             }
             keyEntities.Set(entity.Index, true);
 
-            // senior-dev: Add to key-value index
             if (!_keyValueIndex.TryGetValue(key, out var valueDict))
             {
                 valueDict = [];
@@ -74,13 +68,11 @@ public sealed class PropertyBagIndex : ISingleton<PropertyBagIndex>,
     {
         foreach (var (key, value) in properties)
         {
-            // senior-dev: Remove from key-only index
             if (_keyIndex.TryGetValue(key, out var keyEntities))
             {
                 keyEntities.Remove(entity.Index);
             }
 
-            // senior-dev: Remove from key-value index
             if (_keyValueIndex.TryGetValue(key, out var valueDict))
             {
                 if (valueDict.TryGetValue(value, out var valueEntities))

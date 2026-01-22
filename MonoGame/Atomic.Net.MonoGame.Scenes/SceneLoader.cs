@@ -31,10 +31,10 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
     public static SceneLoader Instance { get; private set; } = null!;
 
-    // senior-dev: Pre-allocated SparseArray for parent-child mappings (zero-alloc iteration)
+    // Pre-allocated SparseArray for parent-child mappings (zero-alloc iteration)
     private readonly SparseArray<EntitySelector> _childToParents = new(Constants.MaxEntities);
     
-    // senior-dev: Pre-allocated SparseArray for PersistToDiskBehavior queue (zero-alloc scene loading)
+    // Pre-allocated SparseArray for PersistToDiskBehavior queue (zero-alloc scene loading)
     private readonly SparseArray<PersistToDiskBehavior> _persistToDiskQueue = new(Constants.MaxEntities);
 
     /// <summary>
@@ -51,7 +51,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
         LoadSceneInternal(scene, usePersistentPartition: false);
         
-        // senior-dev: GC after scene goes out of scope
+        // GC after scene goes out of scope
         GC.Collect();
         GC.WaitForPendingFinalizers();
     }
@@ -70,12 +70,12 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
         LoadSceneInternal(scene, usePersistentPartition: true);
         
-        // senior-dev: GC after scene goes out of scope
+        // GC after scene goes out of scope
         GC.Collect();
         GC.WaitForPendingFinalizers();
     }
 
-    // senior-dev: Separate method for parsing JSON to ensure proper scoping for GC
+    // Separate method for parsing JSON to ensure proper scoping for GC
     private static bool TryParseSceneFile(
         string scenePath,
         [NotNullWhen(true)]
@@ -110,15 +110,15 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
     private void LoadSceneInternal(JsonScene scene, bool usePersistentPartition)
     {
-        // senior-dev: Disable dirty tracking during scene load to prevent unwanted DB writes
+        // Disable dirty tracking during scene load to prevent unwanted DB writes
         DatabaseRegistry.Instance.Disable();
         
         try
         {
-            // senior-dev: Clear pre-allocated child-to-parent mapping
+            // Clear pre-allocated child-to-parent mapping
             _childToParents.Clear();
             
-            // senior-dev: Clear pre-allocated PersistToDiskBehavior queue (zero-alloc)
+            // Clear pre-allocated PersistToDiskBehavior queue (zero-alloc)
             _persistToDiskQueue.Clear();
             
             foreach (var jsonEntity in scene.Entities)
@@ -127,18 +127,16 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
                     ? EntityRegistry.Instance.ActivatePersistent() 
                     : EntityRegistry.Instance.Activate();
 
-                // senior-dev: Use JsonEntity.WriteToEntity() to eliminate duplicate logic (PR comment #9)
+                // Use JsonEntity.WriteToEntity() to eliminate duplicate logic (PR comment #9)
                 // This applies Transform, Properties, and Id behaviors
                 jsonEntity.WriteToEntity(entity);
 
                 if (jsonEntity.Parent.HasValue)
                 {
-                    // senior-dev: Use SparseArray for zero-alloc parent tracking
                     _childToParents.Set(entity.Index, jsonEntity.Parent.Value);
                 }
                 
-                // senior-dev: Queue PersistToDiskBehavior to be applied LAST
-                // CRITICAL: This MUST be applied after all other behaviors (including Parent)
+                // CRITICAL: PersistToDiskBehavior MUST be applied after all other behaviors (including Parent)
                 // to prevent unwanted DB loads during scene construction
                 if (jsonEntity.PersistToDisk.HasValue)
                 {
@@ -146,7 +144,6 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
                 }
             }
 
-            // senior-dev: Second pass - resolve parent references using SparseArray (zero-alloc)
             foreach (var (entityIndex, parentSelector) in _childToParents)
             {
                 if (!parentSelector.TryLocate(out var parent))
@@ -155,8 +152,6 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
                 }
 
                 var entity = EntityRegistry.Instance[entityIndex];
-
-                // Closure avoidance
                 var input = parent.Value.Index;
                 entity.SetBehavior<Parent, ushort>(
                     in input,
@@ -166,8 +161,8 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
             _childToParents.Clear();
             
-            // senior-dev: Third pass - apply PersistToDiskBehavior LAST (after Parent and all other behaviors)
-            // CRITICAL: This order is enforced to prevent DB loads from overwriting scene construction
+            // CRITICAL: Apply PersistToDiskBehavior LAST (after Parent and all other behaviors)
+            // This order prevents DB loads from overwriting scene construction
             // Future maintainers: DO NOT change this order without understanding infinite loop prevention
             foreach (var (entityIndex, persistToDisk) in _persistToDiskQueue)
             {
@@ -179,12 +174,12 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
                 );
             }
             
-            // senior-dev: Clear queue for next scene load (zero-alloc)
+            // Clear queue for next scene load (zero-alloc)
             _persistToDiskQueue.Clear();
         }
         finally
         {
-            // senior-dev: Re-enable dirty tracking after scene load completes
+            // Re-enable dirty tracking after scene load completes
             DatabaseRegistry.Instance.Enable();
         }
     }
@@ -195,7 +190,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     /// </summary>
     public static string SerializeEntityToJson(Entity entity)
     {
-        // senior-dev: Use JsonEntity.FromEntity() to eliminate duplicate logic
+        // Use JsonEntity.FromEntity() to eliminate duplicate logic
         var jsonEntity = JsonEntity.FromEntity(entity);
         return JsonSerializer.Serialize(jsonEntity, JsonSerializerOptions.Web);
     }
@@ -212,7 +207,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
             return;
         }
 
-        // senior-dev: Use JsonEntity.WriteToEntity() to eliminate duplicate deserialization logic
+        // Use JsonEntity.WriteToEntity() to eliminate duplicate deserialization logic
         jsonEntity.WriteToEntity(entity);
     }
 }

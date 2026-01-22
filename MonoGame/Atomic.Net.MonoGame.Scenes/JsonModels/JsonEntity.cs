@@ -40,7 +40,7 @@ public class JsonEntity
 
     /// <summary>
     /// Optional disk persistence behavior (marks entity for saving to LiteDB).
-    /// senior-dev: MUST be applied LAST in SceneLoader to prevent unwanted DB loads during scene construction
+    /// MUST be applied LAST in SceneLoader to prevent unwanted DB loads during scene construction
     /// </summary>
     public PersistToDiskBehavior? PersistToDisk { get; set; } = null;
     
@@ -52,7 +52,7 @@ public class JsonEntity
     {
         var jsonEntity = new JsonEntity();
         
-        // senior-dev: Collect all behaviors from their respective registries
+        // Collect all behaviors from their respective registries
         jsonEntity.Id = BehaviorRegistry<IdBehavior>.Instance.TryGetBehavior(entity, out var id) 
             ? id : null;
 
@@ -65,10 +65,10 @@ public class JsonEntity
         jsonEntity.PersistToDisk = BehaviorRegistry<PersistToDiskBehavior>.Instance.TryGetBehavior(entity, out var persistToDisk) 
             ? persistToDisk : null;
 
-        // senior-dev: Handle Parent (stored in BehaviorRegistry<Parent>)
+        // Handle Parent (stored in BehaviorRegistry<Parent>)
         if (BehaviorRegistry<Parent>.Instance.TryGetBehavior(entity, out var parent))
         {
-            // senior-dev: Get parent entity's ID if it exists
+            // Get parent entity's ID if it exists
             var parentEntity = EntityRegistry.Instance[parent.Value.ParentIndex];
             if (BehaviorRegistry<IdBehavior>.Instance.TryGetBehavior(parentEntity, out var parentId))
             {
@@ -86,7 +86,7 @@ public class JsonEntity
     /// </summary>
     public void WriteToEntity(Entity entity)
     {
-        // senior-dev: Apply all behaviors from JSON (in specific order per sprint requirements)
+        // Apply all behaviors from JSON (in specific order per sprint requirements)
         // Transform, Properties, Id applied first, then Parent
         // PersistToDiskBehavior is NOT applied here (already set by caller)
         
@@ -117,7 +117,7 @@ public class JsonEntity
             );
         }
 
-        // senior-dev: Parent is handled if referenced entity exists
+        // Parent is handled if referenced entity exists
         if (Parent.HasValue)
         {
             if (Parent.Value.TryLocate(out var parentEntity))

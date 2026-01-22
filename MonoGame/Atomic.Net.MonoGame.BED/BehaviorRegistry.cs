@@ -67,7 +67,6 @@ public class BehaviorRegistry<TBehavior> :
             EventBus<BehaviorAddedEvent<TBehavior>>.Push(new(entity));
         }
         
-        // senior-dev: Fire generic EntityMutatedEvent for DatabaseRegistry dirty tracking
         EventBus<EntityMutatedEvent>.Push(new(entity));
     }
 
@@ -105,7 +104,6 @@ public class BehaviorRegistry<TBehavior> :
             EventBus<BehaviorAddedEvent<TBehavior>>.Push(new(entity));
         }
         
-        // senior-dev: Fire generic EntityMutatedEvent for DatabaseRegistry dirty tracking
         EventBus<EntityMutatedEvent>.Push(new(entity));
     }
 

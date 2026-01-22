@@ -33,22 +33,15 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     
     private DatabaseRegistry() { }
 
-    // senior-dev: Dirty tracking sparse array (zero-alloc flagging)
     private readonly SparseArray<bool> _dirtyFlags = new(Constants.MaxEntities);
-    
-    // senior-dev: LiteDB connection (null until initialized in OnEvent(InitializeEvent))
     private LiteDatabase? _database = null;
     private ILiteCollection<BsonDocument>? _collection = null;
-    
-    // senior-dev: Track old keys for infinite loop prevention
     private readonly SparseReferenceArray<string> _oldKeys = new(Constants.MaxEntities);
 
-    // senior-dev: CRITICAL: Database path is a COMPILATION CONSTANT ONLY
+    // CRITICAL: Database path is a COMPILATION CONSTANT ONLY
     // NEVER add runtime configuration, environment variables, or any other mechanism to override this
     // The ONLY way to change the path is via compilation constant:
     //   dotnet build -p:DefineConstants=ATOMIC_PERSISTENCE_DB_PATH=\"/custom/path.db\"
-    // This is intentional - persistence configuration is compile-time, not runtime
-    // DO NOT add SetDatabasePath() or any other runtime override mechanism
 
     /// <summary>
     /// Gets whether dirty tracking is currently enabled.
@@ -64,7 +57,7 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     /// <param name="entityIndex">Index of the entity to mark dirty.</param>
     public void MarkDirty(ushort entityIndex)
     {
-        // senior-dev: CRITICAL: NEVER bypass this IsEnabled check
+        // CRITICAL: NEVER bypass this IsEnabled check
         // IsEnabled controls dirty tracking globally - when false, NO entities should be marked dirty
         // This prevents scene construction from triggering disk writes
         if (!IsEnabled)
@@ -72,8 +65,6 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
             return;
         }
 
-        // senior-dev: Greedy flagging - set dirty flag without checking if entity has PersistToDiskBehavior
-        // This is faster than checking persistence on every mutation (single boolean set ~1 CPU cycle)
         _dirtyFlags.Set(entityIndex, true);
     }
 
@@ -101,16 +92,16 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     /// </summary>
     public void OnEvent(InitializeEvent e)
     {
-        // senior-dev: Register for EntityMutatedEvent (fired by BehaviorRegistry/RefBehaviorRegistry)
+        // Register for EntityMutatedEvent (fired by BehaviorRegistry/RefBehaviorRegistry)
         EventBus<EntityMutatedEvent>.Register(this);
         
-        // senior-dev: Register for PersistToDiskBehavior events (PR comment #2: use overload without explicit handler param - `this` is inferred)
+        // Register for PersistToDiskBehavior events (PR comment #2: use overload without explicit handler param - `this` is inferred)
         EventBus<BehaviorAddedEvent<PersistToDiskBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<PersistToDiskBehavior>>.Register(this);
         EventBus<PreBehaviorUpdatedEvent<PersistToDiskBehavior>>.Register(this);
         EventBus<PreBehaviorRemovedEvent<PersistToDiskBehavior>>.Register(this);
         
-        // senior-dev: Initialize database with path from Constants (COMPILATION CONSTANT ONLY)
+        // Initialize database with path from Constants (COMPILATION CONSTANT ONLY)
         // NEVER add runtime configuration - path is set at compile time via:
         //   dotnet build -p:DefineConstants=ATOMIC_PERSISTENCE_DB_PATH=\"/custom/path.db\"
         try
@@ -128,7 +119,7 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
         }
         catch (IOException ex)
         {
-            // senior-dev: Catch IO exceptions (file locked, access denied, etc.)
+            // Catch IO exceptions (file locked, access denied, etc.)
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Failed to initialize persistence database: {ex.Message}"
             ));
@@ -166,13 +157,12 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     /// </summary>
     public void Flush()
     {
-        // senior-dev: Skip flush if tracking is disabled
+        // Skip flush if tracking is disabled
         if (!IsEnabled)
         {
             return;
         }
         
-        // senior-dev: Throw if database not initialized (per PR requirements)
         if (_collection == null)
         {
             throw new InvalidOperationException(
@@ -180,12 +170,10 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
             );
         }
 
-        // senior-dev: Get all entities with PersistToDiskBehavior
         var persistentEntities = BehaviorRegistry<PersistToDiskBehavior>.Instance.GetActiveBehaviors();
         
         foreach (var (entity, persistBehavior) in persistentEntities)
         {
-            // senior-dev: Validate key (fire ErrorEvent for empty/null/whitespace keys)
             if (string.IsNullOrWhiteSpace(persistBehavior.Key))
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent(
@@ -194,23 +182,18 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
                 continue;
             }
             
-            // senior-dev: Intersect - only write if dirty flag is set
             if (!_dirtyFlags.HasValue(entity.Index))
             {
                 continue;
             }
             
-            // senior-dev: Serialize entity to JSON
             var json = SceneLoader.SerializeEntityToJson(entity);
-            
-            // senior-dev: Create LiteDB document (key = PersistToDiskBehavior.Key)
             var doc = new BsonDocument
             {
                 ["_id"] = persistBehavior.Key,
                 ["data"] = json
             };
             
-            // senior-dev: Write directly to DB - only wrap the ONE operation that can throw
             try
             {
                 _collection.Upsert(doc);
@@ -223,7 +206,6 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
                 continue;
             }
             
-            // senior-dev: Clear dirty flag immediately after successful write
             _dirtyFlags.Remove(entity.Index);
         }
     }
@@ -233,7 +215,6 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     /// </summary>
     public void OnEvent(PreBehaviorUpdatedEvent<PersistToDiskBehavior> e)
     {
-        // senior-dev: Store old key for infinite loop prevention
         if (BehaviorRegistry<PersistToDiskBehavior>.Instance.TryGetBehavior(e.Entity, out var oldBehavior))
         {
             _oldKeys[e.Entity.Index] = oldBehavior.Value.Key;
@@ -248,13 +229,11 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     /// </summary>
     public void OnEvent(BehaviorAddedEvent<PersistToDiskBehavior> e)
     {
-        // senior-dev: Get the behavior that was just added
         if (!BehaviorRegistry<PersistToDiskBehavior>.Instance.TryGetBehavior(e.Entity, out var behavior))
         {
             return;
         }
 
-        // senior-dev: Validate key (fire ErrorEvent for empty/null/whitespace keys)
         if (string.IsNullOrWhiteSpace(behavior.Value.Key))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
@@ -263,7 +242,6 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
             return;
         }
 
-        // senior-dev: Load from DB if exists, mark dirty if not
         LoadOrMarkDirty(e.Entity, behavior.Value.Key);
     }
 
@@ -273,23 +251,20 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     /// </summary>
     public void OnEvent(PostBehaviorUpdatedEvent<PersistToDiskBehavior> e)
     {
-        // senior-dev: Get new behavior for key
         if (!BehaviorRegistry<PersistToDiskBehavior>.Instance.TryGetBehavior(e.Entity, out var newBehavior))
         {
             return;
         }
 
-        // senior-dev: Get old key (stored in PreBehaviorUpdatedEvent)
         var oldKey = _oldKeys.TryGetValue(e.Entity.Index, out var key) ? key : null;
         var newKey = newBehavior.Value.Key;
 
-        // senior-dev: Infinite loop prevention - if keys match, skip DB operation
+        // Infinite loop prevention
         if (oldKey == newKey)
         {
             return;
         }
 
-        // senior-dev: Validate new key (fire ErrorEvent for empty/null/whitespace keys)
         if (string.IsNullOrWhiteSpace(newKey))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
@@ -298,7 +273,6 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
             return;
         }
 
-        // senior-dev: Key changed - check DB and load/mark dirty
         LoadOrMarkDirty(e.Entity, newKey);
     }
 
@@ -308,26 +282,21 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     /// </summary>
     public void OnEvent(PreBehaviorRemovedEvent<PersistToDiskBehavior> e)
     {
-        // senior-dev: Get the behavior before it's removed
         if (!BehaviorRegistry<PersistToDiskBehavior>.Instance.TryGetBehavior(e.Entity, out var behavior))
         {
             return;
         }
 
-        // senior-dev: Skip if database not initialized
         if (_collection == null)
         {
             return;
         }
 
-        // senior-dev: Validate key
         if (string.IsNullOrWhiteSpace(behavior.Value.Key))
         {
             return;
         }
 
-        // senior-dev: Write final state to disk if entity is dirty
-        // This ensures the last changes are persisted before the behavior is removed
         if (_dirtyFlags.HasValue(e.Entity.Index))
         {
             var json = SceneLoader.SerializeEntityToJson(e.Entity);
@@ -351,20 +320,15 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
         }
     }
 
-    // senior-dev: Helper method to load entity from DB or mark dirty
-    // Uses TryPattern per AGENTS.md guidelines (PR comment #8)
     private void LoadOrMarkDirty(Entity entity, string key)
     {
         if (!TryLoadFromDatabase(key, out var json))
         {
-            // senior-dev: Key doesn't exist in DB - mark dirty for first write
             // CRITICAL: NEVER bypass IsEnabled check - always use MarkDirty() which respects IsEnabled
             MarkDirty(entity.Index);
             return;
         }
         
-        // senior-dev: Key exists in DB - load and apply all behaviors
-        // Disable dirty tracking during deserialization to prevent unwanted writes
         var wasEnabled = IsEnabled;
         Disable();
         
@@ -377,7 +341,6 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Failed to deserialize entity with key '{key}': {ex.Message}"
             ));
-            // Entity keeps current state (graceful degradation)
         }
         
         if (wasEnabled)
@@ -386,7 +349,6 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
         }
     }
     
-    // senior-dev: TryPattern for database loading (per AGENTS.md - PR comment #8)
     private bool TryLoadFromDatabase(
         string key,
         [NotNullWhen(true)] out string? json)
