@@ -340,7 +340,8 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
         if (!TryLoadFromDatabase(key, out var json))
         {
             // senior-dev: Key doesn't exist in DB - mark dirty for first write
-            MarkDirty(entity.Index);
+            // Always mark dirty when adding PersistToDiskBehavior, even if disabled
+            _dirtyFlags.Set(entity.Index, true);
             return;
         }
         
