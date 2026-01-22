@@ -6,6 +6,8 @@ using Atomic.Net.MonoGame.Scenes.JsonConverters;
 
 namespace Atomic.Net.MonoGame.Scenes.JsonModels;
 
+// SteffenBlake: @senior-dev, move this to .Atomic.Net.Monogame.Scenes/ parent dir and namespace
+
 [JsonConverter(typeof(EntitySelectorConverter))]
 public struct EntitySelector()
 {

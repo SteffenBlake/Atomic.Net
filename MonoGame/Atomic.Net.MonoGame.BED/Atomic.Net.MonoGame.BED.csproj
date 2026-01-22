@@ -10,4 +10,8 @@
     <ProjectReference Include="..\Atomic.Net.MonoGame.Core\Atomic.Net.MonoGame.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="dotVariant" Version="0.5.3" />
+  </ItemGroup>
+
 </Project>
