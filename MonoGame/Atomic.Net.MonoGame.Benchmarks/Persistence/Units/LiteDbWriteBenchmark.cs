@@ -37,8 +37,10 @@ public class LiteDbWriteBenchmark
     private ILiteCollection<BsonDocument>? _collection;
     
     private readonly SystemJsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = SystemJsonNamingPolicy.CamelCase };
-    private ArrayBufferWriter<byte> _bufferWriter = new();
-    
+    private readonly ArrayBufferWriter<byte> _bufferWriter = new(1000);
+   
+    private readonly List<BsonDocument> _documentsPreAllocd = new(1000);
+
     [GlobalSetup]
     public void Setup()
     {
@@ -109,18 +111,23 @@ public class LiteDbWriteBenchmark
     public int IndividualInsert_Utf8JsonWriter_Pooled()
     {
         var count = 0;
+        using var writer = new SystemUtf8JsonWriter(_bufferWriter);
+
         foreach (var entity in _testEntities)
         {
-            _bufferWriter.Clear();
-            using (var writer = new SystemUtf8JsonWriter(_bufferWriter))
-            {
-                SystemJsonSerializer.Serialize(writer, entity, _jsonOptions);
-            }
-            var json = Encoding.UTF8.GetString(_bufferWriter.WrittenSpan);
-            var doc = new BsonDocument { ["_id"] = entity.PersistKey, ["data"] = json };
+            SystemJsonSerializer.Serialize(writer, entity, _jsonOptions);
+            var doc = new BsonDocument { 
+                ["_id"] = entity.PersistKey, 
+                ["data"] = Encoding.UTF8.GetString(_bufferWriter.WrittenSpan) 
+            };
+
             _collection!.Insert(doc);
             count++;
+
+            _bufferWriter.Clear();
+            writer.Reset();
         }
+
         return count;
     }
     
@@ -164,24 +171,61 @@ public class LiteDbWriteBenchmark
         }
         return _collection!.InsertBulk(documents);
     }
-    
+   
+    [Benchmark]
+    public int BulkInsert_JsonSerializer_PreAllocd()
+    {
+        foreach (var entity in _testEntities)
+        {
+            var json = SystemJsonSerializer.Serialize(entity, _jsonOptions);
+            _documentsPreAllocd.Add(new BsonDocument { ["_id"] = entity.PersistKey, ["data"] = json });
+        }
+        var result = _collection!.InsertBulk(_documentsPreAllocd);
+        _documentsPreAllocd.Clear();
+        return result;
+    }
+
+
     [Benchmark]
     public int BulkInsert_Utf8JsonWriter_Pooled()
     {
+        using var writer = new SystemUtf8JsonWriter(_bufferWriter);
         var documents = new List<BsonDocument>(EntityCount);
         foreach (var entity in _testEntities)
         {
+            SystemJsonSerializer.Serialize(writer, entity, _jsonOptions);
+            documents.Add(new BsonDocument 
+            { 
+                ["_id"] = entity.PersistKey, 
+                ["data"] = Encoding.UTF8.GetString(_bufferWriter.WrittenSpan) 
+            });
+            
             _bufferWriter.Clear();
-            using (var writer = new SystemUtf8JsonWriter(_bufferWriter))
-            {
-                SystemJsonSerializer.Serialize(writer, entity, _jsonOptions);
-            }
-            var json = Encoding.UTF8.GetString(_bufferWriter.WrittenSpan);
-            documents.Add(new BsonDocument { ["_id"] = entity.PersistKey, ["data"] = json });
+            writer.Reset();
         }
         return _collection!.InsertBulk(documents);
     }
-    
+   
+
+    [Benchmark]
+    public int BulkInsert_Utf8JsonWriter_Pooled_PreAllocd()
+    {
+        using var writer = new SystemUtf8JsonWriter(_bufferWriter);
+        foreach (var entity in _testEntities)
+        {
+            SystemJsonSerializer.Serialize(writer, entity, _jsonOptions);
+            _documentsPreAllocd.Add(new BsonDocument { 
+                ["_id"] = entity.PersistKey, 
+                ["data"] = Encoding.UTF8.GetString(_bufferWriter.WrittenSpan) 
+            });
+            _bufferWriter.Clear();
+            writer.Reset();
+        }
+        var result = _collection!.InsertBulk(_documentsPreAllocd);
+        _documentsPreAllocd.Clear();
+        return result;
+    }
+
     [Benchmark]
     public int BulkInsert_DirectBson()
     {
@@ -206,7 +250,34 @@ public class LiteDbWriteBenchmark
         }
         return _collection!.InsertBulk(documents);
     }
-    
+   
+
+    [Benchmark]
+    public int BulkInsert_DirectBson_PreAllocd()
+    {
+        foreach (var entity in _testEntities)
+        {
+            _documentsPreAllocd.Add(new BsonDocument
+            {
+                ["_id"] = entity.PersistKey,
+                ["id"] = entity.Id,
+                ["transform"] = new BsonDocument
+                {
+                    ["position"] = new BsonArray(entity.Transform!.Position.Select(x => new BsonValue(x))),
+                    ["rotation"] = new BsonArray(entity.Transform.Rotation.Select(x => new BsonValue(x))),
+                    ["scale"] = new BsonArray(entity.Transform.Scale.Select(x => new BsonValue(x)))
+                },
+                ["properties"] = new BsonDocument(entity.Properties!.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => new BsonValue(kvp.Value)
+                ))
+            });
+        }
+        var result = _collection!.InsertBulk(_documentsPreAllocd);
+        _documentsPreAllocd.Clear();
+        return result;
+    }
+
     // ========== UPSERT METHODS (for updates) ==========
     
     [Benchmark]
@@ -215,8 +286,10 @@ public class LiteDbWriteBenchmark
         var count = 0;
         foreach (var entity in _testEntities)
         {
-            var json = SystemJsonSerializer.Serialize(entity, _jsonOptions);
-            var doc = new BsonDocument { ["_id"] = entity.PersistKey, ["data"] = json };
+            var doc = new BsonDocument { 
+                ["_id"] = entity.PersistKey, 
+                ["data"] = SystemJsonSerializer.Serialize(entity, _jsonOptions) 
+            };
             _collection!.Upsert(doc);
             count++;
         }
@@ -227,17 +300,17 @@ public class LiteDbWriteBenchmark
     public int Upsert_Utf8JsonWriter_Pooled()
     {
         var count = 0;
+        using var writer = new SystemUtf8JsonWriter(_bufferWriter);
         foreach (var entity in _testEntities)
         {
-            _bufferWriter.Clear();
-            using (var writer = new SystemUtf8JsonWriter(_bufferWriter))
-            {
-                SystemJsonSerializer.Serialize(writer, entity, _jsonOptions);
-            }
-            var json = Encoding.UTF8.GetString(_bufferWriter.WrittenSpan);
-            var doc = new BsonDocument { ["_id"] = entity.PersistKey, ["data"] = json };
+            var doc = new BsonDocument { 
+                ["_id"] = entity.PersistKey, 
+                ["data"] = Encoding.UTF8.GetString(_bufferWriter.WrittenSpan) 
+            };
             _collection!.Upsert(doc);
             count++;
+            _bufferWriter.Clear();
+            writer.Reset();
         }
         return count;
     }
