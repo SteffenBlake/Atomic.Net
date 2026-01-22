@@ -1,4 +1,3 @@
-﻿using Atomic.Net.MonoGame.Benchmarks.Transform;
-using BenchmarkDotNet.Running;
+﻿using BenchmarkDotNet.Running;
 
-BenchmarkRunner.Run<TransformBenchmark>(args: args);
+BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
