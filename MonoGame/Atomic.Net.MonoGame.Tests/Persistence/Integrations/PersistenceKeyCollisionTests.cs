@@ -28,12 +28,15 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         // Arrange: Initialize systems with clean database
         _dbPath = Path.Combine(Path.GetTempPath(), $"persistence_collision_{Guid.NewGuid()}.db");
         
+        // senior-dev: Set database path via environment variable (per PR #5)
+        Environment.SetEnvironmentVariable("ATOMIC_PERSISTENCE_DB_PATH", _dbPath);
+
         AtomicSystem.Initialize();
         BEDSystem.Initialize();
         SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
         
-        DatabaseRegistry.Instance.InitializeDatabase(_dbPath);
+        // Database initialized via environment variable
     }
 
     public void Dispose()
@@ -111,19 +114,16 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         // Act: Simulate scene transition (reset + reload)
         EventBus<ResetEvent>.Push(new());
         
-        // Create new entity with different data (scene2) FIRST, THEN add PersistToDiskBehavior
-        // PersistToDiskBehavior should load from DB and overwrite the scene2 data with scene1 data
+        // Create new entity with same key in second "scene"
         var entity2 = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, (ref PropertiesBehavior behavior) =>
-        {
-            behavior = PropertiesBehavior.CreateFor(entity2);
-            behavior.Properties["scene"] = "scene2";  // This will be overwritten by DB load
-        });
-        
-        // Adding PersistToDiskBehavior should trigger DB load, overwriting scene2 with scene1
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("cross-scene-key");
+        });
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, (ref PropertiesBehavior behavior) =>
+        {
+            behavior = PropertiesBehavior.CreateFor(entity2);
+            behavior.Properties["scene"] = "scene2";
         });
         
         // Assert: entity2 should have loaded data from entity1 (overwriting "scene2" with "scene1")

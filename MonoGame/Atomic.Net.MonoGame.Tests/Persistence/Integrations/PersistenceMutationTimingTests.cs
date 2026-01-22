@@ -27,13 +27,16 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         // Arrange: Initialize systems with clean database
         _dbPath = Path.Combine(Path.GetTempPath(), $"persistence_mutation_{Guid.NewGuid()}.db");
         
+        // senior-dev: Set database path via environment variable (per PR #5)
+        Environment.SetEnvironmentVariable("ATOMIC_PERSISTENCE_DB_PATH", _dbPath);
+
         AtomicSystem.Initialize();
         BEDSystem.Initialize();
         SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
         
         // test-architect: Initialize DatabaseRegistry with test database path
-        DatabaseRegistry.Instance.InitializeDatabase(_dbPath);
+        // Database initialized via environment variable
     }
 
     public void Dispose()

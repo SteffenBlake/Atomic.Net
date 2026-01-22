@@ -28,12 +28,15 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         // Arrange: Initialize systems with clean database
         _dbPath = Path.Combine(Path.GetTempPath(), $"persistence_sceneload_{Guid.NewGuid()}.db");
         
+        // senior-dev: Set database path via environment variable (per PR #5)
+        Environment.SetEnvironmentVariable("ATOMIC_PERSISTENCE_DB_PATH", _dbPath);
+
         AtomicSystem.Initialize();
         BEDSystem.Initialize();
         SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
         
-        DatabaseRegistry.Instance.InitializeDatabase(_dbPath);
+        // Database initialized via environment variable
     }
 
     public void Dispose()

@@ -88,6 +88,7 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
 
     /// <summary>
     /// Handles InitializeEvent - registers for behavior events and initializes database.
+    /// Database path from environment variable ATOMIC_PERSISTENCE_DB_PATH or default.
     /// </summary>
     public void OnEvent(InitializeEvent e)
     {
@@ -100,32 +101,10 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
         EventBus<PreBehaviorUpdatedEvent<PersistToDiskBehavior>>.Register(this);
         EventBus<PreBehaviorRemovedEvent<PersistToDiskBehavior>>.Register(this);
         
-        // senior-dev: Initialize database with default path (PR comment #5)
-        InitializeDatabase(Constants.DefaultPersistenceDatabasePath);
-    }
-    
-    /// <summary>
-    /// Handles EntityMutatedEvent - marks entity as dirty for persistence.
-    /// </summary>
-    public void OnEvent(EntityMutatedEvent e)
-    {
-        MarkDirty(e.Entity.Index);
-    }
-
-    /// <summary>
-    /// Initializes LiteDB connection.
-    /// Called by OnEvent(InitializeEvent) with default path, or explicitly by tests with custom path.
-    /// Can be called multiple times to reinitialize with different path.
-    /// </summary>
-    public void InitializeDatabase(string dbPath)
-    {
-        // senior-dev: Close existing connection if re-initializing
-        if (_database != null)
-        {
-            _database.Dispose();
-            _database = null;
-            _collection = null;
-        }
+        // senior-dev: Initialize database with path from environment variable or default (PR comment #5)
+        // Tests specify path via: dotnet test -e ATOMIC_PERSISTENCE_DB_PATH=/path/to/db
+        var dbPath = Environment.GetEnvironmentVariable("ATOMIC_PERSISTENCE_DB_PATH") 
+                     ?? Constants.DefaultPersistenceDatabasePath;
         
         try
         {
@@ -140,6 +119,14 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
             ));
             // Leave _database and _collection as null (graceful degradation)
         }
+    }
+    
+    /// <summary>
+    /// Handles EntityMutatedEvent - marks entity as dirty for persistence.
+    /// </summary>
+    public void OnEvent(EntityMutatedEvent e)
+    {
+        MarkDirty(e.Entity.Index);
     }
 
     /// <summary>
