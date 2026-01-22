@@ -280,18 +280,12 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
                     Enable();
                 }
             }
-            else if (SerializeEntity != null)
+            else
             {
-                // senior-dev: Key doesn't exist in DB - write current entity state
-                var json = SerializeEntity(entity);
-                
-                var newDoc = new BsonDocument
-                {
-                    ["_id"] = key,
-                    ["data"] = json
-                };
-                
-                _collection.Upsert(newDoc);
+                // senior-dev: Key doesn't exist in DB - DON'T write immediately
+                // Just mark dirty so that Flush() will write the complete entity state
+                // This ensures all behaviors have been added before persisting
+                MarkDirty(entity.Index);
             }
         }
         catch (Exception ex)
