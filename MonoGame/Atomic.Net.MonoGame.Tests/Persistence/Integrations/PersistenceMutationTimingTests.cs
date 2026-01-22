@@ -33,7 +33,7 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         EventBus<InitializeEvent>.Push(new());
         
         // test-architect: Initialize DatabaseRegistry with test database path
-        // DatabaseRegistry.Instance.Initialize(_dbPath);
+        DatabaseRegistry.Instance.InitializeDatabase(_dbPath);
     }
 
     public void Dispose()
@@ -41,7 +41,7 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         // Clean up entities and database between tests
         EventBus<ShutdownEvent>.Push(new());
         
-        // DatabaseRegistry.Instance.Shutdown();
+        DatabaseRegistry.Instance.Shutdown();
         if (File.Exists(_dbPath))
         {
             File.Delete(_dbPath);

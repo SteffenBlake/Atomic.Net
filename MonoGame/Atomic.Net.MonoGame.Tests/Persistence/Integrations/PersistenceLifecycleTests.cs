@@ -41,8 +41,8 @@ public sealed class PersistenceLifecycleTests : IDisposable
         // Clean up ALL entities and shutdown database between tests
         EventBus<ShutdownEvent>.Push(new());
         
-        // test-architect: Clean up database file
-        // DatabaseRegistry.Instance.Shutdown(); // To be implemented by @senior-dev
+        // senior-dev: Clean up database file (Shutdown now implemented)
+        DatabaseRegistry.Instance.Shutdown();
         if (File.Exists(_dbPath))
         {
             File.Delete(_dbPath);
@@ -185,7 +185,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         DatabaseRegistry.Instance.Flush();
         
         // Assert: Database should have final state (10000)
-        var newEntity1 = new Entity(301);
+        var newEntity1 = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity1, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("removal-test-key");
@@ -201,7 +201,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         DatabaseRegistry.Instance.Flush();
         
         // Verify disk still has 10000 (not 20000)
-        var newEntity2 = new Entity(302);
+        var newEntity2 = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity2, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("removal-test-key");

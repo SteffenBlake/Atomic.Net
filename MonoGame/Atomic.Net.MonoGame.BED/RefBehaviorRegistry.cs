@@ -22,7 +22,7 @@ public class RefBehaviorRegistry<TBehavior> :
         }
 
         Instance ??= new();
-        EventBus<InitializeEvent>.Register<RefBehaviorRegistry<TBehavior>>();
+        EventBus<InitializeEvent>.Register(Instance);
     }
 
     public static RefBehaviorRegistry<TBehavior> Instance { get; private set; } = null!;

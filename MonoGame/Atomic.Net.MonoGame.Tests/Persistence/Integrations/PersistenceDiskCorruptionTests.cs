@@ -35,7 +35,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
         
-        // DatabaseRegistry.Instance.InitializeDatabase(_dbPath);
+        DatabaseRegistry.Instance.InitializeDatabase(_dbPath);
     }
 
     public void Dispose()
@@ -43,7 +43,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         // Clean up entities and database between tests
         EventBus<ShutdownEvent>.Push(new());
         
-        // DatabaseRegistry.Instance.Shutdown();
+        DatabaseRegistry.Instance.Shutdown();
         if (File.Exists(_dbPath))
         {
             File.Delete(_dbPath);
@@ -119,7 +119,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
     public void PartialEntitySave_DiskHasSubsetOfBehaviors_MergesWithScene()
     {
         // Arrange: Save entity with only some behaviors
-        var entity1 = new Entity(300);
+        var entity1 = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity1, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("partial-key");
@@ -135,7 +135,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         // Act: Reset and create new entity with Transform but load from disk
         EventBus<ResetEvent>.Push(new());
         
-        var entity2 = new Entity(400);
+        var entity2 = EntityRegistry.Instance.Activate();
         BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(entity2, (ref TransformBehavior behavior) =>
         {
             behavior = TransformBehavior.CreateFor(entity2);
@@ -202,7 +202,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
     public void CrossScenePersistence_PersistentPartitionSurvivesReset()
     {
         // Arrange: Create entity in persistent partition (index < 256)
-        var persistentEntity = new Entity(100);
+        var persistentEntity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(persistentEntity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("persistent-partition-key");
@@ -234,7 +234,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
     public void CrossScenePersistence_ScenePartitionClearedButDiskPersists()
     {
         // Arrange: Create entity in scene partition (index >= 256) with disk persistence
-        var sceneEntity = new Entity(300);
+        var sceneEntity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(sceneEntity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("scene-partition-key");

@@ -2,6 +2,9 @@ using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.BED.Properties;
 using Atomic.Net.MonoGame.Transform;
 using Atomic.Net.MonoGame.Scenes.Persistence;
+using Atomic.Net.MonoGame.Core;
+using Atomic.Net.MonoGame.BED.Hierarchy;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Atomic.Net.MonoGame.Scenes.JsonModels;
 
@@ -40,4 +43,91 @@ public class JsonEntity
     /// senior-dev: MUST be applied LAST in SceneLoader to prevent unwanted DB loads during scene construction
     /// </summary>
     public PersistToDiskBehavior? PersistToDisk { get; set; } = null;
+    
+    /// <summary>
+    /// Creates a JsonEntity from an existing entity by reading all its behaviors.
+    /// Used for serialization to disk.
+    /// </summary>
+    public static JsonEntity FromEntity(Entity entity)
+    {
+        var jsonEntity = new JsonEntity();
+        
+        // senior-dev: Collect all behaviors from their respective registries
+        jsonEntity.Id = BehaviorRegistry<IdBehavior>.Instance.TryGetBehavior(entity, out var id) 
+            ? id : null;
+
+        jsonEntity.Transform = BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var transform) 
+            ? transform : null;
+
+        jsonEntity.Properties = BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out var properties) 
+            ? properties : null;
+
+        jsonEntity.PersistToDisk = BehaviorRegistry<PersistToDiskBehavior>.Instance.TryGetBehavior(entity, out var persistToDisk) 
+            ? persistToDisk : null;
+
+        // senior-dev: Handle Parent (stored in BehaviorRegistry<Parent>)
+        if (BehaviorRegistry<Parent>.Instance.TryGetBehavior(entity, out var parent))
+        {
+            // senior-dev: Get parent entity's ID if it exists
+            var parentEntity = EntityRegistry.Instance[parent.Value.ParentIndex];
+            if (BehaviorRegistry<IdBehavior>.Instance.TryGetBehavior(parentEntity, out var parentId))
+            {
+                jsonEntity.Parent = new EntitySelector { ById = parentId.Value.Id };
+            }
+        }
+        
+        return jsonEntity;
+    }
+    
+    /// <summary>
+    /// Writes all behaviors from this JsonEntity to an existing entity.
+    /// Used for deserialization from disk.
+    /// Does NOT apply PersistToDiskBehavior (already set by caller).
+    /// </summary>
+    public void WriteToEntity(Entity entity)
+    {
+        // senior-dev: Apply all behaviors from JSON (in specific order per sprint requirements)
+        // Transform, Properties, Id applied first, then Parent
+        // PersistToDiskBehavior is NOT applied here (already set by caller)
+        
+        if (Transform.HasValue)
+        {
+            var input = Transform.Value;
+            entity.SetBehavior<TransformBehavior, TransformBehavior>(
+                in input,
+                (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (Properties.HasValue)
+        {
+            var input = Properties.Value;
+            entity.SetBehavior<PropertiesBehavior, PropertiesBehavior>(
+                in input,
+                (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (Id.HasValue)
+        {
+            var input = Id.Value;
+            entity.SetBehavior<IdBehavior, IdBehavior>(
+                in input,
+                (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        // senior-dev: Parent is handled if referenced entity exists
+        if (Parent.HasValue)
+        {
+            if (Parent.Value.TryLocate(out var parentEntity))
+            {
+                var input = parentEntity.Value.Index;
+                entity.SetBehavior<Parent, ushort>(
+                    in input,
+                    (ref readonly _input, ref behavior) => behavior = new(_input)
+                );
+            }
+        }
+    }
 }

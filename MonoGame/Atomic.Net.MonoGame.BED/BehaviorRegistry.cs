@@ -23,7 +23,7 @@ public class BehaviorRegistry<TBehavior> :
         }
 
         Instance ??= new();
-        EventBus<InitializeEvent>.Register<BehaviorRegistry<TBehavior>>();
+        EventBus<InitializeEvent>.Register(Instance);
     }
 
     /// <summary>

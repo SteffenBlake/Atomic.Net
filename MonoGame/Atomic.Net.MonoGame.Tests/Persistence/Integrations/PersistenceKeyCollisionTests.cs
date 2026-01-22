@@ -33,7 +33,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
         
-        // DatabaseRegistry.Instance.InitializeDatabase(_dbPath);
+        DatabaseRegistry.Instance.InitializeDatabase(_dbPath);
     }
 
     public void Dispose()
@@ -41,7 +41,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         // Clean up entities and database between tests
         EventBus<ShutdownEvent>.Push(new());
         
-        // DatabaseRegistry.Instance.Shutdown();
+        DatabaseRegistry.Instance.Shutdown();
         if (File.Exists(_dbPath))
         {
             File.Delete(_dbPath);
@@ -52,8 +52,8 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
     public void DuplicateKeys_SameScene_LastWriteWins()
     {
         // Arrange: Create two entities with same persistence key
-        var entity1 = new Entity(300);
-        var entity2 = new Entity(301);
+        var entity1 = EntityRegistry.Instance.Activate();
+        var entity2 = EntityRegistry.Instance.Activate();
         
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity1, (ref PersistToDiskBehavior behavior) =>
         {
@@ -96,7 +96,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
     public void DuplicateKeys_CrossScene_LoadOverwritesEntity()
     {
         // Arrange: Create and persist entity in first "scene"
-        var entity1 = new Entity(300);
+        var entity1 = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity1, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("cross-scene-key");
@@ -112,7 +112,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         EventBus<ResetEvent>.Push(new());
         
         // Create new entity with same key in second "scene"
-        var entity2 = new Entity(400);
+        var entity2 = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("cross-scene-key");

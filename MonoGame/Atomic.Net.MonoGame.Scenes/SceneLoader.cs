@@ -36,9 +36,6 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     
     // senior-dev: Pre-allocated SparseArray for PersistToDiskBehavior queue (zero-alloc scene loading)
     private readonly SparseArray<PersistToDiskBehavior> _persistToDiskQueue = new(Constants.MaxEntities);
-    
-    // senior-dev: Pre-allocated JsonEntity to reduce allocations during serialization
-    private readonly JsonEntity _jsonEntity = new();
 
     /// <summary>
     /// Loads a game scene from JSON file.
@@ -113,98 +110,109 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
     private void LoadSceneInternal(JsonScene scene, bool usePersistentPartition)
     {
-        // senior-dev: Clear pre-allocated child-to-parent mapping
-        _childToParents.Clear();
+        // senior-dev: Disable dirty tracking during scene load to prevent unwanted DB writes
+        DatabaseRegistry.Instance.Disable();
         
-        // senior-dev: Clear pre-allocated PersistToDiskBehavior queue (zero-alloc)
-        _persistToDiskQueue.Clear();
-        
-        foreach (var jsonEntity in scene.Entities)
+        try
         {
-            var entity = usePersistentPartition 
-                ? EntityRegistry.Instance.ActivatePersistent() 
-                : EntityRegistry.Instance.Activate();
-
-            if (jsonEntity.Transform.HasValue)
+            // senior-dev: Clear pre-allocated child-to-parent mapping
+            _childToParents.Clear();
+            
+            // senior-dev: Clear pre-allocated PersistToDiskBehavior queue (zero-alloc)
+            _persistToDiskQueue.Clear();
+            
+            foreach (var jsonEntity in scene.Entities)
             {
+                var entity = usePersistentPartition 
+                    ? EntityRegistry.Instance.ActivatePersistent() 
+                    : EntityRegistry.Instance.Activate();
+
+                if (jsonEntity.Transform.HasValue)
+                {
+                    // Closure avoidance
+                    var input = jsonEntity.Transform.Value;
+                    entity.SetBehavior<TransformBehavior, TransformBehavior>(
+                        in input,
+                        (ref readonly _input, ref behavior) => behavior = _input
+                    );
+                }
+
+                if (jsonEntity.Properties.HasValue)
+                {
+                    // Closure avoidance
+                    var input = jsonEntity.Properties.Value;
+                    entity.SetBehavior<PropertiesBehavior, PropertiesBehavior>(
+                        in input,
+                        (ref readonly _input, ref behavior) => behavior = _input
+                    );
+                }
+
+                if (jsonEntity.Id.HasValue)
+                {
+                    // Closure avoidance
+                    var input = jsonEntity.Id.Value;
+                    entity.SetBehavior<IdBehavior, IdBehavior>(
+                        in input,
+                        (ref readonly _input, ref behavior) => behavior = _input
+                    );
+                }
+
+                if (jsonEntity.Parent.HasValue)
+                {
+                    // senior-dev: Use SparseArray for zero-alloc parent tracking
+                    _childToParents.Set(entity.Index, jsonEntity.Parent.Value);
+                }
+                
+                // senior-dev: Queue PersistToDiskBehavior to be applied LAST
+                // CRITICAL: This MUST be applied after all other behaviors (including Parent)
+                // to prevent unwanted DB loads during scene construction
+                if (jsonEntity.PersistToDisk.HasValue)
+                {
+                    _persistToDiskQueue.Set(entity.Index, jsonEntity.PersistToDisk.Value);
+                }
+            }
+
+            // senior-dev: Second pass - resolve parent references using SparseArray (zero-alloc)
+            foreach (var (entityIndex, parentSelector) in _childToParents)
+            {
+                if (!parentSelector.TryLocate(out var parent))
+                {
+                    continue;
+                }
+
+                var entity = EntityRegistry.Instance[entityIndex];
+
                 // Closure avoidance
-                var input = jsonEntity.Transform.Value;
-                entity.SetBehavior<TransformBehavior, TransformBehavior>(
+                var input = parent.Value.Index;
+                entity.SetBehavior<Parent, ushort>(
                     in input,
-                    (ref readonly _input, ref behavior) => behavior = _input
+                    (ref readonly _input, ref behavior) => behavior = new(_input)
                 );
             }
 
-            if (jsonEntity.Properties.HasValue)
+            _childToParents.Clear();
+            
+            // senior-dev: Third pass - apply PersistToDiskBehavior LAST (after Parent and all other behaviors)
+            // CRITICAL: This order is enforced to prevent DB loads from overwriting scene construction
+            // Future maintainers: DO NOT change this order without understanding infinite loop prevention
+            foreach (var (entityIndex, persistToDisk) in _persistToDiskQueue)
             {
-                // Closure avoidance
-                var input = jsonEntity.Properties.Value;
-                entity.SetBehavior<PropertiesBehavior, PropertiesBehavior>(
+                var entity = EntityRegistry.Instance[entityIndex];
+                var input = persistToDisk;
+                entity.SetBehavior<PersistToDiskBehavior, PersistToDiskBehavior>(
                     in input,
                     (ref readonly _input, ref behavior) => behavior = _input
                 );
-            }
-
-            if (jsonEntity.Id.HasValue)
-            {
-                // Closure avoidance
-                var input = jsonEntity.Id.Value;
-                entity.SetBehavior<IdBehavior, IdBehavior>(
-                    in input,
-                    (ref readonly _input, ref behavior) => behavior = _input
-                );
-            }
-
-            if (jsonEntity.Parent.HasValue)
-            {
-                // senior-dev: Use SparseArray for zero-alloc parent tracking
-                _childToParents.Set(entity.Index, jsonEntity.Parent.Value);
             }
             
-            // senior-dev: Queue PersistToDiskBehavior to be applied LAST
-            // CRITICAL: This MUST be applied after all other behaviors (including Parent)
-            // to prevent unwanted DB loads during scene construction
-            if (jsonEntity.PersistToDisk.HasValue)
-            {
-                _persistToDiskQueue.Set(entity.Index, jsonEntity.PersistToDisk.Value);
-            }
+            // senior-dev: Clear queue for next scene load (zero-alloc)
+            _persistToDiskQueue.Clear();
         }
-
-        // senior-dev: Second pass - resolve parent references using SparseArray (zero-alloc)
-        foreach (var (entityIndex, parentSelector) in _childToParents)
+        finally
         {
-            if (!parentSelector.TryLocate(out var parent))
-            {
-                continue;
-            }
-
-            var entity = EntityRegistry.Instance[entityIndex];
-
-            // Closure avoidance
-            var input = parent.Value.Index;
-            entity.SetBehavior<Parent, ushort>(
-                in input,
-                (ref readonly _input, ref behavior) => behavior = new(_input)
-            );
+            // senior-dev: Re-enable dirty tracking after scene load completes
+            DatabaseRegistry.Instance.Enable();
         }
-
-        _childToParents.Clear();
-        
-        // senior-dev: Third pass - apply PersistToDiskBehavior LAST (after Parent and all other behaviors)
-        // CRITICAL: This order is enforced to prevent DB loads from overwriting scene construction
-        // Future maintainers: DO NOT change this order without understanding infinite loop prevention
-        foreach (var (entityIndex, persistToDisk) in _persistToDiskQueue)
-        {
-            var entity = EntityRegistry.Instance[entityIndex];
-            var input = persistToDisk;
-            entity.SetBehavior<PersistToDiskBehavior, PersistToDiskBehavior>(
-                in input,
-                (ref readonly _input, ref behavior) => behavior = _input
-            );
-        }
-        
-        // senior-dev: Clear queue for next scene load (zero-alloc)
-        _persistToDiskQueue.Clear();
     }
     
     /// <summary>
@@ -213,41 +221,8 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     /// </summary>
     public static string SerializeEntityToJson(Entity entity)
     {
-        // senior-dev: Use pre-allocated JsonEntity to reduce allocations
-        var jsonEntity = Instance._jsonEntity;
-
-        // senior-dev: Collect all behaviors from their respective registries
-        jsonEntity.Id = BehaviorRegistry<IdBehavior>.Instance.TryGetBehavior(entity, out var id) 
-            ? id : null;
-
-        jsonEntity.Transform = BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var transform) 
-            ? transform : null;
-
-        jsonEntity.Properties = BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out var properties) 
-            ? properties : null;
-
-        jsonEntity.PersistToDisk = BehaviorRegistry<PersistToDiskBehavior>.Instance.TryGetBehavior(entity, out var persistToDisk) 
-            ? persistToDisk : null;
-
-        // senior-dev: Handle Parent (stored in BehaviorRegistry<Parent>)
-        if (BehaviorRegistry<Parent>.Instance.TryGetBehavior(entity, out var parent))
-        {
-            // senior-dev: Get parent entity's ID if it exists
-            var parentEntity = EntityRegistry.Instance[parent.Value.ParentIndex];
-            if (BehaviorRegistry<IdBehavior>.Instance.TryGetBehavior(parentEntity, out var parentId))
-            {
-                jsonEntity.Parent = new EntitySelector { ById = parentId.Value.Id };
-            }
-            else
-            {
-                jsonEntity.Parent = null;
-            }
-        }
-        else
-        {
-            jsonEntity.Parent = null;
-        }
-
+        // senior-dev: Use JsonEntity.FromEntity() to eliminate duplicate logic
+        var jsonEntity = JsonEntity.FromEntity(entity);
         return JsonSerializer.Serialize(jsonEntity, JsonSerializerOptions.Web);
     }
     
@@ -263,48 +238,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
             return;
         }
 
-        // senior-dev: Apply all behaviors from JSON (in specific order per sprint requirements)
-        // Transform, Properties, Id applied first, then Parent
-        // PersistToDiskBehavior is NOT applied here (already set by caller)
-        
-        if (jsonEntity.Transform.HasValue)
-        {
-            var input = jsonEntity.Transform.Value;
-            entity.SetBehavior<TransformBehavior, TransformBehavior>(
-                in input,
-                (ref readonly _input, ref behavior) => behavior = _input
-            );
-        }
-
-        if (jsonEntity.Properties.HasValue)
-        {
-            var input = jsonEntity.Properties.Value;
-            entity.SetBehavior<PropertiesBehavior, PropertiesBehavior>(
-                in input,
-                (ref readonly _input, ref behavior) => behavior = _input
-            );
-        }
-
-        if (jsonEntity.Id.HasValue)
-        {
-            var input = jsonEntity.Id.Value;
-            entity.SetBehavior<IdBehavior, IdBehavior>(
-                in input,
-                (ref readonly _input, ref behavior) => behavior = _input
-            );
-        }
-
-        // senior-dev: Parent is handled if referenced entity exists
-        if (jsonEntity.Parent.HasValue)
-        {
-            if (jsonEntity.Parent.Value.TryLocate(out var parentEntity))
-            {
-                var input = parentEntity.Value.Index;
-                entity.SetBehavior<Parent, ushort>(
-                    in input,
-                    (ref readonly _input, ref behavior) => behavior = new(_input)
-                );
-            }
-        }
+        // senior-dev: Use JsonEntity.WriteToEntity() to eliminate duplicate deserialization logic
+        jsonEntity.WriteToEntity(entity);
     }
 }

@@ -33,7 +33,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
         
-        // DatabaseRegistry.Instance.InitializeDatabase(_dbPath);
+        DatabaseRegistry.Instance.InitializeDatabase(_dbPath);
     }
 
     public void Dispose()
@@ -41,7 +41,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         // Clean up entities and database between tests
         EventBus<ShutdownEvent>.Push(new());
         
-        // DatabaseRegistry.Instance.Shutdown();
+        DatabaseRegistry.Instance.Shutdown();
         if (File.Exists(_dbPath))
         {
             File.Delete(_dbPath);
@@ -204,7 +204,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         EventBus<ResetEvent>.Push(new());
         
         // Create new entity and try to add PersistToDiskBehavior with non-existent key
-        var testEntity = new Entity(301);
+        var testEntity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(testEntity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("non-persistent-entity-key");
@@ -263,7 +263,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         DatabaseRegistry.Instance.Flush();
         
         // Verify data is still correct (no corruption from loop)
-        var verifyEntity = new Entity(401);
+        var verifyEntity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(verifyEntity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("loop-test-key");
