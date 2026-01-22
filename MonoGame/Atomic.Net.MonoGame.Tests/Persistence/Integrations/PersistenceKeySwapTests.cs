@@ -47,11 +47,11 @@ public sealed class PersistenceKeySwapTests : IDisposable
         }
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void KeySwap_PreservesBothSaveSlots()
     {
         // Arrange: Create entity with initial key
-        var entity = new Entity(300);
+        var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("save-slot-1");
@@ -106,11 +106,11 @@ public sealed class PersistenceKeySwapTests : IDisposable
         Assert.Equal(100f, reloadedProps.Value.Properties["hp"]);
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void RapidKeySwapping_DoesNotCorruptData()
     {
         // Arrange: Create entity
-        var entity = new Entity(300);
+        var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity);
@@ -155,11 +155,11 @@ public sealed class PersistenceKeySwapTests : IDisposable
         // before Flush() is called. This is acceptable behavior (batching optimization).
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void KeySwap_WithMutationInSameFrame_WritesToNewKey()
     {
         // Arrange: Create and persist entity
-        var entity = new Entity(300);
+        var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("original-key");
@@ -205,7 +205,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
         // the mutation was made while pointing to old key, but Flush happens after swap.
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void KeySwap_ToExistingKey_LoadsFromDatabase()
     {
         // Arrange: Create two separate save slots

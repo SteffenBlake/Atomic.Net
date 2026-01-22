@@ -48,11 +48,11 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         }
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void RapidMutations_SameFrame_OnlyLastValueWrittenToDisk()
     {
         // Arrange: Create persistent entity
-        var entity = new Entity(300);
+        var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("rapid-mutation-key");
@@ -81,7 +81,7 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         DatabaseRegistry.Instance.Flush();
         
         // Assert: Database should have final value (10), not intermediate values
-        var newEntity = new Entity(301);
+        var newEntity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("rapid-mutation-key");
@@ -90,14 +90,14 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         Assert.Equal(10f, loadedProps.Value.Properties["score"]);
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void MutationsDuringSceneLoad_AreSavedAfterReEnable()
     {
         // Arrange: Disable dirty tracking to simulate scene load
         DatabaseRegistry.Instance.Disable();
         
         // Act: Create entity and mutate during disabled period
-        var entity = new Entity(300);
+        var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("scene-load-mutation-key");
@@ -123,7 +123,7 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         DatabaseRegistry.Instance.Flush();
         
         // Assert: Database should have post-enable value (1000)
-        var newEntity = new Entity(301);
+        var newEntity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("scene-load-mutation-key");
@@ -132,14 +132,14 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         Assert.Equal(1000f, loadedProps.Value.Properties["counter"]);
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void MutationsBeforePersistToDiskBehavior_AreNotSaved()
     {
         // Arrange: Disable dirty tracking to simulate scene load
         DatabaseRegistry.Instance.Disable();
         
         // Act: Create entity and mutate BEFORE adding PersistToDiskBehavior
-        var entity = new Entity(300);
+        var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity);
@@ -159,7 +159,7 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         DatabaseRegistry.Instance.Flush();
         
         // Assert: Verify entity was written with its current state
-        var newEntity = new Entity(301);
+        var newEntity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("pre-behavior-key");

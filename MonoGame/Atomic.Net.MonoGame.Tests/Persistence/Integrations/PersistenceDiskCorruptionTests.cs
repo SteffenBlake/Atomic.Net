@@ -50,7 +50,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         }
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void CorruptJsonInDatabase_FiresErrorEventAndUsesDefaults()
     {
         // Arrange: Set up error event listener
@@ -70,7 +70,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         DatabaseRegistry.Instance.Initialize();
         
         // Act: Try to load entity with corrupt JSON - should fire ErrorEvent when deserializing
-        var entity = new Entity(300);
+        var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("corrupt-key");
@@ -86,7 +86,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         Assert.False(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out _));
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void MissingDatabaseFile_UsesSceneDefaults()
     {
         // Arrange: Delete database file to simulate missing file
@@ -99,7 +99,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         // Act: Try to load entity from non-existent database
         DatabaseRegistry.Instance.Initialize();
         
-        var entity = new Entity(300);
+        var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("missing-file-key");
@@ -115,7 +115,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         Assert.True(File.Exists(_dbPath));
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void PartialEntitySave_DiskHasSubsetOfBehaviors_MergesWithScene()
     {
         // Arrange: Save entity with only some behaviors
@@ -158,7 +158,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         // Behaviors not in disk persist from scene definition.
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void DatabaseLocked_FiresErrorEventAndContinues()
     {
         // Arrange: Set up error event listener
@@ -174,7 +174,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         DatabaseRegistry.Instance.Initialize();
         
         // Act: Try to flush while database is locked - should fire ErrorEvent
-        var entity = new Entity(300);
+        var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("locked-key");
@@ -198,7 +198,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         Assert.True(entity.Active);
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void CrossScenePersistence_PersistentPartitionSurvivesReset()
     {
         // Arrange: Create entity in persistent partition (index < 256)
@@ -221,7 +221,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         Assert.True(persistentEntity.Active);
         
         // test-architect: Disk should also have the entity
-        var newEntity = new Entity(256);
+        var newEntity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("persistent-partition-key");
@@ -230,7 +230,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         Assert.Equal("persistent", props.Value.Properties["partition"]);
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void CrossScenePersistence_ScenePartitionClearedButDiskPersists()
     {
         // Arrange: Create entity in scene partition (index >= 256) with disk persistence
@@ -253,7 +253,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         Assert.False(sceneEntity.Active);
         
         // test-architect: But disk should still have the entity (can be reloaded)
-        var newEntity = new Entity(301);
+        var newEntity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("scene-partition-key");

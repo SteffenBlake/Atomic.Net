@@ -48,7 +48,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         }
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void DuplicateKeys_SameScene_LastWriteWins()
     {
         // Arrange: Create two entities with same persistence key
@@ -80,7 +80,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         
         // Assert: Last write should win (entity2 with "second")
         // test-architect: Design decision - either fire ErrorEvent or use last-write-wins
-        var newEntity = new Entity(302);
+        var newEntity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("duplicate-key");
@@ -92,7 +92,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         // or silently use last-write-wins. Current assumption: last-write-wins.
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void DuplicateKeys_CrossScene_LoadOverwritesEntity()
     {
         // Arrange: Create and persist entity in first "scene"
@@ -129,14 +129,14 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         Assert.Equal("scene1", loadedProps.Value.Properties["scene"]);
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void EmptyStringKey_FiresErrorEventAndSkipsPersistence()
     {
         // Arrange: Set up error event listener
         using var errorListener = new FakeEventListener<ErrorEvent>();
         
         // Act: Try to create entity with empty string key
-        var entity = new Entity(300);
+        var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(entity);
@@ -156,7 +156,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         
         // test-architect: Entity should NOT be written to database
         // Verify by trying to load with empty key - should not find anything
-        var newEntity = new Entity(301);
+        var newEntity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("");
@@ -168,14 +168,14 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
 
 
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void WhitespaceKey_FiresErrorEventAndSkipsPersistence()
     {
         // Arrange: Set up error event listener
         using var errorListener = new FakeEventListener<ErrorEvent>();
         
         // Act: Try to create entity with whitespace-only key
-        var entity = new Entity(300);
+        var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("   ");
@@ -194,7 +194,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         Assert.Contains(errorListener.ReceivedEvents, e => e.Message.Contains("whitespace") || e.Message.Contains("key") || e.Message.Contains("empty"));
         
         // test-architect: Entity should NOT be written to database
-        var newEntity = new Entity(301);
+        var newEntity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("   ");

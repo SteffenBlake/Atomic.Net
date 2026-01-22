@@ -33,6 +33,9 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
     // senior-dev: Pre-allocated SparseReferenceArray for parent-child mappings (zero-alloc iteration)
     private readonly SparseArray<EntitySelector> _childToParents = new(Constants.MaxEntities);
+    
+    // senior-dev: Pre-allocated list for PersistToDiskBehavior queue (zero-alloc scene loading)
+    private readonly List<(Entity, PersistToDiskBehavior)> _persistToDiskQueue = new(Constants.MaxEntities);
 
     /// <summary>
     /// Loads a game scene from JSON file.
@@ -114,8 +117,8 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         // senior-dev: Clear pre-allocated child-to-parent mapping
         _childToParents.Clear();
         
-        // senior-dev: Store entities that need PersistToDiskBehavior (apply LAST)
-        var persistToDiskQueue = new List<(Entity, PersistToDiskBehavior)>();
+        // senior-dev: Clear pre-allocated PersistToDiskBehavior queue (zero-alloc)
+        _persistToDiskQueue.Clear();
         
         foreach (var jsonEntity in scene.Entities)
         {
@@ -164,7 +167,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
             // to prevent unwanted DB loads during scene construction
             if (jsonEntity.PersistToDisk.HasValue)
             {
-                persistToDiskQueue.Add((entity, jsonEntity.PersistToDisk.Value));
+                _persistToDiskQueue.Add((entity, jsonEntity.PersistToDisk.Value));
             }
         }
 
@@ -191,7 +194,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         // senior-dev: Third pass - apply PersistToDiskBehavior LAST (after Parent and all other behaviors)
         // CRITICAL: This order is enforced to prevent DB loads from overwriting scene construction
         // Future maintainers: DO NOT change this order without understanding infinite loop prevention
-        foreach (var (entity, persistToDisk) in persistToDiskQueue)
+        foreach (var (entity, persistToDisk) in _persistToDiskQueue)
         {
             var input = persistToDisk;
             entity.SetBehavior<PersistToDiskBehavior, PersistToDiskBehavior>(
@@ -199,6 +202,9 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
                 (ref readonly _input, ref behavior) => behavior = _input
             );
         }
+        
+        // senior-dev: Clear queue for next scene load (zero-alloc)
+        _persistToDiskQueue.Clear();
         
         // senior-dev: Re-enable dirty tracking after scene load completes
         DatabaseRegistry.Instance.Enable();

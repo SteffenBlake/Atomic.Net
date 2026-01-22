@@ -48,7 +48,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         }
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void LoadScene_WithPersistToDiskBehavior_AppliesBehaviorLast()
     {
         // Arrange
@@ -74,11 +74,11 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         // requires checking SceneLoader code has comment "PersistToDiskBehavior MUST be applied last"
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void LoadScene_WithExistingDiskData_LoadsFromDatabaseNotScene()
     {
         // Arrange: Pre-populate database with DIFFERENT data than scene
-        var entity = new Entity(300);
+        var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("player-save-slot-1");
@@ -108,7 +108,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         // triggers database load, overwriting scene-defined values.
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void LoadScene_DuringDisabled_DoesNotTriggerDirtyTracking()
     {
         // Arrange: Disable dirty tracking
@@ -139,7 +139,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         DatabaseRegistry.Instance.Flush(); // Should write now
         
         // Verify: Load entity from disk and check what persisted
-        var newEntity = new Entity(301);
+        var newEntity = EntityRegistry.Instance.Activate();
         Assert.True(BehaviorRegistry<PersistToDiskBehavior>.Instance.TryGetBehavior(playerEntity.Value, out var persistKey));
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
         {
@@ -150,7 +150,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         Assert.Equal("should-persist", props.Value.Properties["afterEnabled"]); // Persisted
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void SceneReload_WithModifiedData_PreservesChanges()
     {
         // Arrange: Load scene and modify entity
@@ -178,7 +178,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         Assert.Equal(777f, props.Value.Properties["value"]);      // From disk, not scene
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void LoadScene_NonPersistentEntity_DoesNotPersist()
     {
         // Arrange: Load scene with mix of persistent and non-persistent entities
@@ -214,11 +214,11 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
             && props.Value.Properties.ContainsKey("test"));
     }
 
-    [Fact(Skip = "Awaiting implementation by @senior-dev")]
+    [Fact]
     public void InfiniteLoopPrevention_LoadFromDisk_DoesNotTriggerDbWrite()
     {
         // Arrange: Pre-populate database with unique marker
-        var entity = new Entity(300);
+        var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
         {
             behavior = new PersistToDiskBehavior("loop-test-key");
@@ -234,7 +234,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
 
         // Act: Create new entity with DIFFERENT data, then apply same key
         // Key application should LOAD from disk (overwriting the different data)
-        var newEntity = new Entity(400);
+        var newEntity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(newEntity, (ref PropertiesBehavior behavior) =>
         {
             behavior = PropertiesBehavior.CreateFor(newEntity);

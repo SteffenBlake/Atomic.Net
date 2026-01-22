@@ -24,6 +24,9 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     // senior-dev: Dirty tracking sparse array (zero-alloc flagging)
     private readonly SparseArray<bool> _dirtyFlags = new(Constants.MaxEntities);
     
+    // senior-dev: Pre-allocated list for batch upsert operations (zero-alloc flush)
+    private readonly List<BsonDocument> _documentsToUpsert = new(Constants.MaxEntities);
+    
     // senior-dev: LiteDB connection (null until Initialize() is called)
     private LiteDatabase? _database = null;
     private ILiteCollection<BsonDocument>? _collection = null;
@@ -140,8 +143,8 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
             // senior-dev: Get all entities with PersistToDiskBehavior
             var persistentEntities = BehaviorRegistry<PersistToDiskBehavior>.Instance.GetActiveBehaviors();
             
-            // senior-dev: Collect dirty + persistent entities for bulk write (per benchmarker findings)
-            var documentsToUpsert = new List<BsonDocument>();
+            // senior-dev: Clear pre-allocated list for batch write (zero-alloc)
+            _documentsToUpsert.Clear();
             
             foreach (var (entity, persistBehavior) in persistentEntities)
             {
@@ -161,7 +164,8 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
                 }
                 
                 // senior-dev: Serialize entity to JSON using caller-provided delegate
-                var json = SerializeEntity(entity);
+                var serializer = SerializeEntity!; // Null-forgiving: checked at top of method
+                var json = serializer(entity);
                 
                 // senior-dev: Create LiteDB document (key = PersistToDiskBehavior.Key)
                 var doc = new BsonDocument
@@ -170,7 +174,7 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
                     ["data"] = json
                 };
                 
-                documentsToUpsert.Add(doc);
+                _documentsToUpsert.Add(doc);
                 
                 // senior-dev: Clear dirty flag immediately after serialization
                 _dirtyFlags.Remove(entity.Index);
@@ -179,10 +183,13 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
             // senior-dev: Bulk upsert (per benchmarker findings - use Upsert for updates)
             // LiteDB doesn't have a built-in BulkUpsert, so we do individual upserts
             // This is acceptable per benchmarker findings (simpler than tracking new vs existing)
-            foreach (var doc in documentsToUpsert)
+            foreach (var doc in _documentsToUpsert)
             {
                 _collection.Upsert(doc);
             }
+            
+            // senior-dev: Clear list for next flush (zero-alloc)
+            _documentsToUpsert.Clear();
         }
         catch (Exception ex)
         {
