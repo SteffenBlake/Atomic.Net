@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
@@ -86,19 +87,21 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     }
 
     /// <summary>
-    /// Handles InitializeEvent - registers for behavior events.
-    /// Database must be initialized separately via InitializeDatabase().
+    /// Handles InitializeEvent - registers for behavior events and initializes database.
     /// </summary>
     public void OnEvent(InitializeEvent e)
     {
         // senior-dev: Register for EntityMutatedEvent (fired by BehaviorRegistry/RefBehaviorRegistry)
         EventBus<EntityMutatedEvent>.Register(this);
         
-        // senior-dev: Register for PersistToDiskBehavior events
+        // senior-dev: Register for PersistToDiskBehavior events (PR comment #2: use overload without explicit handler param - `this` is inferred)
         EventBus<BehaviorAddedEvent<PersistToDiskBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<PersistToDiskBehavior>>.Register(this);
         EventBus<PreBehaviorUpdatedEvent<PersistToDiskBehavior>>.Register(this);
         EventBus<PreBehaviorRemovedEvent<PersistToDiskBehavior>>.Register(this);
+        
+        // senior-dev: Initialize database with default path (PR comment #5)
+        InitializeDatabase(Constants.DefaultPersistenceDatabasePath);
     }
     
     /// <summary>
@@ -338,11 +341,49 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     }
 
     // senior-dev: Helper method to load entity from DB or mark dirty
+    // Uses TryPattern per AGENTS.md guidelines (PR comment #8)
     private void LoadOrMarkDirty(Entity entity, string key)
     {
+        if (!TryLoadFromDatabase(key, out var json))
+        {
+            // senior-dev: Key doesn't exist in DB - mark dirty for first write
+            MarkDirty(entity.Index);
+            return;
+        }
+        
+        // senior-dev: Key exists in DB - load and apply all behaviors
+        // Disable dirty tracking during deserialization to prevent unwanted writes
+        var wasEnabled = IsEnabled;
+        Disable();
+        
+        try
+        {
+            SceneLoader.DeserializeEntityFromJson(entity, json);
+        }
+        catch (JsonException ex)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Failed to deserialize entity with key '{key}': {ex.Message}"
+            ));
+            // Entity keeps current state (graceful degradation)
+        }
+        
+        if (wasEnabled)
+        {
+            Enable();
+        }
+    }
+    
+    // senior-dev: TryPattern for database loading (per AGENTS.md - PR comment #8)
+    private bool TryLoadFromDatabase(
+        string key,
+        [NotNullWhen(true)] out string? json)
+    {
+        json = null;
+        
         if (_collection == null)
         {
-            return;
+            return false;
         }
 
         BsonDocument? doc = null;
@@ -355,40 +396,15 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Failed to find entity with key '{key}': {ex.Message}"
             ));
-            MarkDirty(entity.Index);
-            return;
+            return false;
         }
         
-        if (doc != null)
+        if (doc == null)
         {
-            // senior-dev: Key exists in DB - load and apply all behaviors
-            var json = doc["data"].AsString;
-            
-            // senior-dev: Disable dirty tracking during deserialization to prevent unwanted writes
-            var wasEnabled = IsEnabled;
-            Disable();
-            
-            try
-            {
-                SceneLoader.DeserializeEntityFromJson(entity, json);
-            }
-            catch (JsonException ex)
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Failed to deserialize entity with key '{key}': {ex.Message}"
-                ));
-                // Entity keeps current state (graceful degradation)
-            }
-            
-            if (wasEnabled)
-            {
-                Enable();
-            }
+            return false;
         }
-        else
-        {
-            // senior-dev: Key doesn't exist in DB - mark dirty for first write
-            MarkDirty(entity.Index);
-        }
+        
+        json = doc["data"].AsString;
+        return true;
     }
 }

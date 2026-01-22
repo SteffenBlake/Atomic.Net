@@ -127,35 +127,9 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
                     ? EntityRegistry.Instance.ActivatePersistent() 
                     : EntityRegistry.Instance.Activate();
 
-                if (jsonEntity.Transform.HasValue)
-                {
-                    // Closure avoidance
-                    var input = jsonEntity.Transform.Value;
-                    entity.SetBehavior<TransformBehavior, TransformBehavior>(
-                        in input,
-                        (ref readonly _input, ref behavior) => behavior = _input
-                    );
-                }
-
-                if (jsonEntity.Properties.HasValue)
-                {
-                    // Closure avoidance
-                    var input = jsonEntity.Properties.Value;
-                    entity.SetBehavior<PropertiesBehavior, PropertiesBehavior>(
-                        in input,
-                        (ref readonly _input, ref behavior) => behavior = _input
-                    );
-                }
-
-                if (jsonEntity.Id.HasValue)
-                {
-                    // Closure avoidance
-                    var input = jsonEntity.Id.Value;
-                    entity.SetBehavior<IdBehavior, IdBehavior>(
-                        in input,
-                        (ref readonly _input, ref behavior) => behavior = _input
-                    );
-                }
+                // senior-dev: Use JsonEntity.WriteToEntity() to eliminate duplicate logic (PR comment #9)
+                // This applies Transform, Properties, and Id behaviors
+                jsonEntity.WriteToEntity(entity);
 
                 if (jsonEntity.Parent.HasValue)
                 {
