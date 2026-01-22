@@ -147,21 +147,19 @@ public sealed class PropertiesBehaviorConverterUnitTests : IDisposable
         """;
 
         // Act & Assert
-        // test-architect: JSON parser itself may catch duplicate keys, but if it doesn't,
-        // our converter should detect and throw JsonException with ErrorEvent
-        // Note: System.Text.Json allows duplicates (last write wins), so we need custom validation
-        var exception = Record.Exception(() => JsonSerializer.Deserialize<PropertiesBehavior>(json));
+        // test-architect: System.Text.Json allows duplicate keys (last write wins) by default,
+        // but our converter now detects and throws JsonException with ErrorEvent
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<PropertiesBehavior>(json));
         
-        // test-architect: Either JSON parser throws, or our converter should validate and throw
-        // For now, marking this test to be updated when duplicate detection is implemented
-        // System.Text.Json by default allows duplicates, so converter needs explicit check
-        Assert.True(true, "Duplicate key handling to be implemented in converter");
+        // test-architect: ErrorEvent should have been fired
+        Assert.NotEmpty(errorListener.ReceivedEvents);
     }
 
     [Fact]
     public void Deserialize_CaseInsensitiveKeys_TreatsAsDuplicates()
     {
         // Arrange
+        using var errorListener = new FakeEventListener<ErrorEvent>();
         var json = """
         {
             "Faction": "horde",
@@ -169,16 +167,14 @@ public sealed class PropertiesBehaviorConverterUnitTests : IDisposable
         }
         """;
 
-        // Act
-        var behavior = JsonSerializer.Deserialize<PropertiesBehavior>(json);
-
-        // Assert
+        // Act & Assert
         // test-architect: Per requirements, keys are case-insensitive
         // Dictionary uses StringComparer.OrdinalIgnoreCase, so "Faction" and "faction" are same key
-        // Last write should win (or throw if duplicate detection implemented)
-        Assert.NotNull(behavior.Properties);
-        // test-architect: This behavior depends on implementation - may be 1 key or throw
-        // Marking for verification once converter implements duplicate detection
+        // Now that duplicate detection is implemented, should throw JsonException with ErrorEvent
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<PropertiesBehavior>(json));
+        
+        // test-architect: ErrorEvent should have been fired
+        Assert.NotEmpty(errorListener.ReceivedEvents);
     }
 
     [Fact]
