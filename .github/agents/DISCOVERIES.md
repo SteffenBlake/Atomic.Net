@@ -71,39 +71,80 @@ collection.InsertBulk(documents);
 
 ---
 
-## LiteDB Persistence: Direct BSON Reads Are 4-5x Faster
+## LiteDB Persistence: Sparse Entity Reads Are Critical
 
-**Problem:** Deserializing full JSON for every entity read is expensive when you only need metadata
+**Problem:** Previous benchmarks tested `FindAll()` for bulk reads, but the ACTUAL use case is sparse reads (loading only ~1% of entities by specific keys)
 
-**Solution:** Store JSON in BSON document, use direct BSON access for filtering, deserialize only when needed
+**Solution:** Use batch query with `Where` clause for multiple entities, or individual `FindById` for very small counts
 
-**Performance Improvement:**
-- **10 entities**: 3x faster (13µs vs 40µs for full deserialization)
-- **100 entities**: 4.2x faster (82.5µs vs 346µs)
-- **1000 entities**: 4.5x faster (752µs vs 3.4ms)
+**Performance Results (1% of entities loaded):**
+- **100 total, 1 read**: Individual FindById 15µs (baseline)
+- **1000 total, 10 read**: Batch query 115µs vs individual 182µs (1.6x faster)
+- **10000 total, 100 read**: Batch query 1.2ms vs individual 2.4ms (2x faster)
 
 **Key Findings:**
-1. **FindById** is very slow for bulk reads - 5.4x slower than FindAll (18.4ms vs 3.4ms for 1000 entities)
-2. **Utf8JsonReader** without deserialization is fast but requires manual parsing
-3. **Direct BSON field access** is fastest but only useful for metadata queries
-4. **Recommended pattern**: Store JSON for full entity, use BSON fields for queryable metadata
+1. **Individual FindById is fine for small counts** (1-5 entities)
+2. **Batch query with Where is 2x faster** for larger sparse reads (10+ entities)
+3. **Hybrid approach is optimal**: use FindById for ≤5 entities, batch query for more
+4. **Avoid Query.Or chains** - they're 60x slower than batch queries (143ms vs 2.4ms for 100 entities)
 
 **Recommended Approach:**
 ```csharp
-// Read all, deserialize only when needed
-var documents = collection.FindAll();
-foreach (var doc in documents)
+// When loading entities with PersistToDiskBehavior
+if (keysToLoad.Length <= 5)
 {
-    // Check BSON metadata first
-    var key = doc["_id"].AsString;
-    
-    // Deserialize only if needed
-    var json = doc["data"].AsString;
-    var entity = JsonSerializer.Deserialize<TestEntity>(json);
+    // Individual lookups for small counts
+    foreach (var key in keysToLoad)
+    {
+        var doc = collection.FindById(key);
+        if (doc != null) LoadEntity(doc);
+    }
+}
+else
+{
+    // Batch query for larger counts
+    var keySet = new HashSet<string>(keysToLoad);
+    var documents = collection.Find(doc => keySet.Contains(doc["_id"].AsString));
+    foreach (var doc in documents) LoadEntity(doc);
 }
 ```
 
-**Benchmark:** `MonoGame/Atomic.Net.MonoGame.Benchmarks/Persistence/Units/LiteDbJsonBenchmark.cs`
+**Benchmark:** `MonoGame/Atomic.Net.MonoGame.Benchmarks/Persistence/Units/LiteDbSparseReadBenchmark.cs`
+
+---
+
+## LiteDB Persistence: Upsert for Sparse Updates
+
+**Problem:** `DatabaseRegistry.Flush()` needs to update only dirty entities (typically 1-2% per frame)
+
+**Solution:** Use `Upsert()` instead of checking existence then updating
+
+**Performance Results (2% of entities dirty):**
+- **100 total, 2 dirty**: Upsert 251µs vs check-then-update 422µs (1.7x faster)
+- **1000 total, 20 dirty**: Upsert 2.0ms vs check-then-update 4.2ms (2.1x faster)
+- **10000 total, 200 dirty**: Upsert 18ms vs check-then-update 31ms (1.7x faster)
+
+**Key Findings:**
+1. **Upsert is consistently 1.7-2x faster** than check-then-update
+2. **Upsert allocates 2.3x less memory** (5.6MB vs 13MB for 10k DB with 200 dirty)
+3. **Upsert is simpler** - one operation instead of two
+
+**Recommended Approach:**
+```csharp
+// DatabaseRegistry.Flush() implementation
+foreach (var dirtyEntity in dirtyPersistentEntities)
+{
+    var json = JsonSerializer.Serialize(dirtyEntity);
+    var doc = new BsonDocument
+    {
+        ["_id"] = dirtyEntity.PersistKey,
+        ["data"] = json
+    };
+    collection.Upsert(doc); // Insert if new, update if exists
+}
+```
+
+**Benchmark:** `MonoGame/Atomic.Net.MonoGame.Benchmarks/Persistence/Units/LiteDbSparseReadBenchmark.cs`
 
 ---
 
@@ -134,18 +175,18 @@ foreach (var doc in documents)
 
 **Use this pattern for disk-persisted entities:**
 
-1. **Batch all writes** - collect dirty entities, bulk insert at end-of-frame
+1. **Batch all writes** - collect dirty entities, use `Upsert()` for updates at end-of-frame
 2. **Use JSON serialization** - simpler, faster, works with existing converters
-3. **Read with FindAll** - 5x faster than individual FindById calls
+3. **Sparse reads with hybrid approach** - FindById for ≤5 entities, batch query for more
 4. **Deserialize selectively** - check metadata first, deserialize only when needed
 5. **Let Dispose() handle flushing** - explicit Checkpoint() not needed
 
-**Expected Performance (1000 entities):**
-- Write: ~12ms (bulk insert)
-- Read: ~3.4ms (bulk read with JSON deserialize)
-- Round-trip: ~21ms total
+**Expected Performance (realistic scenarios):**
+- **Write (2% dirty)**: 2ms for 1000 entities, 18ms for 10k entities
+- **Read (1% sparse)**: 115µs for 10 entities from 1k DB, 1.2ms for 100 entities from 10k DB
+- **Individual entity lookup**: ~15µs per entity
 
-**This meets the <10ms target for 100 entities** and scales well to 1000 entities at ~21ms.
+**This meets performance targets for realistic game scenarios.**
 
 **IMPORTANT: Disk Flush Verification**
 - LiteDB automatically flushes to disk on `Dispose()`

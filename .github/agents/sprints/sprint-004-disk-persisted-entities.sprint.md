@@ -359,8 +359,24 @@ On `BehaviorAddedEvent<PersistToDiskBehavior>` or `PostBehaviorUpdatedEvent<Pers
     - Rapid key swapping doesn't corrupt data
 
 ### Performance Validation
-- [ ] @benchmarker Benchmark zero alloc options for fastest way to deserialize from json repeatedly to the same type, but different data
-- [ ] @benchmarker Benchmark zero alloc options for fastest way to serialize to json repeatedly, ideally some way to re-use the same memory you write to over and over, and then write it out to a LiteDB, without allocating at any step, if possible.
+- [x] @benchmarker Benchmark zero alloc options for fastest way to deserialize from json repeatedly to the same type, but different data
+  - **Finding**: Pooled buffers provide NO benefit - standard JsonSerializer is optimal
+  - **Sparse reads (ACTUAL use case)**: Hybrid approach (FindById for ≤5, batch query for more)
+    - 100 entities in DB, read 1: 15µs (FindById)
+    - 1000 entities in DB, read 10: 115µs (batch query, 1.6x faster than individual)
+    - 10000 entities in DB, read 100: 1.2ms (batch query, 2x faster than individual)
+  - **Recommendation**: Use batch query with `Where` clause for multiple entities
+  - **Benchmark**: `LiteDbSparseReadBenchmark.cs`
+- [x] @benchmarker Benchmark zero alloc options for fastest way to serialize to json repeatedly, ideally some way to re-use the same memory you write to over and over, and then write it out to a LiteDB, without allocating at any step, if possible.
+  - **Finding**: Zero-alloc is not feasible with JSON, but performance is acceptable
+  - **Sparse writes (Flush() use case)**: Use `Upsert()` for dirty entities (2% typical)
+    - 100 entities in DB, write 2: 251µs
+    - 1000 entities in DB, write 20: 2.0ms
+    - 10000 entities in DB, write 200: 18ms
+  - **Upsert is 1.7-2x faster** than check-then-update
+  - **Upsert allocates 2.3x less memory** than check-then-update
+  - **Recommendation**: Use `Upsert()` for all writes (insert if new, update if exists)
+  - **Benchmark**: `LiteDbSparseWriteBenchmark.cs`
 
 
 ### Documentation
