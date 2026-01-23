@@ -1,10 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Atomic.Net.MonoGame.Scenes.JsonModels;
 
-namespace Atomic.Net.MonoGame.Scenes.JsonConverters;
+namespace Atomic.Net.MonoGame.Scenes;
 
-// SteffenBlake: @senior-dev, move this to .Atomic.Net.Monogame.Scenes/ parent dir and namespace
+// TODO: @senior-dev This will now all be deleted, use EntitySelector.TryParse instead
 
 public class EntitySelectorConverter : JsonConverter<EntitySelector>
 {

@@ -5,9 +5,7 @@ using Atomic.Net.MonoGame.Scenes.Persistence;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED.Hierarchy;
 
-namespace Atomic.Net.MonoGame.Scenes.JsonModels;
-
-// SteffenBlake: @senior-dev, move this to .Atomic.Net.Monogame.Scenes/ parent dir and namespace
+namespace Atomic.Net.MonoGame.Scenes;
 
 /// <summary>
 /// JSON model for a single entity in a scene.

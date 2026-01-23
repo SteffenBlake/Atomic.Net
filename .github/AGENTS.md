@@ -1,5 +1,7 @@
 # Agent Instructions
 
+# CRITICAL: PLEASE READ THIS ENTIRE FILE, NOT JUST PORTIONS OF IT
+
 # CRITICAL: DO NOT NEST YOURSELF AS A SUB AGENT
 
 A very common issue I see agents make is spinning a copy of THEMSELF up as a sub agent, which seems to cause a shit tonne of problems with loading up context and info

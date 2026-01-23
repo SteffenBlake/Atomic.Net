@@ -1,6 +1,4 @@
-namespace Atomic.Net.MonoGame.Scenes.JsonModels;
-
-// SteffenBlake: @senior-dev, move this to .Atomic.Net.Monogame.Scenes/ parent dir and namespace
+namespace Atomic.Net.MonoGame.Scenes;
 
 /// <summary>
 /// Root container for scene JSON files.
@@ -11,4 +9,9 @@ public class JsonScene
     /// List of entities to spawn in the scene.
     /// </summary>
     public List<JsonEntity> Entities { get; set; } = [];
+    
+    /// <summary>
+    /// List of rules to spawn in the scene, optional.
+    /// </summary>
+    public List<JsonRule>? Rules { get; set; } = null;
 }

@@ -4,6 +4,8 @@ This document tracks the high-level vision and progress for Atomic.Net.
 
 ---
 
+# CRITICAL: PLEASE READ THIS ENTIRE FILE, NOT JUST PORTIONS OF IT
+
 ## Vision
 
 Build a **data-driven, zero runtime allocation game engine** where entire games can be defined in JSON files, designers can edit gameplay without touching C# code, and performance is baseline excellent (60+ FPS with 8000+ entities).

@@ -4,6 +4,8 @@ This file documents significant performance findings backed by benchmarks. Only 
 
 ---
 
+# CRITICAL: PLEASE READ THIS ENTIRE FILE, NOT JUST PORTIONS OF IT
+
 ## Transform Matrix Order (Sprint 001)
 **Discovery**: MonoGame transform order is `(-Anchor)*Scale*Rotation*Anchor*Position`. Tests with position=0 hide order bugs (both orders give same result). Always test with non-zero values.
 
