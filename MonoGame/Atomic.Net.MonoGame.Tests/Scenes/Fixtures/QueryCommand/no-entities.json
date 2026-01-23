@@ -1,0 +1,26 @@
+{
+  "entities": [],
+  "rules": [
+    {
+      "from": "#poisoned",
+      "where": {
+        ">": [
+          { "var": "properties.health" },
+          0
+        ]
+      },
+      "do": {
+        "mut": {
+          "merge": [
+            { "var": "" },
+            {
+              "properties": {
+                "health": 0
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
