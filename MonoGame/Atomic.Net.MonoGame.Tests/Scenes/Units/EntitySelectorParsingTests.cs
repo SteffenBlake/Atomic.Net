@@ -7,6 +7,12 @@ namespace Atomic.Net.MonoGame.Tests.Scenes.Units;
 /// Unit tests for EntitySelector.TryParse() method.
 /// Tests parsing of selector syntax: @id, #tag, !enter, !exit
 /// Tests operators: , (union), : (refinement chain)
+/// 
+/// test-architect: These tests call EntitySelector.TryParse(), not EntitySelectorV2.TryParse()
+/// because Sprint 005 Task 2 requires merging EntitySelectorV2 into EntitySelector and
+/// deleting the V2 scaffolding. The final API will be EntitySelector.TryParse().
+/// The current stub in EntitySelector.TryParse() throws NotImplementedException.
+/// Once @senior-dev implements the parser and merges, these tests will validate the implementation.
 /// </summary>
 [Trait("Category", "Unit")]
 public sealed class EntitySelectorParsingTests
@@ -117,7 +123,8 @@ public sealed class EntitySelectorParsingTests
         Assert.NotNull(selector);
         
         // test-architect: Once implemented, verify it's a CollisionEnterEntitySelector variant
-        // with Next = TaggedEntitySelector(Tag: "enemies", Next: null)
+        // with Next = EntitySelector (which is a TaggedEntitySelector variant with Tag: "enemies", Next: null)
+        // The Next property is EntitySelector (union type), not a specific variant type
     }
 
     [Fact]
