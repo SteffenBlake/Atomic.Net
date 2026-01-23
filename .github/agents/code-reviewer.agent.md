@@ -41,3 +41,7 @@ The agents are EXTREMELY prone to bad code and choices, you MUST crack down on t
 8. Agents are extremely prone to "faking" passing tests. Cross reference the tests that have been modified. Look at what the test says it should do, vs what it ACTUALLY does, and be 1000% sure the test is ACTUALLY testing what it says it should.
 
 9. The test-architect is allowed to make Skip tests, because they are stubbed in for the senior-dev to make passing, the expectation is that senior-dev removes the skip once they have completed their work.
+    
+11. SKIPPED TESTS STILL MUST SUCCESSFULLY COMPILE AND BUILD, AND NO, COMMENTING OUT BROKEN CODE DOESNT COUNT AS FIXING IT, AND NO, REMOVING CODE (WHICH MAKES THE TEST FAKE) DOESNT COUNT EITHER, THE TESTS MUST ACTUALLY BUILD AND BE VALID, BUT JUST BE EXPECTED TO FAIL BECAUSE THEY CALL STUBBED LOGIC, AND THUS HAVE THE SKIP ATTRIBUTE
+    
+12. DO NOT ALLOW THE TEST ARCHITECT WEASLE OUT OF THIS
