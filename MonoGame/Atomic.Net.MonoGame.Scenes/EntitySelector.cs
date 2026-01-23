@@ -44,16 +44,6 @@ public readonly record struct EntitySelector(
         entity = null;
         return false;
     }
-
-    // @senior-dev: Stubbed in for unit tests to pass, but this whole class will
-    // be deleted
-    public static bool TryParse(
-        ReadOnlySpan<char> tokens, out EntitySelector? entitySelector
-    )
-    {
-        throw new NotImplementedException("To be implemented by @senior-dev");
-    }
-
 }
 
 // These objects will likely need to get used together to produce the new
@@ -93,7 +83,7 @@ public partial class EntitySelectorV2
     // You probably will want to use some combination of Dynamic Programming
     // + recursion here to produce an efficient output
     public static bool TryParse(
-        ReadOnlySpan<char> tokens, out EntitySelector? entitySelector
+        ReadOnlySpan<char> tokens, out EntitySelectorV2? entitySelector
     )
     {
         throw new NotImplementedException("To be implemented by @senior-dev");
