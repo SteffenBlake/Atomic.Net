@@ -119,6 +119,8 @@ public class SceneLoader
 - Check for proper cleanup (no state pollution between tests)
 - Respond to all `@test-architect` pings
 - Add `[Fact(Skip = "reason")]` for tests that can't run yet (e.g., waiting on implementation)
+- Request a code review from specifically the `code-reviewer` custom sub agent
+- NOTE: THATS NOT THE "Copilot code review" agent, its the custom sub agent `code-reviewer`
 
 ## Performance Considerations
 - Unit tests should complete in milliseconds
