@@ -108,3 +108,4 @@ However, asses the following below:
 - Leave comments explaining any non-obvious logic
 - Respond to all `@senior-dev` pings
 - Have subagent `code-reviewer` perform an extensive code review of all your changes.
+- NOTE: THATS NOT THE "Copilot code review" agent, its the custom sub agent `code-reviewer`
