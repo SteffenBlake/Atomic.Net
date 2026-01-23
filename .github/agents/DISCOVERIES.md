@@ -193,3 +193,48 @@ else
 **Results:** `MonoGame/Atomic.Net.MonoGame.Benchmarks/Persistence/Units/JSON_ENTITY_DESERIALIZATION_RESULTS.md`
 
 ---
+
+# dotVariant Variant Types Methods
+
+It seems agents in general really struggle with variant types, so I will include the documentation of relevant methods we care about here.
+
+## Declaring
+
+```
+[Variant]
+public partial class AppleOrOrange
+{
+    static partial void VariantOf(Apple apple, Orange orange);
+}
+```
+
+## Implicit conversion
+
+You can implict cast convert the "inner" types to the Variant
+```
+AppleOrOrange foo = new Orange(); // no manual casting needed
+```
+
+## TryMatch
+```
+var succeeded = myAppleOrOrange.TryMatch(out Orange? orange); // Note this is nullable, it always is nullable
+```
+
+## Visit
+You can execute visitor pattern on any variant, with an empty function to handle "default" case
+```
+myAppleOrOrange.Visit(
+    apple => EatApple(apple),
+    orange => EatOrange(orange),
+    () => throw new ....
+);
+```
+
+And it can have a return type optionally too
+```
+var slices = myAppleOrOrange.Visit(
+    apple => apple.Slices,
+    orage => orange.Peel().Slices,
+    () => throw new ....
+);
+```
