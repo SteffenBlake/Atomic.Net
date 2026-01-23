@@ -8,7 +8,7 @@
     },
     {
       "id": "child",
-      "parent": "#parent",
+      "parent": "@parent",
       "transform": {
         "position": [5, 0, 0]
       }

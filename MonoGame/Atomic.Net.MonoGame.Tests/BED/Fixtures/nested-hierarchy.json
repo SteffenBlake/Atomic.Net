@@ -5,11 +5,11 @@
     },
     {
       "id": "parent",
-      "parent": "#grandparent"
+      "parent": "@grandparent"
     },
     {
       "id": "child",
-      "parent": "#parent"
+      "parent": "@parent"
     }
   ]
 }

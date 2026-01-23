@@ -28,7 +28,7 @@ public class JsonEntity
     public TransformBehavior? Transform { get; set; } = null;
 
     /// <summary>
-    /// Optional parent reference (e.g., "#player" to reference entity with id="player").
+    /// Optional parent reference (e.g., "@player" to reference entity with id="player").
     /// </summary>
     public EntitySelector? Parent { get; set; } = null;
 

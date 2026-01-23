@@ -8,7 +8,7 @@ namespace Atomic.Net.MonoGame.BED;
 
 /// <summary>
 /// Behavior that tracks an entity's string ID for referencing in JSON.
-/// Enables parent references like "parent": "#player-entity".
+/// Enables parent references like "parent": "@player-entity".
 /// </summary>
 [JsonConverter(typeof(IdBehaviorConverter))]
 public readonly record struct IdBehavior(string Id) : IBehavior<IdBehavior>

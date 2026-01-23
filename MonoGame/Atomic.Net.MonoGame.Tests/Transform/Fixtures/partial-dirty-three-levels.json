@@ -8,14 +8,14 @@
     },
     {
       "id": "middle",
-      "parent": "#root",
+      "parent": "@root",
       "transform": {
         "position": [20, 0, 0]
       }
     },
     {
       "id": "leaf",
-      "parent": "#middle",
+      "parent": "@middle",
       "transform": {
         "position": [30, 0, 0]
       }
