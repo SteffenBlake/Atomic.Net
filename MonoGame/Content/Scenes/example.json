@@ -13,7 +13,7 @@
       "transform": {
         "position": [100, 50, 0]
       },
-      "parent": "#root-container"
+      "parent": "@root-container"
     }
   ]
 }

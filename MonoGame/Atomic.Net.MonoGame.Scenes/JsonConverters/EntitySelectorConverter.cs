@@ -18,11 +18,11 @@ public class EntitySelectorConverter : JsonConverter<EntitySelector>
             return default;
         }
 
-        if (nextString.StartsWith('#'))
+        if (nextString.StartsWith('@'))
         {
             return new ()
             {
-                ById = nextString.TrimStart('#')
+                ById = nextString.TrimStart('@')
             };
         }
 
@@ -35,7 +35,7 @@ public class EntitySelectorConverter : JsonConverter<EntitySelector>
     {
         if (!string.IsNullOrEmpty(value.ById))
         {
-            writer.WriteStringValue($"#{value.ById}");
+            writer.WriteStringValue($"@{value.ById}");
         }
         else
         {

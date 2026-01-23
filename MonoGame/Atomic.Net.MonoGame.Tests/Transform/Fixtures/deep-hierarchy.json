@@ -8,28 +8,28 @@
     },
     {
       "id": "level1",
-      "parent": "#root",
+      "parent": "@root",
       "transform": {
         "position": [10, 0, 0]
       }
     },
     {
       "id": "level2",
-      "parent": "#level1",
+      "parent": "@level1",
       "transform": {
         "position": [10, 0, 0]
       }
     },
     {
       "id": "level3",
-      "parent": "#level2",
+      "parent": "@level2",
       "transform": {
         "position": [10, 0, 0]
       }
     },
     {
       "id": "level4",
-      "parent": "#level3",
+      "parent": "@level3",
       "transform": {
         "position": [10, 0, 0]
       }

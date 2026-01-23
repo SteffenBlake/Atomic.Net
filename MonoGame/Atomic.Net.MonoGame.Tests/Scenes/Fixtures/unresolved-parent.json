@@ -2,7 +2,7 @@
   "entities": [
     {
       "id": "orphan",
-      "parent": "#missing-parent"
+      "parent": "@missing-parent"
     }
   ]
 }

@@ -8,14 +8,14 @@
     },
     {
       "id": "left-child",
-      "parent": "#root",
+      "parent": "@root",
       "transform": {
         "position": [20, 10, 0]
       }
     },
     {
       "id": "right-child",
-      "parent": "#root",
+      "parent": "@root",
       "transform": {
         "position": [20, -10, 0]
       }
