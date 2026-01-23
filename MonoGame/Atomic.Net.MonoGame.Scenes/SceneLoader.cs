@@ -173,6 +173,15 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
             
             // Clear queue for next scene load (zero-alloc)
             _persistToDiskQueue.Clear();
+            
+            // test-architect: TODO - @senior-dev to implement rules parsing here
+            // Stage 1 (Parser Only): Parse and validate scene.Rules, store in memory (no execution)
+            // Requirements:
+            // 1. If scene.Rules is not null, iterate and parse each rule's From selector via EntitySelector.TryParse
+            // 2. Fire ErrorEvent for invalid selectors, continue loading other rules
+            // 3. Store parsed rules for future stages (execution not in scope for Sprint 005)
+            // 4. Where and Do fields remain as JsonNode (no evaluation yet)
+            // See: sprint-005-query-command-parsing.sprint.md Task 4
         }
         finally
         {
