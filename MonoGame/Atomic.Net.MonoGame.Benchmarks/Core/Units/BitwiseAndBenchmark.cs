@@ -26,12 +26,11 @@ public class BitwiseAndBenchmark
 {
     // Testing multiple scales to find the breakpoint
     [Params(100, 1000, 10000)]
-    public int ArraySize { get; set; }
+    public ushort ArraySize { get; set; }
 
     // Bool arrays for plain loop approach
     private bool[] _leftBools = null!;
     private bool[] _rightBools = null!;
-    private bool[] _resultBools = null!;
 
     // Byte arrays for TensorPrimitives approach
     private byte[] _leftBytes = null!;
@@ -65,7 +64,6 @@ public class BitwiseAndBenchmark
         // Initialize bool arrays for plain loop
         _leftBools = new bool[ArraySize];
         _rightBools = new bool[ArraySize];
-        _resultBools = new bool[ArraySize];
 
         // Initialize byte arrays for TensorPrimitives
         _leftBytes = new byte[ArraySize];
@@ -77,9 +75,9 @@ public class BitwiseAndBenchmark
         _rightBytesCopied = new byte[ArraySize];
 
         // Initialize SparseArrays
-        _leftSparse = new SparseArray<bool>((ushort)ArraySize);
-        _rightSparse = new SparseArray<bool>((ushort)ArraySize);
-        _resultSparse = new SparseArray<bool>((ushort)ArraySize);
+        _leftSparse = new SparseArray<bool>(ArraySize);
+        _rightSparse = new SparseArray<bool>(ArraySize);
+        _resultSparse = new SparseArray<bool>(ArraySize);
 
         // Fill all structures with ~5% infill of true values using same seed for fair comparison
         for (int i = 0; i < ArraySize; i++)
@@ -121,16 +119,11 @@ public class BitwiseAndBenchmark
         int result = 0;
         
         // Perform AND operation
-        for (int i = 0; i < ArraySize; i++)
+        for (ushort i = 0; i < ArraySize; i++)
         {
-            _resultBools[i] = _leftBools[i] & _rightBools[i];
-        }
-
-        // Iterate results and accumulate matched indexes
-        for (int i = 0; i < ArraySize; i++)
-        {
-            if (_resultBools[i])
+            if(_leftBools[i] & _rightBools[i])
             {
+                _resultSparse.Set(i, true);
                 result += i;
             }
         }
@@ -147,10 +140,11 @@ public class BitwiseAndBenchmark
         TensorPrimitives.BitwiseAnd(_leftBytes, _rightBytes, _resultBytes);
 
         // Iterate results and accumulate matched indexes
-        for (int i = 0; i < ArraySize; i++)
+        for (ushort i = 0; i < ArraySize; i++)
         {
             if (_resultBytes[i] == 1)
             {
+                _resultSparse.Set(i, true);
                 result += i;
             }
         }
@@ -209,11 +203,12 @@ public class BitwiseAndBenchmark
         _resultBitArray = _leftBitArray.And(_rightBitArray);
 
         // Iterate results and accumulate matched indexes
-        for (int i = 0; i < ArraySize; i++)
+        for (ushort i = 0; i < ArraySize; i++)
         {
             if (_resultBitArray[i])
             {
                 result += i;
+                _resultSparse.Set(i, true);
             }
         }
 
@@ -233,11 +228,12 @@ public class BitwiseAndBenchmark
         TensorPrimitives.BitwiseAnd(_leftBytesCopied, _rightBytesCopied, _resultBytes);
 
         // Iterate results and accumulate matched indexes
-        for (int i = 0; i < ArraySize; i++)
+        for (ushort i = 0; i < ArraySize; i++)
         {
             if (_resultBytes[i] == 1)
             {
                 result += i;
+                _resultSparse.Set(i, true);
             }
         }
 
@@ -257,11 +253,12 @@ public class BitwiseAndBenchmark
         _resultBitArray = _leftBitArrayCopied.And(_rightBitArrayCopied);
 
         // Iterate results and accumulate matched indexes
-        for (int i = 0; i < ArraySize; i++)
+        for (ushort i = 0; i < ArraySize; i++)
         {
             if (_resultBitArray[i])
             {
                 result += i;
+                _resultSparse.Set(i, true);
             }
         }
 
