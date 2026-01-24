@@ -11,34 +11,56 @@ This file documents significant performance findings backed by benchmarks. Only 
 
 ---
 
-## TensorPrimitives.BitwiseAnd Dominates Plain For Loop
+## TensorPrimitives vs Plain Loop vs SparseArray for Boolean AND
 
-**Problem:** Bitwise AND operations on bool arrays using plain for loops are slow
+**Problem:** Need to efficiently perform AND operations on boolean arrays/sparse data
 
-**Solution:** Use `TensorPrimitives.BitwiseAnd()` with byte arrays (0/1 values) instead
+**Solution:** Use `TensorPrimitives.BitwiseAnd()` for dense data, `SparseArray.SelectThenIntersect` for truly sparse data (5K+ elements)
 
-**Performance Improvement:**
-- **100 elements**: 21.5x faster (5.3ns vs 113.8ns)
-- **1,000 elements**: 72.4x faster (16.3ns vs 1,182ns) - **peak speedup**
-- **10,000 elements**: 55.9x faster (208.1ns vs 11,641ns)
-- **100,000 elements**: 30.9x faster (3,791ns vs 117,041ns)
+**Performance Comparison (with iteration overhead):**
+- **TensorPrimitives**: 2.6-2.8x faster than plain loop at ALL sizes
+- **SparseArray (Select→Intersect)**: 19-24% faster than plain loop at 5K+ elements, but **2.2x slower** than TensorPrimitives
+- **SparseArray (Intersect→Select)**: 13-27% slower than Select→Intersect (hypothesis confirmed)
+
+**Detailed Results:**
+| Size   | Plain Loop | TensorPrimitives | SparseArray (Select→Int) | SparseArray (Int→Select) |
+|--------|-----------|------------------|-------------------------|-------------------------|
+| 100    | 191 ns    | **72 ns** (2.7x) | 529 ns (0.4x)          | 528 ns (0.4x)          |
+| 1,000  | 1,871 ns  | **668 ns** (2.8x)| 2,093 ns (0.9x)        | 2,374 ns (0.8x)        |
+| 10,000 | 18,747 ns | **6,747 ns** (2.8x) | 15,359 ns (1.2x)    | 19,634 ns (1.0x)       |
+| 50,000 | 93,612 ns | **33,866 ns** (2.8x) | 71,589 ns (1.3x)   | 90,314 ns (1.0x)       |
 
 **Key Insights:**
-1. **No crossover point** - TensorPrimitives wins at ALL array sizes (100 to 100,000+)
-2. **No hybrid approach needed** - Use TensorPrimitives exclusively
-3. **SIMD vectorization** - Processes multiple bytes in parallel using CPU instructions
-4. **Zero allocations** - Same as plain loop with pre-allocated result arrays
-5. **Trade-off**: Requires byte[] instead of bool[] (same memory, 1 byte per element)
+1. **TensorPrimitives wins overall** - SIMD vectorization provides 2.6-2.8x speedup with zero allocations
+2. **Select→Intersect beats Intersect→Select** - 13-27% faster at 1K+ elements (extract indexes first)
+3. **SparseArray competitive at 5K+** - When data is truly sparse (<10% infill), beats plain loop by 19-24%
+4. **Zero allocations for TensorPrimitives/plain loop** - SparseArray allocates (3KB at 1K, 124KB at 50K)
+5. **All tests include iteration** - Fair comparison includes writing output + accumulating matched indexes
 
-**Recommended Pattern:**
+**Recommended Patterns:**
+
+Dense data (any size):
 ```csharp
-// ✅ Use this - 20-72x faster
+// ✅ Use this - 2.8x faster via SIMD, zero allocations
 TensorPrimitives.BitwiseAnd(leftBytes, rightBytes, resultBytes);
-
-// ❌ Don't use this - 20-72x slower
-for (int i = 0; i < length; i++)
+int result = 0;
+for (int i = 0; i < resultBytes.Length; i++)
 {
-    resultBools[i] = leftBools[i] & rightBools[i];
+    if (resultBytes[i] == 1) { result += i; }
+}
+```
+
+Sparse data (5K+ elements, <10% infill):
+```csharp
+// ✅ For sparse iteration - 19-24% faster than plain loop
+// Still 2.2x slower than TensorPrimitives
+var indexesA = leftSparse.Select(static v => v.Index);
+var indexesB = rightSparse.Select(static v => v.Index);
+int result = 0;
+foreach (var indexMatch in indexesA.Intersect(indexesB))
+{
+    result += indexMatch;
+    resultSparse.Set(indexMatch, true);
 }
 ```
 

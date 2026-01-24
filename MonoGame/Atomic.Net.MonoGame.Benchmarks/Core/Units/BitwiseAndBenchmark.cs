@@ -1,19 +1,20 @@
-// benchmarker: Comparing TensorPrimitives.BitwiseAnd (bytes) vs plain for loop (bools) for AND operations
-// Testing to find the performance breakpoint where one approach outperforms the other
-// TensorPrimitives uses byte arrays (0 for false, 1 for true)
-// Plain loop uses bool arrays (true/false)
-// Both have ~5% infill of true values
+// benchmarker: Comparing approaches for AND operations on sparse boolean data
+// 1. Plain for loop with bool arrays
+// 2. TensorPrimitives.BitwiseAnd with byte arrays (SIMD optimized)
+// 3. SparseArray.Intersect (Select→Intersect)
+// 4. SparseArray.Intersect (Intersect→Select)
+// All tests iterate results and accumulate matched indexes for fairness
 
 using System.Numerics.Tensors;
 using BenchmarkDotNet.Attributes;
+using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Benchmarks.Core.Units;
 
 /// <summary>
-/// Glass-box benchmark comparing bitwise AND operations.
-/// TensorPrimitives.BitwiseAnd uses byte arrays (0/1).
-/// Plain for loop uses bool arrays (true/false).
-/// Tests to find performance crossover point.
+/// Glass-box benchmark comparing bitwise AND operations on sparse boolean data.
+/// Tests include iteration overhead to ensure fair comparison.
+/// All approaches write to output arrays and accumulate matched indexes.
 /// </summary>
 [MemoryDiagnoser]
 public class BitwiseAndBenchmark
@@ -32,6 +33,11 @@ public class BitwiseAndBenchmark
     private byte[] _rightBytes = null!;
     private byte[] _resultBytes = null!;
 
+    // SparseArrays for sparse intersection approach
+    private SparseArray<bool> _leftSparse = null!;
+    private SparseArray<bool> _rightSparse = null!;
+    private SparseArray<bool> _resultSparse = null!;
+
     [GlobalSetup]
     public void Setup()
     {
@@ -48,7 +54,12 @@ public class BitwiseAndBenchmark
         _rightBytes = new byte[ArraySize];
         _resultBytes = new byte[ArraySize];
 
-        // Fill both with ~5% infill of true values using same seed for fair comparison
+        // Initialize SparseArrays
+        _leftSparse = new SparseArray<bool>((ushort)ArraySize);
+        _rightSparse = new SparseArray<bool>((ushort)ArraySize);
+        _resultSparse = new SparseArray<bool>((ushort)ArraySize);
+
+        // Fill all structures with ~5% infill of true values using same seed for fair comparison
         for (int i = 0; i < ArraySize; i++)
         {
             // 5% chance of being true/1
@@ -60,23 +71,101 @@ public class BitwiseAndBenchmark
 
             _leftBytes[i] = (byte)(leftValue ? 1 : 0);
             _rightBytes[i] = (byte)(rightValue ? 1 : 0);
+
+            // Only set in SparseArray if true (sparse storage)
+            if (leftValue)
+            {
+                _leftSparse.Set((ushort)i, true);
+            }
+            if (rightValue)
+            {
+                _rightSparse.Set((ushort)i, true);
+            }
         }
     }
 
     [Benchmark(Baseline = true)]
-    public bool[] PlainForLoop_Bools()
+    public int PlainForLoop_Bools()
     {
+        int result = 0;
+        
+        // Perform AND operation
         for (int i = 0; i < ArraySize; i++)
         {
             _resultBools[i] = _leftBools[i] & _rightBools[i];
         }
-        return _resultBools;
+
+        // Iterate results and accumulate matched indexes
+        for (int i = 0; i < ArraySize; i++)
+        {
+            if (_resultBools[i])
+            {
+                result += i;
+            }
+        }
+
+        return result;
     }
 
     [Benchmark]
-    public byte[] TensorPrimitives_BitwiseAnd_Bytes()
+    public int TensorPrimitives_BitwiseAnd_Bytes()
     {
+        int result = 0;
+
+        // Perform SIMD AND operation
         TensorPrimitives.BitwiseAnd(_leftBytes, _rightBytes, _resultBytes);
-        return _resultBytes;
+
+        // Iterate results and accumulate matched indexes
+        for (int i = 0; i < ArraySize; i++)
+        {
+            if (_resultBytes[i] == 1)
+            {
+                result += i;
+            }
+        }
+
+        return result;
+    }
+
+    [Benchmark]
+    public int SparseArray_SelectThenIntersect()
+    {
+        int result = 0;
+
+        // Clear previous results
+        _resultSparse.Clear();
+
+        // Select indexes first, then intersect
+        var indexesA = _leftSparse.Select(static v => v.Index);
+        var indexesB = _rightSparse.Select(static v => v.Index);
+
+        foreach (var indexMatch in indexesA.Intersect(indexesB))
+        {
+            result += indexMatch;
+            _resultSparse.Set(indexMatch, true);
+        }
+
+        return result;
+    }
+
+    [Benchmark]
+    public int SparseArray_IntersectThenSelect()
+    {
+        int result = 0;
+
+        // Clear previous results
+        _resultSparse.Clear();
+
+        // Intersect tuples first, then select indexes
+        var intersected = _leftSparse.Intersect(_rightSparse);
+
+        foreach (var match in intersected)
+        {
+            var indexMatch = match.Index;
+            result += indexMatch;
+            _resultSparse.Set(indexMatch, true);
+        }
+
+        return result;
     }
 }
