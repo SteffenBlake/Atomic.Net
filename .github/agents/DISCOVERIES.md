@@ -15,11 +15,16 @@ This file documents significant performance findings backed by benchmarks. Only 
 
 **Problem:** Need to efficiently perform AND operations on boolean arrays
 
-**Solution:** Use `TensorPrimitives.BitwiseAnd()` 
+**Solution:** Use `TensorPrimitives.BitwiseAnd()` with `MemoryMarshal.Cast` for bool[] to byte[] conversion
 
 **Performance:** 2.6-2.8x faster than plain loop with zero allocations
 
 ```csharp
+// Convert bool[] to byte[] efficiently
+MemoryMarshal.Cast<bool, byte>(leftBools).CopyTo(leftBytes);
+MemoryMarshal.Cast<bool, byte>(rightBools).CopyTo(rightBytes);
+
+// Perform AND operation
 TensorPrimitives.BitwiseAnd(leftBytes, rightBytes, resultBytes);
 ```
 
