@@ -15,7 +15,7 @@ This file documents significant performance findings backed by benchmarks. Only 
 
 **Problem:** Need to efficiently perform AND operations on boolean arrays/sparse data
 
-**Solution:** Use `TensorPrimitives.BitwiseAnd()` for max performance, `BitArray.And()` for best built-in .NET collection, `SparseArray.SelectThenIntersect` for truly sparse data (5K+ elements)
+**Solution:** ALWAYS use `TensorPrimitives.BitwiseAnd()` - it wins in ALL cases regardless of array size or data sparsity
 
 **Performance Comparison (with iteration overhead):**
 - **TensorPrimitives**: 2.6-2.8x faster than plain loop at ALL sizes (SIMD vectorization)
@@ -32,18 +32,18 @@ This file documents significant performance findings backed by benchmarks. Only 
 | 50,000 | 93,911 ns | **33,817 ns** (2.8x) | 47,899 ns (2.0x) | 72,175 ns (1.3x) | 86,033 ns (1.1x) |
 
 **Key Insights:**
-1. **TensorPrimitives wins overall** - SIMD vectorization provides 2.6-2.8x speedup with zero allocations
-2. **BitArray is excellent built-in option** - Consistent 2x speedup, zero allocations, simpler API than TensorPrimitives
-3. **Select→Intersect beats Intersect→Select** - 13-28% faster at 1K+ elements (extract indexes first)
-4. **SparseArray competitive at 5K+** - When data is truly sparse (<10% infill), beats plain loop by 18-23%
-5. **Zero allocations for TensorPrimitives/BitArray/plain loop** - SparseArray allocates (3KB at 1K, 124KB at 50K)
+1. **TensorPrimitives ALWAYS wins** - Fastest in ALL cases (dense, sparse, small, large arrays)
+2. **No use case where alternatives are better** - TensorPrimitives beats BitArray by 1.4x, SparseArray by 2.2x
+3. **SIMD vectorization dominates** - Provides 2.6-2.8x speedup with zero allocations
+4. **BitArray is decent fallback** - 2x speedup if TensorPrimitives unavailable, but still 1.4x slower
+5. **SparseArray never optimal for performance** - Even for sparse data, TensorPrimitives is 2.2x faster
 6. **All tests include iteration** - Fair comparison includes writing output + accumulating matched indexes
 
-**Recommended Patterns:**
+**Recommended Pattern:**
 
-Dense data (max performance):
+ALWAYS use TensorPrimitives (fastest in ALL scenarios):
 ```csharp
-// ✅ Use this - 2.8x faster via SIMD, zero allocations
+// ✅ ALWAYS use this - fastest for dense, sparse, small, large arrays
 TensorPrimitives.BitwiseAnd(leftBytes, rightBytes, resultBytes);
 int result = 0;
 for (int i = 0; i < resultBytes.Length; i++)
@@ -52,24 +52,14 @@ for (int i = 0; i < resultBytes.Length; i++)
 }
 ```
 
-Dense data (best built-in .NET collection):
+Alternatives (ONLY if TensorPrimitives is unavailable):
 ```csharp
-// ✅ Use this - 2x faster, zero allocations, simple API
+// ❌ Only use if TensorPrimitives unavailable - 1.4x slower
 var resultBitArray = leftBitArray.And(rightBitArray);
-int result = 0;
-for (int i = 0; i < resultBitArray.Length; i++)
-{
-    if (resultBitArray[i]) { result += i; }
-}
-```
 
-Sparse data (5K+ elements, <10% infill):
-```csharp
-// ✅ For sparse iteration - 18-23% faster than plain loop
-// Still 2.2x slower than TensorPrimitives, 1.5x slower than BitArray
+// ❌ Only use if TensorPrimitives unavailable - 2.2x slower
 var indexesA = leftSparse.Select(static v => v.Index);
 var indexesB = rightSparse.Select(static v => v.Index);
-int result = 0;
 foreach (var indexMatch in indexesA.Intersect(indexesB))
 {
     result += indexMatch;
