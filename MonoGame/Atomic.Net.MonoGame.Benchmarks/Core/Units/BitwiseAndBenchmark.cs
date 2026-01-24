@@ -3,8 +3,10 @@
 // 2. TensorPrimitives.BitwiseAnd with byte arrays (SIMD optimized)
 // 3. SparseArray.Intersect (Select→Intersect)
 // 4. SparseArray.Intersect (Intersect→Select)
+// 5. BitArray.And (built-in .NET collection)
 // All tests iterate results and accumulate matched indexes for fairness
 
+using System.Collections;
 using System.Numerics.Tensors;
 using BenchmarkDotNet.Attributes;
 using Atomic.Net.MonoGame.Core;
@@ -37,6 +39,11 @@ public class BitwiseAndBenchmark
     private SparseArray<bool> _leftSparse = null!;
     private SparseArray<bool> _rightSparse = null!;
     private SparseArray<bool> _resultSparse = null!;
+
+    // BitArrays for BitArray approach
+    private BitArray _leftBitArray = null!;
+    private BitArray _rightBitArray = null!;
+    private BitArray _resultBitArray = null!;
 
     [GlobalSetup]
     public void Setup()
@@ -82,6 +89,11 @@ public class BitwiseAndBenchmark
                 _rightSparse.Set((ushort)i, true);
             }
         }
+
+        // Initialize BitArrays from bool arrays
+        _leftBitArray = new BitArray(_leftBools);
+        _rightBitArray = new BitArray(_rightBools);
+        _resultBitArray = new BitArray(ArraySize);
     }
 
     [Benchmark(Baseline = true)]
@@ -164,6 +176,26 @@ public class BitwiseAndBenchmark
             var indexMatch = match.Index;
             result += indexMatch;
             _resultSparse.Set(indexMatch, true);
+        }
+
+        return result;
+    }
+
+    [Benchmark]
+    public int BitArray_And()
+    {
+        int result = 0;
+
+        // Perform AND operation
+        _resultBitArray = _leftBitArray.And(_rightBitArray);
+
+        // Iterate results and accumulate matched indexes
+        for (int i = 0; i < ArraySize; i++)
+        {
+            if (_resultBitArray[i])
+            {
+                result += i;
+            }
         }
 
         return result;

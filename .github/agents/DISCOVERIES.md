@@ -11,35 +11,37 @@ This file documents significant performance findings backed by benchmarks. Only 
 
 ---
 
-## TensorPrimitives vs Plain Loop vs SparseArray for Boolean AND
+## BitArray vs TensorPrimitives vs Plain Loop vs SparseArray for Boolean AND
 
 **Problem:** Need to efficiently perform AND operations on boolean arrays/sparse data
 
-**Solution:** Use `TensorPrimitives.BitwiseAnd()` for dense data, `SparseArray.SelectThenIntersect` for truly sparse data (5K+ elements)
+**Solution:** Use `TensorPrimitives.BitwiseAnd()` for max performance, `BitArray.And()` for best built-in .NET collection, `SparseArray.SelectThenIntersect` for truly sparse data (5K+ elements)
 
 **Performance Comparison (with iteration overhead):**
-- **TensorPrimitives**: 2.6-2.8x faster than plain loop at ALL sizes
-- **SparseArray (Select→Intersect)**: 19-24% faster than plain loop at 5K+ elements, but **2.2x slower** than TensorPrimitives
-- **SparseArray (Intersect→Select)**: 13-27% slower than Select→Intersect (hypothesis confirmed)
+- **TensorPrimitives**: 2.6-2.8x faster than plain loop at ALL sizes (SIMD vectorization)
+- **BitArray**: 1.8-2.0x faster than plain loop at ALL sizes (best built-in .NET collection)
+- **SparseArray (Select→Intersect)**: 18-23% faster than plain loop at 5K+ elements, but **2.2x slower** than TensorPrimitives
+- **SparseArray (Intersect→Select)**: 13-28% slower than Select→Intersect (hypothesis confirmed)
 
 **Detailed Results:**
-| Size   | Plain Loop | TensorPrimitives | SparseArray (Select→Int) | SparseArray (Int→Select) |
-|--------|-----------|------------------|-------------------------|-------------------------|
-| 100    | 191 ns    | **72 ns** (2.7x) | 529 ns (0.4x)          | 528 ns (0.4x)          |
-| 1,000  | 1,871 ns  | **668 ns** (2.8x)| 2,093 ns (0.9x)        | 2,374 ns (0.8x)        |
-| 10,000 | 18,747 ns | **6,747 ns** (2.8x) | 15,359 ns (1.2x)    | 19,634 ns (1.0x)       |
-| 50,000 | 93,612 ns | **33,866 ns** (2.8x) | 71,589 ns (1.3x)   | 90,314 ns (1.0x)       |
+| Size   | Plain Loop | TensorPrimitives | BitArray | SparseArray (Select→Int) | SparseArray (Int→Select) |
+|--------|-----------|------------------|----------|-------------------------|-------------------------|
+| 100    | 189 ns    | **72 ns** (2.6x) | 105 ns (1.8x) | 497 ns (0.4x)   | 519 ns (0.4x)          |
+| 1,000  | 1,892 ns  | **669 ns** (2.8x)| 972 ns (1.9x) | 2,053 ns (0.9x) | 2,324 ns (0.8x)        |
+| 10,000 | 19,015 ns | **6,768 ns** (2.8x) | 9,689 ns (2.0x) | 14,964 ns (1.3x) | 19,170 ns (1.0x) |
+| 50,000 | 93,911 ns | **33,817 ns** (2.8x) | 47,899 ns (2.0x) | 72,175 ns (1.3x) | 86,033 ns (1.1x) |
 
 **Key Insights:**
 1. **TensorPrimitives wins overall** - SIMD vectorization provides 2.6-2.8x speedup with zero allocations
-2. **Select→Intersect beats Intersect→Select** - 13-27% faster at 1K+ elements (extract indexes first)
-3. **SparseArray competitive at 5K+** - When data is truly sparse (<10% infill), beats plain loop by 19-24%
-4. **Zero allocations for TensorPrimitives/plain loop** - SparseArray allocates (3KB at 1K, 124KB at 50K)
-5. **All tests include iteration** - Fair comparison includes writing output + accumulating matched indexes
+2. **BitArray is excellent built-in option** - Consistent 2x speedup, zero allocations, simpler API than TensorPrimitives
+3. **Select→Intersect beats Intersect→Select** - 13-28% faster at 1K+ elements (extract indexes first)
+4. **SparseArray competitive at 5K+** - When data is truly sparse (<10% infill), beats plain loop by 18-23%
+5. **Zero allocations for TensorPrimitives/BitArray/plain loop** - SparseArray allocates (3KB at 1K, 124KB at 50K)
+6. **All tests include iteration** - Fair comparison includes writing output + accumulating matched indexes
 
 **Recommended Patterns:**
 
-Dense data (any size):
+Dense data (max performance):
 ```csharp
 // ✅ Use this - 2.8x faster via SIMD, zero allocations
 TensorPrimitives.BitwiseAnd(leftBytes, rightBytes, resultBytes);
@@ -50,10 +52,21 @@ for (int i = 0; i < resultBytes.Length; i++)
 }
 ```
 
+Dense data (best built-in .NET collection):
+```csharp
+// ✅ Use this - 2x faster, zero allocations, simple API
+var resultBitArray = leftBitArray.And(rightBitArray);
+int result = 0;
+for (int i = 0; i < resultBitArray.Length; i++)
+{
+    if (resultBitArray[i]) { result += i; }
+}
+```
+
 Sparse data (5K+ elements, <10% infill):
 ```csharp
-// ✅ For sparse iteration - 19-24% faster than plain loop
-// Still 2.2x slower than TensorPrimitives
+// ✅ For sparse iteration - 18-23% faster than plain loop
+// Still 2.2x slower than TensorPrimitives, 1.5x slower than BitArray
 var indexesA = leftSparse.Select(static v => v.Index);
 var indexesB = rightSparse.Select(static v => v.Index);
 int result = 0;
