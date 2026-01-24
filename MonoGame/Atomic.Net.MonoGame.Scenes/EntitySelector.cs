@@ -17,42 +17,13 @@ namespace Atomic.Net.MonoGame.Scenes;
 // There should NOT be anything named "EntitySelectorV2" or etc in the codebase
 // Once the work is done by senior-dev
 
-[JsonConverter(typeof(EntitySelectorConverter))]
-public readonly record struct EntitySelector(
-    string? ById = null
-)
-{
-    // @senior-dev: This should now be deleted if migrate the code over right
-    public readonly bool TryLocate(
-        [NotNullWhen(true)]
-        out Entity? entity
-    )
-    {
-        if (!string.IsNullOrEmpty(ById))
-        {
-            if (EntityIdRegistry.Instance.TryResolve(ById, out entity))
-            {
-                return true;
-            }
-
-            EventBus<ErrorEvent>.Push(
-                new($"Unresolved reference: #{ById}")
-            );
-            return false;
-        }
-
-        entity = null;
-        return false;
-    }
-}
-
 // These objects will likely need to get used together to produce the new
 // enhanced Entity Selector
 // You will need to delete the old one and replace it with this once
 // You have completed the work
-
 [Variant]
-public partial class EntitySelectorV2
+[JsonConverter(typeof(EntitySelectorConverter))]
+public partial class EntitySelector
 {
     static partial void VariantOf(
         UnionEntitySelector union,
@@ -83,15 +54,19 @@ public partial class EntitySelectorV2
     // You probably will want to use some combination of Dynamic Programming
     // + recursion here to produce an efficient output
     public static bool TryParse(
-        ReadOnlySpan<char> tokens, out EntitySelectorV2? entitySelector
+        ReadOnlySpan<char> tokens, 
+        [NotNullWhen(true)]
+        out EntitySelector? entitySelector
     )
     {
         throw new NotImplementedException("To be implemented by @senior-dev");
     }
+
+    // dotVariant already implements ToString() for us on variants
 }
 
 public readonly record struct UnionEntitySelector(
-    EntitySelectorV2[] Children
+    EntitySelector[] Children
 )
 {
     public bool Matches(Entity entity)
@@ -106,10 +81,26 @@ public readonly record struct UnionEntitySelector(
 
         return false;
     }
+   
+    public static bool TryParse(
+        ReadOnlySpan<char> tokens, 
+        [NotNullWhen(true)]
+        out UnionEntitySelector? entitySelector
+    )
+    {
+        throw new NotImplementedException("To be implemented by @senior-dev");
+    }
+
+    // This also needs to be implemented (and effectively do the reverse of TryParse)
+    // Otherwise the database write passes wont succeed
+    public override string ToString()
+    {
+        throw new NotImplementedException("To be implemented by @senior-dev");
+    }
 }
 
 public readonly record struct IdEntitySelector(
-    string Id, EntitySelectorV2? Next = null
+    string Id, EntitySelector? Next = null
 )
 {
     public bool Matches(Entity entity)
@@ -126,10 +117,26 @@ public readonly record struct IdEntitySelector(
     
         return Next?.Matches(entity) ?? true;
     }
+    
+    public static bool TryParse(
+        ReadOnlySpan<char> tokens, 
+        [NotNullWhen(true)]
+        out IdEntitySelector? entitySelector
+    )
+    {
+        throw new NotImplementedException("To be implemented by @senior-dev");
+    }
+    
+    // This also needs to be implemented (and effectively do the reverse of TryParse)
+    // Otherwise the database write passes wont succeed
+    public override string ToString()
+    {
+        throw new NotImplementedException("To be implemented by @senior-dev");
+    }
 }
 
 public readonly record struct TaggedEntitySelector(
-    string Tag, EntitySelectorV2? Next = null
+    string Tag, EntitySelector? Next = null
 )
 {
     public bool Matches(Entity entity)
@@ -145,11 +152,27 @@ public readonly record struct TaggedEntitySelector(
         //
         // return Next?.Matches(entity) ?? true;
     }
+    
+    public static bool TryParse(
+        ReadOnlySpan<char> tokens, 
+        [NotNullWhen(true)]
+        out TaggedEntitySelector? entitySelector
+    )
+    {
+        throw new NotImplementedException("To be implemented by @senior-dev");
+    }
+    
+    // This also needs to be implemented (and effectively do the reverse of TryParse)
+    // Otherwise the database write passes wont succeed
+    public override string ToString()
+    {
+        throw new NotImplementedException("To be implemented by @senior-dev");
+    }
 }
 
 
 public readonly record struct CollisionEnterEntitySelector(
-    EntitySelectorV2? Next = null
+    EntitySelector? Next = null
 )
 {
     public bool Matches(Entity entity)
@@ -165,10 +188,24 @@ public readonly record struct CollisionEnterEntitySelector(
         //
         // return Next?.Matches(entity) ?? true;
     }
+    
+    public static bool TryParse(
+        ReadOnlySpan<char> tokens, 
+        [NotNullWhen(true)]
+        out CollisionEnterEntitySelector? entitySelector
+    )
+    {
+        throw new NotImplementedException("To be implemented by @senior-dev");
+    }
+    
+    public override string ToString()
+    {
+        throw new NotImplementedException("To be implemented by @senior-dev");
+    }
 }
 
 public readonly record struct CollisionExitEntitySelector(
-    EntitySelectorV2? Next = null
+    EntitySelector? Next = null
 )
 {
     public bool Matches(Entity entity)
@@ -183,5 +220,19 @@ public readonly record struct CollisionExitEntitySelector(
         // }
         //
         // return Next?.Matches(entity) ?? true;
+    }
+    
+    public static bool TryParse(
+        ReadOnlySpan<char> tokens, 
+        [NotNullWhen(true)]
+        out CollisionExitEntitySelector? entitySelector
+    )
+    {
+        throw new NotImplementedException("To be implemented by @senior-dev");
+    }
+    
+    public override string ToString()
+    {
+        throw new NotImplementedException("To be implemented by @senior-dev");
     }
 }

@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics.Tensors;
 using System.Text.Json;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.BED.Hierarchy;
@@ -29,7 +30,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     public static SceneLoader Instance { get; private set; } = null!;
 
     // Pre-allocated SparseArray for parent-child mappings (zero-alloc iteration)
-    private readonly SparseArray<EntitySelector> _childToParents = new(Constants.MaxEntities);
+    private readonly SparseReferenceArray<EntitySelector> _childToParents = new(Constants.MaxEntities);
     
     // Pre-allocated SparseArray for PersistToDiskBehavior queue (zero-alloc scene loading)
     private readonly SparseArray<PersistToDiskBehavior> _persistToDiskQueue = new(Constants.MaxEntities);
@@ -128,10 +129,11 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
                 // This applies Transform, Properties, and Id behaviors
                 jsonEntity.WriteToEntity(entity);
 
-                if (jsonEntity.Parent.HasValue)
-                {
-                    _childToParents.Set(entity.Index, jsonEntity.Parent.Value);
-                }
+                // @senior-dev: This now needs to be fixed to use the new system
+                // if (jsonEntity.Parent.HasValue)
+                // {
+                //     _childToParents.Set(entity.Index, jsonEntity.Parent.Value);
+                // }
                 
                 // CRITICAL: PersistToDiskBehavior MUST be applied after all other behaviors (including Parent)
                 // to prevent unwanted DB loads during scene construction
@@ -141,19 +143,25 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
                 }
             }
 
+
             foreach (var (entityIndex, parentSelector) in _childToParents)
             {
-                if (!parentSelector.TryLocate(out var parent))
-                {
-                    continue;
-                }
+                // TODO : @senior-dev, this logic will need to be fixed once
+                // LocatorRegistry is implemented
 
-                var entity = EntityRegistry.Instance[entityIndex];
-                var input = parent.Value.Index;
-                entity.SetBehavior<Parent, ushort>(
-                    in input,
-                    (ref readonly _input, ref behavior) => behavior = new(_input)
-                );
+                // if (!LocatorRegistery.Instance.TryFind(parentSelector, out var matches))
+                // {
+                //     continue;
+                // }
+                //
+                // var parent = matches.First();
+                //
+                // var entity = EntityRegistry.Instance[entityIndex];
+                // var input = parent.Index;
+                // entity.SetBehavior<Parent, ushort>(
+                //     in input,
+                //     (ref readonly _input, ref behavior) => behavior = new(_input)
+                // );
             }
 
             _childToParents.Clear();

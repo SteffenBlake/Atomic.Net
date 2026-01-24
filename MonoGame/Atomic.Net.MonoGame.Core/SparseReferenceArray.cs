@@ -34,6 +34,8 @@ public sealed class SparseReferenceArray<T>(ushort capacity) : IEnumerable<(usho
         }
     }
 
+    public T[] Values => _sparse;
+
     public bool TryGetValue(
         ushort index, 
         [NotNullWhen(true)] out T? value

@@ -12,34 +12,19 @@ public class EntitySelectorConverter : JsonConverter<EntitySelector>
     )
     {
         var nextString = reader.GetString()?.Trim();
-        if (string.IsNullOrEmpty(nextString))
+       
+        if (EntitySelector.TryParse(nextString, out var selector))
         {
-            return default;
+            return selector;
         }
 
-        if (nextString.StartsWith('@'))
-        {
-            return new ()
-            {
-                ById = nextString.TrimStart('@')
-            };
-        }
-
-        // TODO: Future types of entity selectors
-
-        return default;
+        throw new JsonException("Unable to parse EntitySelector");
     }
 
     public override void Write(Utf8JsonWriter writer, EntitySelector value, JsonSerializerOptions options)
     {
-        if (!string.IsNullOrEmpty(value.ById))
-        {
-            writer.WriteStringValue($"@{value.ById}");
-        }
-        else
-        {
-            writer.WriteNullValue();
-        }
+        var output = value.ToString();
+        writer.WriteStringValue(output);
     }
 }
 

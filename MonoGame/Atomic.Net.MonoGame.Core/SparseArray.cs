@@ -20,6 +20,8 @@ public sealed class SparseArray<T>(ushort capacity) : IEnumerable<(ushort Index,
         }
     }
 
+    public T[] Values => _sparse;
+
     public bool TryGetValue(
         ushort index, 
         [NotNullWhen(true)]
@@ -178,7 +180,7 @@ public sealed class SparseArray<T>(ushort capacity) : IEnumerable<(ushort Index,
             _index = -1;
         }
 
-        public (ushort Index, T Value) Current => _dense[_index];
+        public readonly (ushort Index, T Value) Current => _dense[_index];
 
         public bool MoveNext()
         {
