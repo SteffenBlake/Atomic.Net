@@ -23,29 +23,8 @@ namespace Atomic.Net.MonoGame.Scenes;
 // You have completed the work
 [Variant]
 [JsonConverter(typeof(EntitySelectorConverter))]
-public partial class EntitySelector
+public partial class EntitySelector :
 {
-    static partial void VariantOf(
-        UnionEntitySelector union,
-        IdEntitySelector id,
-        TaggedEntitySelector tagged,
-        CollisionEnterEntitySelector collisionEnter,
-        CollisionExitEntitySelector collisionExit
-    );
-
-    // @senior-dev: This will be the new method you will use to match on entities instead
-    public bool Matches(Entity entity)
-    {
-        return Visit(
-            union => union.Matches(entity),
-            id => id.Matches(entity),
-            tagged => tagged.Matches(entity),
-            collisionEnter => collisionEnter.Matches(entity),
-            collisionExit => collisionExit.Matches(entity),
-            () => false
-        );
-    }
-
     // Important notes: you can use a lot of tricks to very efficiently parse a ReadOnlySpan
     // SomeSpan[x..y] provides a non allocating "window" slice view of the span
     // Without copying the data, its the same memory, which is incredibly efficient
@@ -61,8 +40,6 @@ public partial class EntitySelector
     {
         throw new NotImplementedException("To be implemented by @senior-dev");
     }
-
-    // dotVariant already implements ToString() for us on variants
 }
 
 public readonly record struct UnionEntitySelector(
@@ -208,19 +185,6 @@ public readonly record struct CollisionExitEntitySelector(
     EntitySelector? Next = null
 )
 {
-    public bool Matches(Entity entity)
-    {
-        throw new NotImplementedException(
-            "TODO: future work, requires RigidBodyBehavior to be implemented first"
-        );
-
-        // if (!CollisionRegistry.Instance.CollisionExited(entity))
-        // {
-        //     return false;
-        // }
-        //
-        // return Next?.Matches(entity) ?? true;
-    }
     
     public static bool TryParse(
         ReadOnlySpan<char> tokens, 
