@@ -11,6 +11,42 @@ This file documents significant performance findings backed by benchmarks. Only 
 
 ---
 
+## TensorPrimitives.BitwiseAnd Dominates Plain For Loop
+
+**Problem:** Bitwise AND operations on bool arrays using plain for loops are slow
+
+**Solution:** Use `TensorPrimitives.BitwiseAnd()` with byte arrays (0/1 values) instead
+
+**Performance Improvement:**
+- **100 elements**: 21.5x faster (5.3ns vs 113.8ns)
+- **1,000 elements**: 72.4x faster (16.3ns vs 1,182ns) - **peak speedup**
+- **10,000 elements**: 55.9x faster (208.1ns vs 11,641ns)
+- **100,000 elements**: 30.9x faster (3,791ns vs 117,041ns)
+
+**Key Insights:**
+1. **No crossover point** - TensorPrimitives wins at ALL array sizes (100 to 100,000+)
+2. **No hybrid approach needed** - Use TensorPrimitives exclusively
+3. **SIMD vectorization** - Processes multiple bytes in parallel using CPU instructions
+4. **Zero allocations** - Same as plain loop with pre-allocated result arrays
+5. **Trade-off**: Requires byte[] instead of bool[] (same memory, 1 byte per element)
+
+**Recommended Pattern:**
+```csharp
+// ✅ Use this - 20-72x faster
+TensorPrimitives.BitwiseAnd(leftBytes, rightBytes, resultBytes);
+
+// ❌ Don't use this - 20-72x slower
+for (int i = 0; i < length; i++)
+{
+    resultBools[i] = leftBools[i] & rightBools[i];
+}
+```
+
+**Benchmark:** `MonoGame/Atomic.Net.MonoGame.Benchmarks/Core/Units/BitwiseAndBenchmark.cs`
+**Results:** `MonoGame/Atomic.Net.MonoGame.Benchmarks/Core/Units/BITWISE_AND_RESULTS.md`
+
+---
+
 ## Closures Allocate in Hot Paths
 
 **Problem:** Lambdas with closures allocate ~80 bytes per invocation in tight loops, causing GC pressure
