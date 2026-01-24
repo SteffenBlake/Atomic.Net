@@ -11,64 +11,19 @@ This file documents significant performance findings backed by benchmarks. Only 
 
 ---
 
-## BitArray vs TensorPrimitives vs Plain Loop vs SparseArray for Boolean AND
+## TensorPrimitives for Boolean AND Operations
 
-**Problem:** Need to efficiently perform AND operations on boolean arrays/sparse data
+**Problem:** Need to efficiently perform AND operations on boolean arrays
 
-**Solution:** ALWAYS use `TensorPrimitives.BitwiseAnd()` - it wins in ALL cases regardless of array size or data sparsity
+**Solution:** Use `TensorPrimitives.BitwiseAnd()` 
 
-**Performance Comparison (with iteration overhead):**
-- **TensorPrimitives**: 2.6-2.8x faster than plain loop at ALL sizes (SIMD vectorization)
-- **BitArray**: 1.8-2.0x faster than plain loop at ALL sizes (best built-in .NET collection)
-- **SparseArray (Select→Intersect)**: 18-23% faster than plain loop at 5K+ elements, but **2.2x slower** than TensorPrimitives
-- **SparseArray (Intersect→Select)**: 13-28% slower than Select→Intersect (hypothesis confirmed)
+**Performance:** 2.6-2.8x faster than plain loop with zero allocations
 
-**Detailed Results:**
-| Size   | Plain Loop | TensorPrimitives | BitArray | SparseArray (Select→Int) | SparseArray (Int→Select) |
-|--------|-----------|------------------|----------|-------------------------|-------------------------|
-| 100    | 189 ns    | **72 ns** (2.6x) | 105 ns (1.8x) | 497 ns (0.4x)   | 519 ns (0.4x)          |
-| 1,000  | 1,892 ns  | **669 ns** (2.8x)| 972 ns (1.9x) | 2,053 ns (0.9x) | 2,324 ns (0.8x)        |
-| 10,000 | 19,015 ns | **6,768 ns** (2.8x) | 9,689 ns (2.0x) | 14,964 ns (1.3x) | 19,170 ns (1.0x) |
-| 50,000 | 93,911 ns | **33,817 ns** (2.8x) | 47,899 ns (2.0x) | 72,175 ns (1.3x) | 86,033 ns (1.1x) |
-
-**Key Insights:**
-1. **TensorPrimitives ALWAYS wins** - Fastest in ALL cases (dense, sparse, small, large arrays)
-2. **No use case where alternatives are better** - TensorPrimitives beats BitArray by 1.4x, SparseArray by 2.2x
-3. **SIMD vectorization dominates** - Provides 2.6-2.8x speedup with zero allocations
-4. **BitArray is decent fallback** - 2x speedup if TensorPrimitives unavailable, but still 1.4x slower
-5. **SparseArray never optimal for performance** - Even for sparse data, TensorPrimitives is 2.2x faster
-6. **All tests include iteration** - Fair comparison includes writing output + accumulating matched indexes
-
-**Recommended Pattern:**
-
-ALWAYS use TensorPrimitives (fastest in ALL scenarios):
 ```csharp
-// ✅ ALWAYS use this - fastest for dense, sparse, small, large arrays
 TensorPrimitives.BitwiseAnd(leftBytes, rightBytes, resultBytes);
-int result = 0;
-for (int i = 0; i < resultBytes.Length; i++)
-{
-    if (resultBytes[i] == 1) { result += i; }
-}
-```
-
-Alternatives (ONLY if TensorPrimitives is unavailable):
-```csharp
-// ❌ Only use if TensorPrimitives unavailable - 1.4x slower
-var resultBitArray = leftBitArray.And(rightBitArray);
-
-// ❌ Only use if TensorPrimitives unavailable - 2.2x slower
-var indexesA = leftSparse.Select(static v => v.Index);
-var indexesB = rightSparse.Select(static v => v.Index);
-foreach (var indexMatch in indexesA.Intersect(indexesB))
-{
-    result += indexMatch;
-    resultSparse.Set(indexMatch, true);
-}
 ```
 
 **Benchmark:** `MonoGame/Atomic.Net.MonoGame.Benchmarks/Core/Units/BitwiseAndBenchmark.cs`
-**Results:** `MonoGame/Atomic.Net.MonoGame.Benchmarks/Core/Units/BITWISE_AND_RESULTS.md`
 
 ---
 
