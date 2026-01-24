@@ -4,10 +4,13 @@
 // 3. SparseArray.Intersect (Select→Intersect)
 // 4. SparseArray.Intersect (Intersect→Select)
 // 5. BitArray.And (built-in .NET collection)
+// 6. TensorPrimitives with copy overhead (bool[] to byte[])
+// 7. BitArray with copy overhead (bool[] to BitArray)
 // All tests iterate results and accumulate matched indexes for fairness
 
 using System.Collections;
 using System.Numerics.Tensors;
+using System.Runtime.InteropServices;
 using BenchmarkDotNet.Attributes;
 using Atomic.Net.MonoGame.Core;
 
@@ -22,7 +25,7 @@ namespace Atomic.Net.MonoGame.Benchmarks.Core.Units;
 public class BitwiseAndBenchmark
 {
     // Testing multiple scales to find the breakpoint
-    [Params(100, 500, 1000, 5000, 10000, 50000, 100000)]
+    [Params(100, 1000, 10000)]
     public int ArraySize { get; set; }
 
     // Bool arrays for plain loop approach
@@ -35,6 +38,10 @@ public class BitwiseAndBenchmark
     private byte[] _rightBytes = null!;
     private byte[] _resultBytes = null!;
 
+    // Byte arrays for TensorPrimitives with copy approach
+    private byte[] _leftBytesCopied = null!;
+    private byte[] _rightBytesCopied = null!;
+
     // SparseArrays for sparse intersection approach
     private SparseArray<bool> _leftSparse = null!;
     private SparseArray<bool> _rightSparse = null!;
@@ -44,6 +51,10 @@ public class BitwiseAndBenchmark
     private BitArray _leftBitArray = null!;
     private BitArray _rightBitArray = null!;
     private BitArray _resultBitArray = null!;
+
+    // BitArrays for BitArray with copy approach
+    private BitArray _leftBitArrayCopied = null!;
+    private BitArray _rightBitArrayCopied = null!;
 
     [GlobalSetup]
     public void Setup()
@@ -60,6 +71,10 @@ public class BitwiseAndBenchmark
         _leftBytes = new byte[ArraySize];
         _rightBytes = new byte[ArraySize];
         _resultBytes = new byte[ArraySize];
+
+        // Initialize byte arrays for copy test (pre-allocated, will be reused)
+        _leftBytesCopied = new byte[ArraySize];
+        _rightBytesCopied = new byte[ArraySize];
 
         // Initialize SparseArrays
         _leftSparse = new SparseArray<bool>((ushort)ArraySize);
@@ -94,6 +109,10 @@ public class BitwiseAndBenchmark
         _leftBitArray = new BitArray(_leftBools);
         _rightBitArray = new BitArray(_rightBools);
         _resultBitArray = new BitArray(ArraySize);
+
+        // Initialize BitArrays for copy test (pre-allocated, will be reused)
+        _leftBitArrayCopied = new BitArray(ArraySize);
+        _rightBitArrayCopied = new BitArray(ArraySize);
     }
 
     [Benchmark(Baseline = true)]
@@ -188,6 +207,54 @@ public class BitwiseAndBenchmark
 
         // Perform AND operation
         _resultBitArray = _leftBitArray.And(_rightBitArray);
+
+        // Iterate results and accumulate matched indexes
+        for (int i = 0; i < ArraySize; i++)
+        {
+            if (_resultBitArray[i])
+            {
+                result += i;
+            }
+        }
+
+        return result;
+    }
+
+    [Benchmark]
+    public int TensorPrimitives_BitwiseAnd_Bytes_Copy()
+    {
+        int result = 0;
+
+        // Copy bool[] to byte[] using MemoryMarshal.Cast (conversion overhead)
+        MemoryMarshal.Cast<bool, byte>(_leftBools).CopyTo(_leftBytesCopied);
+        MemoryMarshal.Cast<bool, byte>(_rightBools).CopyTo(_rightBytesCopied);
+
+        // Perform SIMD AND operation
+        TensorPrimitives.BitwiseAnd(_leftBytesCopied, _rightBytesCopied, _resultBytes);
+
+        // Iterate results and accumulate matched indexes
+        for (int i = 0; i < ArraySize; i++)
+        {
+            if (_resultBytes[i] == 1)
+            {
+                result += i;
+            }
+        }
+
+        return result;
+    }
+
+    [Benchmark]
+    public int BitArray_And_Copy()
+    {
+        int result = 0;
+
+        // Copy bool[] to BitArray using constructor (conversion overhead)
+        _leftBitArrayCopied = new BitArray(_leftBools);
+        _rightBitArrayCopied = new BitArray(_rightBools);
+
+        // Perform AND operation
+        _resultBitArray = _leftBitArrayCopied.And(_rightBitArrayCopied);
 
         // Iterate results and accumulate matched indexes
         for (int i = 0; i < ArraySize; i++)
