@@ -1,8 +1,7 @@
 using System.Text.Json;
 using Xunit;
 using Atomic.Net.MonoGame.Core;
-using Atomic.Net.MonoGame.BED;
-using Atomic.Net.MonoGame.BED.Properties;
+using Atomic.Net.MonoGame.Properties;
 
 namespace Atomic.Net.MonoGame.Tests.BED.Units;
 
@@ -17,7 +16,6 @@ public sealed class PropertiesBehaviorConverterUnitTests : IDisposable
     public PropertiesBehaviorConverterUnitTests()
     {
         AtomicSystem.Initialize();
-        BEDSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
 

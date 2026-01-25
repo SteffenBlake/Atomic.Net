@@ -1,10 +1,8 @@
 using Xunit;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
-using Atomic.Net.MonoGame.BED.Properties;
-using Atomic.Net.MonoGame.Scenes.Persistence;
-using Atomic.Net.MonoGame.Scenes;
-using Atomic.Net.MonoGame.Tests;
+using Atomic.Net.MonoGame.Properties;
+using Atomic.Net.MonoGame.Persistence;
 
 namespace Atomic.Net.MonoGame.Tests.Persistence.Integrations;
 
@@ -29,8 +27,6 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         _dbPath = "persistence.db";
 
         AtomicSystem.Initialize();
-        BEDSystem.Initialize();
-        SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
 
@@ -53,23 +49,21 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         var entity1 = EntityRegistry.Instance.Activate();
         var entity2 = EntityRegistry.Instance.Activate();
         
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity1, (ref PersistToDiskBehavior behavior) =>
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("duplicate-key");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, (ref PropertiesBehavior behavior) =>
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
-            behavior = PropertiesBehavior.CreateFor(entity1);
             behavior.Properties["id"] = "first";
         });
         
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, (ref PersistToDiskBehavior behavior) =>
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("duplicate-key");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, (ref PropertiesBehavior behavior) =>
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
         {
-            behavior = PropertiesBehavior.CreateFor(entity2);
             behavior.Properties["id"] = "second";
         });
         
@@ -79,7 +73,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         // Assert: Last write should win (entity2 with "second")
         // test-architect: Design decision - either fire ErrorEvent or use last-write-wins
         var newEntity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("duplicate-key");
         });
@@ -95,13 +89,12 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
     {
         // Arrange: Create and persist entity in first "scene"
         var entity1 = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity1, (ref PersistToDiskBehavior behavior) =>
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("cross-scene-key");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, (ref PropertiesBehavior behavior) =>
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
-            behavior = PropertiesBehavior.CreateFor(entity1);
             behavior.Properties["scene"] = "scene1";
         });
         DatabaseRegistry.Instance.Flush();
@@ -112,12 +105,11 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         // Create new entity with same key in second "scene"
         var entity2 = EntityRegistry.Instance.Activate();
         // Add PersistToDiskBehavior LAST to prevent it from loading and then being overwritten
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, (ref PropertiesBehavior behavior) =>
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
         {
-            behavior = PropertiesBehavior.CreateFor(entity2);
             behavior.Properties["scene"] = "scene2";
         });
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, (ref PersistToDiskBehavior behavior) =>
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("cross-scene-key");
         });
@@ -136,12 +128,11 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         
         // Act: Try to create entity with empty string key
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = PropertiesBehavior.CreateFor(entity);
             behavior.Properties["test"] = "value";
         });
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("");
         });
@@ -156,7 +147,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         // test-architect: Entity should NOT be written to database
         // Verify by trying to load with empty key - should not find anything
         var newEntity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("");
         });
@@ -173,13 +164,12 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         
         // Act: Try to create entity with whitespace-only key
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("   ");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = PropertiesBehavior.CreateFor(entity);
             behavior.Properties["test"] = "whitespace";
         });
         
@@ -192,7 +182,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         
         // test-architect: Entity should NOT be written to database
         var newEntity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("   ");
         });

@@ -1,5 +1,6 @@
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
+using Atomic.Net.MonoGame.Ids;
 using Xunit;
 
 namespace Atomic.Net.MonoGame.Tests.BED.Units;
@@ -10,7 +11,6 @@ public sealed class EntityIdRegistryUnitTests : IDisposable
     public EntityIdRegistryUnitTests()
     {
         AtomicSystem.Initialize();
-        BEDSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
 

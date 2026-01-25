@@ -22,8 +22,6 @@ public sealed class BehaviorRegistryIntegrationTests : IDisposable
     public BehaviorRegistryIntegrationTests()
     {
         AtomicSystem.Initialize();
-        BEDSystem.Initialize();
-        BehaviorRegistry<TestBehaviorIntegration>.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
 

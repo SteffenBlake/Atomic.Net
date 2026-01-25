@@ -1,8 +1,9 @@
 using Xunit;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
-using Atomic.Net.MonoGame.BED.Hierarchy;
+using Atomic.Net.MonoGame.Hierarchy;
 using Atomic.Net.MonoGame.Scenes;
+using Atomic.Net.MonoGame.Ids;
 
 namespace Atomic.Net.MonoGame.Tests.BED.Integrations;
 
@@ -13,8 +14,6 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
     public HierarchyRegistryIntegrationTests()
     {
         AtomicSystem.Initialize();
-        BEDSystem.Initialize();
-        SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
 
@@ -74,7 +73,7 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
         Assert.True(child.Value.TryGetParent(out _));
         
         // Act
-        BehaviorRegistry<Parent>.Instance.Remove(child.Value);
+        BehaviorRegistry<ParentBehavior>.Instance.Remove(child.Value);
         
         // Assert
         Assert.False(child.Value.TryGetParent(out _));
@@ -257,7 +256,7 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
     public void WithParent_FiresBehaviorAddedEvent()
     {
         // Arrange
-        using var listener = new FakeEventListener<BehaviorAddedEvent<Parent>>();
+        using var listener = new FakeEventListener<BehaviorAddedEvent<ParentBehavior>>();
         var scenePath = "BED/Fixtures/parent-child.json";
         
         // Act
@@ -276,14 +275,14 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
     public void RemoveParent_FiresBehaviorRemovedEvent()
     {
         // Arrange
-        using var listener = new FakeEventListener<PostBehaviorRemovedEvent<Parent>>();
+        using var listener = new FakeEventListener<PostBehaviorRemovedEvent<ParentBehavior>>();
         var scenePath = "BED/Fixtures/parent-child.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
         
         Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
         
         // Act
-        BehaviorRegistry<Parent>.Instance.Remove(child.Value);
+        BehaviorRegistry<ParentBehavior>.Instance.Remove(child.Value);
         
         // Assert
         Assert.Single(listener.ReceivedEvents);

@@ -1,7 +1,7 @@
 using Xunit;
-using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Scenes;
+using Atomic.Net.MonoGame.Ids;
 
 namespace Atomic.Net.MonoGame.Tests.Core.Integrations;
 
@@ -12,7 +12,6 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
     public EntityRegistryIntegrationTests()
     {
         AtomicSystem.Initialize();
-        SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
 

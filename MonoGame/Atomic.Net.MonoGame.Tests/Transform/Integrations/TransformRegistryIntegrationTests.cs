@@ -4,6 +4,7 @@ using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Transform;
 using Atomic.Net.MonoGame.Scenes;
+using Atomic.Net.MonoGame.Ids;
 
 namespace Atomic.Net.MonoGame.Tests.Transform.Integrations;
 
@@ -33,9 +34,6 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
     public TransformRegistryIntegrationTests()
     {
         AtomicSystem.Initialize();
-        BEDSystem.Initialize();
-        TransformSystem.Initialize();
-        SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
 

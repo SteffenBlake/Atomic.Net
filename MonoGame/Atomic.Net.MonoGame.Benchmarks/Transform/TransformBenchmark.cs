@@ -1,7 +1,6 @@
 using Atomic.Net.MonoGame.Core;
-using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Transform;
-using Atomic.Net.MonoGame.BED.Hierarchy;
+using Atomic.Net.MonoGame.Hierarchy;
 using BenchmarkDotNet. Attributes;
 using Microsoft. Xna.Framework;
 
@@ -21,26 +20,12 @@ public class TransformBenchmark
     private TransformData[] _transformData = null!;
     private int[] _parentIndices = null!;
 
-    private readonly struct TransformData
-    {
-        public readonly Vector3 Position;
-        public readonly Quaternion Rotation;
-        public readonly Vector3 Scale;
-        public readonly Vector3 Anchor;
-
-        public TransformData(
-            Vector3 position,
-            Quaternion rotation,
-            Vector3 scale,
-            Vector3 anchor
-        )
-        {
-            Position = position;
-            Rotation = rotation;
-            Scale = scale;
-            Anchor = anchor;
-        }
-    }
+    private readonly record struct TransformData(
+        Vector3 Position,
+        Quaternion Rotation,
+        Vector3 Scale,
+        Vector3 Anchor
+    );
 
     [Params(LowEntityCount, MediumEntityCount, HighEntityCount)]
     public int EntityCount { get; set; }
@@ -49,8 +34,6 @@ public class TransformBenchmark
     public void GlobalSetup()
     {
         AtomicSystem.Initialize();
-        BEDSystem.Initialize();
-        TransformSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
 

@@ -1,5 +1,5 @@
 using Xunit;
-using Atomic.Net.MonoGame.BED.Properties;
+using Atomic.Net.MonoGame.Properties;
 
 namespace Atomic.Net.MonoGame.Tests.BED.Units;
 

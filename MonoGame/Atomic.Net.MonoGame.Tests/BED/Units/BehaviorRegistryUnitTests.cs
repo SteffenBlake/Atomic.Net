@@ -22,7 +22,6 @@ public sealed class BehaviorRegistryUnitTests : IDisposable
     public BehaviorRegistryUnitTests()
     {
         AtomicSystem.Initialize();
-        BEDSystem.Initialize();
         
         // CRITICAL: Must initialize BehaviorRegistry for each behavior type used in tests
         // This registers the BehaviorRegistry to listen for PreEntityDeactivatedEvent

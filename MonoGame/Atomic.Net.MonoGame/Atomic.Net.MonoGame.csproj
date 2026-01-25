@@ -1,20 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
-    <PackageReference Include="LiteDB" Version="5.0.21" />
     <PackageReference Include="MonoGame.Framework.DesktopGL" PrivateAssets="All" Version="3.8.4" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Atomic.Net.MonoGame\Atomic.Net.MonoGame.csproj" />
+    <PackageReference Include="dotVariant" Version="0.5.3" />
+    <PackageReference Include="System.Numerics.Tensors" Version="10.0.1" />
+    <PackageReference Include="JsonLogic" Version="5.5.0" />
+    <PackageReference Include="LiteDB" Version="5.0.21" />
+    <PackageReference Include="FlexLayoutSharp" Version="1.0.0" />
   </ItemGroup>
 
 </Project>

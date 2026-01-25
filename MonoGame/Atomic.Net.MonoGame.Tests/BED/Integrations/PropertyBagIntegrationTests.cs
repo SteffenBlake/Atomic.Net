@@ -1,9 +1,9 @@
 using Xunit;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
-using Atomic.Net.MonoGame.BED.Properties;
-using Atomic.Net.MonoGame.Transform;
+using Atomic.Net.MonoGame.Properties;
 using Atomic.Net.MonoGame.Scenes;
+using Atomic.Net.MonoGame.Ids;
 
 namespace Atomic.Net.MonoGame.Tests.BED.Integrations;
 
@@ -19,9 +19,6 @@ public sealed class PropertyBagIntegrationTests : IDisposable
     {
         // Arrange: Initialize systems before each test
         AtomicSystem.Initialize();
-        BEDSystem.Initialize();
-        SceneSystem.Initialize();
-        BehaviorRegistry<PropertiesBehavior>.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
 

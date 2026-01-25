@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Atomic.Net.MonoGame.Benchmarks/Atomic.Net.MonoGame.Benchmarks.csproj" />
+  <Project Path="Atomic.Net.MonoGame.Tests/Atomic.Net.MonoGame.Tests.csproj" />
+  <Project Path="Atomic.Net.MonoGame/Atomic.Net.MonoGame.csproj" />
+</Solution>

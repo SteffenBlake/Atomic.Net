@@ -1,9 +1,10 @@
 using Xunit;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
-using Atomic.Net.MonoGame.BED.Hierarchy;
+using Atomic.Net.MonoGame.Hierarchy;
 using Atomic.Net.MonoGame.Transform;
 using Atomic.Net.MonoGame.Scenes;
+using Atomic.Net.MonoGame.Ids;
 
 namespace Atomic.Net.MonoGame.Tests.Scenes.Integrations;
 
@@ -19,8 +20,6 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
     {
         // Arrange: Initialize systems before each test
         AtomicSystem.Initialize();
-        BEDSystem.Initialize();
-        SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
 

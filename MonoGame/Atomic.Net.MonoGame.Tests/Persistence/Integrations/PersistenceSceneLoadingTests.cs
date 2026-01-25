@@ -1,10 +1,11 @@
 using Xunit;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
-using Atomic.Net.MonoGame.BED.Properties;
-using Atomic.Net.MonoGame.Scenes.Persistence;
 using Atomic.Net.MonoGame.Scenes;
 using Atomic.Net.MonoGame.Transform;
+using Atomic.Net.MonoGame.Persistence;
+using Atomic.Net.MonoGame.Ids;
+using Atomic.Net.MonoGame.Properties;
 
 namespace Atomic.Net.MonoGame.Tests.Persistence.Integrations;
 
@@ -29,8 +30,6 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         _dbPath = "persistence.db";
 
         AtomicSystem.Initialize();
-        BEDSystem.Initialize();
-        SceneSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
 
@@ -57,8 +56,10 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
 
         // Assert: Verify entities were created with PersistToDiskBehavior
-        Assert.True(EntityIdRegistry.Instance.TryResolve("persistent-player", out var playerEntity), 
-            "persistent-player should be registered");
+        Assert.True(
+            EntityIdRegistry.Instance.TryResolve("persistent-player", out var playerEntity), 
+            "persistent-player should be registered"
+        );
         
         // test-architect: Verify PersistToDiskBehavior was applied
         Assert.True(BehaviorRegistry<PersistToDiskBehavior>.Instance.TryGetBehavior(playerEntity.Value, out var persistBehavior));
@@ -77,13 +78,12 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
     {
         // Arrange: Pre-populate database with DIFFERENT data than scene
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("player-save-slot-1");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = PropertiesBehavior.CreateFor(entity);
             behavior.Properties["fromDisk"] = "yes";  // This value is from disk
             behavior.Properties["hp"] = 999f;         // Different from scene
         });
@@ -111,20 +111,19 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
     {
         // Arrange: Create and save an entity first
         var entity1 = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity1, (ref PersistToDiskBehavior behavior) =>
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("disable-test-key");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, (ref PropertiesBehavior behavior) =>
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
-            behavior = PropertiesBehavior.CreateFor(entity1);
             behavior.Properties["initial"] = "saved";
         });
         DatabaseRegistry.Instance.Flush();
         
         // Act: Disable tracking, then mutate entity
         DatabaseRegistry.Instance.Disable();
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, (ref PropertiesBehavior behavior) =>
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
             behavior.Properties["duringDisabled"] = "should-not-persist";
         });
@@ -132,7 +131,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         
         // Re-enable and verify tracking resumes
         DatabaseRegistry.Instance.Enable();
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, (ref PropertiesBehavior behavior) =>
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
             behavior.Properties["afterEnabled"] = "should-persist";
         });
@@ -140,7 +139,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         
         // Verify: Load entity from disk
         var newEntity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("disable-test-key");
         });
@@ -164,7 +163,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("inventory-manager", out var inventoryEntity));
         
         // Modify entity data
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(inventoryEntity.Value, (ref PropertiesBehavior behavior) =>
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(inventoryEntity.Value, static (ref behavior) =>
         {
             behavior.Properties["modified"] = "yes";
             behavior.Properties["value"] = 777f;
@@ -198,7 +197,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         Assert.False(BehaviorRegistry<PersistToDiskBehavior>.Instance.TryGetBehavior(nonPersistentEntity.Value, out _));
         
         // Modify entity and flush
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(nonPersistentEntity.Value, (ref PropertiesBehavior behavior) =>
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(nonPersistentEntity.Value, static (ref behavior) =>
         {
             behavior.Properties["test"] = "should-not-save";
         });
@@ -209,7 +208,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         
         // Create new entity and try to add PersistToDiskBehavior with non-existent key
         var testEntity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(testEntity, (ref PersistToDiskBehavior behavior) =>
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(testEntity, static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("non-persistent-entity-key");
         });
@@ -223,13 +222,12 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
     {
         // Arrange: Pre-populate database with unique marker
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref PersistToDiskBehavior behavior) =>
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("loop-test-key");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref PropertiesBehavior behavior) =>
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = PropertiesBehavior.CreateFor(entity);
             behavior.Properties["originalData"] = "first-write";
             behavior.Properties["counter"] = 1f;
         });
@@ -239,16 +237,15 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         // Act: Create new entity with DIFFERENT data, then apply same key
         // Key application should LOAD from disk (overwriting the different data)
         var newEntity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(newEntity, (ref PropertiesBehavior behavior) =>
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(newEntity, static (ref behavior) =>
         {
-            behavior = PropertiesBehavior.CreateFor(newEntity);
             behavior.Properties["originalData"] = "second-write"; // Different from disk
             behavior.Properties["counter"] = 2f; // Different from disk
         });
         
         // Now apply PersistToDiskBehavior - should load from disk, triggering PostBehaviorUpdatedEvent
         // with oldKey == newKey, preventing infinite loop
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, (ref PersistToDiskBehavior behavior) =>
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("loop-test-key");
         });
@@ -268,7 +265,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         
         // Verify data is still correct (no corruption from loop)
         var verifyEntity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(verifyEntity, (ref PersistToDiskBehavior behavior) =>
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(verifyEntity, static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("loop-test-key");
         });
