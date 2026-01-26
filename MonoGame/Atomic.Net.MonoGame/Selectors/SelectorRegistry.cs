@@ -40,6 +40,23 @@ public class SelectorRegistry :
     // Lookup for @Tag => IdEntitySelector (for tagging dirty)
     private readonly Dictionary<string, TagEntitySelector> _tagSelectorLookup = new(Constants.MaxEntities / 64);
 
+    // Track root selectors (final parsed results) for bulk Recalc
+    // senior-dev: Only track the final "root" nodes from TryParse to avoid recalculating
+    // the same sub-nodes multiple times. Each root recursively recalcs its children.
+    private readonly HashSet<EntitySelector> _rootSelectors = new(Constants.MaxEntities / 64);
+
+    /// <summary>
+    /// Recalculates all root selectors that have been parsed.
+    /// Call this after scene loading or when entities/IDs change to update selector matches.
+    /// </summary>
+    public void Recalc()
+    {
+        foreach (var selector in _rootSelectors)
+        {
+            selector.Recalc();
+        }
+    }
+
     public bool TryParse(
         ReadOnlySpan<char> tokens,
         [NotNullWhen(true)] 
@@ -102,6 +119,9 @@ public class SelectorRegistry :
         entitySelector = unionParts.Count == 1
             ? unionParts[0]
             : GetOrCreateUnionSelector(tokens, unionParts);
+
+        // senior-dev: Track this as a root selector for bulk Recalc
+        _rootSelectors.Add(entitySelector);
 
         return true;
     }

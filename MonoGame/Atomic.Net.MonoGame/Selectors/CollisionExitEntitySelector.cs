@@ -39,6 +39,10 @@ public class CollisionExitEntitySelector(
 
         if (shouldRecalc)
         {
+            // senior-dev: Reset dirty flag even though implementation is pending
+            // This prevents infinite recalc loops when collision is implemented
+            _dirty = false;
+            
             throw new NotImplementedException("Requires Collision registry to be implemented later");
         }
 

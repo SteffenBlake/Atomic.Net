@@ -50,6 +50,9 @@ public class IdEntitySelector(
                     Matches.Set(match.Value.Index, true);
                 }
             }
+            
+            // senior-dev: Reset dirty flag after recalc to prevent unnecessary recomputation
+            _dirty = false;
         }
 
         return shouldRecalc;
