@@ -13,6 +13,10 @@ public readonly record struct ParentBehavior(EntitySelector ParentSelector)
         out Entity? parent
     )
     {
+        // senior-dev: Must recalculate selector before accessing Matches
+        // Selectors are marked dirty when IDs change, but not automatically recalculated
+        ParentSelector.Recalc();
+        
         var enumerator = ParentSelector.Matches.GetEnumerator();
         if (enumerator.MoveNext())
         {
