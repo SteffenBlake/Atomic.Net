@@ -11,7 +11,8 @@ public class SelectorRegistry :
     IEventHandler<BehaviorAddedEvent<IdBehavior>>,
     IEventHandler<PreBehaviorUpdatedEvent<IdBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<IdBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<IdBehavior>>
+    IEventHandler<PreBehaviorRemovedEvent<IdBehavior>>,
+    IEventHandler<ShutdownEvent>
 {
     public static SelectorRegistry Instance { get; private set; } = null!;
 
@@ -323,6 +324,17 @@ public class SelectorRegistry :
         EventBus<PreBehaviorUpdatedEvent<IdBehavior>>.Register(Instance);
         EventBus<PostBehaviorUpdatedEvent<IdBehavior>>.Register(Instance);
         EventBus<PreBehaviorRemovedEvent<IdBehavior>>.Register(Instance);
+        EventBus<ShutdownEvent>.Register(Instance);
+    }
+
+    public void OnEvent(ShutdownEvent _)
+    {
+        // senior-dev: Unregister from all events to prevent duplicate registrations
+        EventBus<BehaviorAddedEvent<IdBehavior>>.Unregister(Instance);
+        EventBus<PreBehaviorUpdatedEvent<IdBehavior>>.Unregister(Instance);
+        EventBus<PostBehaviorUpdatedEvent<IdBehavior>>.Unregister(Instance);
+        EventBus<PreBehaviorRemovedEvent<IdBehavior>>.Unregister(Instance);
+        EventBus<ShutdownEvent>.Unregister(Instance);
     }
 
     public void OnEvent(BehaviorAddedEvent<IdBehavior> e)

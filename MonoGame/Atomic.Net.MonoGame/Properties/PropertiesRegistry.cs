@@ -12,7 +12,8 @@ public sealed class PropertiesRegistry : ISingleton<PropertiesRegistry>,
     IEventHandler<BehaviorAddedEvent<PropertiesBehavior>>,
     IEventHandler<PreBehaviorUpdatedEvent<PropertiesBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<PropertiesBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<PropertiesBehavior>>
+    IEventHandler<PreBehaviorRemovedEvent<PropertiesBehavior>>,
+    IEventHandler<ShutdownEvent>
 {
     internal static void Initialize()
     {
@@ -38,6 +39,13 @@ public sealed class PropertiesRegistry : ISingleton<PropertiesRegistry>,
     /// </summary>
     public void IndexProperties(Entity entity, Dictionary<string, PropertyValue> properties)
     {
+        // senior-dev: Null check for defensive programming - properties can be null if
+        // PropertiesBehavior was default-initialized.
+        if (properties == null)
+        {
+            return;
+        }
+
         foreach (var (key, value) in properties)
         {
             if (!_keyIndex.TryGetValue(key, out var keyEntities))
@@ -67,6 +75,14 @@ public sealed class PropertiesRegistry : ISingleton<PropertiesRegistry>,
     /// </summary>
     public void RemoveProperties(Entity entity, Dictionary<string, PropertyValue> properties)
     {
+        // senior-dev: Null check needed because PropertiesBehavior is a struct and can be
+        // default-initialized (e.g., in PropertiesBehaviorConverter when JSON is not StartObject),
+        // which leaves Properties as null instead of an empty dictionary.
+        if (properties == null)
+        {
+            return;
+        }
+
         foreach (var (key, value) in properties)
         {
             if (_keyIndex.TryGetValue(key, out var keyEntities))
@@ -121,6 +137,17 @@ public sealed class PropertiesRegistry : ISingleton<PropertiesRegistry>,
         EventBus<PreBehaviorUpdatedEvent<PropertiesBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<PropertiesBehavior>>.Register(this);
         EventBus<PreBehaviorRemovedEvent<PropertiesBehavior>>.Register(this);
+        EventBus<ShutdownEvent>.Register(this);
+    }
+
+    public void OnEvent(ShutdownEvent _)
+    {
+        // senior-dev: Unregister from all events to prevent duplicate registrations
+        EventBus<BehaviorAddedEvent<PropertiesBehavior>>.Unregister(this);
+        EventBus<PreBehaviorUpdatedEvent<PropertiesBehavior>>.Unregister(this);
+        EventBus<PostBehaviorUpdatedEvent<PropertiesBehavior>>.Unregister(this);
+        EventBus<PreBehaviorRemovedEvent<PropertiesBehavior>>.Unregister(this);
+        EventBus<ShutdownEvent>.Unregister(this);
     }
 
     public void OnEvent(BehaviorAddedEvent<PropertiesBehavior> e)

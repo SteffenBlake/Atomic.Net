@@ -12,7 +12,8 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
     IEventHandler<BehaviorAddedEvent<IdBehavior>>,
     IEventHandler<PreBehaviorUpdatedEvent<IdBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<IdBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<IdBehavior>>
+    IEventHandler<PreBehaviorRemovedEvent<IdBehavior>>,
+    IEventHandler<ShutdownEvent>
 {
     internal static void Initialize()
     {
@@ -74,6 +75,18 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
         EventBus<PreBehaviorUpdatedEvent<IdBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<IdBehavior>>.Register(this);
         EventBus<PreBehaviorRemovedEvent<IdBehavior>>.Register(this);
+        EventBus<ShutdownEvent>.Register(this);
+    }
+
+    public void OnEvent(ShutdownEvent _)
+    {
+        // senior-dev: Unregister from all events to prevent duplicate registrations
+        // when InitializeEvent is pushed again in subsequent tests
+        EventBus<BehaviorAddedEvent<IdBehavior>>.Unregister(this);
+        EventBus<PreBehaviorUpdatedEvent<IdBehavior>>.Unregister(this);
+        EventBus<PostBehaviorUpdatedEvent<IdBehavior>>.Unregister(this);
+        EventBus<PreBehaviorRemovedEvent<IdBehavior>>.Unregister(this);
+        EventBus<ShutdownEvent>.Unregister(this);
     }
 
     public void OnEvent(BehaviorAddedEvent<IdBehavior> e)
