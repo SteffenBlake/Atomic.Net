@@ -46,6 +46,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin-1", out var goblin1));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(goblin1.Value, out var goblin1Props));
         Assert.NotNull(goblin1Props);
+        Assert.NotNull(goblin1Props.Value.Properties);
         
         // test-architect: Verify goblin-1 has 5 properties
         Assert.Equal(5, goblin1Props.Value.Properties.Count);
@@ -80,6 +81,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin-boss", out var goblinBoss));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(goblinBoss.Value, out var bossProps));
         Assert.NotNull(bossProps);
+        Assert.NotNull(bossProps.Value.Properties);
         Assert.Equal(6, bossProps.Value.Properties.Count);
         
         Assert.True(bossProps.Value.Properties["is-boss"].TryMatch(out bool isBoss));
@@ -92,6 +94,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("treasure-chest", out var chest));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(chest.Value, out var chestProps));
         Assert.NotNull(chestProps);
+        Assert.NotNull(chestProps.Value.Properties);
         Assert.Equal(2, chestProps.Value.Properties.Count);
         
         Assert.True(chestProps.Value.Properties["locked"].TryMatch(out bool locked));
@@ -126,6 +129,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity-with-edge-cases", out var entity));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity.Value, out var props));
         Assert.NotNull(props);
+        Assert.NotNull(props.Value.Properties);
         
         // test-architect: Per requirements, empty string, 0, and false are valid values
         Assert.True(props.Value.Properties["empty-string"].TryMatch(out string? emptyStr));
@@ -157,6 +161,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity-with-nulls", out var entity));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity.Value, out var props));
         Assert.NotNull(props);
+        Assert.NotNull(props.Value.Properties);
         
         // test-architect: Per requirements, null properties are skipped (not added to dictionary)
         Assert.Equal(2, props.Value.Properties.Count);
@@ -178,6 +183,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity-with-unsupported", out var entity));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity.Value, out var props));
         Assert.NotNull(props);
+        Assert.NotNull(props.Value.Properties);
         
         // test-architect: Per requirements, arrays and objects are unsupported and should be skipped
         Assert.Equal(2, props.Value.Properties.Count);
@@ -219,6 +225,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("case-test-1", out var entity1));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity1.Value, out var props1));
         Assert.NotNull(props1);
+        Assert.NotNull(props1.Value.Properties);
         
         // test-architect: Keys should be accessible case-insensitively
         Assert.True(props1.Value.Properties.ContainsKey("faction"));
@@ -275,6 +282,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(goblin1After.Value, out var propsAfter));
         Assert.NotNull(propsAfter);
+        Assert.NotNull(propsAfter.Value.Properties);
         Assert.Equal(5, propsAfter.Value.Properties.Count);
     }
 
@@ -299,6 +307,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         // test-architect: Properties should be identical to first load
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(goblin1Second.Value, out var props));
         Assert.NotNull(props);
+        Assert.NotNull(props.Value.Properties);
         Assert.Equal(5, props.Value.Properties.Count);
         
         Assert.True(props.Value.Properties["enemy-type"].TryMatch(out string? enemyType));
@@ -350,7 +359,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         // test-architect: Update properties by modifying the dictionary
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(goblin1.Value, (ref behavior) =>
         {
-            behavior.Properties["max-health"] = 200f;
+            behavior = new(new() {{"max-health", 200f }});
         });
 
         // Assert
@@ -358,6 +367,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(goblin1.Value, out var updatedProps));
         Assert.NotNull(updatedProps);
+        Assert.NotNull(updatedProps.Value.Properties);
         Assert.True(updatedProps.Value.Properties["max-health"].TryMatch(out float newHealth));
         Assert.Equal(200f, newHealth);
     }

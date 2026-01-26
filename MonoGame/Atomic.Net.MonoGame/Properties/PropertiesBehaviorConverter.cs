@@ -19,7 +19,7 @@ public class PropertiesBehaviorConverter : JsonConverter<PropertiesBehavior>
         ref Utf8JsonReader reader, JsonSerializerOptions options
     )
     {
-        var prop = new PropertiesBehavior();
+        var dict = new Dictionary<string, PropertyValue>(StringComparer.OrdinalIgnoreCase);
 
         while (reader.Read())
         {
@@ -42,17 +42,18 @@ public class PropertiesBehaviorConverter : JsonConverter<PropertiesBehavior>
                 EventBus<ErrorEvent>.Push(new ErrorEvent(
                     $"Property key cannot be empty or whitespace"
                 ));
-                throw new JsonException("Property key cannot be empty or whitespace");
+                return default;
             }
 
             // Check for duplicate keys (case-insensitive)
-            if (prop.Properties.ContainsKey(key))
+            if (dict.ContainsKey(key))
             {
                 // test-architect: Per requirements, duplicate keys fire ErrorEvent and throw
                 EventBus<ErrorEvent>.Push(new ErrorEvent(
                     $"Duplicate property key '{key}' detected (keys are case-insensitive)"
                 ));
-                throw new JsonException($"Duplicate property key '{key}' detected (keys are case-insensitive)");
+
+                return default;
             }
 
             // Read the value
@@ -66,14 +67,18 @@ public class PropertiesBehaviorConverter : JsonConverter<PropertiesBehavior>
                 continue;
             }
 
-            prop.Properties[key] = value;
+            dict[key] = value;
         }
 
-        return prop;
+        return new(dict);
     }
 
     public override void Write(Utf8JsonWriter writer, PropertiesBehavior value, JsonSerializerOptions options)
     {
+        if (value.Properties == null)
+        {
+            return;
+        }
         JsonSerializer.Serialize(writer, value.Properties, options);
     }
 }
