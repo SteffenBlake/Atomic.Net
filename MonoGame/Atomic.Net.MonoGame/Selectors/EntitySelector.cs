@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using System.Text.Json.Serialization;
 using Atomic.Net.MonoGame.Core;
 using dotVariant;
@@ -32,34 +33,6 @@ public partial class EntitySelector
         CollisionExitEntitySelector collisionExit
     );
 
-    // Important notes: you can use a lot of tricks to very efficiently parse a ReadOnlySpan
-    // SomeSpan[x..y] provides a non allocating "window" slice view of the span
-    // Without copying the data, its the same memory, which is incredibly efficient
-    // For quickly parsing over data
-    //
-    // You probably will want to use some combination of Dynamic Programming
-    // + recursion here to produce an efficient output
-    public static bool TryParse(
-        ReadOnlySpan<char> tokens, 
-        [NotNullWhen(true)]
-        out EntitySelector? entitySelector
-    )
-    {
-        throw new NotImplementedException("To be implemented by @senior-dev");
-    }
-
-    public void MarkDirty()
-    {
-        Visit(
-            static union => union.MarkDirty(),
-            static id => id.MarkDirty(),
-            static tag => tag.MarkDirty(),
-            static collisionEnter => collisionEnter.MarkDirty(),
-            static collisionExit => collisionExit.MarkDirty(),
-            static () => {}
-        );
-    }
-
     public bool Recalc()
     {
         return Visit(
@@ -79,206 +52,25 @@ public partial class EntitySelector
         static collisionEnter => collisionEnter.Matches,
         static collisionExit => collisionExit.Matches
     );
-}
 
-public readonly record struct UnionEntitySelector(
-    EntitySelector[] Children
-)
-{
-    public SparseArray<bool> Matches => throw new NotImplementedException();
-
-    public static bool TryParse(
-        ReadOnlySpan<char> tokens, 
-        [NotNullWhen(true)]
-        out UnionEntitySelector? entitySelector
-    )
+    internal void WriteTo(StringBuilder stringBuilder)
     {
-        throw new NotImplementedException("To be implemented by @senior-dev");
-    }
-
-    // This also needs to be implemented (and effectively do the reverse of TryParse)
-    // Otherwise the database write passes wont succeed
-    public override string ToString()
-    {
-        throw new NotImplementedException("To be implemented by @senior-dev");
-    }
-
-    public void MarkDirty()
-    {
-        throw new NotImplementedException("To be implemented by @senior-dev");
-    }
-
-    public readonly bool Recalc()
-    {
-        var shouldRecalc = false;
-        for (var n = 0; n < Children.Length; n++)
+        // To avoid closures we have to do this the long way
+        if (TryMatch(out IdEntitySelector? id))
         {
-            shouldRecalc |= Children[n].Recalc();
+            id.WriteTo(stringBuilder);
         }
-
-        if (shouldRecalc)
+        else if (TryMatch(out TagEntitySelector? tag))
         {
-            throw new NotImplementedException("To be implemented by @senior-dev");
+            tag.WriteTo(stringBuilder);
         }
-
-        return shouldRecalc;
-    }
-}
-
-public record struct IdEntitySelector(
-    string Id, EntitySelector? Prior = null
-)
-{
-    public readonly SparseArray<bool> Matches = new(Constants.MaxEntities);
-
-    private bool _dirty = true;
-
-    public static bool TryParse(
-        ReadOnlySpan<char> tokens, 
-        [NotNullWhen(true)]
-        out IdEntitySelector? entitySelector
-    )
-    {
-        throw new NotImplementedException("To be implemented by @senior-dev");
-    }
-    
-    // This also needs to be implemented (and effectively do the reverse of TryParse)
-    // Otherwise the database write passes wont succeed
-    public override string ToString()
-    {
-        throw new NotImplementedException("To be implemented by @senior-dev");
-    }
-
-    public void MarkDirty() => _dirty = true;
-
-    public readonly bool Recalc()
-    {
-        var priorDirty = Prior?.Recalc() ?? false;
-        var shouldRecalc = priorDirty || _dirty;
-
-        if (shouldRecalc)
+        else if (TryMatch(out CollisionEnterEntitySelector? collisionEnter))
         {
-            throw new NotImplementedException("To be implemented by @senior-dev");
+            collisionEnter.WriteTo(stringBuilder);
         }
-
-        return shouldRecalc;
-    }
-}
-
-public struct TagEntitySelector(
-    string Tag, EntitySelector? Prior = null
-)
-{
-    public SparseArray<bool> Matches => throw new NotImplementedException("Requires Tags registry to be implemented later");
-
-    private bool _dirty = true;
-
-    public static bool TryParse(
-        ReadOnlySpan<char> tokens, 
-        [NotNullWhen(true)]
-        out TagEntitySelector? entitySelector
-    )
-    {
-        throw new NotImplementedException("To be implemented by @senior-dev");
-    }
-    
-    // This also needs to be implemented (and effectively do the reverse of TryParse)
-    // Otherwise the database write passes wont succeed
-    public override string ToString()
-    {
-        throw new NotImplementedException("To be implemented by @senior-dev");
-    }
-
-    public void MarkDirty() => _dirty = true;
-
-    public readonly bool Recalc()
-    {
-        var priorDirty = Prior?.Recalc() ?? false;
-        var shouldRecalc = priorDirty || _dirty;
-
-        if (shouldRecalc)
+        else if (TryMatch(out CollisionExitEntitySelector? collisionExit))
         {
-            throw new NotImplementedException("Requires Tags registry to be implemented later");
+            collisionExit.WriteTo(stringBuilder);
         }
-
-        return shouldRecalc;
     }
-}
-
-
-public record struct CollisionEnterEntitySelector(
-    EntitySelector? Prior = null
-)
-{
-    public readonly SparseArray<bool> Matches = new(Constants.MaxEntities);
-
-    private bool _dirty = true;
-
-    public static bool TryParse(
-        ReadOnlySpan<char> tokens, 
-        [NotNullWhen(true)]
-        out CollisionEnterEntitySelector? entitySelector
-    )
-    {
-        throw new NotImplementedException("To be implemented by @senior-dev");
-    }
-    
-    public override string ToString()
-    {
-        throw new NotImplementedException("To be implemented by @senior-dev");
-    }
-
-    public void MarkDirty() => _dirty = true;
-
-    public readonly bool Recalc()
-    {
-        var priorDirty = Prior?.Recalc() ?? false;
-        var shouldRecalc = priorDirty || _dirty;
-
-        if (shouldRecalc)
-        {
-            throw new NotImplementedException("Requires Collision registry to be implemented later");
-        }
-
-        return shouldRecalc;
-    }
-}
-
-public record struct CollisionExitEntitySelector(
-    EntitySelector? Prior = null
-)
-{
-    public readonly SparseArray<bool> Matches = new(Constants.MaxEntities);
-
-    private bool _dirty = true;
-
-    public static bool TryParse(
-        ReadOnlySpan<char> tokens, 
-        [NotNullWhen(true)]
-        out CollisionExitEntitySelector? entitySelector
-    )
-    {
-        throw new NotImplementedException("To be implemented by @senior-dev");
-    }
-    
-    public override string ToString()
-    {
-        throw new NotImplementedException("To be implemented by @senior-dev");
-    }
-
-    public void MarkDirty() => _dirty = true;
-
-    public readonly bool Recalc()
-    {
-        var priorDirty = Prior?.Recalc() ?? false;
-        var shouldRecalc = priorDirty || _dirty;
-
-        if (shouldRecalc)
-        {
-            throw new NotImplementedException("Requires Collision registry to be implemented later");
-        }
-
-        return shouldRecalc;
-    }
-    
 }

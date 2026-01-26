@@ -3,8 +3,6 @@ using System.Text.Json.Serialization;
 
 namespace Atomic.Net.MonoGame.Selectors;
 
-// TODO: @senior-dev This will now all be deleted, use EntitySelector.TryParse instead
-
 public class EntitySelectorConverter : JsonConverter<EntitySelector>
 {
     public override EntitySelector Read(
@@ -13,7 +11,7 @@ public class EntitySelectorConverter : JsonConverter<EntitySelector>
     {
         var nextString = reader.GetString()?.Trim();
        
-        if (EntitySelector.TryParse(nextString, out var selector))
+        if (SelectorRegistry.Instance.TryParse(nextString, out var selector))
         {
             return selector;
         }

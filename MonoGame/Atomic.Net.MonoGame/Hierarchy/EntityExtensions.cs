@@ -40,12 +40,14 @@ public static class HierarchyEntityExtensions
             );
         }
 
-        EntitySelector parentSelector = new IdEntitySelector(idBehavior.Value.Id);
+        if (SelectorRegistry.Instance.TryParse(idBehavior.Value.Id, out var selector))
+        {
+            child.SetBehavior<ParentBehavior, EntitySelector>(
+                in selector,
+                (ref readonly _selector, ref behavior) => behavior = new(_selector)
+            );
+        }
 
-        child.SetBehavior<ParentBehavior, EntitySelector>(
-            in parentSelector,
-            (ref readonly _parentSelector, ref behavior) => behavior = new(_parentSelector)
-        );
         return child;
     }
 
