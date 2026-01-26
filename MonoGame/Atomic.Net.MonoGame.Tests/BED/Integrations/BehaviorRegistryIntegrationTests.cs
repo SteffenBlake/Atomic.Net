@@ -1,4 +1,5 @@
 using Xunit;
+using Xunit.Abstractions;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
 
@@ -19,8 +20,11 @@ public struct TestBehaviorIntegration : IBehavior<TestBehaviorIntegration>
 [Trait("Category", "Integration")]
 public sealed class BehaviorRegistryIntegrationTests : IDisposable
 {
-    public BehaviorRegistryIntegrationTests()
+    private readonly ErrorEventLogger _errorLogger;
+
+    public BehaviorRegistryIntegrationTests(ITestOutputHelper output)
     {
+        _errorLogger = new ErrorEventLogger(output);
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
@@ -29,6 +33,7 @@ public sealed class BehaviorRegistryIntegrationTests : IDisposable
     {
         // Clean up ALL entities (both loading and scene) between tests
         EventBus<ShutdownEvent>.Push(new());
+        _errorLogger.Dispose();
     }
 
     [Fact]

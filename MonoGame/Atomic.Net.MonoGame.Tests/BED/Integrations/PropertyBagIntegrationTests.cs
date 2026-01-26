@@ -1,4 +1,5 @@
 using Xunit;
+using Xunit.Abstractions;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Properties;
@@ -15,8 +16,11 @@ namespace Atomic.Net.MonoGame.Tests.BED.Integrations;
 [Trait("Category", "Integration")]
 public sealed class PropertyBagIntegrationTests : IDisposable
 {
-    public PropertyBagIntegrationTests()
+    private readonly ErrorEventLogger _errorLogger;
+
+    public PropertyBagIntegrationTests(ITestOutputHelper output)
     {
+        _errorLogger = new ErrorEventLogger(output);
         // Arrange: Initialize systems before each test
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
@@ -26,6 +30,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
     {
         // Clean up ALL entities (both loading and scene) between tests
         EventBus<ShutdownEvent>.Push(new());
+        _errorLogger.Dispose();
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using Xunit;
+using Xunit.Abstractions;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Hierarchy;
@@ -11,8 +12,11 @@ namespace Atomic.Net.MonoGame.Tests.BED.Integrations;
 [Trait("Category", "Integration")]
 public sealed class HierarchyRegistryIntegrationTests : IDisposable
 {
-    public HierarchyRegistryIntegrationTests()
+    private readonly ErrorEventLogger _errorLogger;
+
+    public HierarchyRegistryIntegrationTests(ITestOutputHelper output)
     {
+        _errorLogger = new ErrorEventLogger(output);
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
@@ -21,6 +25,7 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
     {
         // Clean up ALL entities (both persistent and scene) between tests
         EventBus<ShutdownEvent>.Push(new());
+        _errorLogger.Dispose();
     }
 
     [Fact]

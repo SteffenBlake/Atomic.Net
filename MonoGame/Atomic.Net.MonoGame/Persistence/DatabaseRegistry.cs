@@ -104,6 +104,12 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
         // senior-dev: Register for ShutdownEvent to properly close database connection
         EventBus<ShutdownEvent>.Register(this);
         
+        // senior-dev: Only initialize database once to prevent file locking issues
+        if (_database != null)
+        {
+            return;
+        }
+
         // Initialize database with path from Constants (COMPILATION CONSTANT ONLY)
         // NEVER add runtime configuration - path is set at compile time via:
         //   dotnet build -p:DefineConstants=ATOMIC_PERSISTENCE_DB_PATH=\"/custom/path.db\"
