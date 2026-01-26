@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Selectors;
 
 namespace Atomic.Net.MonoGame.Hierarchy;
@@ -35,8 +34,6 @@ public class ParentBehaviorConverter : JsonConverter<ParentBehavior>
 
     public override void Write(Utf8JsonWriter writer, ParentBehavior value, JsonSerializerOptions options)
     {
-        // For serialization, we'd need to convert EntitySelector back to string
-        // For now, throw as ParentBehavior serialization isn't needed yet
-        throw new NotImplementedException("ParentBehavior serialization not yet implemented");
+        writer.WriteStringValue(value.ToString());
     }
 }
