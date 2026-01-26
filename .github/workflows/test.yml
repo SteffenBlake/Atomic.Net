@@ -19,10 +19,10 @@ jobs:
         dotnet-version: '10.0.x'
 
     - name: Restore dependencies
-      run: dotnet restore MonoGame/Atomic.Net.MonoGame.sln
+      run: dotnet restore MonoGame/Atomic.Net.MonoGame.slnx
 
     - name: Build
-      run: dotnet build MonoGame/Atomic.Net.MonoGame.sln --no-restore --configuration Release
+      run: dotnet build MonoGame/Atomic.Net.MonoGame.slnx --no-restore --configuration Release
 
     - name: Test
-      run: dotnet test MonoGame/Atomic.Net.MonoGame.sln --no-build --configuration Release --verbosity normal
+      run: dotnet test MonoGame/Atomic.Net.MonoGame.slnx --no-build --configuration Release --verbosity normal
