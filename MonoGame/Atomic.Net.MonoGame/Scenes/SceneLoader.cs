@@ -2,12 +2,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
-using Atomic.Net.MonoGame.Hierarchy;
-using Atomic.Net.MonoGame.Ids;
 using Atomic.Net.MonoGame.Persistence;
-using Atomic.Net.MonoGame.Properties;
 using Atomic.Net.MonoGame.Selectors;
-using Atomic.Net.MonoGame.Transform;
 
 namespace Atomic.Net.MonoGame.Scenes;
 
@@ -114,79 +110,30 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         // Clear pre-allocated PersistToDiskBehavior queue (zero-alloc)
         _persistToDiskQueue.Clear();
         
-        // senior-dev: Two-pass loading to fix selector timing issue (code-reviewer feedback)
-        // PASS 1: Create entities and apply Transform, Properties, Id behaviors
-        // This creates selectors and marks them dirty but doesn't try to use them yet
         foreach (var jsonEntity in scene.Entities)
         {
             var entity = usePersistentPartition 
                 ? EntityRegistry.Instance.ActivatePersistent() 
                 : EntityRegistry.Instance.Activate();
 
-            // Apply Transform
-            if (jsonEntity.Transform.HasValue)
-            {
-                var input = jsonEntity.Transform.Value;
-                entity.SetBehavior<TransformBehavior, TransformBehavior>(
-                    in input,
-                    (ref readonly _input, ref behavior) => behavior = _input
-                );
-            }
-
-            // Apply Properties
-            if (jsonEntity.Properties.HasValue)
-            {
-                var input = jsonEntity.Properties.Value;
-                entity.SetBehavior<PropertiesBehavior, PropertiesBehavior>(
-                    in input,
-                    (ref readonly _input, ref behavior) => behavior = _input
-                );
-            }
-
-            // Apply Id (creates selectors)
-            if (jsonEntity.Id.HasValue)
-            {
-                var input = jsonEntity.Id.Value;
-                entity.SetBehavior<IdBehavior, IdBehavior>(
-                    in input,
-                    (ref readonly _input, ref behavior) => behavior = _input
-                );
-            }
+            // Use JsonEntity.WriteToEntity() to eliminate duplicate logic (PR comment #9)
+            // This applies Transform, Properties, Id, and Parent behaviors
+            jsonEntity.WriteToEntity(entity);
             
-            // Queue PersistToDisk for later (must be applied LAST)
+            // CRITICAL: PersistToDiskBehavior MUST be applied after all other behaviors (including Parent)
+            // to prevent unwanted DB loads during scene construction
             if (jsonEntity.PersistToDisk.HasValue)
             {
                 _persistToDiskQueue.Set(entity.Index, jsonEntity.PersistToDisk.Value);
             }
         }
         
-        // senior-dev: CRITICAL - Recalc BEFORE applying Parent behaviors
-        // This ensures selector Matches arrays are populated so parent lookups work
-        // See code-reviewer feedback: timing was wrong when Recalc was at the end
-        SelectorRegistry.Instance.Recalc();
-        
-        // PASS 2: Apply Parent behaviors (now that selectors are recalculated)
-        var entityIndex = usePersistentPartition ? (ushort)0 : Constants.MaxPersistentEntities;
-        foreach (var jsonEntity in scene.Entities)
-        {
-            if (jsonEntity.Parent.HasValue)
-            {
-                var entity = EntityRegistry.Instance[entityIndex];
-                var input = jsonEntity.Parent.Value;
-                entity.SetBehavior<ParentBehavior, ParentBehavior>(
-                    in input,
-                    (ref readonly _input, ref behavior) => behavior = _input
-                );
-            }
-            entityIndex++;
-        }
-        
         // CRITICAL: Apply PersistToDiskBehavior LAST (after Parent and all other behaviors)
         // This order prevents DB loads from overwriting scene construction
         // Future maintainers: DO NOT change this order without understanding infinite loop prevention
-        foreach (var (entityIdx, persistToDisk) in _persistToDiskQueue)
+        foreach (var (entityIndex, persistToDisk) in _persistToDiskQueue)
         {
-            var entity = EntityRegistry.Instance[entityIdx];
+            var entity = EntityRegistry.Instance[entityIndex];
             var input = persistToDisk;
             entity.SetBehavior<PersistToDiskBehavior, PersistToDiskBehavior>(
                 in input,
@@ -196,6 +143,10 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         
         // Clear queue for next scene load (zero-alloc)
         _persistToDiskQueue.Clear();
+        
+        // senior-dev: Recalc all selectors after scene loading completes
+        // This updates all selector Matches arrays so parent lookups and queries work
+        SelectorRegistry.Instance.Recalc();
     }
   
     // Static instance to write to, to avoid alloc'ing a new one each time
