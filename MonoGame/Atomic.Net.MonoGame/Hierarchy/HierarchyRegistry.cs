@@ -1,5 +1,6 @@
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
+using Atomic.Net.MonoGame.Ids;
 
 namespace Atomic.Net.MonoGame.Hierarchy;
 
@@ -32,6 +33,13 @@ public class HierarchyRegistry :
 
     private readonly SparseReferenceArray<SparseArray<bool>> _parentToChildLookup 
         = new(Constants.MaxEntities);
+
+    // senior-dev: Track dirty children who need parent resolution during Recalc
+    private readonly SparseArray<bool> _dirtyChildren = new(Constants.MaxEntities);
+    
+    // senior-dev: Track old parent index during parent change (Pre->Post event)
+    // This allows us to clean up the old parent's child list during Recalc
+    private readonly SparseArray<ushort> _oldParentIndex = new(Constants.MaxEntities);
 
     /// <summary>
     /// Tracks a child entity to the specified parent.
@@ -113,83 +121,137 @@ public class HierarchyRegistry :
             children.Count > 0;
     }
 
+    /// <summary>
+    /// Recalculates all dirty parent-child relationships.
+    /// This must be called AFTER SelectorRegistry.Recalc() to ensure selectors are resolved.
+    /// Processes all children marked dirty since last Recalc and updates their parent relationships.
+    /// </summary>
+    public void Recalc()
+    {
+        // senior-dev: Process all dirty children and resolve their parent selectors
+        // This is called AFTER SelectorRegistry.Recalc() so selectors have updated Matches
+        foreach (var (childIndex, _) in _dirtyChildren)
+        {
+            var child = EntityRegistry.Instance[childIndex];
+            
+            // Skip inactive entities (deactivated between dirty mark and Recalc)
+            if (!child.Active)
+            {
+                _oldParentIndex.Remove(childIndex);
+                continue;
+            }
+            
+            // Get the child's ParentBehavior (may have been removed)
+            if (!BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(child, out var behavior))
+            {
+                // ParentBehavior was removed - clean up old parent if we tracked one
+                if (_oldParentIndex.TryGetValue(childIndex, out var oldParentIdx))
+                {
+                    UntrackChild(EntityRegistry.Instance[oldParentIdx.Value], child);
+                    _oldParentIndex.Remove(childIndex);
+                }
+                continue;
+            }
+            
+            // Try to resolve the new parent using the selector
+            var hasNewParent = behavior.Value.TryFindParent(out var newParent);
+            
+            // Fire error event if parent selector doesn't resolve
+            if (!hasNewParent && child.TryGetBehavior<IdBehavior>(out var idBehavior))
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Unresolved parent reference for entity '{idBehavior.Value.Id}'"
+                ));
+            }
+            
+            // Clean up old parent relationship if one was tracked
+            if (_oldParentIndex.TryGetValue(childIndex, out var oldParentIndex))
+            {
+                var oldParent = EntityRegistry.Instance[oldParentIndex.Value];
+                
+                // Only untrack if the parent actually changed
+                if (!hasNewParent || newParent!.Value.Index != oldParentIndex.Value)
+                {
+                    UntrackChild(oldParent, child);
+                }
+                
+                _oldParentIndex.Remove(childIndex);
+            }
+            
+            // Track new parent relationship if one was found
+            if (hasNewParent)
+            {
+                TrackChild(newParent!.Value, child);
+            }
+        }
+        
+        // Clear dirty flags for next frame
+        _dirtyChildren.Clear();
+    }
+
     public void OnEvent(BehaviorAddedEvent<ParentBehavior> e)
     {
-        if (!BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(e.Entity, out var behavior))
-        {
-            return;
-        }
-
-        if (!behavior.Value.TryFindParent(out var parent))
-        {
-            return;
-        }
-
-        TrackChild(parent.Value, e.Entity);
+        // senior-dev: Mark child as dirty instead of immediately tracking
+        // Parent relationship will be established during Recalc()
+        _dirtyChildren.Set(e.Entity.Index, true);
     }
 
     public void OnEvent(PreBehaviorUpdatedEvent<ParentBehavior> e)
     {
-        if (!BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(e.Entity, out var oldBehavior))
+        // senior-dev: Store old parent index for cleanup during Recalc
+        if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(e.Entity, out var oldBehavior))
         {
-            return;
+            if (oldBehavior.Value.TryFindParent(out var oldParent))
+            {
+                _oldParentIndex.Set(e.Entity.Index, oldParent.Value.Index);
+            }
         }
-
-        if (!oldBehavior.Value.TryFindParent(out var oldParent))
-        {
-            return;
-        }
-
-        UntrackChild(
-            oldParent.Value,
-            e.Entity
-        );
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<ParentBehavior> e)
     {
-        if (!BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(e.Entity, out var newBehavior))
-        {
-            return;
-        }
-
-        if (!newBehavior.Value.TryFindParent(out var newParent))
-        {
-            return;
-        }
-
-        TrackChild(
-            newParent.Value,
-            e.Entity
-        );
+        // senior-dev: Mark child as dirty, Recalc will handle old parent cleanup
+        _dirtyChildren.Set(e.Entity.Index, true);
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<ParentBehavior> e)
     {
-        if (!BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(e.Entity, out var behavior))
+        // senior-dev: Store old parent for cleanup, mark dirty so Recalc processes removal
+        if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(e.Entity, out var behavior))
         {
-            return;
+            if (behavior.Value.TryFindParent(out var parent))
+            {
+                _oldParentIndex.Set(e.Entity.Index, parent.Value.Index);
+            }
         }
-
-        if (!behavior.Value.TryFindParent(out var parent))
-        {
-            return;
-        }
-
-        UntrackChild(
-            parent.Value,
-            e.Entity
-        );
+        _dirtyChildren.Set(e.Entity.Index, true);
     }
 
     public void OnEvent(PreEntityDeactivatedEvent e)
     {
-        if (!_parentToChildLookup.TryGetValue(e.Entity.Index, out var children))
+        // senior-dev: Clean up both parent-child tracking and dirty state on deactivation
+        // Remove from dirty children list to prevent processing deactivated entities
+        _dirtyChildren.Remove(e.Entity.Index);
+        _oldParentIndex.Remove(e.Entity.Index);
+        
+        // If this entity is a child, remove it from its parent's child list
+        // We need to scan all parents to find which one has this child
+        // (This is rare - only happens on deactivation, not hot path)
+        foreach (var (parentIndex, children) in _parentToChildLookup)
+        {
+            if (children.HasValue(e.Entity.Index))
+            {
+                children.Remove(e.Entity.Index);
+            }
+        }
+        
+        // If this entity is a parent, orphan all its children
+        if (!_parentToChildLookup.TryGetValue(e.Entity.Index, out var ownChildren))
         {
             return;
         }
 
-        while (children.TryPop(out _, out var childIndex))
+        while (ownChildren.TryPop(out _, out var childIndex))
         {
             var child = EntityRegistry.Instance[childIndex.Value];
             BehaviorRegistry<ParentBehavior>.Instance.Remove(child);

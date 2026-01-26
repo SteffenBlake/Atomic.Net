@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
+using Atomic.Net.MonoGame.Hierarchy;
 using Atomic.Net.MonoGame.Persistence;
 using Atomic.Net.MonoGame.Selectors;
 
@@ -144,9 +145,12 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         // Clear queue for next scene load (zero-alloc)
         _persistToDiskQueue.Clear();
         
-        // senior-dev: Recalc all selectors after scene loading completes
-        // This updates all selector Matches arrays so parent lookups and queries work
+        // senior-dev: Recalc selectors first, then hierarchy
+        // This ordering is CRITICAL:
+        // 1. SelectorRegistry.Recalc() updates all selector Matches arrays
+        // 2. HierarchyRegistry.Recalc() uses those Matches to resolve parent relationships
         SelectorRegistry.Instance.Recalc();
+        HierarchyRegistry.Instance.Recalc();
     }
   
     // Static instance to write to, to avoid alloc'ing a new one each time
