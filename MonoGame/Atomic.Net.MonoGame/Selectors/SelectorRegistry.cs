@@ -335,6 +335,15 @@ public class SelectorRegistry :
         EventBus<PostBehaviorUpdatedEvent<IdBehavior>>.Unregister(Instance);
         EventBus<PreBehaviorRemovedEvent<IdBehavior>>.Unregister(Instance);
         EventBus<ShutdownEvent>.Unregister(Instance);
+        
+        // senior-dev: Clear all selector registries on shutdown
+        _unionSelectorRegistry.Clear();
+        _idSelectorRegistry.Clear();
+        _tagSelectorRegistry.Clear();
+        _enterSelectorRegistry.Clear();
+        _exitSelectorRegistry.Clear();
+        _idSelectorLookup.Clear();
+        _tagSelectorLookup.Clear();
     }
 
     public void OnEvent(BehaviorAddedEvent<IdBehavior> e)
@@ -365,6 +374,41 @@ public class SelectorRegistry :
             {
                 selector.MarkDirty();
             }
+        }
+    }
+
+    /// <summary>
+    /// Recalculates all registered selectors. Should be called after entities/IDs are loaded.
+    /// </summary>
+    public void RecalcAll()
+    {
+        // Recalc all id selectors
+        foreach (var selector in _idSelectorRegistry.Values)
+        {
+            selector.Recalc();
+        }
+        
+        // Recalc all tag selectors
+        foreach (var selector in _tagSelectorRegistry.Values)
+        {
+            selector.Recalc();
+        }
+        
+        // Recalc all collision selectors
+        foreach (var selector in _enterSelectorRegistry.Values)
+        {
+            selector.Recalc();
+        }
+        
+        foreach (var selector in _exitSelectorRegistry.Values)
+        {
+            selector.Recalc();
+        }
+        
+        // Recalc all union selectors
+        foreach (var selector in _unionSelectorRegistry.Values)
+        {
+            selector.Recalc();
         }
     }
 }

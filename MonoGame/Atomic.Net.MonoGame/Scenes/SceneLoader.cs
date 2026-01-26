@@ -142,6 +142,10 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         
         // Clear queue for next scene load (zero-alloc)
         _persistToDiskQueue.Clear();
+        
+        // senior-dev: Recalculate all selectors after scene load
+        // Selectors are marked dirty when ID behaviors are added, but need explicit recalc to populate matches
+        Selectors.SelectorRegistry.Instance.RecalcAll();
     }
   
     // Static instance to write to, to avoid alloc'ing a new one each time
