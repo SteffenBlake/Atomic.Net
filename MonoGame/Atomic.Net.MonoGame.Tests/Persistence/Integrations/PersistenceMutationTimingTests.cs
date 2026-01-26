@@ -53,21 +53,21 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior.Properties["score"] = 1f;
+            behavior = new(new Dictionary<string, PropertyValue> { { "score", 1f } });
         });
         
         // Act: Rapidly mutate property multiple times in same "frame" (before Flush)
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior.Properties["score"] = 5f;
+            behavior = new(new Dictionary<string, PropertyValue> { { "score", 5f } });
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior.Properties["score"] = 7f;
+            behavior = new(new Dictionary<string, PropertyValue> { { "score", 7f } });
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior.Properties["score"] = 10f;
+            behavior = new(new Dictionary<string, PropertyValue> { { "score", 10f } });
         });
         
         // test-architect: Only single write should occur (batched)
@@ -97,7 +97,7 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior.Properties["counter"] = 500f;
+            behavior = new(new Dictionary<string, PropertyValue> { { "counter", 500f } });
         });
         
         // test-architect: These mutations should NOT be tracked (disabled)
@@ -108,7 +108,7 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior.Properties["counter"] = 1000f;
+            behavior = new(new Dictionary<string, PropertyValue> { { "counter", 1000f } });
         });
         
         // test-architect: This mutation SHOULD be tracked (enabled)
@@ -134,7 +134,7 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior.Properties["value"] = 999f;
+            behavior = new(new Dictionary<string, PropertyValue> { { "value", 999f } });
         });
         
         // test-architect: Now add PersistToDiskBehavior (still disabled - entity NOT marked dirty)

@@ -122,7 +122,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
-            behavior.Properties["fromDisk"] = "yes";
+            behavior = new(new Dictionary<string, PropertyValue> { { "fromDisk", "yes" } });
         });
 
         // test-architect: Note - no Transform behavior saved
@@ -193,7 +193,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(persistentEntity, static (ref behavior) =>
         {
-            behavior.Properties["partition"] = "persistent";
+            behavior = new(new Dictionary<string, PropertyValue> { { "partition", "persistent" } });
         });
 
         DatabaseRegistry.Instance.Flush();
@@ -227,7 +227,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
 
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(sceneEntity, static (ref behavior) =>
         {
-            behavior.Properties["partition"] = "scene";
+            behavior = new(new Dictionary<string, PropertyValue> { { "partition", "scene" } });
         });
 
         DatabaseRegistry.Instance.Flush();

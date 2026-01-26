@@ -84,8 +84,10 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior.Properties["fromDisk"] = "yes";  // This value is from disk
-            behavior.Properties["hp"] = 999f;         // Different from scene
+            behavior = new(new Dictionary<string, PropertyValue> { 
+                { "fromDisk", "yes" },  // This value is from disk
+                { "hp", 999f }          // Different from scene
+            });
         });
         DatabaseRegistry.Instance.Flush();
         
@@ -117,7 +119,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
-            behavior.Properties["initial"] = "saved";
+            behavior = new(new Dictionary<string, PropertyValue> { { "initial", "saved" } });
         });
         DatabaseRegistry.Instance.Flush();
         
@@ -125,7 +127,12 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         DatabaseRegistry.Instance.Disable();
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
-            behavior.Properties["duringDisabled"] = "should-not-persist";
+            // senior-dev: Preserve existing properties when adding new ones (behavior is immutable)
+            var dict = behavior.Properties != null 
+                ? new Dictionary<string, PropertyValue>(behavior.Properties)
+                : new Dictionary<string, PropertyValue>();
+            dict["duringDisabled"] = "should-not-persist";
+            behavior = new(dict);
         });
         DatabaseRegistry.Instance.Flush(); // Should be no-op (disabled)
         
@@ -133,7 +140,12 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         DatabaseRegistry.Instance.Enable();
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
-            behavior.Properties["afterEnabled"] = "should-persist";
+            // senior-dev: Preserve existing properties when adding new ones (behavior is immutable)
+            var dict = behavior.Properties != null 
+                ? new Dictionary<string, PropertyValue>(behavior.Properties)
+                : new Dictionary<string, PropertyValue>();
+            dict["afterEnabled"] = "should-persist";
+            behavior = new(dict);
         });
         DatabaseRegistry.Instance.Flush(); // Should write now (includes both properties)
         
@@ -165,8 +177,10 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         // Modify entity data
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(inventoryEntity.Value, static (ref behavior) =>
         {
-            behavior.Properties["modified"] = "yes";
-            behavior.Properties["value"] = 777f;
+            behavior = new(new Dictionary<string, PropertyValue> { 
+                { "modified", "yes" },
+                { "value", 777f }
+            });
         });
         DatabaseRegistry.Instance.Flush();
 
@@ -199,7 +213,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         // Modify entity and flush
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(nonPersistentEntity.Value, static (ref behavior) =>
         {
-            behavior.Properties["test"] = "should-not-save";
+            behavior = new(new Dictionary<string, PropertyValue> { { "test", "should-not-save" } });
         });
         DatabaseRegistry.Instance.Flush();
         
@@ -228,8 +242,10 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior.Properties["originalData"] = "first-write";
-            behavior.Properties["counter"] = 1f;
+            behavior = new(new Dictionary<string, PropertyValue> { 
+                { "originalData", "first-write" },
+                { "counter", 1f }
+            });
         });
         DatabaseRegistry.Instance.Flush();
         EventBus<ResetEvent>.Push(new());
@@ -239,8 +255,10 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         var newEntity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(newEntity, static (ref behavior) =>
         {
-            behavior.Properties["originalData"] = "second-write"; // Different from disk
-            behavior.Properties["counter"] = 2f; // Different from disk
+            behavior = new(new Dictionary<string, PropertyValue> { 
+                { "originalData", "second-write" }, // Different from disk
+                { "counter", 2f }                   // Different from disk
+            });
         });
         
         // Now apply PersistToDiskBehavior - should load from disk, triggering PostBehaviorUpdatedEvent
