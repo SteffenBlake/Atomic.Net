@@ -13,7 +13,6 @@ public class HierarchyRegistry :
     IEventHandler<PreBehaviorUpdatedEvent<ParentBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<ParentBehavior>>,
     IEventHandler<PreBehaviorRemovedEvent<ParentBehavior>>,
-    IEventHandler<PreEntityDeactivatedEvent>,
     IEventHandler<InitializeEvent>,
     IEventHandler<ShutdownEvent>
 {
@@ -182,20 +181,6 @@ public class HierarchyRegistry :
         );
     }
 
-    public void OnEvent(PreEntityDeactivatedEvent e)
-    {
-        if (!_parentToChildLookup.TryGetValue(e.Entity.Index, out var children))
-        {
-            return;
-        }
-
-        while (children.TryPop(out _, out var childIndex))
-        {
-            var child = EntityRegistry.Instance[childIndex.Value];
-            BehaviorRegistry<ParentBehavior>.Instance.Remove(child);
-        }
-    }
-
     public void OnEvent(InitializeEvent e)
     {
         // senior-dev: Fixed duplicate registration of BehaviorAddedEvent (was registered twice)
@@ -203,7 +188,6 @@ public class HierarchyRegistry :
         EventBus<PreBehaviorUpdatedEvent<ParentBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<ParentBehavior>>.Register(this);
         EventBus<PreBehaviorRemovedEvent<ParentBehavior>>.Register(this);
-        EventBus<PreEntityDeactivatedEvent>.Register(this);
         EventBus<ShutdownEvent>.Register(this);
     }
 
@@ -214,7 +198,9 @@ public class HierarchyRegistry :
         EventBus<PreBehaviorUpdatedEvent<ParentBehavior>>.Unregister(this);
         EventBus<PostBehaviorUpdatedEvent<ParentBehavior>>.Unregister(this);
         EventBus<PreBehaviorRemovedEvent<ParentBehavior>>.Unregister(this);
-        EventBus<PreEntityDeactivatedEvent>.Unregister(this);
         EventBus<ShutdownEvent>.Unregister(this);
+        
+        // senior-dev: Clear hierarchy data on shutdown
+        _parentToChildLookup.Clear();
     }
 }
