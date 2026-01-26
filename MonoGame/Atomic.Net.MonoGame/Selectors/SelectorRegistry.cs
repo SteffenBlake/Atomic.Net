@@ -12,6 +12,7 @@ public class SelectorRegistry :
     IEventHandler<PreBehaviorUpdatedEvent<IdBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<IdBehavior>>,
     IEventHandler<PreBehaviorRemovedEvent<IdBehavior>>,
+    IEventHandler<ResetEvent>,
     IEventHandler<ShutdownEvent>
 {
     public static SelectorRegistry Instance { get; private set; } = null!;
@@ -325,7 +326,7 @@ public class SelectorRegistry :
             }
 
             _exitSelectorRegistry[hash] = new CollisionExitEntitySelector(hash, prior);
-            selector = _enterSelectorRegistry[hash];
+            selector = _exitSelectorRegistry[hash];  // senior-dev: Fixed copy-paste error
 
             return true;
         }
@@ -344,16 +345,37 @@ public class SelectorRegistry :
         EventBus<PreBehaviorUpdatedEvent<IdBehavior>>.Register(Instance);
         EventBus<PostBehaviorUpdatedEvent<IdBehavior>>.Register(Instance);
         EventBus<PreBehaviorRemovedEvent<IdBehavior>>.Register(Instance);
+        EventBus<ResetEvent>.Register(Instance);
         EventBus<ShutdownEvent>.Register(Instance);
+    }
+
+    public void OnEvent(ResetEvent _)
+    {
+        // senior-dev: On Reset, recalc all selectors to update Matches for non-persistent entities
+        // Scene entities (>= MaxPersistentEntities) are deactivated by EntityRegistry
+        // Their IdBehaviors are removed, marking selectors dirty
+        // We recalc here to update all selector Matches arrays
+        Recalc();
     }
 
     public void OnEvent(ShutdownEvent _)
     {
-        // senior-dev: Unregister from all events to prevent duplicate registrations
+        // senior-dev: Shutdown clears EVERYTHING (used between tests)
+        _unionSelectorRegistry.Clear();
+        _idSelectorRegistry.Clear();
+        _tagSelectorRegistry.Clear();
+        _enterSelectorRegistry.Clear();
+        _exitSelectorRegistry.Clear();
+        _idSelectorLookup.Clear();
+        _tagSelectorLookup.Clear();
+        _rootSelectors.Clear();
+        
+        // Unregister from all events to prevent duplicate registrations
         EventBus<BehaviorAddedEvent<IdBehavior>>.Unregister(Instance);
         EventBus<PreBehaviorUpdatedEvent<IdBehavior>>.Unregister(Instance);
         EventBus<PostBehaviorUpdatedEvent<IdBehavior>>.Unregister(Instance);
         EventBus<PreBehaviorRemovedEvent<IdBehavior>>.Unregister(Instance);
+        EventBus<ResetEvent>.Unregister(Instance);
         EventBus<ShutdownEvent>.Unregister(Instance);
     }
 
