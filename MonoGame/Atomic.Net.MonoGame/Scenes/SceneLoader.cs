@@ -3,6 +3,7 @@ using System.Text.Json;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Persistence;
+using Atomic.Net.MonoGame.Selectors;
 
 namespace Atomic.Net.MonoGame.Scenes;
 
@@ -116,7 +117,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
                 : EntityRegistry.Instance.Activate();
 
             // Use JsonEntity.WriteToEntity() to eliminate duplicate logic (PR comment #9)
-            // This applies Transform, Properties, and Id behaviors
+            // This applies Transform, Properties, Id, and Parent behaviors
             jsonEntity.WriteToEntity(entity);
             
             // CRITICAL: PersistToDiskBehavior MUST be applied after all other behaviors (including Parent)
@@ -142,6 +143,10 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         
         // Clear queue for next scene load (zero-alloc)
         _persistToDiskQueue.Clear();
+        
+        // senior-dev: Recalc all selectors after scene loading completes
+        // This updates all selector Matches arrays so parent lookups and queries work
+        SelectorRegistry.Instance.Recalc();
     }
   
     // Static instance to write to, to avoid alloc'ing a new one each time

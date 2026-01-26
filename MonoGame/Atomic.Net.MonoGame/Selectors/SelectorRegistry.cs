@@ -12,6 +12,7 @@ public class SelectorRegistry :
     IEventHandler<PreBehaviorUpdatedEvent<IdBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<IdBehavior>>,
     IEventHandler<PreBehaviorRemovedEvent<IdBehavior>>,
+    IEventHandler<ResetEvent>,
     IEventHandler<ShutdownEvent>
 {
     public static SelectorRegistry Instance { get; private set; } = null!;
@@ -39,6 +40,23 @@ public class SelectorRegistry :
 
     // Lookup for @Tag => IdEntitySelector (for tagging dirty)
     private readonly Dictionary<string, TagEntitySelector> _tagSelectorLookup = new(Constants.MaxEntities / 64);
+
+    // Track root selectors (final parsed results) for bulk Recalc
+    // senior-dev: Only track the final "root" nodes from TryParse to avoid recalculating
+    // the same sub-nodes multiple times. Each root recursively recalcs its children.
+    private readonly HashSet<EntitySelector> _rootSelectors = new(Constants.MaxEntities / 64);
+
+    /// <summary>
+    /// Recalculates all root selectors that have been parsed.
+    /// Call this after scene loading or when entities/IDs change to update selector matches.
+    /// </summary>
+    public void Recalc()
+    {
+        foreach (var selector in _rootSelectors)
+        {
+            selector.Recalc();
+        }
+    }
 
     public bool TryParse(
         ReadOnlySpan<char> tokens,
@@ -102,6 +120,9 @@ public class SelectorRegistry :
         entitySelector = unionParts.Count == 1
             ? unionParts[0]
             : GetOrCreateUnionSelector(tokens, unionParts);
+
+        // senior-dev: Track this as a root selector for bulk Recalc
+        _rootSelectors.Add(entitySelector);
 
         return true;
     }
@@ -305,7 +326,7 @@ public class SelectorRegistry :
             }
 
             _exitSelectorRegistry[hash] = new CollisionExitEntitySelector(hash, prior);
-            selector = _enterSelectorRegistry[hash];
+            selector = _exitSelectorRegistry[hash];  // senior-dev: Fixed copy-paste error
 
             return true;
         }
@@ -324,16 +345,37 @@ public class SelectorRegistry :
         EventBus<PreBehaviorUpdatedEvent<IdBehavior>>.Register(Instance);
         EventBus<PostBehaviorUpdatedEvent<IdBehavior>>.Register(Instance);
         EventBus<PreBehaviorRemovedEvent<IdBehavior>>.Register(Instance);
+        EventBus<ResetEvent>.Register(Instance);
         EventBus<ShutdownEvent>.Register(Instance);
+    }
+
+    public void OnEvent(ResetEvent _)
+    {
+        // senior-dev: On Reset, recalc all selectors to update Matches for non-persistent entities
+        // Scene entities (>= MaxPersistentEntities) are deactivated by EntityRegistry
+        // Their IdBehaviors are removed, marking selectors dirty
+        // We recalc here to update all selector Matches arrays
+        Recalc();
     }
 
     public void OnEvent(ShutdownEvent _)
     {
-        // senior-dev: Unregister from all events to prevent duplicate registrations
+        // senior-dev: Shutdown clears EVERYTHING (used between tests)
+        _unionSelectorRegistry.Clear();
+        _idSelectorRegistry.Clear();
+        _tagSelectorRegistry.Clear();
+        _enterSelectorRegistry.Clear();
+        _exitSelectorRegistry.Clear();
+        _idSelectorLookup.Clear();
+        _tagSelectorLookup.Clear();
+        _rootSelectors.Clear();
+        
+        // Unregister from all events to prevent duplicate registrations
         EventBus<BehaviorAddedEvent<IdBehavior>>.Unregister(Instance);
         EventBus<PreBehaviorUpdatedEvent<IdBehavior>>.Unregister(Instance);
         EventBus<PostBehaviorUpdatedEvent<IdBehavior>>.Unregister(Instance);
         EventBus<PreBehaviorRemovedEvent<IdBehavior>>.Unregister(Instance);
+        EventBus<ResetEvent>.Unregister(Instance);
         EventBus<ShutdownEvent>.Unregister(Instance);
     }
 
