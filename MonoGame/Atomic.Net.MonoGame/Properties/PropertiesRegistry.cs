@@ -37,7 +37,7 @@ public sealed class PropertiesRegistry : ISingleton<PropertiesRegistry>,
     /// <summary>
     /// Indexes all properties for an entity.
     /// </summary>
-    public void IndexProperties(Entity entity, Dictionary<string, PropertyValue> properties)
+    public void IndexProperties(Entity entity, IReadOnlyDictionary<string, PropertyValue>? properties)
     {
         // senior-dev: Null check for defensive programming - properties can be null if
         // PropertiesBehavior was default-initialized.
@@ -73,7 +73,7 @@ public sealed class PropertiesRegistry : ISingleton<PropertiesRegistry>,
     /// <summary>
     /// Removes all indexed properties for an entity.
     /// </summary>
-    public void RemoveProperties(Entity entity, Dictionary<string, PropertyValue> properties)
+    public void RemoveProperties(Entity entity, IReadOnlyDictionary<string, PropertyValue>? properties)
     {
         // senior-dev: Null check needed because PropertiesBehavior is a struct and can be
         // default-initialized (e.g., in PropertiesBehaviorConverter when JSON is not StartObject),

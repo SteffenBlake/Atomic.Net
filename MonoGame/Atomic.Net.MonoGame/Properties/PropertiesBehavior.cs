@@ -8,15 +8,21 @@ namespace Atomic.Net.MonoGame.Properties;
 // IMPORTANT: Because Properties is a Ref type, it will be assigned a value of 
 // null, not [], when you instantiate it via `default` which is EXPECTED BEHAVIOR
 //
-// DO NOT constantly `new` it up, it should be immutable as a behavior.
+// Behaviors are IMMUTABLE - Properties is IReadOnlyDictionary to enforce this.
+// To "update" a property, create a NEW PropertiesBehavior with a new dictionary.
 //
-// Instead, just always defensively null check Properties before accessing it
+// Example - setting a single property:
+//   behavior = new(new Dictionary<string, PropertyValue> { { "key", value } });
+//
+// Example - preserving existing properties while adding/updating:
+//   var dict = new Dictionary<string, PropertyValue>(behavior.Properties ?? []);
+//   dict["newKey"] = newValue;
+//   behavior = new(dict);
 [JsonConverter(typeof(PropertiesBehaviorConverter))]
 public readonly record struct PropertiesBehavior(
-    Dictionary<string, PropertyValue>? Properties = null
+    IReadOnlyDictionary<string, PropertyValue>? Properties = null
 ) : IBehavior<PropertiesBehavior>
 {
-
     public static PropertiesBehavior CreateFor(Entity entity)
     {
         return new();

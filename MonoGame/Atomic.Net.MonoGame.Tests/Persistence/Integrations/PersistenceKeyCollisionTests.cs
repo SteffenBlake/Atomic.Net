@@ -55,7 +55,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
-            behavior.Properties["id"] = "first";
+            behavior = new(new Dictionary<string, PropertyValue> { { "id", "first" } });
         });
         
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
@@ -64,7 +64,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
         {
-            behavior.Properties["id"] = "second";
+            behavior = new(new Dictionary<string, PropertyValue> { { "id", "second" } });
         });
         
         // Act: Flush both entities
@@ -78,6 +78,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
             behavior = new PersistToDiskBehavior("duplicate-key");
         });
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var loadedProps));
+        Assert.NotNull(loadedProps.Value.Properties);
         Assert.Equal("second", loadedProps.Value.Properties["id"]);
         
         // test-architect: FINDING: Need to decide if duplicate keys should fire ErrorEvent
@@ -95,7 +96,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
-            behavior.Properties["scene"] = "scene1";
+            behavior = new(new Dictionary<string, PropertyValue> { { "scene", "scene1" } });
         });
         DatabaseRegistry.Instance.Flush();
         
@@ -107,7 +108,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         // Add PersistToDiskBehavior LAST to prevent it from loading and then being overwritten
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
         {
-            behavior.Properties["scene"] = "scene2";
+            behavior = new(new Dictionary<string, PropertyValue> { { "scene", "scene2" } });
         });
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
         {
@@ -117,6 +118,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         // Assert: entity2 should have loaded data from entity1 (overwriting "scene2" with "scene1")
         // test-architect: When PersistToDiskBehavior is added, it loads from DB
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity2, out var loadedProps));
+        Assert.NotNull(loadedProps.Value.Properties);
         Assert.Equal("scene1", loadedProps.Value.Properties["scene"]);
     }
 
@@ -130,7 +132,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior.Properties["test"] = "value";
+            behavior = new(new Dictionary<string, PropertyValue> { { "test", "value" } });
         });
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
@@ -152,8 +154,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
             behavior = new PersistToDiskBehavior("");
         });
         // If it loaded from DB, it would have "test" property. Since it shouldn't, it won't have it.
-        Assert.False(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var props) 
-            && props.Value.Properties.ContainsKey("test"));
+        Assert.False(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var props));
     }
 
     [Fact]
@@ -170,7 +171,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior.Properties["test"] = "whitespace";
+            behavior = new(new Dictionary<string, PropertyValue> { { "test", "whitespace" } });
         });
         
         // test-architect: Whitespace key should fire ErrorEvent
@@ -186,7 +187,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         {
             behavior = new PersistToDiskBehavior("   ");
         });
-        Assert.False(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var props) 
-            && props.Value.Properties.ContainsKey("test"));
+
+        Assert.False(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var props));
     }
 }
