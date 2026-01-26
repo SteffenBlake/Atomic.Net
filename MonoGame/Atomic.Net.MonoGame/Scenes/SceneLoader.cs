@@ -145,10 +145,9 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         // Clear queue for next scene load (zero-alloc)
         _persistToDiskQueue.Clear();
         
-        // senior-dev: Recalc selectors first, then hierarchy
-        // This ordering is CRITICAL:
-        // 1. SelectorRegistry.Recalc() updates all selector Matches arrays
-        // 2. HierarchyRegistry.Recalc() uses those Matches to resolve parent relationships
+        // CRITICAL: Recalc selectors first, then hierarchy
+        // SelectorRegistry.Recalc() must run before HierarchyRegistry.Recalc()
+        // to ensure parent selectors have valid Matches arrays
         SelectorRegistry.Instance.Recalc();
         HierarchyRegistry.Instance.Recalc();
     }
