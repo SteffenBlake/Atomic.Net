@@ -74,6 +74,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         
         // Verify the entity loaded properties from disk
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var loadedProps));
+        Assert.NotNull(loadedProps.Value.Properties);
         Assert.Equal(100f, loadedProps.Value.Properties["health"]);
     }
 
@@ -112,6 +113,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         });
         
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var loadedProps));
+        Assert.NotNull(loadedProps.Value.Properties);
         Assert.Equal(50f, loadedProps.Value.Properties["mana"]);
     }
 
@@ -145,6 +147,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         });
         
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var loadedProps));
+        Assert.NotNull(loadedProps.Value.Properties);
         Assert.Equal(10f, loadedProps.Value.Properties["level"]);
     }
 
@@ -181,6 +184,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
             behavior = new PersistToDiskBehavior("removal-test-key");
         });
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity1, out var props1));
+        Assert.NotNull(props1.Value.Properties);
         Assert.Equal(5000f, props1.Value.Properties["experience"]); // Original value, not 10000
         
         // test-architect: Modify entity again and flush - should NOT update disk (no PersistToDiskBehavior)
@@ -197,6 +201,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
             behavior = new PersistToDiskBehavior("removal-test-key");
         });
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity2, out var props2));
+        Assert.NotNull(props2.Value.Properties);
         Assert.Equal(5000f, props2.Value.Properties["experience"]); // Still original value
     }
 }

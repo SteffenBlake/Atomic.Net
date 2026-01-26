@@ -80,6 +80,7 @@ public sealed class PersistenceMutationTimingTests : IDisposable
             behavior = new PersistToDiskBehavior("rapid-mutation-key");
         });
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var loadedProps));
+        Assert.NotNull(loadedProps.Value.Properties);
         Assert.Equal(10f, loadedProps.Value.Properties["score"]);
     }
 
@@ -121,6 +122,7 @@ public sealed class PersistenceMutationTimingTests : IDisposable
             behavior = new PersistToDiskBehavior("scene-load-mutation-key");
         });
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var loadedProps));
+        Assert.NotNull(loadedProps.Value.Properties);
         Assert.Equal(1000f, loadedProps.Value.Properties["counter"]);
     }
 

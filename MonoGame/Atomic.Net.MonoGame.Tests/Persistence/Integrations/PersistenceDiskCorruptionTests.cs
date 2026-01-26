@@ -148,6 +148,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         Assert.Equal(new Microsoft.Xna.Framework.Vector3(50, 75, 0), transform.Value.Position);
         
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity2, out var props));
+        Assert.NotNull(props.Value.Properties);
         Assert.Equal("yes", props.Value.Properties["fromDisk"]);
         
         // test-architect: FINDING: Scene provides defaults, disk overwrites with saved values.
@@ -212,6 +213,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         });
 
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var props));
+        Assert.NotNull(props.Value.Properties);
         Assert.Equal("persistent", props.Value.Properties["partition"]);
     }
 
@@ -245,6 +247,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
             behavior = new PersistToDiskBehavior("scene-partition-key");
         });
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var props));
+        Assert.NotNull(props.Value.Properties);
         Assert.Equal("scene", props.Value.Properties["partition"]);
         
         // test-architect: FINDING: This validates that persistent partition vs disk persistence

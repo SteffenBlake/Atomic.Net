@@ -101,6 +101,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         // Assert: Entity should have DISK values, NOT scene values
         Assert.True(EntityIdRegistry.Instance.TryResolve("persistent-player", out var playerEntity));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(playerEntity.Value, out var props));
+        Assert.NotNull(props.Value.Properties);
         Assert.Equal("yes", props.Value.Properties["fromDisk"]);  // From disk, not scene
         Assert.Equal(999f, props.Value.Properties["hp"]);        // From disk (999), not scene default
         
@@ -127,12 +128,10 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         DatabaseRegistry.Instance.Disable();
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
-            // senior-dev: Preserve existing properties when adding new ones (behavior is immutable)
-            var dict = behavior.Properties != null 
-                ? new Dictionary<string, PropertyValue>(behavior.Properties)
-                : new Dictionary<string, PropertyValue>();
-            dict["duringDisabled"] = "should-not-persist";
-            behavior = new(dict);
+            behavior = new(new Dictionary<string, PropertyValue> { 
+                { "initial", "saved" },
+                {"duringDisabled", "should-not-persist"}
+            });
         });
         DatabaseRegistry.Instance.Flush(); // Should be no-op (disabled)
         
@@ -140,12 +139,11 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         DatabaseRegistry.Instance.Enable();
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
-            // senior-dev: Preserve existing properties when adding new ones (behavior is immutable)
-            var dict = behavior.Properties != null 
-                ? new Dictionary<string, PropertyValue>(behavior.Properties)
-                : new Dictionary<string, PropertyValue>();
-            dict["afterEnabled"] = "should-persist";
-            behavior = new(dict);
+            behavior = new(new Dictionary<string, PropertyValue> { 
+                { "initial", "saved" },
+                {"duringDisabled", "should-not-persist"},
+                {"afterEnabled", "should-persist"}
+            });
         });
         DatabaseRegistry.Instance.Flush(); // Should write now (includes both properties)
         
@@ -156,6 +154,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
             behavior = new PersistToDiskBehavior("disable-test-key");
         });
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var props));
+        Assert.NotNull(props.Value.Properties);
         
         // test-architect: Both properties persisted because Flush() at line 30 writes current state
         // The key insight: mutations during disabled don't MARK entity dirty, but the entity
@@ -191,6 +190,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         // Assert: Modified value should be preserved (loaded from disk, NOT scene defaults)
         Assert.True(EntityIdRegistry.Instance.TryResolve("inventory-manager", out var reloadedEntity));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(reloadedEntity.Value, out var props));
+        Assert.NotNull(props.Value.Properties);
         Assert.Equal("yes", props.Value.Properties["modified"]);  // From disk
         Assert.Equal(777f, props.Value.Properties["value"]);      // From disk, not scene
     }
@@ -226,9 +226,8 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         {
             behavior = new PersistToDiskBehavior("non-persistent-entity-key");
         });
-        // Should load empty/default since non-persistent entity was never saved
-        Assert.False(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(testEntity, out var props) 
-            && props.Value.Properties.ContainsKey("test"));
+
+        Assert.False(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(testEntity, out var props));
     }
 
     [Fact]
@@ -270,6 +269,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
 
         // Assert: Entity should have loaded data from disk (NOT the "second-write")
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var props));
+        Assert.NotNull(props.Value.Properties);
         Assert.Equal("first-write", props.Value.Properties["originalData"]); // From disk
         Assert.Equal(1f, props.Value.Properties["counter"]); // From disk
         
@@ -288,6 +288,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
             behavior = new PersistToDiskBehavior("loop-test-key");
         });
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(verifyEntity, out var verifyProps));
+        Assert.NotNull(verifyProps.Value.Properties);
         Assert.Equal("first-write", verifyProps.Value.Properties["originalData"]);
     }
 }
