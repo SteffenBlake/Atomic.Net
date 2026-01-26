@@ -1,0 +1,10 @@
+{
+  "entities": [
+    {
+      "id": "standalone",
+      "properties": {
+        "value": 42
+      }
+    }
+  ]
+}
