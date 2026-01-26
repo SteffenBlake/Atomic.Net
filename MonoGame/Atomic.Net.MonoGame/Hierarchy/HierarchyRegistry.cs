@@ -14,7 +14,8 @@ public class HierarchyRegistry :
     IEventHandler<PostBehaviorUpdatedEvent<ParentBehavior>>,
     IEventHandler<PreBehaviorRemovedEvent<ParentBehavior>>,
     IEventHandler<PreEntityDeactivatedEvent>,
-    IEventHandler<InitializeEvent>
+    IEventHandler<InitializeEvent>,
+    IEventHandler<ShutdownEvent>
 {
     internal static void Initialize()
     {
@@ -197,11 +198,23 @@ public class HierarchyRegistry :
 
     public void OnEvent(InitializeEvent e)
     {
-        EventBus<BehaviorAddedEvent<ParentBehavior>>.Register(this);
+        // senior-dev: Fixed duplicate registration of BehaviorAddedEvent (was registered twice)
         EventBus<BehaviorAddedEvent<ParentBehavior>>.Register(this);
         EventBus<PreBehaviorUpdatedEvent<ParentBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<ParentBehavior>>.Register(this);
         EventBus<PreBehaviorRemovedEvent<ParentBehavior>>.Register(this);
         EventBus<PreEntityDeactivatedEvent>.Register(this);
+        EventBus<ShutdownEvent>.Register(this);
+    }
+
+    public void OnEvent(ShutdownEvent _)
+    {
+        // senior-dev: Unregister from all events to prevent duplicate registrations
+        EventBus<BehaviorAddedEvent<ParentBehavior>>.Unregister(this);
+        EventBus<PreBehaviorUpdatedEvent<ParentBehavior>>.Unregister(this);
+        EventBus<PostBehaviorUpdatedEvent<ParentBehavior>>.Unregister(this);
+        EventBus<PreBehaviorRemovedEvent<ParentBehavior>>.Unregister(this);
+        EventBus<PreEntityDeactivatedEvent>.Unregister(this);
+        EventBus<ShutdownEvent>.Unregister(this);
     }
 }

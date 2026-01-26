@@ -17,7 +17,8 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     IEventHandler<BehaviorAddedEvent<PersistToDiskBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<PersistToDiskBehavior>>,
     IEventHandler<PreBehaviorUpdatedEvent<PersistToDiskBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<PersistToDiskBehavior>>
+    IEventHandler<PreBehaviorRemovedEvent<PersistToDiskBehavior>>,
+    IEventHandler<ShutdownEvent>
 {
     internal static void Initialize()
     {
@@ -100,6 +101,9 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
         EventBus<PreBehaviorUpdatedEvent<PersistToDiskBehavior>>.Register(this);
         EventBus<PreBehaviorRemovedEvent<PersistToDiskBehavior>>.Register(this);
         
+        // senior-dev: Register for ShutdownEvent to properly close database connection
+        EventBus<ShutdownEvent>.Register(this);
+        
         // Initialize database with path from Constants (COMPILATION CONSTANT ONLY)
         // NEVER add runtime configuration - path is set at compile time via:
         //   dotnet build -p:DefineConstants=ATOMIC_PERSISTENCE_DB_PATH=\"/custom/path.db\"
@@ -135,7 +139,16 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     }
 
     /// <summary>
+    /// Handles ShutdownEvent - closes LiteDB connection and cleans up resources.
+    /// </summary>
+    public void OnEvent(ShutdownEvent e)
+    {
+        Shutdown();
+    }
+
+    /// <summary>
     /// Closes LiteDB connection and cleans up resources.
+    /// Called by OnEvent(ShutdownEvent) or can be called manually for testing.
     /// </summary>
     public void Shutdown()
     {
@@ -144,6 +157,7 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
         EventBus<PostBehaviorUpdatedEvent<PersistToDiskBehavior>>.Unregister(this);
         EventBus<PreBehaviorUpdatedEvent<PersistToDiskBehavior>>.Unregister(this);
         EventBus<PreBehaviorRemovedEvent<PersistToDiskBehavior>>.Unregister(this);
+        EventBus<ShutdownEvent>.Unregister(this);
         
         _database?.Dispose();
         _database = null;
