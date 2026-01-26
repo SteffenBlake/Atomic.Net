@@ -40,16 +40,9 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
 
         // Assert
-        // test-architect: Scene should load without errors
-        var activeEntities = EntityRegistry.Instance.GetActiveEntities().ToList();
-        Assert.NotEmpty(activeEntities);
-        
-        // test-architect: Verify goblin entity was spawned
+        Assert.NotEmpty(EntityRegistry.Instance.GetActiveEntities());
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin", out var goblinEntity));
         Assert.NotNull(goblinEntity);
-        
-        // test-architect: No error events should fire for valid scene
-        // (ErrorEvents would be in FakeEventListener if we were tracking them)
     }
 
     [Fact(Skip = "Tag+Collision selector Recalc throws NotImplementedException - Stage 1: parser only")]
@@ -62,11 +55,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
 
         // Assert
-        // test-architect: Scene should load without errors
-        var activeEntities = EntityRegistry.Instance.GetActiveEntities().ToList();
-        Assert.NotEmpty(activeEntities);
-        
-        // test-architect: Verify both entities were spawned
+        Assert.NotEmpty(EntityRegistry.Instance.GetActiveEntities());
         Assert.True(EntityIdRegistry.Instance.TryResolve("player", out var playerEntity));
         Assert.True(EntityIdRegistry.Instance.TryResolve("boss", out var bossEntity));
         Assert.NotNull(playerEntity);
@@ -102,11 +91,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
 
         // Assert
-        // test-architect: Scene should load without entities but rules are parsed
-        var activeEntities = EntityRegistry.Instance.GetActiveEntities().ToList();
-        Assert.Empty(activeEntities);
-        
-        // test-architect: No errors should fire - empty entities array is valid
+        Assert.Empty(EntityRegistry.Instance.GetActiveEntities());
     }
 
     [Fact(Skip = "Tag selector Recalc throws NotImplementedException - Stage 1: parser only")]
@@ -119,11 +104,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
 
         // Assert
-        // test-architect: Scene should load without errors
-        var activeEntities = EntityRegistry.Instance.GetActiveEntities().ToList();
-        Assert.NotEmpty(activeEntities);
-        
-        // test-architect: Verify goblin entity was spawned
+        Assert.NotEmpty(EntityRegistry.Instance.GetActiveEntities());
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin", out var goblinEntity));
         Assert.NotNull(goblinEntity);
     }
@@ -138,21 +119,17 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
 
         // Assert
-        // test-architect: Both entities should be spawned
         Assert.True(EntityIdRegistry.Instance.TryResolve("player", out var playerEntity));
         Assert.True(EntityIdRegistry.Instance.TryResolve("weapon", out var weaponEntity));
         Assert.NotNull(playerEntity);
         Assert.NotNull(weaponEntity);
         
-        // test-architect: Verify parent-child relationship was established
         Assert.True(weaponEntity.Value.TryGetParent(out var parent));
         Assert.NotNull(parent);
         Assert.Equal(playerEntity.Value.Index, parent.Value.Index);
         
-        // test-architect: Verify player has weapon as child
-        var playerChildren = playerEntity.Value.GetChildren().ToList();
-        Assert.Single(playerChildren);
-        Assert.Contains(weaponEntity.Value, playerChildren);
+        Assert.Single(playerEntity.Value.GetChildren());
+        Assert.Contains(weaponEntity.Value, playerEntity.Value.GetChildren());
     }
 
     [Fact]
@@ -184,11 +161,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
 
         // Assert
-        // test-architect: Scene without rules should load successfully
-        var activeEntities = EntityRegistry.Instance.GetActiveEntities().ToList();
-        Assert.NotEmpty(activeEntities);
-        
-        // test-architect: Verify entity was spawned
+        Assert.NotEmpty(EntityRegistry.Instance.GetActiveEntities());
         Assert.True(EntityIdRegistry.Instance.TryResolve("standalone", out var entity));
         Assert.NotNull(entity);
     }
