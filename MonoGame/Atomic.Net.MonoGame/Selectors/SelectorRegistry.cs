@@ -46,6 +46,9 @@ public class SelectorRegistry :
     // the same sub-nodes multiple times. Each root recursively recalcs its children.
     private readonly HashSet<EntitySelector> _rootSelectors = new(Constants.MaxEntities / 64);
 
+    // senior-dev: Pre-allocated buffer for union parts to achieve zero allocations during parsing
+    private readonly List<EntitySelector> _unionPartsBuffer = new(32);
+
     /// <summary>
     /// Recalculates all root selectors that have been parsed.
     /// Call this after scene loading or when entities/IDs change to update selector matches.
@@ -72,8 +75,10 @@ public class SelectorRegistry :
             return false;
         }
 
+        // senior-dev: Clear buffer at start to ensure clean state (zero allocations)
+        _unionPartsBuffer.Clear();
+
         EntitySelector? current = null;
-        List<EntitySelector>? unionParts = null;
         var segmentStart = 0;
 
         for (var i = 0; i <= tokens.Length; i++)
@@ -93,8 +98,7 @@ public class SelectorRegistry :
                 {
                     if (current != null)
                     {
-                        unionParts ??= [];
-                        unionParts.Add(current);
+                        _unionPartsBuffer.Add(current);
                     }
                     current = null;
                 }
@@ -116,18 +120,21 @@ public class SelectorRegistry :
         }
 
         // Build final result
-        if (unionParts is null)
+        if (_unionPartsBuffer.Count == 0)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("No valid selectors parsed"));
             return false;
         }
 
-        entitySelector = unionParts.Count == 1
-            ? unionParts[0]
-            : GetOrCreateUnionSelector(tokens, unionParts);
+        entitySelector = _unionPartsBuffer.Count == 1
+            ? _unionPartsBuffer[0]
+            : GetOrCreateUnionSelector(tokens, _unionPartsBuffer);
 
         // senior-dev: Track this as a root selector for bulk Recalc
         _rootSelectors.Add(entitySelector);
+
+        // senior-dev: Clear buffer at end for next parse (zero allocations)
+        _unionPartsBuffer.Clear();
 
         return true;
     }
@@ -175,7 +182,10 @@ public class SelectorRegistry :
             return cached;
         }
 
-        var union = new UnionEntitySelector(hash, children);
+        // senior-dev: Create a new List copy since UnionEntitySelector stores the reference
+        // and we reuse _unionPartsBuffer for zero allocations
+        var childrenCopy = new List<EntitySelector>(children);
+        var union = new UnionEntitySelector(hash, childrenCopy);
         _unionSelectorRegistry[hash] = union;
         return union;
     }
