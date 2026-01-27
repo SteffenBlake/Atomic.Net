@@ -46,6 +46,10 @@ public class SelectorRegistry :
     // the same sub-nodes multiple times. Each root recursively recalcs its children.
     private readonly HashSet<EntitySelector> _rootSelectors = new(Constants.MaxEntities / 64);
 
+    // senior-dev: Pre-allocated buffers for TryParse to avoid allocations during parsing
+    private readonly List<EntitySelector> _unionPartsBuffer = new(16);
+    private readonly List<(int start, int end)> _chainTokensBuffer = new(16);
+
     /// <summary>
     /// Recalculates all root selectors that have been parsed.
     /// Call this after scene loading or when entities/IDs change to update selector matches.
@@ -72,8 +76,9 @@ public class SelectorRegistry :
             return false;
         }
 
-        List<EntitySelector>? unionParts = null;
-        List<(int start, int end)>? chainTokens = null;
+        // senior-dev: Use pre-allocated buffers to avoid allocations
+        _unionPartsBuffer.Clear();
+        _chainTokensBuffer.Clear();
         var segmentStart = 0;
 
         // senior-dev: First pass - collect token positions for each refinement chain
@@ -86,23 +91,21 @@ public class SelectorRegistry :
             {
                 if (i > segmentStart)
                 {
-                    chainTokens ??= [];
-                    chainTokens.Add((segmentStart, i));
+                    _chainTokensBuffer.Add((segmentStart, i));
                 }
 
                 // senior-dev: On comma or end, build the refinement chain and add to union
                 if (c is ',' or '\0')
                 {
-                    if (chainTokens != null && chainTokens.Count > 0)
+                    if (_chainTokensBuffer.Count > 0)
                     {
-                        if (!TryBuildRefinementChain(tokens, chainTokens, out var chain))
+                        if (!TryBuildRefinementChain(tokens, _chainTokensBuffer, out var chain))
                         {
                             return false;
                         }
                         
-                        unionParts ??= [];
-                        unionParts.Add(chain);
-                        chainTokens.Clear();
+                        _unionPartsBuffer.Add(chain);
+                        _chainTokensBuffer.Clear();
                     }
                 }
 
@@ -123,15 +126,15 @@ public class SelectorRegistry :
         }
 
         // Build final result
-        if (unionParts is null)
+        if (_unionPartsBuffer.Count == 0)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("No valid selectors parsed"));
             return false;
         }
 
-        entitySelector = unionParts.Count == 1
-            ? unionParts[0]
-            : GetOrCreateUnionSelector(tokens, unionParts);
+        entitySelector = _unionPartsBuffer.Count == 1
+            ? _unionPartsBuffer[0]
+            : GetOrCreateUnionSelector(tokens, _unionPartsBuffer);
 
         // senior-dev: Track this as a root selector for bulk Recalc
         _rootSelectors.Add(entitySelector);
@@ -167,7 +170,7 @@ public class SelectorRegistry :
             prior = selector;
         }
 
-        result = prior;
+        result = prior!;
         return true;
     }
 

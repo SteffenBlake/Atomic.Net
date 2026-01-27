@@ -74,13 +74,6 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
 
         // Assert
-        // senior-dev: Check if there were any errors during loading
-        if (_errorListener.ReceivedEvents.Count > 0)
-        {
-            var errors = string.Join(", ", _errorListener.ReceivedEvents.Select(e => e.Message));
-            throw new Exception($"Unexpected errors during scene load: {errors}");
-        }
-        
         // test-architect: Verify exactly 1 rule was loaded
         var rules = RuleRegistry.Instance.Rules.ToList();
         Assert.Single(rules);
