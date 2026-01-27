@@ -1,0 +1,13 @@
+{
+  "entities": [
+    { "id": "player", "properties": { "health": 100 } },
+    { "id": "boss", "tags": [ "enemies", "boss" ], "properties": { "health": 500 } }
+  ],
+  "rules": [
+    {
+      "from": "@player, !enter:#enemies:#boss",
+      "where": { "<": [ { "var": "entities.properties.distance" }, 10 ] },
+      "do": { "mut": { "merge": [ { "var": "entities" }, { "properties": { "inCombat": true } } ] } }
+    }
+  ]
+}

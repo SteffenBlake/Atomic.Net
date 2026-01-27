@@ -58,5 +58,33 @@ public static class Constants
     /// </summary>
     public const string DefaultPersistenceDatabasePath = "persistence.db";
 #endif
+
+#if MAX_RULES
+    /// <summary>
+    /// Maximum number of rules supported.
+    /// </summary>
+    public const ushort MaxRules = MAX_RULES;
+#else
+    /// <summary>
+    /// Maximum number of rules supported.
+    /// </summary>
+    public const ushort MaxRules = 1024;
+#endif
+
+#if MAX_GLOBAL_RULES
+    /// <summary>
+    /// Partition point between global and scene rules.
+    /// Rules with indices less than MaxGlobalRules are global rules.
+    /// Rules with indices greater than or equal to MaxGlobalRules are scene rules.
+    /// </summary>
+    public const ushort MaxGlobalRules = MAX_GLOBAL_RULES;
+#else
+    /// <summary>
+    /// Partition point between global and scene rules.
+    /// Rules with indices less than MaxGlobalRules are global rules.
+    /// Rules with indices greater than or equal to MaxGlobalRules are scene rules.
+    /// </summary>
+    public const ushort MaxGlobalRules = 128;
+#endif
 }
 

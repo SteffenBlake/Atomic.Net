@@ -1,0 +1,12 @@
+{
+  "entities": [
+    { "id": "goblin", "tags": ["poisoned"], "properties": { "health": 50, "poisonStacks": 3 } }
+  ],
+  "rules": [
+    {
+      "from": "#poisoned",
+      "where": { ">": [ { "var": "entities.properties.poisonStacks" }, 0 ] },
+      "do": { "mut": { "merge": [ { "var": "entities" }, { "properties": { "health": { "-": [ { "var": "entities.properties.health" }, 1 ] } } } ] } }
+    }
+  ]
+}

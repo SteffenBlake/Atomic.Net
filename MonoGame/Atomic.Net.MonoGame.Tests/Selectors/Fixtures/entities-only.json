@@ -1,0 +1,6 @@
+{
+  "entities": [
+    { "id": "player", "properties": { "health": 100 } },
+    { "id": "enemy", "tags": [ "hostile" ], "properties": { "health": 50 } }
+  ]
+}

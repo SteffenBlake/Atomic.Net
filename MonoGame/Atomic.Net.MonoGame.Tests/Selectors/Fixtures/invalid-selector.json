@@ -1,0 +1,10 @@
+{
+  "entities": [ { "id": "player", "properties": { "health": 100 } } ],
+  "rules": [
+    {
+      "from": "@@player",
+      "where": {},
+      "do": { "mut": {} }
+    }
+  ]
+}
