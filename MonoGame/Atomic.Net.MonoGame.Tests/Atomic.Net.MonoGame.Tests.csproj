@@ -12,6 +12,7 @@
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.4" />
     <PackageReference Include="xunit" Version="2.*" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.*" />
+    <PackageReference Include="JsonLogic" Version="5.5.0" />
   </ItemGroup>
 
   <ItemGroup>
