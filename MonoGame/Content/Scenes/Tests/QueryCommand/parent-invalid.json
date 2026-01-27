@@ -1,0 +1,6 @@
+{
+  "entities": [
+    { "id": "player", "transform": { "position": [0, 0, 0] } },
+    { "id": "weapon", "parent": "@@invalid", "transform": { "position": [1, 0, 0] } }
+  ]
+}

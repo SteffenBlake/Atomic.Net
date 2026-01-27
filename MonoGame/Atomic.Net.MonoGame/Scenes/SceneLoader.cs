@@ -145,11 +145,23 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         // Clear queue for next scene load (zero-alloc)
         _persistToDiskQueue.Clear();
         
+        // test-architect: Load rules into RuleRegistry - to be implemented by @senior-dev
+        LoadRules(scene, useGlobalPartition);
+        
         // CRITICAL: Recalc selectors first, then hierarchy
         // SelectorRegistry.Recalc() must run before HierarchyRegistry.Recalc()
         // to ensure parent selectors have valid Matches arrays
         SelectorRegistry.Instance.Recalc();
         HierarchyRegistry.Instance.Recalc();
+    }
+    
+    /// <summary>
+    /// Loads rules from scene into RuleRegistry.
+    /// </summary>
+    private void LoadRules(JsonScene scene, bool useGlobalPartition)
+    {
+        // test-architect: Stub implementation - to be implemented by @senior-dev
+        throw new NotImplementedException("SceneLoader.LoadRules() - Rule loading not yet implemented");
     }
   
     // Static instance to write to, to avoid alloc'ing a new one each time

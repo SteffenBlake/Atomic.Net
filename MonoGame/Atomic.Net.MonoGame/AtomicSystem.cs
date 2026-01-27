@@ -75,6 +75,7 @@ public static class AtomicSystem
         PropertiesRegistry.Initialize();
         SelectorRegistry.Initialize();
         TransformRegistry.Initialize();
+        RuleRegistry.Initialize();
 
         // Scene System
         SceneLoader.Initialize();

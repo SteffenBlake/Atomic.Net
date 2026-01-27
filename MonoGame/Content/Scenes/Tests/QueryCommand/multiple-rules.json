@@ -1,0 +1,17 @@
+{
+  "entities": [
+    { "id": "goblin", "tags": ["poisoned", "burning"], "properties": { "health": 50, "poisonStacks": 2, "burnStacks": 1 } }
+  ],
+  "rules": [
+    {
+      "from": "#poisoned",
+      "where": { ">": [ { "var": "entities.properties.poisonStacks" }, 0 ] },
+      "do": { "mut": { "merge": [ { "var": "entities" }, { "properties": { "health": { "-": [ { "var": "entities.properties.health" }, { "var": "entities.properties.poisonStacks" } ] } } } ] } }
+    },
+    {
+      "from": "#burning",
+      "where": { ">": [ { "var": "entities.properties.burnStacks" }, 0 ] },
+      "do": { "mut": { "merge": [ { "var": "entities" }, { "properties": { "health": { "-": [ { "var": "entities.properties.health" }, { "*": [ { "var": "entities.properties.burnStacks" }, 2 ] } ] } } } ] } }
+    }
+  ]
+}
