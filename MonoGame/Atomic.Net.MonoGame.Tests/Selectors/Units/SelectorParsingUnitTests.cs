@@ -202,7 +202,7 @@ public sealed class SelectorParsingUnitTests : IDisposable
     }
 
     [Fact]
-    public void TryParse_WithWhitespaceInRefinement_ParsesCorrectly()
+    public void TryParse_WithWhitespaceInRefinement_FiresErrorEvent()
     {
         // Arrange
         var input = "!enter : #enemies";
@@ -211,12 +211,9 @@ public sealed class SelectorParsingUnitTests : IDisposable
         var success = SelectorRegistry.Instance.TryParse(input, out var selector);
 
         // Assert
-        Assert.True(success, "Should successfully parse !enter : #enemies with whitespace");
-        Assert.NotNull(selector);
-        
-        // test-architect: Verify it's a CollisionEnterEntitySelector with refinement (whitespace should be handled)
-        Assert.True(selector.TryMatch(out CollisionEnterEntitySelector? enterSelector), "Should be CollisionEnterEntitySelector");
-        Assert.NotNull(enterSelector);
+        Assert.False(success, "Should fail to parse !enter : #enemies with whitespace in refinement");
+        Assert.Null(selector);
+        Assert.True(_errorListener.ReceivedEvents.Count > 0, "Should fire at least one ErrorEvent for whitespace in refinement");
     }
 
     [Fact]

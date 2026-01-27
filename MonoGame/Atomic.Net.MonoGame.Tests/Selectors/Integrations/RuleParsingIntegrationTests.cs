@@ -35,7 +35,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
     public void LoadGameScene_WithPoisonRule_LoadsRuleCorrectly()
     {
         // Arrange
-        var scenePath = "Content/Scenes/Tests/QueryCommand/poison-rule.json";
+        var scenePath = "Selectors/Fixtures/poison-rule.json";
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
@@ -68,7 +68,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
     public void LoadGameScene_WithComplexPrecedence_LoadsRuleCorrectly()
     {
         // Arrange
-        var scenePath = "Content/Scenes/Tests/QueryCommand/complex-precedence.json";
+        var scenePath = "Selectors/Fixtures/complex-precedence.json";
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
@@ -95,7 +95,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
     public void LoadGameScene_WithInvalidSelector_FiresErrorEvent()
     {
         // Arrange
-        var scenePath = "Content/Scenes/Tests/QueryCommand/invalid-selector.json";
+        var scenePath = "Selectors/Fixtures/invalid-selector.json";
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
@@ -118,7 +118,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
     public void LoadGameScene_WithNoEntitiesButRules_LoadsRuleCorrectly()
     {
         // Arrange
-        var scenePath = "Content/Scenes/Tests/QueryCommand/no-entities-with-rules.json";
+        var scenePath = "Selectors/Fixtures/no-entities-with-rules.json";
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
@@ -140,7 +140,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
     public void LoadGameScene_WithMultipleRules_LoadsAllRulesCorrectly()
     {
         // Arrange
-        var scenePath = "Content/Scenes/Tests/QueryCommand/multiple-rules.json";
+        var scenePath = "Selectors/Fixtures/multiple-rules.json";
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
@@ -167,7 +167,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
     public void LoadGameScene_WithParentValidSelector_LoadsSuccessfully()
     {
         // Arrange
-        var scenePath = "Content/Scenes/Tests/QueryCommand/parent-valid.json";
+        var scenePath = "Selectors/Fixtures/parent-valid.json";
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
@@ -182,7 +182,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
     public void LoadGameScene_WithParentInvalidSelector_FiresErrorEvent()
     {
         // Arrange
-        var scenePath = "Content/Scenes/Tests/QueryCommand/parent-invalid.json";
+        var scenePath = "Selectors/Fixtures/parent-invalid.json";
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
@@ -205,7 +205,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
     public void LoadGameScene_WithEntitiesOnly_LoadsSuccessfully()
     {
         // Arrange
-        var scenePath = "Content/Scenes/Tests/QueryCommand/entities-only.json";
+        var scenePath = "Selectors/Fixtures/entities-only.json";
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
@@ -223,7 +223,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
     public void LoadGlobalScene_WithRules_LoadsIntoGlobalPartition()
     {
         // Arrange
-        var scenePath = "Content/Scenes/Tests/QueryCommand/poison-rule.json";
+        var scenePath = "Selectors/Fixtures/poison-rule.json";
 
         // Act
         SceneLoader.Instance.LoadGlobalScene(scenePath);
@@ -244,8 +244,8 @@ public sealed class RuleParsingIntegrationTests : IDisposable
     public void ResetEvent_ClearsSceneRulesOnly()
     {
         // Arrange
-        var globalScenePath = "Content/Scenes/Tests/QueryCommand/poison-rule.json";
-        var sceneScenePath = "Content/Scenes/Tests/QueryCommand/multiple-rules.json";
+        var globalScenePath = "Selectors/Fixtures/poison-rule.json";
+        var sceneScenePath = "Selectors/Fixtures/multiple-rules.json";
         
         SceneLoader.Instance.LoadGlobalScene(globalScenePath);
         SceneLoader.Instance.LoadGameScene(sceneScenePath);
@@ -271,8 +271,8 @@ public sealed class RuleParsingIntegrationTests : IDisposable
     public void ShutdownEvent_ClearsAllRules()
     {
         // Arrange
-        var globalScenePath = "Content/Scenes/Tests/QueryCommand/poison-rule.json";
-        var sceneScenePath = "Content/Scenes/Tests/QueryCommand/multiple-rules.json";
+        var globalScenePath = "Selectors/Fixtures/poison-rule.json";
+        var sceneScenePath = "Selectors/Fixtures/multiple-rules.json";
         
         SceneLoader.Instance.LoadGlobalScene(globalScenePath);
         SceneLoader.Instance.LoadGameScene(sceneScenePath);
@@ -294,8 +294,8 @@ public sealed class RuleParsingIntegrationTests : IDisposable
     public void LoadGameScene_MultipleScenes_AccumulatesRulesInRegistry()
     {
         // Arrange
-        var scene1Path = "Content/Scenes/Tests/QueryCommand/poison-rule.json";
-        var scene2Path = "Content/Scenes/Tests/QueryCommand/multiple-rules.json";
+        var scene1Path = "Selectors/Fixtures/poison-rule.json";
+        var scene2Path = "Selectors/Fixtures/multiple-rules.json";
 
         // Act
         SceneLoader.Instance.LoadGameScene(scene1Path);

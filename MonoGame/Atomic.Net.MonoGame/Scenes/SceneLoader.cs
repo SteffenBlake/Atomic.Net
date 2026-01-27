@@ -161,7 +161,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     private void LoadRules(JsonScene scene, bool useGlobalPartition)
     {
         // test-architect: Stub implementation - to be implemented by @senior-dev
-        throw new NotImplementedException("SceneLoader.LoadRules() - Rule loading not yet implemented");
+        throw new NotImplementedException("SceneLoader.LoadRules() - Rule loading logic not yet implemented");
     }
   
     // Static instance to write to, to avoid alloc'ing a new one each time
