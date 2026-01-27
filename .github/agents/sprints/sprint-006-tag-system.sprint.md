@@ -176,25 +176,20 @@
 ### Performance Considerations
 
 #### Allocation Strategy
-- **TagsBehavior:** ImmutableHashSet allocated at load time (zero gameplay allocations)
+- **TagsBehavior:** ImmutableHashSet allocated at load time, but its impossible to not have zero allocs for any type of "list"/"array" object, but it only allocs for the behavior which is low cost (SteffenBlake: Approved)
+- Add a note that the allocation of the ImmutableHashSet for the behavior has been approved by SteffenBlake
 - **TagRegistry dictionaries:** Pre-sized to `Constants.MaxEntities / 64`
 - **SparseArray<bool>:** Allocated at load time, reused for all entities with tag
 - **Tag update:** Set difference via ImmutableHashSet (zero allocations)
 
 #### Cache-Friendly Data Layout
 - **SparseArray<bool> iteration:** Contiguous memory, SIMD-friendly for intersection
-- **TagEntitySelector.Recalc():** Iterate SparseArray, set bits in Matches (cache-friendly)
-- **Union selectors:** TensorPrimitives.BitwiseAnd for fast intersection (see DISCOVERIES.md)
+- **TagEntitySelector.Recalc():** TensorSparse for fast intersection, see UnionSelector for an example
 
 #### Potential Hotspots
 - **Tag validation during deserialization:** O(n) per entity, acceptable at load time
 - **Selector recalc:** O(entities_with_tag), bounded by Constants.MaxEntities
 - **Tag update:** O(old_tags + new_tags), typically < 10 tags per entity
-
-#### Benchmarking Requests
-- @benchmarker Validate ImmutableHashSet vs List<string> for tag storage (allocation comparison)
-- @benchmarker Test SparseArray<bool> iteration vs HashSet<Entity> for tag resolution (performance + allocations)
-- @benchmarker Validate scene load performance with 1,000 entities, 10 tags each (< 10ms target)
 
 ---
 
@@ -209,13 +204,11 @@
 ### TagRegistry Implementation
 - [ ] Implement `TagRegistry` singleton with tag-to-entity and entity-to-tag mappings
 - [ ] Implement `TryRegister(Entity, string)` and `TryResolve(string, out SparseArray<bool>)`
-- [ ] Implement `RegisterSelector(string, TagEntitySelector)` for dirty tracking
 - [ ] Subscribe to `BehaviorAddedEvent<TagsBehavior>` and register tags
 - [ ] Subscribe to `PreBehaviorUpdatedEvent<TagsBehavior>` and unregister old tags
 - [ ] Subscribe to `PostBehaviorUpdatedEvent<TagsBehavior>` and register new tags
 - [ ] Subscribe to `PreBehaviorRemovedEvent<TagsBehavior>` and unregister tags
-- [ ] Implement `ResetEvent` handler (clear scene partition tags, keep global)
-- [ ] Implement `ShutdownEvent` handler (clear all, unregister from events)
+- [ ] Implement `ShutdownEvent` handler (unregister from events)
 
 ### TagEntitySelector Implementation
 - [ ] Update `TagEntitySelector.Recalc()` to resolve entities from TagRegistry
@@ -282,17 +275,24 @@
 
 ### Design Decisions
 
-**ImmutableHashSet vs List<string> for TagsBehavior:**
-- ImmutableHashSet enables zero-allocation set difference during updates
-- Fast duplicate detection during deserialization (O(1) Contains)
-- Structural equality for comparing old vs new tags
-- Request benchmark to validate assumption
+**ImmutableHashSet for TagsBehavior:**
 
-**SparseArray<bool> vs HashSet<Entity> for tag-to-entity mapping:**
-- SparseArray<bool> flips bool flag (zero allocations) vs HashSet Add/Remove (allocates)
-- Cache-friendly iteration (contiguous memory)
-- Fast intersection with other selectors via TensorPrimitives (see DISCOVERIES.md - 2.6x speedup)
-- Request benchmark to validate assumption
+Code hint on how you can have a ref type not be null in a struct:
+```
+readonly record struct SomeStruct
+{
+    private readonly SomeRefType? _foo;
+    public SomeRefType Foo
+    {
+        init => _foo = value;
+        get => _foo ?? SomeRefType.Empty;
+    }
+}
+
+var x = new SomeStruct();
+x = x with { Foo = x.Foo.ButChanged(...) }
+```
+This should work with ImmutableHashset!
 
 **Case-Insensitive Tags:**
 - Normalize to lowercase during deserialization (TagsBehaviorConverter)
@@ -322,20 +322,12 @@
 ### Risks and Mitigations
 
 **Risk:** ImmutableHashSet may allocate more than expected during updates
-- **Mitigation:** Request benchmark to validate zero-allocation claim
-- **Fallback:** Use List<string> with manual duplicate checking if needed
-
-**Risk:** SparseArray<bool> may be slower than HashSet<Entity> for sparse tags
-- **Mitigation:** Request benchmark to compare performance
-- **Fallback:** HashSet<Entity> if SparseArray performs poorly (unlikely given DISCOVERIES.md)
 
 **Risk:** Tag validation during deserialization may be slow
 - **Mitigation:** Validation is O(n) per entity, acceptable at load time (not hot path)
-- **Mitigation:** Request benchmark to validate scene load performance (< 10ms for 1,000 entities)
 
 **Risk:** Case normalization may surprise users who expect case-sensitive tags
 - **Mitigation:** Document in error messages and XML comments
-- **Mitigation:** Fire ErrorEvent if tag case differs from registered tag (informational only)
 
 ### Reference Implementation: EntityIdRegistry
 
@@ -353,4 +345,3 @@ Both registries:
 - Subscribe to BehaviorAdded/Updated/Removed events
 - First-write-wins (or skip duplicates)
 - Fire ErrorEvent for invalid data
-- Clear on ResetEvent (scene partition only) and ShutdownEvent (all)
