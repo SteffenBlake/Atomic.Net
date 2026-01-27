@@ -1,0 +1,90 @@
+{
+  "entities": [
+    {
+      "id": "c1",
+      "tags": ["character"],
+      "properties": {
+        "health": 90
+      }
+    },
+    {
+      "id": "c2",
+      "tags": ["character"],
+      "properties": {
+        "health": 60
+      }
+    },
+    {
+      "id": "c3",
+      "tags": ["character"],
+      "properties": {
+        "health": 30
+      }
+    }
+  ],
+  "rules": [
+    {
+      "from": "#character",
+      "where": {
+        "filter": [
+          { "var": "entities" },
+          true
+        ]
+      },
+      "do": {
+        "mut": {
+          "map": [
+            { "var": "entities" },
+            {
+              "merge": [
+                { "var": "" },
+                {
+                  "properties": {
+                    "healthRegen": {
+                      "if": [
+                        {
+                          ">": [
+                            { "var": "properties.health" },
+                            80
+                          ]
+                        },
+                        {
+                          "*": [
+                            { "var": "world.deltaTime" },
+                            5
+                          ]
+                        },
+                        {
+                          "if": [
+                            {
+                              ">": [
+                                { "var": "properties.health" },
+                                50
+                              ]
+                            },
+                            {
+                              "*": [
+                                { "var": "world.deltaTime" },
+                                10
+                              ]
+                            },
+                            {
+                              "*": [
+                                { "var": "world.deltaTime" },
+                                20
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

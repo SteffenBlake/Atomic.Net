@@ -1,0 +1,85 @@
+{
+  "entities": [
+    {
+      "id": "e1",
+      "tags": ["enemy", "burning"],
+      "properties": {
+        "health": 50
+      }
+    },
+    {
+      "id": "e2",
+      "tags": ["enemy", "poisoned"],
+      "properties": {
+        "health": 30
+      }
+    },
+    {
+      "id": "e3",
+      "tags": ["enemy"],
+      "properties": {
+        "health": 0
+      }
+    },
+    {
+      "id": "e4",
+      "tags": ["enemy", "burning"],
+      "properties": {
+        "health": 100
+      }
+    }
+  ],
+  "rules": [
+    {
+      "from": "#enemy",
+      "where": {
+        "filter": [
+          { "var": "entities" },
+          {
+            "and": [
+              {
+                ">": [
+                  { "var": "properties.health" },
+                  0
+                ]
+              },
+              {
+                "or": [
+                  {
+                    "in": [
+                      "burning",
+                      { "var": "tags" }
+                    ]
+                  },
+                  {
+                    "in": [
+                      "poisoned",
+                      { "var": "tags" }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "do": {
+        "mut": {
+          "map": [
+            { "var": "entities" },
+            {
+              "merge": [
+                { "var": "" },
+                {
+                  "properties": {
+                    "afflicted": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

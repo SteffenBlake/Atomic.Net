@@ -1,0 +1,81 @@
+{
+  "entities": [
+    {
+      "id": "u1",
+      "tags": ["unit"],
+      "properties": {
+        "distanceToU1": 0
+      }
+    },
+    {
+      "id": "u2",
+      "tags": ["unit"],
+      "properties": {
+        "distanceToU1": 5
+      }
+    },
+    {
+      "id": "u3",
+      "tags": ["unit"],
+      "properties": {
+        "distanceToU1": 15
+      }
+    },
+    {
+      "id": "u4",
+      "tags": ["unit"],
+      "properties": {
+        "distanceToU1": 8
+      }
+    }
+  ],
+  "rules": [
+    {
+      "from": "#unit",
+      "where": {
+        "filter": [
+          { "var": "entities" },
+          true
+        ]
+      },
+      "do": {
+        "mut": {
+          "map": [
+            { "var": "entities" },
+            {
+              "merge": [
+                { "var": "" },
+                {
+                  "properties": {
+                    "nearbyCount": {
+                      "reduce": [
+                        {
+                          "filter": [
+                            { "var": "entities" },
+                            {
+                              "<": [
+                                { "var": "properties.distanceToU1" },
+                                10
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "+": [
+                            { "var": "accumulator" },
+                            1
+                          ]
+                        },
+                        0
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

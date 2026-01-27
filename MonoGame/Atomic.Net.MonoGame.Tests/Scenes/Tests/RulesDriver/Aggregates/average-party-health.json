@@ -1,0 +1,76 @@
+{
+  "entities": [
+    {
+      "id": "p1",
+      "tags": ["party"],
+      "properties": {
+        "health": 100
+      }
+    },
+    {
+      "id": "p2",
+      "tags": ["party"],
+      "properties": {
+        "health": 80
+      }
+    },
+    {
+      "id": "p3",
+      "tags": ["party"],
+      "properties": {
+        "health": 60
+      }
+    },
+    {
+      "id": "p4",
+      "tags": ["party"],
+      "properties": {
+        "health": 40
+      }
+    }
+  ],
+  "rules": [
+    {
+      "from": "#party",
+      "where": {
+        "filter": [
+          { "var": "entities" },
+          true
+        ]
+      },
+      "do": {
+        "mut": {
+          "map": [
+            { "var": "entities" },
+            {
+              "merge": [
+                { "var": "" },
+                {
+                  "properties": {
+                    "avgPartyHealth": {
+                      "/": [
+                        {
+                          "reduce": [
+                            { "var": "entities" },
+                            {
+                              "+": [
+                                { "var": "accumulator" },
+                                { "var": "current.properties.health" }
+                              ]
+                            },
+                            0
+                          ]
+                        },
+                        { "var": "entities.length" }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

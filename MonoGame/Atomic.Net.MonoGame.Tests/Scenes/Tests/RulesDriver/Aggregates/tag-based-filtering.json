@@ -1,0 +1,95 @@
+{
+  "entities": [
+    {
+      "id": "u1",
+      "tags": ["unit", "ally"]
+    },
+    {
+      "id": "u2",
+      "tags": ["unit", "ally"]
+    },
+    {
+      "id": "u3",
+      "tags": ["unit", "enemy"]
+    },
+    {
+      "id": "u4",
+      "tags": ["unit", "enemy"]
+    },
+    {
+      "id": "u5",
+      "tags": ["unit", "enemy"]
+    }
+  ],
+  "rules": [
+    {
+      "from": "#unit",
+      "where": {
+        "filter": [
+          { "var": "entities" },
+          true
+        ]
+      },
+      "do": {
+        "mut": {
+          "map": [
+            { "var": "entities" },
+            {
+              "merge": [
+                { "var": "" },
+                {
+                  "properties": {
+                    "enemyCount": {
+                      "reduce": [
+                        {
+                          "filter": [
+                            { "var": "entities" },
+                            {
+                              "in": [
+                                "enemy",
+                                { "var": "tags" }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "+": [
+                            { "var": "accumulator" },
+                            1
+                          ]
+                        },
+                        0
+                      ]
+                    },
+                    "allyCount": {
+                      "reduce": [
+                        {
+                          "filter": [
+                            { "var": "entities" },
+                            {
+                              "in": [
+                                "ally",
+                                { "var": "tags" }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "+": [
+                            { "var": "accumulator" },
+                            1
+                          ]
+                        },
+                        0
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

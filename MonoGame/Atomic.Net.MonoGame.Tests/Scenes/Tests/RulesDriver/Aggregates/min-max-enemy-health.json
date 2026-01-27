@@ -1,0 +1,88 @@
+{
+  "entities": [
+    {
+      "id": "e1",
+      "tags": ["enemy"],
+      "properties": {
+        "health": 250
+      }
+    },
+    {
+      "id": "e2",
+      "tags": ["enemy"],
+      "properties": {
+        "health": 50
+      }
+    },
+    {
+      "id": "e3",
+      "tags": ["enemy"],
+      "properties": {
+        "health": 150
+      }
+    }
+  ],
+  "rules": [
+    {
+      "from": "#enemy",
+      "where": {
+        "filter": [
+          { "var": "entities" },
+          true
+        ]
+      },
+      "do": {
+        "mut": {
+          "map": [
+            { "var": "entities" },
+            {
+              "merge": [
+                { "var": "" },
+                {
+                  "properties": {
+                    "weakestEnemyHealth": {
+                      "reduce": [
+                        { "var": "entities" },
+                        {
+                          "if": [
+                            {
+                              "<": [
+                                { "var": "current.properties.health" },
+                                { "var": "accumulator" }
+                              ]
+                            },
+                            { "var": "current.properties.health" },
+                            { "var": "accumulator" }
+                          ]
+                        },
+                        99999
+                      ]
+                    },
+                    "strongestEnemyHealth": {
+                      "reduce": [
+                        { "var": "entities" },
+                        {
+                          "if": [
+                            {
+                              ">": [
+                                { "var": "current.properties.health" },
+                                { "var": "accumulator" }
+                              ]
+                            },
+                            { "var": "current.properties.health" },
+                            { "var": "accumulator" }
+                          ]
+                        },
+                        0
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
