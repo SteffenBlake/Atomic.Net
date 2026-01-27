@@ -34,12 +34,10 @@ public sealed class TagRegistryUnitTests : IDisposable
     {
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
-        var behavior = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy") };
 
         // Act
-        entity.SetBehavior<TagsBehavior, TagsBehavior>(
-            in behavior,
-            (ref readonly input, ref b) => b = input
+        entity.SetBehavior<TagsBehavior>(
+            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
         );
 
         // Assert
@@ -52,12 +50,10 @@ public sealed class TagRegistryUnitTests : IDisposable
     {
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
-        var behavior = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy", "goblin", "hostile") };
 
         // Act
-        entity.SetBehavior<TagsBehavior, TagsBehavior>(
-            in behavior,
-            (ref readonly input, ref b) => b = input
+        entity.SetBehavior<TagsBehavior>(
+            (ref b) => b = b with { Tags = b.Tags.Add("enemy").Add("goblin").Add("hostile") }
         );
 
         // Assert
@@ -78,20 +74,16 @@ public sealed class TagRegistryUnitTests : IDisposable
         var entity1 = EntityRegistry.Instance.Activate();
         var entity2 = EntityRegistry.Instance.Activate();
         var entity3 = EntityRegistry.Instance.Activate();
-        var behavior = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy") };
 
         // Act
-        entity1.SetBehavior<TagsBehavior, TagsBehavior>(
-            in behavior,
-            (ref readonly input, ref b) => b = input
+        entity1.SetBehavior<TagsBehavior>(
+            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
         );
-        entity2.SetBehavior<TagsBehavior, TagsBehavior>(
-            in behavior,
-            (ref readonly input, ref b) => b = input
+        entity2.SetBehavior<TagsBehavior>(
+            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
         );
-        entity3.SetBehavior<TagsBehavior, TagsBehavior>(
-            in behavior,
-            (ref readonly input, ref b) => b = input
+        entity3.SetBehavior<TagsBehavior>(
+            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
         );
 
         // Assert
@@ -106,18 +98,13 @@ public sealed class TagRegistryUnitTests : IDisposable
     {
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
-        var behavior1 = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy") };
-
-        entity.SetBehavior<TagsBehavior, TagsBehavior>(
-            in behavior1,
-            (ref readonly input, ref b) => b = input
+        entity.SetBehavior<TagsBehavior>(
+            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
         );
 
         // Act - Update with additional tags
-        var behavior2 = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy", "boss") };
-        entity.SetBehavior<TagsBehavior, TagsBehavior>(
-            in behavior2,
-            (ref readonly input, ref b) => b = input
+        entity.SetBehavior<TagsBehavior>(
+            (ref b) => b = b with { Tags = b.Tags.Add("enemy").Add("boss") }
         );
 
         // Assert
@@ -133,11 +120,8 @@ public sealed class TagRegistryUnitTests : IDisposable
     {
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
-        var behavior = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy") };
-
-        entity.SetBehavior<TagsBehavior, TagsBehavior>(
-            in behavior,
-            (ref readonly input, ref b) => b = input
+        entity.SetBehavior<TagsBehavior>(
+            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
         );
 
         // Act & Assert - All case variations should resolve to same entity
@@ -172,11 +156,8 @@ public sealed class TagRegistryUnitTests : IDisposable
     {
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
-        var behavior = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy", "goblin") };
-
-        entity.SetBehavior<TagsBehavior, TagsBehavior>(
-            in behavior,
-            (ref readonly input, ref b) => b = input
+        entity.SetBehavior<TagsBehavior>(
+            (ref b) => b = b with { Tags = b.Tags.Add("enemy").Add("goblin") }
         );
 
         // Act - Remove behavior
@@ -192,18 +173,13 @@ public sealed class TagRegistryUnitTests : IDisposable
     {
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
-        var behavior1 = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy", "goblin", "hostile") };
-
-        entity.SetBehavior<TagsBehavior, TagsBehavior>(
-            in behavior1,
-            (ref readonly input, ref b) => b = input
+        entity.SetBehavior<TagsBehavior>(
+            (ref b) => b = b with { Tags = b.Tags.Add("enemy").Add("goblin").Add("hostile") }
         );
 
         // Act - Update to remove "goblin" tag
-        var behavior2 = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy", "hostile") };
-        entity.SetBehavior<TagsBehavior, TagsBehavior>(
-            in behavior2,
-            (ref readonly input, ref b) => b = input
+        entity.SetBehavior<TagsBehavior>(
+            (ref b) => b = b with { Tags = b.Tags.Remove("goblin") }
         );
 
         // Assert
@@ -225,11 +201,8 @@ public sealed class TagRegistryUnitTests : IDisposable
     {
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
-        var behavior = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy", "goblin") };
-
-        entity.SetBehavior<TagsBehavior, TagsBehavior>(
-            in behavior,
-            (ref readonly input, ref b) => b = input
+        entity.SetBehavior<TagsBehavior>(
+            (ref b) => b = b with { Tags = b.Tags.Add("enemy").Add("goblin") }
         );
 
         // Act - Deactivate entity
@@ -256,12 +229,10 @@ public sealed class TagRegistryUnitTests : IDisposable
     {
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
-        var behavior = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy") };
 
         // Act - SetBehavior fires BehaviorAddedEvent
-        entity.SetBehavior<TagsBehavior, TagsBehavior>(
-            in behavior,
-            (ref readonly input, ref b) => b = input
+        entity.SetBehavior<TagsBehavior>(
+            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
         );
 
         // Assert
@@ -274,18 +245,13 @@ public sealed class TagRegistryUnitTests : IDisposable
     {
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
-        var behavior1 = new TagsBehavior { Tags = ImmutableHashSet.Create("old-tag") };
-
-        entity.SetBehavior<TagsBehavior, TagsBehavior>(
-            in behavior1,
-            (ref readonly input, ref b) => b = input
+        entity.SetBehavior<TagsBehavior>(
+            (ref b) => b = b with { Tags = b.Tags.Add("old-tag") }
         );
 
         // Act - Update fires PreBehaviorUpdatedEvent then PostBehaviorUpdatedEvent
-        var behavior2 = new TagsBehavior { Tags = ImmutableHashSet.Create("new-tag") };
-        entity.SetBehavior<TagsBehavior, TagsBehavior>(
-            in behavior2,
-            (ref readonly input, ref b) => b = input
+        entity.SetBehavior<TagsBehavior>(
+            (ref b) => b = b with { Tags = b.Tags.Remove("old-tag").Add("new-tag") }
         );
 
         // Assert
@@ -303,11 +269,8 @@ public sealed class TagRegistryUnitTests : IDisposable
     {
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
-        var behavior = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy", "boss") };
-
-        entity.SetBehavior<TagsBehavior, TagsBehavior>(
-            in behavior,
-            (ref readonly input, ref b) => b = input
+        entity.SetBehavior<TagsBehavior>(
+            (ref b) => b = b with { Tags = b.Tags.Add("enemy").Add("boss") }
         );
 
         // Act - Remove fires PreBehaviorRemovedEvent
@@ -330,11 +293,8 @@ public sealed class TagRegistryUnitTests : IDisposable
     {
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
-        var behavior = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy") };
-
-        entity.SetBehavior<TagsBehavior, TagsBehavior>(
-            in behavior,
-            (ref readonly input, ref b) => b = input
+        entity.SetBehavior<TagsBehavior>(
+            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
         );
 
         // Act - Deactivate triggers PreBehaviorRemovedEvent cascade
@@ -357,15 +317,11 @@ public sealed class TagRegistryUnitTests : IDisposable
         // Arrange
         var globalEntity = EntityRegistry.Instance.ActivateGlobal();
         var sceneEntity = EntityRegistry.Instance.Activate();
-        var behavior = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy") };
-
-        globalEntity.SetBehavior<TagsBehavior, TagsBehavior>(
-            in behavior,
-            (ref readonly input, ref b) => b = input
+        globalEntity.SetBehavior<TagsBehavior>(
+            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
         );
-        sceneEntity.SetBehavior<TagsBehavior, TagsBehavior>(
-            in behavior,
-            (ref readonly input, ref b) => b = input
+        sceneEntity.SetBehavior<TagsBehavior>(
+            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
         );
 
         // Act - ResetEvent clears scene entities
@@ -383,15 +339,11 @@ public sealed class TagRegistryUnitTests : IDisposable
         // Arrange
         var globalEntity = EntityRegistry.Instance.ActivateGlobal();
         var sceneEntity = EntityRegistry.Instance.Activate();
-        var behavior = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy") };
-
-        globalEntity.SetBehavior<TagsBehavior, TagsBehavior>(
-            in behavior,
-            (ref readonly input, ref b) => b = input
+        globalEntity.SetBehavior<TagsBehavior>(
+            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
         );
-        sceneEntity.SetBehavior<TagsBehavior, TagsBehavior>(
-            in behavior,
-            (ref readonly input, ref b) => b = input
+        sceneEntity.SetBehavior<TagsBehavior>(
+            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
         );
 
         // Act - ShutdownEvent clears everything
