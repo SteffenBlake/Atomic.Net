@@ -23,13 +23,14 @@ public class IdEntitySelector(
 
     internal void WriteTo(StringBuilder stringBuilder)
     {
-        if (prior != null)
-        {
-            prior.WriteTo(stringBuilder);
-            stringBuilder.Append(':');
-        }
+        // senior-dev: Print self first, then prior (to match input order)
         stringBuilder.Append('@');
         stringBuilder.Append(id);
+        if (prior != null)
+        {
+            stringBuilder.Append(':');
+            prior.WriteTo(stringBuilder);
+        }
     }
 
     public void MarkDirty() => _dirty = true;

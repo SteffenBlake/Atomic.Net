@@ -24,6 +24,8 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
 
     private readonly SparseArray<JsonRule> _rules = new(Constants.MaxRules);
     private readonly SparseArray<bool> _active = new(Constants.MaxRules);
+    private ushort _nextSceneRuleIndex = Constants.MaxGlobalRules;
+    private ushort _nextGlobalRuleIndex = 0;
 
     /// <summary>
     /// Public accessor for rules SparseArray for iteration and testing.
@@ -37,8 +39,17 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
     /// <returns>The index of the activated rule.</returns>
     public ushort Activate(JsonRule rule)
     {
-        // test-architect: Stub implementation - to be implemented by @senior-dev
-        throw new NotImplementedException("RuleRegistry.Activate() - Scene partition rule activation not yet implemented");
+        // senior-dev: Allocate from scene partition (>= MaxGlobalRules)
+        if (_nextSceneRuleIndex >= Constants.MaxRules)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Scene rule capacity exceeded"));
+            return 0;
+        }
+
+        var index = _nextSceneRuleIndex++;
+        _rules.Set(index, rule);
+        _active.Set(index, true);
+        return index;
     }
 
     /// <summary>
@@ -48,8 +59,17 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
     /// <returns>The index of the activated rule.</returns>
     public ushort ActivateGlobal(JsonRule rule)
     {
-        // test-architect: Stub implementation - to be implemented by @senior-dev
-        throw new NotImplementedException("RuleRegistry.ActivateGlobal() - Global partition rule activation not yet implemented");
+        // senior-dev: Allocate from global partition (< MaxGlobalRules)
+        if (_nextGlobalRuleIndex >= Constants.MaxGlobalRules)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Global rule capacity exceeded"));
+            return 0;
+        }
+
+        var index = _nextGlobalRuleIndex++;
+        _rules.Set(index, rule);
+        _active.Set(index, true);
+        return index;
     }
 
     /// <summary>
@@ -57,8 +77,18 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
     /// </summary>
     public void OnEvent(ResetEvent _)
     {
-        // test-architect: Stub implementation - to be implemented by @senior-dev
-        throw new NotImplementedException("RuleRegistry.OnEvent(ResetEvent) - Scene rule cleanup not yet implemented");
+        // senior-dev: Clear scene partition only (>= MaxGlobalRules)
+        for (ushort i = Constants.MaxGlobalRules; i < Constants.MaxRules; i++)
+        {
+            if (_active.HasValue(i))
+            {
+                _rules.Remove(i);
+                _active.Remove(i);
+            }
+        }
+
+        // senior-dev: Reset scene index allocator
+        _nextSceneRuleIndex = Constants.MaxGlobalRules;
     }
 
     /// <summary>
@@ -67,7 +97,12 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
     /// </summary>
     public void OnEvent(ShutdownEvent _)
     {
-        // test-architect: Stub implementation - to be implemented by @senior-dev
-        throw new NotImplementedException("RuleRegistry.OnEvent(ShutdownEvent) - Full rule cleanup not yet implemented");
+        // senior-dev: Clear all partitions (both global and scene)
+        _rules.Clear();
+        _active.Clear();
+
+        // senior-dev: Reset both index allocators
+        _nextGlobalRuleIndex = 0;
+        _nextSceneRuleIndex = Constants.MaxGlobalRules;
     }
 }

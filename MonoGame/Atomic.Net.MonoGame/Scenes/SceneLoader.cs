@@ -140,8 +140,8 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         // Clear queue for next scene load (zero-alloc)
         _persistToDiskQueue.Clear();
         
-        // test-architect: Load rules into RuleRegistry - to be implemented by @senior-dev
-        // LoadRules(scene, useGlobalPartition);
+        // senior-dev: Load rules into RuleRegistry (must be before selector recalc)
+        LoadRules(scene, useGlobalPartition);
         
         // CRITICAL: Recalc selectors first, then hierarchy
         // SelectorRegistry.Recalc() must run before HierarchyRegistry.Recalc()
@@ -155,8 +155,31 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     /// </summary>
     private void LoadRules(JsonScene scene, bool useGlobalPartition)
     {
-        // test-architect: Stub implementation - to be implemented by @senior-dev
-        throw new NotImplementedException("SceneLoader.LoadRules() - Rule loading logic not yet implemented");
+        // senior-dev: Rules are optional in scenes
+        if (scene.Rules == null || scene.Rules.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var rule in scene.Rules)
+        {
+            try
+            {
+                // senior-dev: Allocate to appropriate partition based on loader method
+                if (useGlobalPartition)
+                {
+                    RuleRegistry.Instance.ActivateGlobal(rule);
+                }
+                else
+                {
+                    RuleRegistry.Instance.Activate(rule);
+                }
+            }
+            catch (Exception ex)
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent($"Failed to load rule: {ex.Message}"));
+            }
+        }
     }
   
     // Static instance to write to, to avoid alloc'ing a new one each time

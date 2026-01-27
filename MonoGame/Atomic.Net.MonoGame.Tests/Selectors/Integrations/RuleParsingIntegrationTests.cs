@@ -31,7 +31,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         EventBus<ShutdownEvent>.Push(new());
     }
 
-    [Fact(Skip = "RuleRegistry.Activate() not yet implemented - will be implemented by @senior-dev")]
+    [Fact]
     public void LoadGameScene_WithPoisonRule_LoadsRuleCorrectly()
     {
         // Arrange
@@ -64,7 +64,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         Assert.NotNull(mutCommand.Mut);
     }
 
-    [Fact(Skip = "RuleRegistry.Activate() not yet implemented - will be implemented by @senior-dev")]
+    [Fact]
     public void LoadGameScene_WithComplexPrecedence_LoadsRuleCorrectly()
     {
         // Arrange
@@ -74,6 +74,13 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
 
         // Assert
+        // senior-dev: Check if there were any errors during loading
+        if (_errorListener.ReceivedEvents.Count > 0)
+        {
+            var errors = string.Join(", ", _errorListener.ReceivedEvents.Select(e => e.Message));
+            throw new Exception($"Unexpected errors during scene load: {errors}");
+        }
+        
         // test-architect: Verify exactly 1 rule was loaded
         var rules = RuleRegistry.Instance.Rules.ToList();
         Assert.Single(rules);
@@ -114,7 +121,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         Assert.True(hasRelevantError, "Error should mention selector parsing or JSON failure");
     }
 
-    [Fact(Skip = "RuleRegistry.Activate() not yet implemented - will be implemented by @senior-dev")]
+    [Fact]
     public void LoadGameScene_WithNoEntitiesButRules_LoadsRuleCorrectly()
     {
         // Arrange
@@ -136,7 +143,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         Assert.Equal("#poisoned", rule.From.ToString());
     }
 
-    [Fact(Skip = "RuleRegistry.Activate() not yet implemented - will be implemented by @senior-dev")]
+    [Fact]
     public void LoadGameScene_WithMultipleRules_LoadsAllRulesCorrectly()
     {
         // Arrange
@@ -219,7 +226,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         Assert.Empty(rules);
     }
 
-    [Fact(Skip = "RuleRegistry.Activate() not yet implemented - will be implemented by @senior-dev")]
+    [Fact]
     public void LoadGlobalScene_WithRules_LoadsIntoGlobalPartition()
     {
         // Arrange
@@ -240,7 +247,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
             $"Rule should be in global partition (< {Constants.MaxGlobalRules})");
     }
 
-    [Fact(Skip = "RuleRegistry.OnEvent(ResetEvent) not yet implemented - will be implemented by @senior-dev")]
+    [Fact]
     public void ResetEvent_ClearsSceneRulesOnly()
     {
         // Arrange
@@ -267,7 +274,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
             "Remaining rule should be in global partition");
     }
 
-    [Fact(Skip = "RuleRegistry.OnEvent(ShutdownEvent) not yet implemented - will be implemented by @senior-dev")]
+    [Fact]
     public void ShutdownEvent_ClearsAllRules()
     {
         // Arrange
@@ -290,7 +297,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         Assert.Empty(rulesAfterShutdown);
     }
 
-    [Fact(Skip = "RuleRegistry.Activate() not yet implemented - will be implemented by @senior-dev")]
+    [Fact]
     public void LoadGameScene_MultipleScenes_AccumulatesRulesInRegistry()
     {
         // Arrange

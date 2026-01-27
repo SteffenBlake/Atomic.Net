@@ -22,7 +22,8 @@ public class SceneCommandConverter : JsonConverter<SceneCommand>
 
         return propertyKey switch
         {
-            "mut" => jsonNode.Deserialize<MutCommand>(options),
+            // senior-dev: Deserialize the VALUE of the property, not the whole object
+            "mut" => new MutCommand(firstProperty.Value!),
             _ => throw new JsonException($"Unrecognized object discriminator key: '{propertyKey}'")
         };
     }

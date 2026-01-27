@@ -72,10 +72,11 @@ public class SelectorRegistry :
             return false;
         }
 
-        EntitySelector? current = null;
         List<EntitySelector>? unionParts = null;
+        List<(int start, int end)>? chainTokens = null;
         var segmentStart = 0;
 
+        // senior-dev: First pass - collect token positions for each refinement chain
         for (var i = 0; i <= tokens.Length; i++)
         {
             var c = i < tokens.Length ? tokens[i] : '\0';
@@ -83,15 +84,26 @@ public class SelectorRegistry :
             // Process delimiters and end of input
             if (c is ':' or ',' or '\0')
             {
-                if (!TryProcessToken(tokens, segmentStart, i, current, ref unionParts, out current))
+                if (i > segmentStart)
                 {
-                    return false;
+                    chainTokens ??= [];
+                    chainTokens.Add((segmentStart, i));
                 }
 
-                // Reset current for union segments
+                // senior-dev: On comma or end, build the refinement chain and add to union
                 if (c is ',' or '\0')
                 {
-                    current = null;
+                    if (chainTokens != null && chainTokens.Count > 0)
+                    {
+                        if (!TryBuildRefinementChain(tokens, chainTokens, out var chain))
+                        {
+                            return false;
+                        }
+                        
+                        unionParts ??= [];
+                        unionParts.Add(chain);
+                        chainTokens.Clear();
+                    }
                 }
 
                 segmentStart = i + 1;
@@ -127,38 +139,35 @@ public class SelectorRegistry :
         return true;
     }
 
-    private bool TryProcessToken(
+    // senior-dev: Build refinement chain from RIGHT to LEFT per sprint requirements
+    // "!enter:#enemies" → CollisionEnter(Prior: Tagged("enemies"))
+    // Parse #enemies first (rightmost), then !enter with #enemies as its prior
+    private bool TryBuildRefinementChain(
         ReadOnlySpan<char> tokens,
-        int segmentStart,
-        int segmentEnd,
-        EntitySelector? prior,
-        ref List<EntitySelector>? unionParts,
-        out EntitySelector? result
+        List<(int start, int end)> chainTokens,
+        [NotNullWhen(true)] out EntitySelector? result
     )
     {
         result = null;
+        EntitySelector? prior = null;
 
-        // Guard: empty token
-        if (segmentEnd == segmentStart)
+        // senior-dev: Build from right to left
+        for (var i = chainTokens.Count - 1; i >= 0; i--)
         {
-            EventBus<ErrorEvent>.Push(
-                new ErrorEvent($"Empty token at position {segmentEnd}")
-            );
-            return false;
+            var (start, end) = chainTokens[i];
+            var fullPath = tokens[0..end];
+            var token = tokens[start..end];
+            var hash = string.GetHashCode(fullPath);
+
+            if (!TryGetOrCreateSelector(token, hash, prior, out var selector))
+            {
+                return false;
+            }
+
+            prior = selector;
         }
 
-        var fullPath = tokens[0..segmentEnd];
-        var token = tokens[segmentStart..segmentEnd];
-        var hash = string.GetHashCode(fullPath);
-
-        if (!TryGetOrCreateSelector(token, hash, prior, out var selector))
-        {
-            return false;
-        }
-
-        unionParts ??= [];
-        unionParts.Add(selector);
-        result = selector;
+        result = prior;
         return true;
     }
 
