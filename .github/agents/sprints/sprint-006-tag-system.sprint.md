@@ -235,35 +235,29 @@
 - [ ] Create `tags-many.json` fixture (entity with 50 tags)
 
 ### Unit Tests - TagRegistry
-- [ ] @test-architect Create `TagRegistryUnitTests.cs` with positive tests (single tag, multiple tags, multiple entities)
-- [ ] @test-architect Add negative tests (null, empty, whitespace, duplicates)
-- [ ] @test-architect Add lifecycle tests (add, update, remove, deactivate)
-- [ ] @test-architect Add partition tests (scene vs global tags, ResetEvent behavior)
+- [ ] @senior-dev Create `TagRegistryUnitTests.cs` with positive tests (single tag, multiple tags, multiple entities)
+- [ ] @senior-dev Add negative tests (null, empty, whitespace, duplicates)
+- [ ] @senior-dev Add lifecycle tests (add, update, remove, deactivate)
+- [ ] @senior-dev Add partition tests (scene vs global tags, ResetEvent behavior)
 
 ### Integration Tests - TagEntitySelector
-- [ ] @test-architect Create `TagEntitySelectorIntegrationTests.cs` with selector matching tests
-- [ ] @test-architect Add refinement tests (`#enemy:#boss`, `@player:#enemy`)
-- [ ] @test-architect Add union tests (`#enemy,#boss`)
-- [ ] @test-architect Add dirty tracking tests (add/remove tags, selector recalc)
-- [ ] @test-architect Add error handling tests (empty selector, invalid characters)
+- [ ] @senior-dev Create `TagEntitySelectorIntegrationTests.cs` with selector matching tests
+- [ ] @senior-dev Add refinement tests (`#enemy:#boss`, `@player:#enemy`)
+- [ ] @senior-dev Add union tests (`#enemy,#boss`)
+- [ ] @senior-dev Add dirty tracking tests (add/remove tags, selector recalc)
+- [ ] @senior-dev Add error handling tests (empty selector, invalid characters)
 
 ### Integration Tests - Scene Loading
-- [ ] @test-architect Create `SceneLoaderTagIntegrationTests.cs` with scene loading tests
-- [ ] @test-architect Test tag deserialization from JSON
-- [ ] @test-architect Test error handling (null tags, invalid types, duplicates)
-- [ ] @test-architect Test partition behavior (scene vs global tags, ResetEvent)
+- [ ] @senior-dev Create `SceneLoaderTagIntegrationTests.cs` with scene loading tests
+- [ ] @senior-dev Test tag deserialization from JSON
+- [ ] @senior-dev Test error handling (null tags, invalid types, duplicates)
+- [ ] @senior-dev Test partition behavior (scene vs global tags, ResetEvent)
 
 ### Integration Tests - Error Handling
-- [ ] @test-architect Create `TagErrorHandlingTests.cs` with error event validation
-- [ ] @test-architect Verify ErrorEvent fired for all invalid cases
-- [ ] @test-architect Verify graceful degradation (valid tags registered, invalid skipped)
-- [ ] @test-architect Verify error recovery (scene loads despite errors)
-
-### Performance Validation
-- [ ] @benchmarker Benchmark ImmutableHashSet vs List<string> for tag storage
-- [ ] @benchmarker Benchmark SparseArray<bool> vs HashSet<Entity> for tag resolution
-- [ ] @benchmarker Benchmark scene load with 1,000 entities, 10 tags each (< 10ms target)
-- [ ] @benchmarker Benchmark selector recalc with 1,000 entities (< 2ms target)
+- [ ] @senior-dev Create `TagErrorHandlingTests.cs` with error event validation
+- [ ] @senior-dev Verify ErrorEvent fired for all invalid cases
+- [ ] @senior-dev Verify graceful degradation (valid tags registered, invalid skipped)
+- [ ] @senior-dev Verify error recovery (scene loads despite errors)
 
 ### Documentation
 - [ ] Add XML doc comments to TagsBehavior, TagRegistry, public APIs
@@ -292,7 +286,9 @@ readonly record struct SomeStruct
 var x = new SomeStruct();
 x = x with { Foo = x.Foo.ButChanged(...) }
 ```
-This should work with ImmutableHashset!
+This should work with ImmutableHashset inside of SetBehavior()!
+
+YOU SHOULD NOT NEED TO CREATE AN INSTANCE OF THE STRUCT MANUALLY, THE BEHAVIORREGISTRY SHOULD SET IT TO `default` AND THAT SHOULD WORK IF YOU DO IT RIGHT
 
 **Case-Insensitive Tags:**
 - Normalize to lowercase during deserialization (TagsBehaviorConverter)
@@ -304,7 +300,7 @@ This should work with ImmutableHashset!
 - Fire ErrorEvent so designer knows about issue
 - Matches EntityIdRegistry pattern (first-write-wins)
 
-### Integration with Future Sprints
+### Integration with Other Sprints
 
 **Query System (Sprint 005):**
 - `#tag` selectors already integrated into query parsing

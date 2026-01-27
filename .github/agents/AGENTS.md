@@ -42,7 +42,6 @@ When you need input from another agent, leave a comment with your role name and 
 
 Valid roles you can ping:
 - `@senior-dev` - Implementation questions, deviations from spec
-- `@test-architect` - Test coverage, expected behavior
 - `@benchmarker` - Performance testing requests
 
 ### Responding to Pings
@@ -81,7 +80,7 @@ INSTEAD, IF YOU ARE A SUB AGENT, PRACTICE FREQUENTLY REQUESTING THE "PARENT" AGE
 COMMIT OFTEN, BUT, MAKE IT ABUNDANTLY CLEAR TO THE PARENT PROCESS THEY WILL PROBABLY NEED TO SPIN YOU BACK UP AGAIN
 
 ### WHEN IN DOUBT, ASK THE SUB AGENT
-Anytime you need to ping a sub agent, you can just commit and specifically request the sub agent respond to your request.
+Anytime you need to ping an agent, you can just commit and specifically request the agent respond to your request.
 
 MAKE IT EXTREMELY CLEAR TO THEM TO ONLY DO THAT THOUGH SO THEY DONT GO DOWN A RABBIT HOLE
 

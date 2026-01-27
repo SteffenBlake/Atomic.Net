@@ -39,23 +39,7 @@ The agents are EXTREMELY prone to bad code and choices, you MUST crack down on t
 7. Agents seem very prone to leaving their resolved comments littering all over the codebase. Harp on them that they have to clean up after themselves and remove extraneous "discussion" comments once an issue is resolved.
 
 8. Agents are extremely prone to "faking" passing tests. Cross reference the tests that have been modified. Look at what the test says it should do, vs what it ACTUALLY does, and be 1000% sure the test is ACTUALLY testing what it says it should.
-
-9. The test-architect is allowed to make Skip tests, because they are stubbed in for the senior-dev to make passing, the expectation is that senior-dev removes the skip once they have completed their work.
     
-11. SKIPPED TESTS STILL MUST SUCCESSFULLY COMPILE AND BUILD, AND NO, COMMENTING OUT BROKEN CODE DOESNT COUNT AS FIXING IT, AND NO, REMOVING CODE (WHICH MAKES THE TEST FAKE) DOESNT COUNT EITHER, THE TESTS MUST ACTUALLY BUILD AND BE VALID, BUT JUST BE EXPECTED TO FAIL BECAUSE THEY CALL STUBBED LOGIC, AND THUS HAVE THE SKIP ATTRIBUTE
+9. SKIPPED TESTS STILL MUST SUCCESSFULLY COMPILE AND BUILD, AND NO, COMMENTING OUT BROKEN CODE DOESNT COUNT AS FIXING IT, AND NO, REMOVING CODE (WHICH MAKES THE TEST FAKE) DOESNT COUNT EITHER, THE TESTS MUST ACTUALLY BUILD AND BE VALID
     
-12. DO NOT ALLOW THE TEST ARCHITECT WEASLE OUT OF THIS
-
-13. DO NOT INSTRUCT THE TEST ARCHITECT TO IMPLEMENT DOMAIN LAYER LOGIC
-
-The expectation is that we follow TDD
-
-The test architect should be implementing only the ABSOLUTE BARE MINIMUM stubbed in functions so their new tests COMPILE AND BUILD but fail due to NotImplementedExceptions, but also that this DOESNT BREAK PRIOR EXISTING TESTS, and instead they have merely put "skip" on these new tests for `senior-dev` to implement the details of.
-
-HOWEVER, their tests should be COMPLETE and adhere to the rules of the sprint
-
-The expectation is when `senior-dev` takes over, they dont have to make ANY changes to the test files, they just have to implement stuff on their end and remove the "skip"s off the tests and they all start passing now that theyve done their job.
-
-The test-architect shouldnt be leaving behind commented out code or etc in their tests, and only should be JUST adding the bare minimum functions/classes stubbed in so their tests can invoke them and assert on their results.
-
-This is very simple and basic TDD, and yet I keep constantly having to remind all the agents about how this works.
+10. DO NOT ALLOW THE DEV WEASLE OUT OF THIS
