@@ -23,6 +23,7 @@ public class IdEntitySelector(
 
     internal void WriteTo(StringBuilder stringBuilder)
     {
+        // senior-dev: Print prior first (left), then self (right) to match input order
         if (prior != null)
         {
             prior.WriteTo(stringBuilder);

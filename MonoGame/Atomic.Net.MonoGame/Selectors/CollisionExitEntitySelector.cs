@@ -22,6 +22,7 @@ public class CollisionExitEntitySelector(
 
     internal void WriteTo(StringBuilder stringBuilder)
     {
+        // senior-dev: Print prior first (left), then self (right) to match input order
         if (prior != null)
         {
             prior.WriteTo(stringBuilder);
@@ -40,10 +41,12 @@ public class CollisionExitEntitySelector(
         if (shouldRecalc)
         {
             // senior-dev: Reset dirty flag even though implementation is pending
-            // This prevents infinite recalc loops when collision is implemented
+            // Stage 1: parsing only, no actual collision matching yet
             _dirty = false;
             
-            throw new NotImplementedException("Requires Collision registry to be implemented later");
+            // senior-dev: In Stage 1, we just clear matches and return
+            // Collision registry will be implemented in Stage 2
+            Matches.Clear();
         }
 
         return shouldRecalc;

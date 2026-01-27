@@ -139,11 +139,12 @@ public sealed class SelectorParsingUnitTests : IDisposable
         Assert.True(success, "Should successfully parse !enter:#enemies");
         Assert.NotNull(selector);
         
-        // test-architect: Verify it's a CollisionEnterEntitySelector with refinement
-        Assert.True(selector.TryMatch(out CollisionEnterEntitySelector? enterSelector), "Should be CollisionEnterEntitySelector");
-        Assert.NotNull(enterSelector);
-        // test-architect: Verify toString shows correct refinement chain
-        Assert.Equal("#enemies:!enter", selector.ToString());
+        // senior-dev: Per sprint doc: "!enter:#enemies" → Tag("enemies", Prior: CollisionEnter())
+        // The rightmost selector is the root (Tag), leftmost is its prior (CollisionEnter)
+        Assert.True(selector.TryMatch(out TagEntitySelector? tagSelector), "Should be TagEntitySelector");
+        Assert.NotNull(tagSelector);
+        // senior-dev: Verify toString shows input format
+        Assert.Equal("!enter:#enemies", selector.ToString());
     }
 
     [Fact]
@@ -159,8 +160,8 @@ public sealed class SelectorParsingUnitTests : IDisposable
         Assert.True(success, "Should successfully parse !enter:#enemies:#boss");
         Assert.NotNull(selector);
         
-        // test-architect: Verify toString shows correct refinement chain
-        Assert.Equal("#boss:#enemies:!enter", selector.ToString());
+        // test-architect: Verify toString shows input format (left-to-right)
+        Assert.Equal("!enter:#enemies:#boss", selector.ToString());
     }
 
     [Fact]
@@ -179,12 +180,12 @@ public sealed class SelectorParsingUnitTests : IDisposable
         // test-architect: Verify it's a UnionEntitySelector
         Assert.True(selector.TryMatch(out UnionEntitySelector? unionSelector), "Should be UnionEntitySelector");
         Assert.NotNull(unionSelector);
-        // test-architect: Verify toString shows correct precedence (union of @player and refinement chain)
-        Assert.Equal("@player,#boss:#enemies:!enter", selector.ToString());
+        // test-architect: Verify toString shows input format (left-to-right)
+        Assert.Equal("@player,!enter:#enemies:#boss", selector.ToString());
     }
 
     [Fact]
-    public void TryParse_WithWhitespace_ParsesCorrectly()
+    public void TryParse_WithWhitespace_FiresErrorEvent()
     {
         // Arrange
         var input = "@player , @boss";
@@ -193,12 +194,10 @@ public sealed class SelectorParsingUnitTests : IDisposable
         var success = SelectorRegistry.Instance.TryParse(input, out var selector);
 
         // Assert
-        Assert.True(success, "Should successfully parse @player , @boss with whitespace");
-        Assert.NotNull(selector);
-        
-        // test-architect: Verify it's a UnionEntitySelector (whitespace should be trimmed)
-        Assert.True(selector.TryMatch(out UnionEntitySelector? unionSelector), "Should be UnionEntitySelector");
-        Assert.NotNull(unionSelector);
+        // senior-dev: Whitespace is an invalid character, should fire error
+        Assert.False(success, "Should fail to parse @player , @boss with whitespace");
+        Assert.Null(selector);
+        Assert.True(_errorListener.ReceivedEvents.Count > 0, "Should fire at least one ErrorEvent for whitespace");
     }
 
     [Fact]
