@@ -66,10 +66,15 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
     public void OnEvent(ShutdownEvent _)
     {
         // senior-dev: FINDING: Unregistering from PreBehaviorRemovedEvent in ShutdownEvent
-        // creates a race condition. EntityRegistry.OnEvent(ShutdownEvent) deactivates entities,
-        // which triggers PreBehaviorRemovedEvent, but if we unregister here first, we miss
-        // the cleanup events. This bug exists in EntityIdRegistry and PropertiesRegistry too.
+        // creates a potential race condition. EntityRegistry.OnEvent(ShutdownEvent) deactivates 
+        // entities, which should trigger PreBehaviorRemovedEvent for cleanup. However, if we
+        // unregister here before the cascade completes, we miss cleanup events.
         // 
+        // This bug exists in EntityIdRegistry and PropertiesRegistry too. The initialization 
+        // order in AtomicSystem.Initialize() may affect whether this manifests - EntityRegistry
+        // initializes before TagRegistry, so EntityRegistry.OnEvent(ShutdownEvent) should run
+        // first and trigger the cleanup cascade before we unregister.
+        //
         // Workaround: Manually clear _tagToEntities until proper fix is implemented.
         // Proper fix would be: Don't unregister in ShutdownEvent, only in destructor/dispose.
         _tagToEntities.Clear();
