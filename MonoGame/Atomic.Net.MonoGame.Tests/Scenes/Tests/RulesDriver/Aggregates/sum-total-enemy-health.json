@@ -36,25 +36,21 @@
           "map": [
             { "var": "entities" },
             {
-              "merge": [
-                { "var": "" },
-                {
-                  "properties": {
-                    "totalEnemyHealth": {
-                      "reduce": [
-                        { "var": "entities" },
-                        {
-                          "+": [
-                            { "var": "accumulator" },
-                            { "var": "current.properties.health" }
-                          ]
-                        },
-                        0
+              "_index": { "var": "_index" },
+              "properties": {
+                "totalEnemyHealth": {
+                  "reduce": [
+                    { "var": "entities" },
+                    {
+                      "+": [
+                        { "var": "accumulator" },
+                        { "var": "current.properties.health" }
                       ]
-                    }
-                  }
+                    },
+                    0
+                  ]
                 }
-              ]
+              }
             }
           ]
         }

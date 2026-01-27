@@ -80,10 +80,6 @@ public sealed class RulesDriverIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("p3", out var p3));
         Assert.True(EntityIdRegistry.Instance.TryResolve("p4", out var p4));
 
-        // Resolved via TryResolve above
-        // Resolved via TryResolve above
-        // Resolved via TryResolve above
-        // Resolved via TryResolve above
 
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(p1.Value, out var props1));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(p2.Value, out var props2));
@@ -117,9 +113,6 @@ public sealed class RulesDriverIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("e2", out var e2));
         Assert.True(EntityIdRegistry.Instance.TryResolve("e3", out var e3));
 
-        // Resolved via TryResolve above
-        // Resolved via TryResolve above
-        // Resolved via TryResolve above
 
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(e1.Value, out var props1));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(e2.Value, out var props2));
@@ -156,7 +149,6 @@ public sealed class RulesDriverIntegrationTests : IDisposable
 
         // Assert
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin", out var goblin));
-        // Resolved via TryResolve above
 
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(goblin.Value, out var props));
         Assert.True(props.Value.Properties!.TryGetValue("health", out var health));
@@ -181,10 +173,6 @@ public sealed class RulesDriverIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("u3", out var u3));
         Assert.True(EntityIdRegistry.Instance.TryResolve("u4", out var u4));
 
-        // Resolved via TryResolve above
-        // Resolved via TryResolve above
-        // Resolved via TryResolve above
-        // Resolved via TryResolve above
 
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(u1.Value, out var props1));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(u2.Value, out var props2));
@@ -221,9 +209,6 @@ public sealed class RulesDriverIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("c2", out var c2));
         Assert.True(EntityIdRegistry.Instance.TryResolve("c3", out var c3));
 
-        // Resolved via TryResolve above
-        // Resolved via TryResolve above
-        // Resolved via TryResolve above
 
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(c1.Value, out var props1));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(c2.Value, out var props2));
@@ -255,10 +240,6 @@ public sealed class RulesDriverIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("e3", out var e3));
         Assert.True(EntityIdRegistry.Instance.TryResolve("e4", out var e4));
 
-        // Resolved via TryResolve above
-        // Resolved via TryResolve above
-        // Resolved via TryResolve above
-        // Resolved via TryResolve above
 
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(e1.Value, out var props1));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(e2.Value, out var props2));
@@ -293,11 +274,6 @@ public sealed class RulesDriverIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("u4", out var u4));
         Assert.True(EntityIdRegistry.Instance.TryResolve("u5", out var u5));
 
-        // Resolved via TryResolve above
-        // Resolved via TryResolve above
-        // Resolved via TryResolve above
-        // Resolved via TryResolve above
-        // Resolved via TryResolve above
 
         foreach (var unit in new[] { u1.Value, u2.Value, u3.Value, u4.Value, u5.Value })
         {
@@ -323,7 +299,6 @@ public sealed class RulesDriverIntegrationTests : IDisposable
 
         // Assert
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin", out var goblin));
-        // Resolved via TryResolve above
 
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(goblin.Value, out var props));
         Assert.True(props.Value.Properties!.TryGetValue("health", out var health));
@@ -347,7 +322,6 @@ public sealed class RulesDriverIntegrationTests : IDisposable
 
         // Assert
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin", out var goblin));
-        // Resolved via TryResolve above
 
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(goblin.Value, out var props));
         Assert.True(props.Value.Properties!.TryGetValue("health", out var health));

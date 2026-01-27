@@ -297,10 +297,10 @@ public class RulesDriver : IEventHandler<InitializeEvent>, IEventHandler<Shutdow
                 continue;
             }
 
-            if (!indexNode.AsValue().TryGetValue<ushort>(out var entityIndex))
+            if (indexNode is not JsonValue indexValue || !indexValue.TryGetValue<ushort>(out var entityIndex))
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Rule {ruleIndex}: Mutation _index is not a valid ushort. Skipping mutation."
+                    $"Rule {ruleIndex}: Mutation _index is not a valid ushort, got {indexNode.GetType().Name}. Skipping mutation."
                 ));
                 continue;
             }
