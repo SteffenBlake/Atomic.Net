@@ -22,6 +22,9 @@
 - All rules loaded from JSON scenes with `{ "entities": [...], "rules": [...] }` structure (rules optional)
 - No allocations during gameplay (all allocations at scene load)
 - All errors during parsing fire ErrorEvents, never throw or crash
+- Rules loaded into RuleRegistry during scene load (Global vs Scene partition based on loader method)
+- RuleRegistry.Instance.Rules SparseArray accessible for iteration and testing
+- ResetEvent clears Scene rules only, ShutdownEvent clears all rules
 
 ### Migration Constraints
 - Existing Parent selector (entity parenting in scenes) MUST migrate to use the new EntitySelector parser (no string-matching hacks)
@@ -123,20 +126,76 @@ The major refactor has reorganized the codebase with new namespaces and file loc
 - ✅ `Rules` list (nullable, optional)
 - ✅ Correctly deserializes from JSON
 
-#### 6. SceneLoader ⚠️ **PARTIALLY IMPLEMENTED**
+#### 6. RuleRegistry ❌ **NOT IMPLEMENTED**
+**Location:** `MonoGame/Atomic.Net.MonoGame/Scenes/RuleRegistry.cs` (to be created)
+
+**Requirements:**
+- Singleton pattern (like EntityRegistry, SelectorRegistry)
+- SparseArray-based storage for rules with public accessor property
+- Global/Scene partition system (same pattern as EntityRegistry)
+- Two activation methods:
+  - `Activate()` - allocates rule in Scene partition (index >= MaxGlobalRules)
+  - `ActivateGlobal()` - allocates rule in Global partition (index < MaxGlobalRules)
+- Public property to access rules: `RuleRegistry.Instance.Rules` (returns SparseArray)
+- Event handlers:
+  - **ResetEvent** - Deactivate Scene partition rules only (index >= MaxGlobalRules)
+  - **ShutdownEvent** - Deactivate all rules (both Global and Scene partitions)
+- Initialized during `AtomicSystem.Initialize()`
+- No ID lookup needed (iteration-only access pattern)
+
+**Constants Needed:**
+- `Constants.MaxRules` - total rule capacity (suggested: 1024)
+- `Constants.MaxGlobalRules` - partition boundary (suggested: 128)
+
+**Note:** Rules do NOT persist to disk (they're declarative logic from JSON, not entity state)
+
+#### 7. SceneLoader ⚠️ **PARTIALLY IMPLEMENTED**
 **Location:** `MonoGame/Atomic.Net.MonoGame/Scenes/SceneLoader.cs`
 
 **Current State:**
 - ✅ Loads entities from JsonScene
 - ✅ Calls `SelectorRegistry.Instance.Recalc()` after scene load
 - ✅ Calls `HierarchyRegistry.Instance.Recalc()` after selector recalc
-- ❌ **MISSING:** Does not process `JsonScene.Rules` (parses them via JsonScene but doesn't validate or store)
+- ❌ **MISSING:** Does not process `JsonScene.Rules` and load into RuleRegistry
 
 **Required Changes:**
 - Parse rules from `JsonScene.Rules` if present
-- Validate each rule's `from` field parses successfully (TryParse already validates during deserialization via EntitySelectorConverter)
-- Fire ErrorEvent for any parsing failures during rule loading
-- Store parsed rules somewhere (TBD - may just be in-memory List for Stage 1 since execution is out of scope)
+- For each rule:
+  - Call `RuleRegistry.Instance.Activate()` or `RuleRegistry.Instance.ActivateGlobal()` based on `useGlobalPartition` flag
+  - Store parsed JsonRule in RuleRegistry
+  - Validate rule's `from` field (already validated via EntitySelectorConverter during JSON deserialization)
+- Fire ErrorEvent for any rule loading failures
+- Rules must be loaded AFTER entities but BEFORE `SelectorRegistry.Recalc()` call
+
+### World Object Structure
+
+**Context:** Rules execute with a "World" object that provides access to entities and global state.
+
+**Structure (Test Data Only - No C# Parsing Yet):**
+
+**For `where` clauses:**
+- Input: `World<Entity[]>` - array of entities being evaluated
+- JSON structure: `{ "entities": Entity[] }`
+- Example: `{ "var": "entities.properties.health" }` accesses health of entities in the set
+
+**For `do.mut` commands:**
+- Input: `World<Entity>` - single entity being mutated (per-entity execution)
+- JSON structure: `{ "entities": Entity }` (singular)
+- Example: `{ "var": "entities.properties.health" }` accesses health of the current entity
+
+**Execution Flow:**
+1. `from` selector returns `Entity[]` (matched entities)
+2. For each entity in that set:
+   - `where` evaluates with `World<Entity[]>` context (can check relationships across entities)
+   - If `where` passes, `do.mut` executes with `World<Entity>` context (mutates single entity)
+
+**Future Expansion:**
+The World object will later include:
+- `deltaTime` - frame delta for time-based logic
+- `random` - seeded RNG state
+- `scene` - scene context and global state
+
+**CRITICAL:** Stage 1 only changes test JSON structure. C# code still passes JsonNode through unchanged.
 
 ### Integration Points
 
@@ -208,12 +267,14 @@ The major refactor has reorganized the codebase with new namespaces and file loc
   - EntitySelectorConverter handles deserialization
   - Backward compatible with `"@id"` syntax
 
-- [ ] **Task 6:** Update SceneLoader to validate and store rules
+- [ ] **Task 6:** Update SceneLoader to load rules into RuleRegistry
   - ✅ JsonScene already deserializes Rules via System.Text.Json
   - ✅ EntitySelectorConverter already validates `from` selectors during deserialization
-  - ❌ **MISSING:** SceneLoader should fire ErrorEvent if Rules contains invalid data
-  - ❌ **MISSING:** SceneLoader should store parsed rules (or at least validate they parsed correctly)
-  - **Note:** Since this is Stage 1 (parsing only, no execution), storing rules may just be keeping them in memory for validation. No execution infrastructure needed yet.
+  - ❌ **MISSING:** RuleRegistry implementation (see Architecture section)
+  - ❌ **MISSING:** SceneLoader.LoadSceneInternal() should call RuleRegistry.Activate() / ActivateGlobal() for each rule
+  - ❌ **MISSING:** Rules must be loaded AFTER entities, BEFORE SelectorRegistry.Recalc()
+  - ❌ **MISSING:** SceneLoader should fire ErrorEvent if rule loading fails
+  - **Note:** Since this is Stage 1 (parsing only, no execution), rules are stored in RuleRegistry for validation and testing. No execution infrastructure needed yet.
 
 ### Testing Tasks (Not Started)
 
@@ -256,6 +317,11 @@ The major refactor has reorganized the codebase with new namespaces and file loc
     - Assert scenes without rules load successfully
     - Assert scenes with rules but no entities are valid (per requirements)
     - Assert selectors in rules are validated during scene load
+    - Assert rules load into RuleRegistry.Instance.Rules SparseArray
+    - Assert correct partition allocation (Global vs Scene based on LoadGlobalScene vs LoadGameScene)
+    - Assert RuleRegistry.Instance.Rules contains expected JsonRule objects
+    - Assert ResetEvent clears Scene partition rules only (Global rules persist)
+    - Assert ShutdownEvent clears all rules
 
 - [ ] **Task 11:** Create negative tests for error handling
   - Test invalid selector syntax fires ErrorEvent, not exception
@@ -294,8 +360,8 @@ These MUST be created as test scene files and tested:
   "rules": [
     {
       "from": "#poisoned",
-      "where": { ">": [ { "var": "properties.poisonStacks" }, 0 ] },
-      "do": { "mut": { "merge": [ { "var": "" }, { "properties": { "health": { "-": [ { "var": "properties.health" }, 1 ] } } } ] } }
+      "where": { ">": [ { "var": "entities.properties.poisonStacks" }, 0 ] },
+      "do": { "mut": { "merge": [ { "var": "entities" }, { "properties": { "health": { "-": [ { "var": "entities.properties.health" }, 1 ] } } } ] } }
     }
   ]
 }
@@ -311,8 +377,8 @@ These MUST be created as test scene files and tested:
   "rules": [
     {
       "from": "@player, !enter:#enemies:#boss",
-      "where": { "<": [ { "var": "properties.distance" }, 10 ] },
-      "do": { "mut": { "merge": [ { "var": "" }, { "properties": { "inCombat": true } } ] } }
+      "where": { "<": [ { "var": "entities.properties.distance" }, 10 ] },
+      "do": { "mut": { "merge": [ { "var": "entities" }, { "properties": { "inCombat": true } } ] } }
     }
   ]
 }
@@ -339,8 +405,8 @@ These MUST be created as test scene files and tested:
   "rules": [
     {
       "from": "#poisoned",
-      "where": { ">": [ { "var": "properties.health" }, 0 ] },
-      "do": { "mut": { "merge": [ { "var": "" }, { "properties": { "health": 0 } } ] } }
+      "where": { ">": [ { "var": "entities.properties.health" }, 0 ] },
+      "do": { "mut": { "merge": [ { "var": "entities" }, { "properties": { "health": 0 } } ] } }
     }
   ]
 }
@@ -355,13 +421,13 @@ These MUST be created as test scene files and tested:
   "rules": [
     {
       "from": "#poisoned",
-      "where": { ">": [ { "var": "properties.poisonStacks" }, 0 ] },
-      "do": { "mut": { "merge": [ { "var": "" }, { "properties": { "health": { "-": [ { "var": "properties.health" }, { "var": "properties.poisonStacks" } ] } } } ] } }
+      "where": { ">": [ { "var": "entities.properties.poisonStacks" }, 0 ] },
+      "do": { "mut": { "merge": [ { "var": "entities" }, { "properties": { "health": { "-": [ { "var": "entities.properties.health" }, { "var": "entities.properties.poisonStacks" } ] } } } ] } }
     },
     {
       "from": "#burning",
-      "where": { ">": [ { "var": "properties.burnStacks" }, 0 ] },
-      "do": { "mut": { "merge": [ { "var": "" }, { "properties": { "health": { "-": [ { "var": "properties.health" }, { "*": [ { "var": "properties.burnStacks" }, 2 ] } ] } } } ] } }
+      "where": { ">": [ { "var": "entities.properties.burnStacks" }, 0 ] },
+      "do": { "mut": { "merge": [ { "var": "entities" }, { "properties": { "health": { "-": [ { "var": "entities.properties.health" }, { "*": [ { "var": "entities.properties.burnStacks" }, 2 ] } ] } } } ] } }
     }
   ]
 }
