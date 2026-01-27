@@ -108,7 +108,7 @@
 5. Force GC: `GC.Collect()` and `GC.WaitForPendingFinalizers()` to clean up ephemeral JSON objects
 
 #### Registry Interactions
-- **EntityRegistry:** Activates game scene entities (indices ≥32) or loading scene entities (indices <32)
+- **EntityRegistry:** Activates game scene entities (indices ≥32) or global scene entities (indices <32)
 - **BehaviorRegistry<TransformBehavior>:** Stores transform data via `SetBehavior()`
 - **BehaviorRegistry<Parent>:** Stores parent references via `SetBehavior()`
 - **BehaviorRegistry<EntityId>:** Stores entity ID mappings via `SetBehavior()`
