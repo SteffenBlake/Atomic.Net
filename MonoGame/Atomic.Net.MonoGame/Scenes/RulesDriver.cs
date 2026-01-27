@@ -172,7 +172,8 @@ public class RulesDriver : IEventHandler<InitializeEvent>, IEventHandler<Shutdow
             }
 
             // senior-dev: Step 6 - Apply mutations back to entities
-            ApplyMutations(mutations, ruleIndex);
+            // Pass the original entities array so we can match mutations by position
+            ApplyMutations(mutations, entitiesToMutate, ruleIndex);
 
             return true;
     }
@@ -269,12 +270,18 @@ public class RulesDriver : IEventHandler<InitializeEvent>, IEventHandler<Shutdow
     }
 
     /// <summary>
-    /// Applies mutation results back to entities via _index property.
+    /// Applies mutation results back to entities.
+    /// Matches mutations to entities by array position (map preserves order).
     /// </summary>
-    private void ApplyMutations(JsonArray mutations, ushort ruleIndex)
+    private void ApplyMutations(JsonArray mutations, JsonArray sourceEntities, ushort ruleIndex)
     {
-        foreach (var mutationNode in mutations)
+        // senior-dev: FINDING: JsonLogic map doesn't evaluate nested { "var": "_index" } operations.
+        // They come through as JsonObject literals. Solution: match mutations to entities by position.
+        // Map operation preserves order, so mutations[i] corresponds to sourceEntities[i].
+        
+        for (int i = 0; i < mutations.Count; i++)
         {
+            var mutationNode = mutations[i];
             if (mutationNode == null)
             {
                 continue;
@@ -288,11 +295,29 @@ public class RulesDriver : IEventHandler<InitializeEvent>, IEventHandler<Shutdow
                 continue;
             }
 
-            // senior-dev: Extract _index to identify target entity
-            if (!mutation.TryGetPropertyValue("_index", out var indexNode) || indexNode == null)
+            // senior-dev: Get corresponding source entity to extract _index
+            if (i >= sourceEntities.Count)
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Rule {ruleIndex}: Mutation missing _index property. Skipping mutation."
+                    $"Rule {ruleIndex}: Mutation index {i} exceeds source entities count {sourceEntities.Count}. Skipping mutation."
+                ));
+                continue;
+            }
+
+            var sourceEntity = sourceEntities[i];
+            if (sourceEntity is not JsonObject sourceObj)
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Rule {ruleIndex}: Source entity at index {i} is not a JsonObject. Skipping mutation."
+                ));
+                continue;
+            }
+
+            // senior-dev: Extract _index from source entity (not from mutation)
+            if (!sourceObj.TryGetPropertyValue("_index", out var indexNode) || indexNode == null)
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Rule {ruleIndex}: Source entity missing _index property. Skipping mutation."
                 ));
                 continue;
             }
@@ -300,7 +325,7 @@ public class RulesDriver : IEventHandler<InitializeEvent>, IEventHandler<Shutdow
             if (indexNode is not JsonValue indexValue || !indexValue.TryGetValue<ushort>(out var entityIndex))
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Rule {ruleIndex}: Mutation _index is not a valid ushort, got {indexNode.GetType().Name}. Skipping mutation."
+                    $"Rule {ruleIndex}: Source entity _index is not a valid ushort, got {indexNode.GetType().Name}. Skipping mutation."
                 ));
                 continue;
             }
@@ -309,7 +334,7 @@ public class RulesDriver : IEventHandler<InitializeEvent>, IEventHandler<Shutdow
             if (entityIndex >= Constants.MaxEntities)
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Rule {ruleIndex}: Mutation _index {entityIndex} out of bounds. Skipping mutation."
+                    $"Rule {ruleIndex}: Entity _index {entityIndex} out of bounds. Skipping mutation."
                 ));
                 continue;
             }

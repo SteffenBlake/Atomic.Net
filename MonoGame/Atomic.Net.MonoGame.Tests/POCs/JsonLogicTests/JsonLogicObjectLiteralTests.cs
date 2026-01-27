@@ -236,7 +236,6 @@ public class JsonLogicObjectLiteralTests
             }
         }
     }
-}
 
     [Fact]
     public void MapOperation_UsingMergeForPropertiesWorks()
@@ -276,3 +275,37 @@ public class JsonLogicObjectLiteralTests
             }
         }
     }
+
+    [Fact]
+    public void MapOperation_WithNestedReduceEvaluates()
+    {
+        // senior-dev: Testing if reduce operations inside map object literals get evaluated
+        JsonNode? rule = JsonNode.Parse("""
+        {
+          "map": [
+            [{"val": 10}, {"val": 20}],
+            {
+              "total": {
+                "reduce": [
+                  [{"val": 10}, {"val": 20}],
+                  {"+": [{"var": "accumulator"}, {"var": "current.val"}]},
+                  0
+                ]
+              }
+            }
+          ]
+        }
+        """);
+
+        JsonNode? result = JsonLogic.Apply(rule, JsonNode.Parse("{}"));
+        
+        Assert.NotNull(result);
+        Console.WriteLine($"Result: {result}");
+        
+        if (result is JsonArray arr && arr.Count > 0 && arr[0] is JsonObject obj)
+        {
+            Console.WriteLine($"First element total: {obj["total"]}");
+            Console.WriteLine($"First element total type: {obj["total"]?.GetType().Name}");
+        }
+    }
+}

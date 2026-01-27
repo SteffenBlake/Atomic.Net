@@ -36,7 +36,6 @@
           "map": [
             { "var": "entities" },
             {
-              "_index": { "var": "_index" },
               "properties": {
                 "totalEnemyHealth": {
                   "reduce": [
