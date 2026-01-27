@@ -455,3 +455,8 @@ Initial implementation may allocate during JsonNode serialization. This is accep
 4. Benchmarking will guide optimization if needed
 
 These optimizations should be benchmarked before implementation to ensure value.
+
+### Proof of concept test files
+
+Multiple "proof of concept" test files exist in `Atomic.Net.MonoGame.Tests/POCs/JsonLogicTests/JsonLogicObjectLiteralTests.cs`
+These prove for sure that JsonLogic absolutely has the functionality we need, and 100% works exactly as expected. It also demonstrates HOW to work with it and integrate with it, which should help you as a reference for when you integrate with the library.
