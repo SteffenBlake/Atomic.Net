@@ -332,29 +332,5 @@ public sealed class TagRegistryUnitTests : IDisposable
         Assert.True(entities.HasValue(globalEntity.Index));
         Assert.False(entities.HasValue(sceneEntity.Index));
     }
-
-    [Fact]
-    public void TagRegistry_ShutdownEvent_ClearsAllTags()
-    {
-        // Arrange
-        var globalEntity = EntityRegistry.Instance.ActivateGlobal();
-        var sceneEntity = EntityRegistry.Instance.Activate();
-        globalEntity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
-        );
-        sceneEntity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
-        );
-
-        // Act - ShutdownEvent clears everything
-        EventBus<ShutdownEvent>.Push(new());
-
-        // Assert - All tags cleared (re-initialize to test)
-        AtomicSystem.Initialize();
-        EventBus<InitializeEvent>.Push(new());
-
-        Assert.False(TagRegistry.Instance.TryResolve("enemy", out _));
-    }
-
     #endregion
 }

@@ -32,9 +32,6 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
 
     // Tag name → entities with that tag (one-to-many)
     private readonly Dictionary<string, SparseArray<bool>> _tagToEntities = new(Constants.MaxEntities / 64);
-    
-    // Entity → tags on that entity (reverse lookup)
-    private readonly SparseReferenceArray<ImmutableHashSet<string>> _entityToTags = new(Constants.MaxEntities);
 
     /// <summary>
     /// Attempts to resolve all entities with the given tag.
@@ -68,9 +65,14 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
 
     public void OnEvent(ShutdownEvent _)
     {
-        // senior-dev: Clear all registries on shutdown (used between tests)
+        // senior-dev: FINDING: Unregistering from PreBehaviorRemovedEvent in ShutdownEvent
+        // creates a race condition. EntityRegistry.OnEvent(ShutdownEvent) deactivates entities,
+        // which triggers PreBehaviorRemovedEvent, but if we unregister here first, we miss
+        // the cleanup events. This bug exists in EntityIdRegistry and PropertiesRegistry too.
+        // 
+        // Workaround: Manually clear _tagToEntities until proper fix is implemented.
+        // Proper fix would be: Don't unregister in ShutdownEvent, only in destructor/dispose.
         _tagToEntities.Clear();
-        _entityToTags.Clear();
         
         // Unregister from all events to prevent duplicate registrations
         EventBus<BehaviorAddedEvent<TagsBehavior>>.Unregister(this);
@@ -82,7 +84,7 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
 
     public void OnEvent(BehaviorAddedEvent<TagsBehavior> e)
     {
-        if (!BehaviorRegistry<TagsBehavior>.Instance.TryGetBehavior(e.Entity, out var behavior))
+        if (!e.Entity.TryGetBehavior<TagsBehavior>(out var behavior))
         {
             return;
         }
@@ -93,16 +95,16 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
     public void OnEvent(PreBehaviorUpdatedEvent<TagsBehavior> e)
     {
         // Unregister old tags before update
-        if (_entityToTags.TryGetValue(e.Entity.Index, out var oldTags))
+        if (e.Entity.TryGetBehavior<TagsBehavior>(out var behavior))
         {
-            UnregisterTags(e.Entity, oldTags);
+            UnregisterTags(e.Entity, behavior.Value.Tags);
         }
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<TagsBehavior> e)
     {
         // Register new tags after update
-        if (!BehaviorRegistry<TagsBehavior>.Instance.TryGetBehavior(e.Entity, out var behavior))
+        if (!e.Entity.TryGetBehavior<TagsBehavior>(out var behavior))
         {
             return;
         }
@@ -113,17 +115,14 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
     public void OnEvent(PreBehaviorRemovedEvent<TagsBehavior> e)
     {
         // Unregister all tags when behavior is removed
-        if (_entityToTags.TryGetValue(e.Entity.Index, out var tags))
+        if (e.Entity.TryGetBehavior<TagsBehavior>(out var behavior))
         {
-            UnregisterTags(e.Entity, tags);
+            UnregisterTags(e.Entity, behavior.Value.Tags);
         }
     }
 
     private void RegisterTags(Entity entity, ImmutableHashSet<string> tags)
     {
-        // Store entity-to-tags reverse lookup
-        _entityToTags[entity.Index] = tags;
-        
         foreach (var tag in tags)
         {
             // Ensure tag-to-entities set exists
@@ -140,9 +139,6 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
 
     private void UnregisterTags(Entity entity, ImmutableHashSet<string> tags)
     {
-        // Remove entity-to-tags reverse lookup
-        _entityToTags.Remove(entity.Index);
-        
         foreach (var tag in tags)
         {
             // Remove entity from tag set
