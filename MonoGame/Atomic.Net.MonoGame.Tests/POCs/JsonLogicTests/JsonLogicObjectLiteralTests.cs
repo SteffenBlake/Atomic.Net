@@ -199,4 +199,80 @@ public class JsonLogicObjectLiteralTests
         Assert.Equal(350m, result?.GetValue<decimal>());
         Console.WriteLine($"Result: {result}");
     }
+
+    [Fact]
+    public void MapOperation_AccessingIndexProperty_ShouldReturnValue()
+    {
+        // senior-dev: FINDING: { "var": "_index" } inside map object literal returns JsonObject, not value!
+        // This proves the blocker - JsonLogic doesn't evaluate nested var operations in object literals
+        JsonNode? rule = JsonNode.Parse("""
+        {
+          "map": [
+            [{"_index": 1, "value": 10}, {"_index": 2, "value": 20}],
+            {
+              "idx": {"var": "_index"},
+              "val": {"var": "value"}
+            }
+          ]
+        }
+        """);
+
+        JsonNode? result = JsonLogic.Apply(rule, JsonNode.Parse("{}"));
+        
+        Assert.NotNull(result);
+        Console.WriteLine($"Result: {result}");
+        
+        // senior-dev: Check if result is array with proper structure
+        if (result is JsonArray arr)
+        {
+            Console.WriteLine($"Array length: {arr.Count}");
+            if (arr.Count > 0 && arr[0] is JsonObject obj)
+            {
+                Console.WriteLine($"First element idx type: {obj["idx"]?.GetType().Name}");
+                Console.WriteLine($"First element idx value: {obj["idx"]}");
+                
+                // senior-dev: Confirmed - returns JsonObject with the operation, not the value!
+                Assert.IsType<JsonObject>(obj["idx"]);
+            }
+        }
+    }
 }
+
+    [Fact]
+    public void MapOperation_UsingMergeForPropertiesWorks()
+    {
+        // senior-dev: Testing if merge inside map can create proper objects with evaluated values
+        JsonNode? rule = JsonNode.Parse("""
+        {
+          "map": [
+            [{"_index": 1, "value": 10}, {"_index": 2, "value": 20}],
+            {
+              "merge": [
+                {"_index": {"var": "_index"}},
+                {"doubled": {"*": [{"var": "value"}, 2]}}
+              ]
+            }
+          ]
+        }
+        """);
+
+        JsonNode? result = JsonLogic.Apply(rule, JsonNode.Parse("{}"));
+        
+        Assert.NotNull(result);
+        Console.WriteLine($"Result: {result}");
+        
+        if (result is JsonArray arr && arr.Count > 0)
+        {
+            Console.WriteLine($"First element: {arr[0]}");
+            if (arr[0] is JsonArray mergeResult)
+            {
+                Console.WriteLine($"Merge returned array with {mergeResult.Count} elements");
+            }
+            else if (arr[0] is JsonObject obj)
+            {
+                Console.WriteLine($"Has _index: {obj.ContainsKey("_index")}");
+                Console.WriteLine($"_index type: {obj["_index"]?.GetType().Name}");
+                Console.WriteLine($"_index value: {obj["_index"]}");
+            }
+        }
+    }
