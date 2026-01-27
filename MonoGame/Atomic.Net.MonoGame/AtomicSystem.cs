@@ -75,7 +75,8 @@ public static class AtomicSystem
         PropertiesRegistry.Initialize();
         SelectorRegistry.Initialize();
         TransformRegistry.Initialize();
-        RuleRegistry.Initialize();
+        // TODO : @senior-dev - enable
+        // RuleRegistry.Initialize();
 
         // Scene System
         SceneLoader.Initialize();

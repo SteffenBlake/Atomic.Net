@@ -39,12 +39,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     /// </summary>
     public void LoadGameScene(string scenePath)
     {
-        if (!TryParseSceneFile(scenePath, out var scene))
-        {
-            return;
-        }
-
-        LoadSceneInternal(scene, useGlobalPartition: false);
+        LoadSceneInternal(scenePath, useGlobalPartition: false);
         
         // GC after scene goes out of scope
         GC.Collect();
@@ -58,12 +53,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     /// </summary>
     public void LoadGlobalScene(string scenePath = "Content/Scenes/loading.json")
     {
-        if (!TryParseSceneFile(scenePath, out var scene))
-        {
-            return;
-        }
-
-        LoadSceneInternal(scene, useGlobalPartition: true);
+        LoadSceneInternal(scenePath, useGlobalPartition: true);
         
         // GC after scene goes out of scope
         GC.Collect();
@@ -103,8 +93,13 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         return false;
     }
 
-    private void LoadSceneInternal(JsonScene scene, bool useGlobalPartition)
+    private void LoadSceneInternal(string scenePath, bool useGlobalPartition)
     {
+        if (!TryParseSceneFile(scenePath, out var scene))
+        {
+            return;
+        }
+
         // We do NOT disable dirty tracking during scene load to prevent unwanted DB writes here
         // An "outer" calling system will be in charge of calling this
         
@@ -146,7 +141,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         _persistToDiskQueue.Clear();
         
         // test-architect: Load rules into RuleRegistry - to be implemented by @senior-dev
-        LoadRules(scene, useGlobalPartition);
+        // LoadRules(scene, useGlobalPartition);
         
         // CRITICAL: Recalc selectors first, then hierarchy
         // SelectorRegistry.Recalc() must run before HierarchyRegistry.Recalc()
