@@ -138,16 +138,21 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
         var bossOnly = EntityRegistry.Instance.Activate();
         var enemyBoss = EntityRegistry.Instance.Activate();
 
+        var enemyOnlyBehavior = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy") };
         enemyOnly.SetBehavior<TagsBehavior, TagsBehavior>(
-            new TagsBehavior { Tags = ImmutableHashSet.Create("enemy") },
+            in enemyOnlyBehavior,
             (ref readonly input, ref b) => b = input
         );
+        
+        var bossOnlyBehavior = new TagsBehavior { Tags = ImmutableHashSet.Create("boss") };
         bossOnly.SetBehavior<TagsBehavior, TagsBehavior>(
-            new TagsBehavior { Tags = ImmutableHashSet.Create("boss") },
+            in bossOnlyBehavior,
             (ref readonly input, ref b) => b = input
         );
+        
+        var enemyBossBehavior = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy", "boss") };
         enemyBoss.SetBehavior<TagsBehavior, TagsBehavior>(
-            new TagsBehavior { Tags = ImmutableHashSet.Create("enemy", "boss") },
+            in enemyBossBehavior,
             (ref readonly input, ref b) => b = input
         );
 
@@ -168,21 +173,25 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
         var entity1 = EntityRegistry.Instance.Activate();
         var entity2 = EntityRegistry.Instance.Activate();
 
+        var idBehavior1 = new IdBehavior("player");
         entity1.SetBehavior<IdBehavior, IdBehavior>(
-            new IdBehavior("player"),
+            in idBehavior1,
             (ref readonly input, ref b) => b = input
         );
+        var entity1Behavior = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy")  };
         entity1.SetBehavior<TagsBehavior, TagsBehavior>(
-            new TagsBehavior { Tags = ImmutableHashSet.Create("enemy") },
+            in entity1Behavior,
             (ref readonly input, ref b) => b = input
         );
 
+        var idBehavior2 = new IdBehavior("npc");
         entity2.SetBehavior<IdBehavior, IdBehavior>(
-            new IdBehavior("npc"),
+            in idBehavior2,
             (ref readonly input, ref b) => b = input
         );
+        var entity2Behavior = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy")  };
         entity2.SetBehavior<TagsBehavior, TagsBehavior>(
-            new TagsBehavior { Tags = ImmutableHashSet.Create("enemy") },
+            in entity2Behavior,
             (ref readonly input, ref b) => b = input
         );
 
@@ -207,16 +216,19 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
         var bossOnly = EntityRegistry.Instance.Activate();
         var neither = EntityRegistry.Instance.Activate();
 
+        var enemyOnlyBehavior = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy")  };
         enemyOnly.SetBehavior<TagsBehavior, TagsBehavior>(
-            new TagsBehavior { Tags = ImmutableHashSet.Create("enemy") },
+            in enemyOnlyBehavior,
             (ref readonly input, ref b) => b = input
         );
+        var bossOnlyBehavior = new TagsBehavior { Tags = ImmutableHashSet.Create("boss")  };
         bossOnly.SetBehavior<TagsBehavior, TagsBehavior>(
-            new TagsBehavior { Tags = ImmutableHashSet.Create("boss") },
+            in bossOnlyBehavior,
             (ref readonly input, ref b) => b = input
         );
+        var neitherBehavior = new TagsBehavior { Tags = ImmutableHashSet.Create("friendly")  };
         neither.SetBehavior<TagsBehavior, TagsBehavior>(
-            new TagsBehavior { Tags = ImmutableHashSet.Create("friendly") },
+            in neitherBehavior,
             (ref readonly input, ref b) => b = input
         );
 
@@ -239,16 +251,19 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
         var tag3 = EntityRegistry.Instance.Activate();
         var noTags = EntityRegistry.Instance.Activate();
 
+        var tag1Behavior = new TagsBehavior { Tags = ImmutableHashSet.Create("tag1")  };
         tag1.SetBehavior<TagsBehavior, TagsBehavior>(
-            new TagsBehavior { Tags = ImmutableHashSet.Create("tag1") },
+            in tag1Behavior,
             (ref readonly input, ref b) => b = input
         );
+        var tag2Behavior = new TagsBehavior { Tags = ImmutableHashSet.Create("tag2")  };
         tag2.SetBehavior<TagsBehavior, TagsBehavior>(
-            new TagsBehavior { Tags = ImmutableHashSet.Create("tag2") },
+            in tag2Behavior,
             (ref readonly input, ref b) => b = input
         );
+        var tag3Behavior = new TagsBehavior { Tags = ImmutableHashSet.Create("tag3")  };
         tag3.SetBehavior<TagsBehavior, TagsBehavior>(
-            new TagsBehavior { Tags = ImmutableHashSet.Create("tag3") },
+            in tag3Behavior,
             (ref readonly input, ref b) => b = input
         );
 
@@ -280,8 +295,9 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
         Assert.False(selector.Matches.HasValue(entity.Index));
 
         // Act - Add tag
+        var entityBehavior = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy")  };
         entity.SetBehavior<TagsBehavior, TagsBehavior>(
-            new TagsBehavior { Tags = ImmutableHashSet.Create("enemy") },
+            in entityBehavior,
             (ref readonly input, ref b) => b = input
         );
         selector.Recalc();
@@ -295,8 +311,9 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
     {
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
+        var entityBehavior = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy")  };
         entity.SetBehavior<TagsBehavior, TagsBehavior>(
-            new TagsBehavior { Tags = ImmutableHashSet.Create("enemy") },
+            in entityBehavior,
             (ref readonly input, ref b) => b = input
         );
 
@@ -317,8 +334,9 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
     {
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
+        var entityBehavior = new TagsBehavior { Tags = ImmutableHashSet.Create("enemy")  };
         entity.SetBehavior<TagsBehavior, TagsBehavior>(
-            new TagsBehavior { Tags = ImmutableHashSet.Create("enemy") },
+            in entityBehavior,
             (ref readonly input, ref b) => b = input
         );
 
@@ -332,8 +350,9 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
         Assert.False(allySelector.Matches.HasValue(entity.Index));
 
         // Act - Swap tags
+        var updatedBehavior = new TagsBehavior { Tags = ImmutableHashSet.Create("ally")  };
         entity.SetBehavior<TagsBehavior, TagsBehavior>(
-            new TagsBehavior { Tags = ImmutableHashSet.Create("ally") },
+            in updatedBehavior,
             (ref readonly input, ref b) => b = input
         );
         enemySelector.Recalc();

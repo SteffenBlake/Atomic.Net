@@ -256,8 +256,10 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
         Assert.True(alsoValidEntities.HasValue(entity.Value.Index));
 
         // "invalid tag" with space should NOT be registered
-        var hasInvalidTag = TagRegistry.Instance.TryResolve("invalid tag", out var invalidEntities);
-        Assert.False(hasInvalidTag && invalidEntities.HasValue(entity.Value.Index));
+        if (TagRegistry.Instance.TryResolve("invalid tag", out var invalidEntities))
+        {
+            Assert.False(invalidEntities.HasValue(entity.Value.Index));
+        }
 
         // Error should be fired
         Assert.NotEmpty(errorListener.ReceivedEvents);
@@ -313,8 +315,10 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
         EventBus<ResetEvent>.Push(new());
 
         // Assert - Scene tags cleared
-        var hasEnemyTag = TagRegistry.Instance.TryResolve("enemy", out var enemyTagsAfterReset);
-        Assert.False(hasEnemyTag && enemyTagsAfterReset.HasValue(goblin1.Value.Index));
+        if (TagRegistry.Instance.TryResolve("enemy", out var enemyTagsAfterReset))
+        {
+            Assert.False(enemyTagsAfterReset.HasValue(goblin1.Value.Index));
+        }
     }
 
     [Fact]

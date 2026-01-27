@@ -213,9 +213,11 @@ public sealed class TagRegistryUnitTests : IDisposable
         Assert.True(TagRegistry.Instance.TryResolve("hostile", out var hostileEntities));
         Assert.True(hostileEntities.HasValue(entity.Index));
 
-        // Goblin tag should no longer resolve
-        var hasGoblin = TagRegistry.Instance.TryResolve("goblin", out var goblinEntities);
-        Assert.False(hasGoblin && goblinEntities.HasValue(entity.Index));
+        // Goblin tag should no longer resolve to this entity
+        if (TagRegistry.Instance.TryResolve("goblin", out var goblinEntities))
+        {
+            Assert.False(goblinEntities.HasValue(entity.Index));
+        }
     }
 
     [Fact]
@@ -233,12 +235,16 @@ public sealed class TagRegistryUnitTests : IDisposable
         // Act - Deactivate entity
         EntityRegistry.Instance.Deactivate(entity);
 
-        // Assert - Tags should not resolve
-        var hasEnemy = TagRegistry.Instance.TryResolve("enemy", out var enemyEntities);
-        Assert.False(hasEnemy && enemyEntities.HasValue(entity.Index));
+        // Assert - Tags should not resolve to this entity
+        if (TagRegistry.Instance.TryResolve("enemy", out var enemyEntities))
+        {
+            Assert.False(enemyEntities.HasValue(entity.Index));
+        }
 
-        var hasGoblin = TagRegistry.Instance.TryResolve("goblin", out var goblinEntities);
-        Assert.False(hasGoblin && goblinEntities.HasValue(entity.Index));
+        if (TagRegistry.Instance.TryResolve("goblin", out var goblinEntities))
+        {
+            Assert.False(goblinEntities.HasValue(entity.Index));
+        }
     }
 
     #endregion
@@ -286,8 +292,10 @@ public sealed class TagRegistryUnitTests : IDisposable
         Assert.True(TagRegistry.Instance.TryResolve("new-tag", out var newEntities));
         Assert.True(newEntities.HasValue(entity.Index));
 
-        var hasOldTag = TagRegistry.Instance.TryResolve("old-tag", out var oldEntities);
-        Assert.False(hasOldTag && oldEntities.HasValue(entity.Index));
+        if (TagRegistry.Instance.TryResolve("old-tag", out var oldEntities))
+        {
+            Assert.False(oldEntities.HasValue(entity.Index));
+        }
     }
 
     [Fact]
@@ -306,11 +314,15 @@ public sealed class TagRegistryUnitTests : IDisposable
         BehaviorRegistry<TagsBehavior>.Instance.Remove(entity);
 
         // Assert
-        var hasEnemy = TagRegistry.Instance.TryResolve("enemy", out var enemyEntities);
-        Assert.False(hasEnemy && enemyEntities.HasValue(entity.Index));
+        if (TagRegistry.Instance.TryResolve("enemy", out var enemyEntities))
+        {
+            Assert.False(enemyEntities.HasValue(entity.Index));
+        }
 
-        var hasBoss = TagRegistry.Instance.TryResolve("boss", out var bossEntities);
-        Assert.False(hasBoss && bossEntities.HasValue(entity.Index));
+        if (TagRegistry.Instance.TryResolve("boss", out var bossEntities))
+        {
+            Assert.False(bossEntities.HasValue(entity.Index));
+        }
     }
 
     [Fact]
@@ -329,8 +341,10 @@ public sealed class TagRegistryUnitTests : IDisposable
         EntityRegistry.Instance.Deactivate(entity);
 
         // Assert
-        var hasEnemy = TagRegistry.Instance.TryResolve("enemy", out var entities);
-        Assert.False(hasEnemy && entities.HasValue(entity.Index));
+        if (TagRegistry.Instance.TryResolve("enemy", out var entities))
+        {
+            Assert.False(entities.HasValue(entity.Index));
+        }
     }
 
     #endregion
