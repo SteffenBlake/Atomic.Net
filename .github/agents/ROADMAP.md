@@ -64,7 +64,7 @@ This should HEAVILY be cooked on to really hash out a very performance approach.
 ---
 
 ### Tag system
-- [ ] TagBehavior needs to be implemented with TagRegistry, and it has to be wired up to properly work with the tag EntitySelector and be tracked in the SelectorRegistry
+- [x] TagBehavior needs to be implemented with TagRegistry, and it has to be wired up to properly work with the tag EntitySelector and be tracked in the SelectorRegistry
 
 ### Time-Based Logic
 - [ ] Can script sequences over time (animations, transitions, cutscenes)

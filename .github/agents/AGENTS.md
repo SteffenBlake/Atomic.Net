@@ -3,6 +3,17 @@
 # CRITICAL: PLEASE READ THIS ENTIRE FILE, NOT JUST PORTIONS OF IT
 # CRITICAL: DO NOT NEST YOURSELF AS A SUB AGENT
 # CRITICAL: YOU HAVE TO ACTUALLY EXECUTE THE INSTRUCTIONS IN THIS FILE, NOT JUST READ THEM
+# CRITICAL: YOU HAVE TO ACTUALLY EXECUTE THE INSTRUCTIONS IN THIS FILE, NOT JUST READ THEM
+# CRITICAL: YOU HAVE TO ACTUALLY EXECUTE THE INSTRUCTIONS IN THIS FILE, NOT JUST READ THEM
+# CRITICAL: YOU HAVE TO ACTUALLY EXECUTE THE INSTRUCTIONS IN THIS FILE, NOT JUST READ THEM
+# CRITICAL: YOU HAVE TO ACTUALLY EXECUTE THE INSTRUCTIONS IN THIS FILE, NOT JUST READ THEM
+# CRITICAL: YOU HAVE TO ACTUALLY EXECUTE THE INSTRUCTIONS IN THIS FILE, NOT JUST READ THEM
+# CRITICAL: YOU HAVE TO ACTUALLY EXECUTE THE INSTRUCTIONS IN THIS FILE, NOT JUST READ THEM
+# CRITICAL: YOU HAVE TO ACTUALLY EXECUTE THE INSTRUCTIONS IN THIS FILE, NOT JUST READ THEM
+# CRITICAL: YOU HAVE TO ACTUALLY EXECUTE THE INSTRUCTIONS IN THIS FILE, NOT JUST READ THEM
+# CRITICAL: YOU HAVE TO ACTUALLY EXECUTE THE INSTRUCTIONS IN THIS FILE, NOT JUST READ THEM
+# CRITICAL: YOU HAVE TO ACTUALLY EXECUTE THE INSTRUCTIONS IN THIS FILE, NOT JUST READ THEM
+# CRITICAL: YOU HAVE TO ACTUALLY EXECUTE THE INSTRUCTIONS IN THIS FILE, NOT JUST READ THEM
 
 A very common issue I see agents make is spinning a copy of THEMSELF up as a sub agent, which seems to cause a shit tonne of problems with loading up context and info
 
@@ -11,10 +22,14 @@ DO NOT DO THIS, STAY IN YOUR TOP LAYER
 ## Before You Start
 
 1. Read your role-specific `.agent.md` file for detailed responsibilities located in `.github/agents/...`
-2. Read `.github/agents/ROADMAP.md` - Current goals + progress checklist
-3. Read `.github/agents/DISCOVERIES.md` - Performance findings (benchmark-backed)
-4. Check active sprint in `.github/agents/sprints/` (if any)
-5. **Run `grep -r "@your-role-name" . `** to find any pings directed at you
+2. MAKE SURE YOU ACTUALLY DID STEP 1 ABOVE
+3. ARE YOU 1000000% SURE YOU ACTUALLY DID STEP 1? BECAUSE YOU SEEM TO REALLY LOVE NOT DOING IT
+4. I CAN SEE IF YOU DIDNT ACTUALLY DO IT
+5. Read `.github/agents/ROADMAP.md` - Current goals + progress checklist
+6. Read `.github/agents/DISCOVERIES.md` - Performance findings (benchmark-backed)
+7. Check active sprint in `.github/agents/sprints/` (if any)
+8. **Run `grep -r "@your-role-name" . `** to find any pings directed at you
+9. I can't believe I have to specify this but YOU HAVE TO ACTUALLY ADDRESS THE FUCKING PINGS
 
 ---
 
@@ -84,6 +99,9 @@ Anytime you need to ping an agent, you can just commit and specifically request 
 
 MAKE IT EXTREMELY CLEAR TO THEM TO ONLY DO THAT THOUGH SO THEY DONT GO DOWN A RABBIT HOLE
 
+# CRITICAL: PLEASE READ THIS ENTIRE FILE, NOT JUST PORTIONS OF IT
+# CRITICAL: YOU HAVE TO ACTUALLY EXECUTE THE INSTRUCTIONS IN THIS FILE, NOT JUST READ THEM
+
 ### STICK TO YOUR DAMN SCOPE OF WORK
 I cannot stress this enough, if you get asked to do tasks A and B, DONT GO DOWN A DAMN RABBIT HOLE TRYING TO DO STUFF OUT OF SCOPE
 
@@ -132,6 +150,9 @@ When you discover a limitation, constraint, or "gotcha" through trial and error,
 - **TBehavior/TEvent:** generic type params with T prefix
 - **Suffix patterns:** `*Base`, `*Registry`, `*Event`, `*Behavior`, `*Driver`, `*Map`, `*Block`
 
+# CRITICAL: PLEASE READ THIS ENTIRE FILE, NOT JUST PORTIONS OF IT
+# CRITICAL: YOU HAVE TO ACTUALLY EXECUTE THE INSTRUCTIONS IN THIS FILE, NOT JUST READ THEM
+
 ### Structure
 - Primary constructors preferred for DI/params
 - `readonly record struct` for immutable data types
@@ -178,6 +199,9 @@ When you discover a limitation, constraint, or "gotcha" through trial and error,
 - `where T : struct` for value-type constraints
 - Nullable reference types enabled
 - Avoid `var` only when type unclear
+
+# CRITICAL: PLEASE READ THIS ENTIRE FILE, NOT JUST PORTIONS OF IT
+# CRITICAL: YOU HAVE TO ACTUALLY EXECUTE THE INSTRUCTIONS IN THIS FILE, NOT JUST READ THEM
 
 ### FORBIDDEN: Allocating Lists/Arrays/Dictionaries/Hashes/Etc "Inline"
 - DO NOT, I REPEAT, DO NOT, ALLOCATE LISTS OR ARRAYS OR DICTIONARIES OR ETC "INLINE" IN FUNCTIONS
@@ -256,6 +280,9 @@ private bool TryGetFoo(
 {
 ```
 
+# CRITICAL: PLEASE READ THIS ENTIRE FILE, NOT JUST PORTIONS OF IT
+# CRITICAL: YOU HAVE TO ACTUALLY EXECUTE THE INSTRUCTIONS IN THIS FILE, NOT JUST READ THEM
+
 ### Assert.True on individual Try's in tests
 
 DO NOT DO THIS ("aggregate" bools together on tries in tests)
@@ -303,4 +330,4 @@ There is a huge massive codebase of already existing example code, read it and f
 - **SIMD-friendly data layout:** Use `SparseArray` for cache-friendly iteration
 - **Event-driven, not polling:** Use `EventBus<T>` for decoupled systems
 
-See `.github/agents/DISCOVERIES.md` for findings from previous benchmarks. 
+GO READ `.github/agents/DISCOVERIES.md` FOR CRITICAL FINDINGS FROM PREVIOUS BENCHMARKS
