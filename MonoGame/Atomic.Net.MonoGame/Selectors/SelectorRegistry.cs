@@ -352,7 +352,7 @@ public class SelectorRegistry :
     public void OnEvent(ResetEvent _)
     {
         // senior-dev: On Reset, recalc all selectors to update Matches for non-persistent entities
-        // Scene entities (>= MaxPersistentEntities) are deactivated by EntityRegistry
+        // Scene entities (>= MaxGlobalEntities) are deactivated by EntityRegistry
         // Their IdBehaviors are removed, marking selectors dirty
         // We recalc here to update all selector Matches arrays
         Recalc();

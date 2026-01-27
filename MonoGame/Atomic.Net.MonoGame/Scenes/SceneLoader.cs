@@ -44,7 +44,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
             return;
         }
 
-        LoadSceneInternal(scene, usePersistentPartition: false);
+        LoadSceneInternal(scene, useGlobalPartition: false);
         
         // GC after scene goes out of scope
         GC.Collect();
@@ -52,18 +52,18 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     }
 
     /// <summary>
-    /// Loads a persistent scene from JSON file.
-    /// Spawns entities using EntityRegistry.ActivatePersistent() (indices &lt;256).
+    /// Loads a global scene from JSON file.
+    /// Spawns entities using EntityRegistry.ActivateGlobal() (indices &lt;256).
     /// Fires ErrorEvent for file not found, invalid JSON, or unresolved references.
     /// </summary>
-    public void LoadPersistentScene(string scenePath = "Content/Scenes/loading.json")
+    public void LoadGlobalScene(string scenePath = "Content/Scenes/loading.json")
     {
         if (!TryParseSceneFile(scenePath, out var scene))
         {
             return;
         }
 
-        LoadSceneInternal(scene, usePersistentPartition: true);
+        LoadSceneInternal(scene, useGlobalPartition: true);
         
         // GC after scene goes out of scope
         GC.Collect();
@@ -103,7 +103,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         return false;
     }
 
-    private void LoadSceneInternal(JsonScene scene, bool usePersistentPartition)
+    private void LoadSceneInternal(JsonScene scene, bool useGlobalPartition)
     {
         // We do NOT disable dirty tracking during scene load to prevent unwanted DB writes here
         // An "outer" calling system will be in charge of calling this
@@ -113,8 +113,8 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         
         foreach (var jsonEntity in scene.Entities)
         {
-            var entity = usePersistentPartition 
-                ? EntityRegistry.Instance.ActivatePersistent() 
+            var entity = useGlobalPartition 
+                ? EntityRegistry.Instance.ActivateGlobal() 
                 : EntityRegistry.Instance.Activate();
 
             // Use JsonEntity.WriteToEntity() to eliminate duplicate logic (PR comment #9)

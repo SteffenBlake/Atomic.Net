@@ -27,8 +27,8 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
 
     private readonly SparseArray<bool> _active = new(Constants.MaxEntities);
     private readonly SparseArray<bool> _enabled = new(Constants.MaxEntities);
-    private ushort _nextSceneIndex = Constants.MaxPersistentEntities;
-    private ushort _nextPersistentIndex = 0;
+    private ushort _nextSceneIndex = Constants.MaxGlobalEntities;
+    private ushort _nextGlobalIndex = 0;
 
     public Entity this[ushort index]
     {
@@ -39,12 +39,12 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     }
 
     /// <summary>
-    /// Activate the next available scene entity (index greater than or equal to MaxPersistentEntities).
+    /// Activate the next available scene entity (index greater than or equal to MaxGlobalEntities).
     /// </summary>
     /// <returns>The activated entity.</returns>
     public Entity Activate()
     {
-        for (ushort offset = 0; offset < Constants.MaxEntities - Constants.MaxPersistentEntities; offset++)
+        for (ushort offset = 0; offset < Constants.MaxEntities - Constants.MaxGlobalEntities; offset++)
         {
             ushort i = GetNextSceneIndex(offset);
             
@@ -58,7 +58,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
             _nextSceneIndex = (ushort)(i + 1);
             if (_nextSceneIndex >= Constants.MaxEntities)
             {
-                _nextSceneIndex = Constants.MaxPersistentEntities;
+                _nextSceneIndex = Constants.MaxGlobalEntities;
             }
 
             return new(i);
@@ -68,14 +68,14 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     }
 
     /// <summary>
-    /// Activate the next available persistent entity (index less than MaxPersistentEntities).
+    /// Activate the next available global entity (index less than MaxGlobalEntities).
     /// </summary>
     /// <returns>The activated entity.</returns>
-    public Entity ActivatePersistent()
+    public Entity ActivateGlobal()
     {
-        for (ushort offset = 0; offset < Constants.MaxPersistentEntities; offset++)
+        for (ushort offset = 0; offset < Constants.MaxGlobalEntities; offset++)
         {
-            ushort i = (ushort)((_nextPersistentIndex + offset) % Constants.MaxPersistentEntities);
+            ushort i = (ushort)((_nextGlobalIndex + offset) % Constants.MaxGlobalEntities);
             
             if (_active[i])
             {
@@ -84,32 +84,32 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
 
             _active.Set(i, true);
             _enabled.Set(i, true);
-            _nextPersistentIndex = (ushort)((i + 1) % Constants.MaxPersistentEntities);
+            _nextGlobalIndex = (ushort)((i + 1) % Constants.MaxGlobalEntities);
 
             return new(i);
         }
 
-        throw new InvalidOperationException("MaxPersistentEntities reached");
+        throw new InvalidOperationException("MaxGlobalEntities reached");
     }
 
     private ushort GetNextSceneIndex(ushort offset)
     {
-        return (ushort)(Constants.MaxPersistentEntities + 
-            ((_nextSceneIndex - Constants.MaxPersistentEntities + offset) % 
-            (Constants.MaxEntities - Constants.MaxPersistentEntities)));
+        return (ushort)(Constants.MaxGlobalEntities + 
+            ((_nextSceneIndex - Constants.MaxGlobalEntities + offset) % 
+            (Constants.MaxEntities - Constants.MaxGlobalEntities)));
     }
 
     /// <summary>
-    /// Get the first scene entity (index MaxPersistentEntities).
+    /// Get the first scene entity (index MaxGlobalEntities).
     /// </summary>
     /// <returns>The scene root entity.</returns>
-    public Entity GetSceneRoot() => _entities[Constants.MaxPersistentEntities];
+    public Entity GetSceneRoot() => _entities[Constants.MaxGlobalEntities];
 
     /// <summary>
-    /// Get the first persistent entity (index 0).
+    /// Get the first global entity (index 0).
     /// </summary>
-    /// <returns>The persistent root entity.</returns>
-    public Entity GetPersistentRoot() => _entities[0];
+    /// <returns>The global root entity.</returns>
+    public Entity GetGlobalRoot() => _entities[0];
 
     /// <summary>
     /// Deactivate an entity by index.
@@ -211,9 +211,9 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     /// </summary>
     public void OnEvent(ResetEvent _)
     {
-        // Deactivate only scene entities (indices >= MaxPersistentEntities)
+        // Deactivate only scene entities (indices >= MaxGlobalEntities)
         var sceneEntities = _active
-            .Where(static a => a.Index >= Constants.MaxPersistentEntities)
+            .Where(static a => a.Index >= Constants.MaxGlobalEntities)
             .Select(a => _entities[a.Index])
             .ToList();
 
@@ -222,11 +222,11 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
             Deactivate(entity);
         }
 
-        _nextSceneIndex = Constants.MaxPersistentEntities;
+        _nextSceneIndex = Constants.MaxGlobalEntities;
     }
 
     /// <summary>
-    /// Handle shutdown event by deactivating ALL entities (both persistent and scene).
+    /// Handle shutdown event by deactivating ALL entities (both global and scene).
     /// Used for complete game shutdown and test cleanup.
     /// </summary>
     public void OnEvent(ShutdownEvent e)
@@ -241,7 +241,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
             Deactivate(entity);
         }
 
-        _nextSceneIndex = Constants.MaxPersistentEntities;
-        _nextPersistentIndex = 0;
+        _nextSceneIndex = Constants.MaxGlobalEntities;
+        _nextGlobalIndex = 0;
     }
 }

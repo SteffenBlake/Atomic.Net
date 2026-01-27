@@ -25,7 +25,7 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
 
     public void Dispose()
     {
-        // Clean up ALL entities (both persistent and scene) between tests
+        // Clean up ALL entities (both global and scene) between tests
         EventBus<ShutdownEvent>.Push(new());
     }
 
@@ -46,18 +46,18 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         
         // test-architect: All entities should be in scene partition (index >= 256)
         Assert.All(activeEntities, entity => 
-            Assert.True(entity.Index >= Constants.MaxPersistentEntities, 
-                $"Entity {entity.Index} should be in scene partition (>= {Constants.MaxPersistentEntities})"));
+            Assert.True(entity.Index >= Constants.MaxGlobalEntities, 
+                $"Entity {entity.Index} should be in scene partition (>= {Constants.MaxGlobalEntities})"));
     }
 
     [Fact]
-    public void LoadPersistentScene_WithBasicEntities_SpawnsEntitiesInPersistentPartition()
+    public void LoadGlobalScene_WithBasicEntities_SpawnsEntitiesInGlobalPartition()
     {
         // Arrange
         var scenePath = "Scenes/Fixtures/basic-scene.json";
 
         // Act
-        SceneLoader.Instance.LoadPersistentScene(scenePath);
+        SceneLoader.Instance.LoadGlobalScene(scenePath);
 
         // Assert
         var activeEntities = EntityRegistry.Instance.GetActiveEntities().ToList();
@@ -65,10 +65,10 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         // test-architect: Should spawn 2 entities (root-container, menu-button)
         Assert.True(activeEntities.Count >= 2, $"Expected at least 2 entities, got {activeEntities.Count}");
         
-        // test-architect: All entities should be in persistent partition (index < 256)
+        // test-architect: All entities should be in global partition (index < 256)
         Assert.All(activeEntities, entity => 
-            Assert.True(entity.Index < Constants.MaxPersistentEntities, 
-                $"Entity {entity.Index} should be in persistent partition (< {Constants.MaxPersistentEntities})"));
+            Assert.True(entity.Index < Constants.MaxGlobalEntities, 
+                $"Entity {entity.Index} should be in global partition (< {Constants.MaxGlobalEntities})"));
     }
 
     [Fact]
@@ -83,11 +83,11 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         // Assert
         // test-architect: Verify "root-container" can be resolved
         Assert.True(EntityIdRegistry.Instance.TryResolve("root-container", out var rootEntity), "root-container should be registered");
-        Assert.True(rootEntity.Value.Index >= Constants.MaxPersistentEntities);
+        Assert.True(rootEntity.Value.Index >= Constants.MaxGlobalEntities);
 
         // test-architect: Verify "menu-button" can be resolved
         Assert.True(EntityIdRegistry.Instance.TryResolve("menu-button", out var buttonEntity), "menu-button should be registered");
-        Assert.True(buttonEntity.Value.Index >= Constants.MaxPersistentEntities);
+        Assert.True(buttonEntity.Value.Index >= Constants.MaxGlobalEntities);
     }
 
     [Fact]

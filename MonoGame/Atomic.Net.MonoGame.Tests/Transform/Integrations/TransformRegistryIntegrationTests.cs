@@ -39,7 +39,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
     public void Dispose()
     {
-        // Clean up ALL entities (both loading and scene) between tests
+        // Clean up ALL entities (both global and scene) between tests
         EventBus<ShutdownEvent>.Push(new());
     }
 

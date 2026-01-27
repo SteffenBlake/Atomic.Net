@@ -17,7 +17,7 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
 
     public void Dispose()
     {
-        // Clean up ALL entities (both persistent and scene) between tests
+        // Clean up ALL entities (both global and scene) between tests
         EventBus<ShutdownEvent>.Push(new());
     }
 
@@ -32,7 +32,7 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("scene-entity", out var entity));
         
         // Assert
-        Assert.True(entity.Value.Index >= Constants.MaxPersistentEntities);
+        Assert.True(entity.Value.Index >= Constants.MaxGlobalEntities);
         Assert.True(entity.Value.Index < Constants.MaxEntities);
         Assert.True(EntityRegistry.Instance.IsActive(entity.Value));
         Assert.True(EntityRegistry.Instance.IsEnabled(entity.Value));
@@ -42,17 +42,17 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void LoadPersistentScene_AllocatesPersistentEntity()
+    public void LoadGlobalScene_AllocatesGlobalEntity()
     {
         // Arrange
-        var scenePath = "Core/Fixtures/single-persistent-entity.json";
+        var scenePath = "Core/Fixtures/single-global-entity.json";
 
         // Act
-        SceneLoader.Instance.LoadPersistentScene(scenePath);
-        Assert.True(EntityIdRegistry.Instance.TryResolve("persistent-entity", out var entity));
+        SceneLoader.Instance.LoadGlobalScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("global-entity", out var entity));
         
         // Assert
-        Assert.True(entity.Value.Index < Constants.MaxPersistentEntities);
+        Assert.True(entity.Value.Index < Constants.MaxGlobalEntities);
         Assert.True(EntityRegistry.Instance.IsActive(entity.Value));
         Assert.True(EntityRegistry.Instance.IsEnabled(entity.Value));
     }
@@ -66,16 +66,16 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
         var root = EntityRegistry.Instance.GetSceneRoot();
         
         // Assert
-        Assert.Equal(Constants.MaxPersistentEntities, root.Index);
+        Assert.Equal(Constants.MaxGlobalEntities, root.Index);
     }
 
     [Fact]
-    public void GetPersistentRoot_ReturnsFirstPersistentEntity()
+    public void GetGlobalRoot_ReturnsFirstGlobalEntity()
     {
         // Arrange
 
         // Act
-        var root = EntityRegistry.Instance.GetPersistentRoot();
+        var root = EntityRegistry.Instance.GetGlobalRoot();
         
         // Assert
         Assert.Equal((ushort)0, root.Index);
@@ -100,13 +100,13 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void LoadPersistentScene_AllocatesSequentialIndices()
+    public void LoadGlobalScene_AllocatesSequentialIndices()
     {
         // Arrange
         var scenePath = "Core/Fixtures/three-entities.json";
 
         // Act
-        SceneLoader.Instance.LoadPersistentScene(scenePath);
+        SceneLoader.Instance.LoadGlobalScene(scenePath);
         
         // Assert
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity-1", out var entity1));
@@ -225,23 +225,23 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
     public void ResetEvent_DeactivatesOnlySceneEntities()
     {
         // Arrange
-        var persistentPath = "Core/Fixtures/single-persistent-entity.json";
+        var globalPath = "Core/Fixtures/single-global-entity.json";
         var scenePath = "Core/Fixtures/single-scene-entity.json";
         
-        SceneLoader.Instance.LoadPersistentScene(persistentPath);
+        SceneLoader.Instance.LoadGlobalScene(globalPath);
         SceneLoader.Instance.LoadGameScene(scenePath);
         
-        Assert.True(EntityIdRegistry.Instance.TryResolve("persistent-entity", out var persistentEntity));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("global-entity", out var globalEntity));
         Assert.True(EntityIdRegistry.Instance.TryResolve("scene-entity", out var sceneEntity));
         
-        Assert.True(EntityRegistry.Instance.IsActive(persistentEntity.Value));
+        Assert.True(EntityRegistry.Instance.IsActive(globalEntity.Value));
         Assert.True(EntityRegistry.Instance.IsActive(sceneEntity.Value));
         
         // Act
         EventBus<ResetEvent>.Push(new());
         
         // Assert
-        Assert.True(EntityRegistry.Instance.IsActive(persistentEntity.Value));
+        Assert.True(EntityRegistry.Instance.IsActive(globalEntity.Value));
         Assert.False(EntityRegistry.Instance.IsActive(sceneEntity.Value));
     }
 

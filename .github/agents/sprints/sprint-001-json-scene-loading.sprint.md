@@ -71,7 +71,7 @@
 - **File:** `Atomic.Net.MonoGame.Scenes/SceneLoader.cs`
   - Singleton pattern via `ISingleton<SceneLoader>`
   - Method: `LoadGameScene(string scenePath)` - loads game scene JSON (uses `EntityRegistry.Activate()`)
-  - Method: `LoadPersistentScene(string scenePath)` - loads persistent scene JSON (uses `EntityRegistry.ActivatePersistent()`)
+  - Method: `LoadGlobalScene(string scenePath)` - loads global scene JSON (uses `EntityRegistry.ActivateGlobal()`)
   - Two-pass loading:
     - **Pass 1:** Create all entities, apply behaviors (Transform, EntityId)
     - **Pass 2:** Resolve parent references, fire error events for unresolved IDs
@@ -86,7 +86,7 @@
 
 #### 6. Integration with Existing Systems
 - Uses `EntityRegistry.Instance.Activate()` for game scene entities (indices ≥256)
-- Uses `EntityRegistry.Instance.ActivatePersistent()` for persistent scene entities (indices <256)
+- Uses `EntityRegistry.Instance.ActivateGlobal()` for global scene entities (indices <256)
 - Uses `BehaviorRegistry<TransformBehavior>.Instance.SetBehavior()` to apply transforms
 - Uses `BehaviorRegistry<Parent>.Instance.SetBehavior()` to set parent relationships
 - Uses `BehaviorRegistry<EntityId>.Instance.SetBehavior()` to track entity IDs
@@ -95,10 +95,10 @@
 ### Integration Points
 
 #### Event Flow
-1. User calls `SceneLoader.Instance.LoadGameScene("Content/scenes/main-menu.json")` or `LoadPersistentScene(...)`
+1. User calls `SceneLoader.Instance.LoadGameScene("Content/scenes/main-menu.json")` or `LoadGlobalScene(...)`
 2. SceneLoader reads file, deserializes JSON using `System.Text.Json`
 3. **Pass 1:** For each `JsonEntity`:
-   - Call `EntityRegistry.Instance.Activate()` (or `ActivatePersistent()`) to spawn entity
+   - Call `EntityRegistry.Instance.Activate()` (or `ActivateGlobal()`) to spawn entity
    - If `jsonEntity.Transform != null`, call `BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(entity, behavior => behavior = jsonEntity.Transform.Value)`
    - If `jsonEntity.Id != null`, call `BehaviorRegistry<EntityId>.Instance.SetBehavior(entity, behavior => behavior = new EntityId(jsonEntity.Id))`
 4. **Pass 2:** For each entity with `jsonEntity.Parent != null`:
@@ -108,7 +108,7 @@
 5. Force GC: `GC.Collect()` and `GC.WaitForPendingFinalizers()` to clean up ephemeral JSON objects
 
 #### Registry Interactions
-- **EntityRegistry:** Activates game scene entities (indices ≥32) or loading scene entities (indices <32)
+- **EntityRegistry:** Activates game scene entities (indices ≥32) or global scene entities (indices <32)
 - **BehaviorRegistry<TransformBehavior>:** Stores transform data via `SetBehavior()`
 - **BehaviorRegistry<Parent>:** Stores parent references via `SetBehavior()`
 - **BehaviorRegistry<EntityId>:** Stores entity ID mappings via `SetBehavior()`
@@ -164,7 +164,7 @@
 ### Core Scene Loading Logic
 - [ ] Implement `SceneLoader` singleton with two-pass loading algorithm
 - [ ] Implement `LoadGameScene(string scenePath)` method (spawns game scene entities)
-- [ ] Implement `LoadPersistentScene(string scenePath)` method (spawns persistent scene entities)
+- [ ] Implement `LoadGlobalScene(string scenePath)` method (spawns global scene entities)
 - [ ] Force GC after loading completes (`GC.Collect()` + `GC.WaitForPendingFinalizers()`)
 - [ ] Implement parent reference resolution with error events for unresolved IDs
 
@@ -175,7 +175,7 @@
 - [x] #test-architect Verify parent-child relationships are established correctly
 - [x] #test-architect Test error handling (missing file, invalid JSON, unresolved references)
 - [x] #test-architect Test first-write-wins for duplicate entity IDs
-- [x] #test-architect Test `LoadGameScene` vs `LoadPersistentScene` (different entity partitions)
+- [x] #test-architect Test `LoadGameScene` vs `LoadGlobalScene` (different entity partitions)
 
 
 ### Documentation
