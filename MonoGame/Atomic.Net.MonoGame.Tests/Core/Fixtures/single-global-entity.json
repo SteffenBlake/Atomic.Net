@@ -1,7 +1,7 @@
 {
   "entities": [
     {
-      "id": "persistent-entity"
+      "id": "global-entity"
     }
   ]
 }

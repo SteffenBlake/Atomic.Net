@@ -184,37 +184,37 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
     }
 
     [Fact]
-    public void CrossScenePersistence_PersistentPartitionSurvivesReset()
+    public void CrossScenePersistence_GlobalPartitionSurvivesReset()
     {
-        // Arrange: Create entity in persistent partition (index < 256) - must use ActivatePersistent()
-        var persistentEntity = EntityRegistry.Instance.ActivatePersistent();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(persistentEntity, static (ref behavior) =>
+        // Arrange: Create entity in global partition (index < 256) - must use ActivateGlobal()
+        var globalEntity = EntityRegistry.Instance.ActivateGlobal();
+        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(globalEntity, static (ref behavior) =>
         {
-            behavior = new PersistToDiskBehavior("persistent-partition-key");
+            behavior = new PersistToDiskBehavior("global-partition-key");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(persistentEntity, static (ref behavior) =>
+        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(globalEntity, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "partition", "persistent" } });
+            behavior = new(new Dictionary<string, PropertyValue> { { "partition", "global" } });
         });
 
         DatabaseRegistry.Instance.Flush();
         
-        // Act: Fire ResetEvent (should NOT deactivate persistent partition)
+        // Act: Fire ResetEvent (should NOT deactivate global partition)
         EventBus<ResetEvent>.Push(new());
         
         // Assert: Entity should still be active in-memory
-        Assert.True(persistentEntity.Active);
+        Assert.True(globalEntity.Active);
         
         // test-architect: Disk should also have the entity
         var newEntity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, static (ref behavior) =>
         {
-            behavior = new PersistToDiskBehavior("persistent-partition-key");
+            behavior = new PersistToDiskBehavior("global-partition-key");
         });
 
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(newEntity, out var props));
         Assert.NotNull(props.Value.Properties);
-        Assert.Equal("persistent", props.Value.Properties["partition"]);
+        Assert.Equal("global", props.Value.Properties["partition"]);
     }
 
     [Fact]

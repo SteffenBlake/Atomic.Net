@@ -148,26 +148,26 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void ResetEvent_PreservesPersistentEntityHierarchy()
+    public void ResetEvent_PreservesGlobalEntityHierarchy()
     {
         // Arrange
         var scenePath = "BED/Fixtures/parent-child.json";
-        SceneLoader.Instance.LoadPersistentScene(scenePath);
+        SceneLoader.Instance.LoadGlobalScene(scenePath);
         
-        Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out var persistentParent));
-        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var persistentChild));
-        Assert.True(persistentChild.Value.TryGetParent(out var parent1));
-        Assert.Equal(persistentParent.Value.Index, parent1.Value.Index);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out var globalParent));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var globalChild));
+        Assert.True(globalChild.Value.TryGetParent(out var parent1));
+        Assert.Equal(globalParent.Value.Index, parent1.Value.Index);
         
         // Act
         EventBus<ResetEvent>.Push(new());
         
         // Assert
-        Assert.True(EntityRegistry.Instance.IsActive(persistentParent.Value));
-        Assert.True(EntityRegistry.Instance.IsActive(persistentChild.Value));
-        Assert.True(persistentChild.Value.TryGetParent(out var parent2));
-        Assert.Equal(persistentParent.Value.Index, parent2.Value.Index);
-        Assert.Single(persistentParent.Value.GetChildren());
+        Assert.True(EntityRegistry.Instance.IsActive(globalParent.Value));
+        Assert.True(EntityRegistry.Instance.IsActive(globalChild.Value));
+        Assert.True(globalChild.Value.TryGetParent(out var parent2));
+        Assert.Equal(globalParent.Value.Index, parent2.Value.Index);
+        Assert.Single(globalParent.Value.GetChildren());
     }
 
     [Fact]
