@@ -172,8 +172,9 @@ public class RulesDriver : IEventHandler<InitializeEvent>, IEventHandler<Shutdow
             }
 
             // senior-dev: Step 6 - Apply mutations back to entities
-            // Pass the original entities array so we can match mutations by position
-            ApplyMutations(mutations, entitiesToMutate, ruleIndex);
+            // Pass the original entities array and context so we can match mutations by position
+            // and evaluate nested operations with proper context
+            ApplyMutations(mutations, entitiesToMutate, doContext, ruleIndex);
 
             return true;
     }
@@ -273,7 +274,7 @@ public class RulesDriver : IEventHandler<InitializeEvent>, IEventHandler<Shutdow
     /// Applies mutation results back to entities.
     /// Matches mutations to entities by array position (map preserves order).
     /// </summary>
-    private void ApplyMutations(JsonArray mutations, JsonArray sourceEntities, ushort ruleIndex)
+    private void ApplyMutations(JsonArray mutations, JsonArray sourceEntities, JsonObject evaluationContext, ushort ruleIndex)
     {
         // senior-dev: FINDING: JsonLogic map doesn't evaluate nested { "var": "_index" } operations.
         // They come through as JsonObject literals. Solution: match mutations to entities by position.
@@ -349,7 +350,10 @@ public class RulesDriver : IEventHandler<InitializeEvent>, IEventHandler<Shutdow
             // senior-dev: Apply property mutations
             if (mutation.TryGetPropertyValue("properties", out var propertiesNode))
             {
-                ApplyPropertiesMutation(entity, propertiesNode, ruleIndex);
+                // senior-dev: FINDING: JsonLogic doesn't evaluate nested operations in object literals
+                // Need to recursively evaluate any JsonLogic operations in the properties
+                var evaluatedProperties = EvaluateNestedOperations(propertiesNode, evaluationContext);
+                ApplyPropertiesMutation(entity, evaluatedProperties, ruleIndex);
             }
 
             // senior-dev: Apply tag mutations (if present)
@@ -358,6 +362,73 @@ public class RulesDriver : IEventHandler<InitializeEvent>, IEventHandler<Shutdow
                 ApplyTagsMutation(entity, tagsNode, ruleIndex);
             }
         }
+    }
+
+    /// <summary>
+    /// Recursively evaluates JsonLogic operations found in object literals.
+    /// FINDING: JsonLogic map doesn't evaluate nested operations in object literals.
+    /// This method traverses the JSON structure and evaluates any JsonLogic operations found.
+    /// </summary>
+    private JsonNode? EvaluateNestedOperations(JsonNode? node, JsonObject context)
+    {
+        if (node == null)
+        {
+            return null;
+        }
+
+        // senior-dev: If node is an object, check if it's a JsonLogic operation
+        if (node is JsonObject obj)
+        {
+            // senior-dev: Check if this object is a JsonLogic operation
+            // JsonLogic operations have exactly one key which is the operation name
+            if (obj.Count == 1)
+            {
+                var firstKey = obj.First().Key;
+                // senior-dev: Common JsonLogic operations
+                var operations = new[] { "var", "+", "-", "*", "/", "reduce", "filter", "map", "if", "==", "!=", ">", "<", ">=", "<=", "and", "or", "not", "in", "merge" };
+                
+                if (operations.Contains(firstKey))
+                {
+                    // senior-dev: This is a JsonLogic operation - evaluate it
+                    try
+                    {
+                        return JsonLogic.Apply(node, context);
+                    }
+                    catch (Exception)
+                    {
+                        // senior-dev: If evaluation fails, return the node as-is
+                        return node;
+                    }
+                }
+            }
+
+            // senior-dev: Not a JsonLogic operation - recursively evaluate properties
+            var result = new JsonObject();
+            foreach (var kvp in obj)
+            {
+                var evaluatedValue = EvaluateNestedOperations(kvp.Value, context);
+                // senior-dev: Clone the node to avoid "already has a parent" error
+                if (evaluatedValue != null)
+                {
+                    result[kvp.Key] = JsonNode.Parse(evaluatedValue.ToJsonString());
+                }
+            }
+            return result;
+        }
+
+        // senior-dev: If node is an array, recursively evaluate elements
+        if (node is JsonArray arr)
+        {
+            var result = new JsonArray();
+            foreach (var item in arr)
+            {
+                result.Add(EvaluateNestedOperations(item, context));
+            }
+            return result;
+        }
+
+        // senior-dev: Primitive value - return as-is
+        return node;
     }
 
     /// <summary>
