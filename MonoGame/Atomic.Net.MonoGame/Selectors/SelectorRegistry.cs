@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Ids;
+using Atomic.Net.MonoGame.Tags;
 
 namespace Atomic.Net.MonoGame.Selectors;
 
@@ -12,6 +13,10 @@ public class SelectorRegistry :
     IEventHandler<PreBehaviorUpdatedEvent<IdBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<IdBehavior>>,
     IEventHandler<PreBehaviorRemovedEvent<IdBehavior>>,
+    IEventHandler<BehaviorAddedEvent<TagsBehavior>>,
+    IEventHandler<PreBehaviorUpdatedEvent<TagsBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<TagsBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<TagsBehavior>>,
     IEventHandler<ResetEvent>,
     IEventHandler<ShutdownEvent>
 {
@@ -357,6 +362,10 @@ public class SelectorRegistry :
         EventBus<PreBehaviorUpdatedEvent<IdBehavior>>.Register(Instance);
         EventBus<PostBehaviorUpdatedEvent<IdBehavior>>.Register(Instance);
         EventBus<PreBehaviorRemovedEvent<IdBehavior>>.Register(Instance);
+        EventBus<BehaviorAddedEvent<TagsBehavior>>.Register(Instance);
+        EventBus<PreBehaviorUpdatedEvent<TagsBehavior>>.Register(Instance);
+        EventBus<PostBehaviorUpdatedEvent<TagsBehavior>>.Register(Instance);
+        EventBus<PreBehaviorRemovedEvent<TagsBehavior>>.Register(Instance);
         EventBus<ResetEvent>.Register(Instance);
         EventBus<ShutdownEvent>.Register(Instance);
     }
@@ -387,6 +396,10 @@ public class SelectorRegistry :
         EventBus<PreBehaviorUpdatedEvent<IdBehavior>>.Unregister(Instance);
         EventBus<PostBehaviorUpdatedEvent<IdBehavior>>.Unregister(Instance);
         EventBus<PreBehaviorRemovedEvent<IdBehavior>>.Unregister(Instance);
+        EventBus<BehaviorAddedEvent<TagsBehavior>>.Unregister(Instance);
+        EventBus<PreBehaviorUpdatedEvent<TagsBehavior>>.Unregister(Instance);
+        EventBus<PostBehaviorUpdatedEvent<TagsBehavior>>.Unregister(Instance);
+        EventBus<PreBehaviorRemovedEvent<TagsBehavior>>.Unregister(Instance);
         EventBus<ResetEvent>.Unregister(Instance);
         EventBus<ShutdownEvent>.Unregister(Instance);
     }
@@ -418,6 +431,41 @@ public class SelectorRegistry :
             if (_idSelectorLookup.TryGetValue(behavior.Value.Id, out var selector))
             {
                 selector.MarkDirty();
+            }
+        }
+    }
+    
+    public void OnEvent(BehaviorAddedEvent<TagsBehavior> e)
+    {
+        MarkTagSelectorsAsDirty(e.Entity);
+    }
+
+    public void OnEvent(PreBehaviorUpdatedEvent<TagsBehavior> e)
+    {
+        MarkTagSelectorsAsDirty(e.Entity);
+    }
+
+    public void OnEvent(PostBehaviorUpdatedEvent<TagsBehavior> e)
+    {
+        MarkTagSelectorsAsDirty(e.Entity);
+    }
+
+    public void OnEvent(PreBehaviorRemovedEvent<TagsBehavior> e)
+    {
+        MarkTagSelectorsAsDirty(e.Entity);
+    }
+    
+    private void MarkTagSelectorsAsDirty(Entity entity)
+    {
+        // senior-dev: When tags change on an entity, mark all selectors for those tags as dirty
+        if (entity.TryGetBehavior<TagsBehavior>(out var behavior))
+        {
+            foreach (var tag in behavior.Value.Tags)
+            {
+                if (_tagSelectorLookup.TryGetValue(tag, out var selector))
+                {
+                    selector.MarkDirty();
+                }
             }
         }
     }

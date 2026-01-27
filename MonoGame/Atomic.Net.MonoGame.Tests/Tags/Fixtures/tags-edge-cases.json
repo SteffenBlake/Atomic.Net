@@ -1,0 +1,15 @@
+{
+  "entities": [
+    {
+      "id": "empty-tags",
+      "tags": []
+    },
+    {
+      "id": "no-tags-field"
+    },
+    {
+      "id": "case-test",
+      "tags": ["Enemy", "BOSS", "flying"]
+    }
+  ]
+}

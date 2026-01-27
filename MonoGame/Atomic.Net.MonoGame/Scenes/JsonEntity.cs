@@ -5,6 +5,7 @@ using Atomic.Net.MonoGame.Persistence;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Hierarchy;
 using Atomic.Net.MonoGame.Ids;
+using Atomic.Net.MonoGame.Tags;
 
 namespace Atomic.Net.MonoGame.Scenes;
 
@@ -19,6 +20,11 @@ public class JsonEntity
     /// Optional entity ID for referencing (e.g., "player", "main-menu").
     /// </summary>
     public IdBehavior? Id { get; set; } = null;
+    
+    /// <summary>
+    /// Optional tags for group selection in rules and queries (e.g., ["enemy", "boss"]).
+    /// </summary>
+    public TagsBehavior? Tags { get; set; } = null;
 
     /// <summary>
     /// Optional transform behavior.
@@ -52,6 +58,10 @@ public class JsonEntity
         jsonEntity.Id = BehaviorRegistry<IdBehavior>.Instance.TryGetBehavior(
             entity, out var id
         ) ? id : null;
+        
+        jsonEntity.Tags = BehaviorRegistry<TagsBehavior>.Instance.TryGetBehavior(
+            entity, out var tags
+        ) ? tags : null;
 
         jsonEntity.Transform = BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(
             entity, out var transform
@@ -80,7 +90,7 @@ public class JsonEntity
     public void WriteToEntity(Entity entity)
     {
         // Apply all behaviors from JSON (in specific order per sprint requirements)
-        // Transform, Properties, Id applied first, then Parent
+        // Transform, Properties, Id, Tags applied first, then Parent
         // PersistToDiskBehavior is NOT applied here (already set by caller)
         
         if (Transform.HasValue)
@@ -105,6 +115,15 @@ public class JsonEntity
         {
             var input = Id.Value;
             entity.SetBehavior<IdBehavior, IdBehavior>(
+                in input,
+                (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+        
+        if (Tags.HasValue)
+        {
+            var input = Tags.Value;
+            entity.SetBehavior<TagsBehavior, TagsBehavior>(
                 in input,
                 (ref readonly _input, ref behavior) => behavior = _input
             );

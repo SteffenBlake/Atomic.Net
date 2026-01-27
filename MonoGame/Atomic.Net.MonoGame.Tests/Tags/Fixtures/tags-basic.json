@@ -1,0 +1,16 @@
+{
+  "entities": [
+    {
+      "id": "goblin-1",
+      "tags": ["enemy", "goblin"]
+    },
+    {
+      "id": "goblin-2",
+      "tags": ["enemy", "goblin"]
+    },
+    {
+      "id": "boss",
+      "tags": ["enemy", "boss"]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "entities": [
+    {
+      "id": "null-tag",
+      "tags": ["valid", null, "also-valid"]
+    },
+    {
+      "id": "empty-tag",
+      "tags": ["valid", "", "also-valid"]
+    },
+    {
+      "id": "whitespace-tag",
+      "tags": ["valid", "   ", "also-valid"]
+    },
+    {
+      "id": "duplicate-tags",
+      "tags": ["enemy", "boss", "enemy"]
+    },
+    {
+      "id": "invalid-chars",
+      "tags": ["valid-tag", "invalid tag", "also_valid"]
+    }
+  ]
+}

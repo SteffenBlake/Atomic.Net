@@ -8,6 +8,7 @@ using Atomic.Net.MonoGame.Persistence;
 using Atomic.Net.MonoGame.Properties;
 using Atomic.Net.MonoGame.Scenes;
 using Atomic.Net.MonoGame.Selectors;
+using Atomic.Net.MonoGame.Tags;
 using Atomic.Net.MonoGame.Transform;
 
 namespace Atomic.Net.MonoGame;
@@ -50,6 +51,9 @@ public static class AtomicSystem
 
         // Id Behaviors
         BehaviorRegistry<IdBehavior>.Initialize();
+        
+        // Tags Behaviors
+        BehaviorRegistry<TagsBehavior>.Initialize();
 
         // Persistence Behaviors
         BehaviorRegistry<PersistToDiskBehavior>.Initialize();
@@ -71,6 +75,7 @@ public static class AtomicSystem
         FlexRegistry.Initialize();
         HierarchyRegistry.Initialize();
         EntityIdRegistry.Initialize();
+        TagRegistry.Initialize();
         DatabaseRegistry.Initialize();
         PropertiesRegistry.Initialize();
         SelectorRegistry.Initialize();
