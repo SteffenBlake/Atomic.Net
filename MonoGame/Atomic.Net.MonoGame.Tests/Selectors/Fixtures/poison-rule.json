@@ -5,8 +5,29 @@
   "rules": [
     {
       "from": "#poisoned",
-      "where": { ">": [ { "var": "entities.properties.poisonStacks" }, 0 ] },
-      "do": { "mut": { "merge": [ { "var": "entities" }, { "properties": { "health": { "-": [ { "var": "entities.properties.health" }, 1 ] } } } ] } }
+      "where": {
+        "filter": [
+          { "var": "entities" },
+          { ">": [{ "var": "properties.poisonStacks" }, 0] }
+        ]
+      },
+      "do": {
+        "mut": {
+          "map": [
+            { "var": "entities" },
+            {
+              "merge": [
+                { "var": "" },
+                {
+                  "properties": {
+                    "health": { "-": [{ "var": "properties.health" }, 1] }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
     }
   ]
 }
