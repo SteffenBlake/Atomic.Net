@@ -1,0 +1,40 @@
+{
+  "entities": [
+    {
+      "id": "player",
+      "tags": ["unit"],
+      "properties": {
+        "health": 100.0,
+        "mana": 50.0
+      }
+    }
+  ],
+  "rules": [
+    {
+      "from": "#unit",
+      "where": {
+        "filter": [
+          { "var": "entities" },
+          true
+        ]
+      },
+      "do": {
+        "mut": {
+          "map": [
+            { "var": "entities" },
+            {
+              "merge": [
+                { "var": "" },
+                {
+                  "properties": {
+                    "processed": "true"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

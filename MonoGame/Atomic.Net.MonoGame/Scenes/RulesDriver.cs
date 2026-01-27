@@ -153,10 +153,18 @@ public sealed class RulesDriver :
         // senior-dev: Execute DO clause
         if (rule.Do.TryMatch(out MutCommand mutCommand))
         {
+            // senior-dev: Clone filteredEntities to avoid "node already has a parent" error
+            var filteredEntitiesClone = filteredEntities != null 
+                ? JsonNode.Parse(filteredEntities.ToJsonString())
+                : null;
+
             var doContext = new JsonObject
             {
-                ["world"] = worldContext["world"],
-                ["entities"] = filteredEntities
+                ["world"] = new JsonObject
+                {
+                    ["deltaTime"] = deltaTime
+                },
+                ["entities"] = filteredEntitiesClone
             };
 
             var doResult = EvaluateDo(mutCommand.Mut, doContext);
