@@ -81,6 +81,7 @@ public static class AtomicSystem
         SelectorRegistry.Initialize();
         TransformRegistry.Initialize();
         RuleRegistry.Initialize();
+        RulesDriver.Initialize();
 
         // Scene System
         SceneLoader.Initialize();
