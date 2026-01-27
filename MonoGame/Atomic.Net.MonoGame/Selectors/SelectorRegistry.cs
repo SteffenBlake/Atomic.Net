@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Ids;
+using Atomic.Net.MonoGame.Tags;
 
 namespace Atomic.Net.MonoGame.Selectors;
 
@@ -12,6 +13,10 @@ public class SelectorRegistry :
     IEventHandler<PreBehaviorUpdatedEvent<IdBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<IdBehavior>>,
     IEventHandler<PreBehaviorRemovedEvent<IdBehavior>>,
+    IEventHandler<BehaviorAddedEvent<TagsBehavior>>,
+    IEventHandler<PreBehaviorUpdatedEvent<TagsBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<TagsBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<TagsBehavior>>,
     IEventHandler<ResetEvent>,
     IEventHandler<ShutdownEvent>
 {
@@ -300,6 +305,9 @@ public class SelectorRegistry :
 
         _tagSelectorRegistry[hash] = newSelector;
         _tagSelectorLookup[tag] = newSelector;
+        
+        // senior-dev: Register selector with TagRegistry for dirty flag propagation
+        TagRegistry.Instance.RegisterSelector(tag, newSelector);
 
         selector = newSelector;
         return true;
@@ -357,6 +365,10 @@ public class SelectorRegistry :
         EventBus<PreBehaviorUpdatedEvent<IdBehavior>>.Register(Instance);
         EventBus<PostBehaviorUpdatedEvent<IdBehavior>>.Register(Instance);
         EventBus<PreBehaviorRemovedEvent<IdBehavior>>.Register(Instance);
+        EventBus<BehaviorAddedEvent<TagsBehavior>>.Register(Instance);
+        EventBus<PreBehaviorUpdatedEvent<TagsBehavior>>.Register(Instance);
+        EventBus<PostBehaviorUpdatedEvent<TagsBehavior>>.Register(Instance);
+        EventBus<PreBehaviorRemovedEvent<TagsBehavior>>.Register(Instance);
         EventBus<ResetEvent>.Register(Instance);
         EventBus<ShutdownEvent>.Register(Instance);
     }
@@ -387,6 +399,10 @@ public class SelectorRegistry :
         EventBus<PreBehaviorUpdatedEvent<IdBehavior>>.Unregister(Instance);
         EventBus<PostBehaviorUpdatedEvent<IdBehavior>>.Unregister(Instance);
         EventBus<PreBehaviorRemovedEvent<IdBehavior>>.Unregister(Instance);
+        EventBus<BehaviorAddedEvent<TagsBehavior>>.Unregister(Instance);
+        EventBus<PreBehaviorUpdatedEvent<TagsBehavior>>.Unregister(Instance);
+        EventBus<PostBehaviorUpdatedEvent<TagsBehavior>>.Unregister(Instance);
+        EventBus<PreBehaviorRemovedEvent<TagsBehavior>>.Unregister(Instance);
         EventBus<ResetEvent>.Unregister(Instance);
         EventBus<ShutdownEvent>.Unregister(Instance);
     }
@@ -420,5 +436,33 @@ public class SelectorRegistry :
                 selector.MarkDirty();
             }
         }
+    }
+    
+    public void OnEvent(BehaviorAddedEvent<TagsBehavior> e)
+    {
+        OnTagBehaviorMutated(e.Entity);
+    }
+
+    public void OnEvent(PreBehaviorUpdatedEvent<TagsBehavior> e)
+    {
+        OnTagBehaviorMutated(e.Entity);
+    }
+
+    public void OnEvent(PostBehaviorUpdatedEvent<TagsBehavior> e)
+    {
+        OnTagBehaviorMutated(e.Entity);
+    }
+
+    public void OnEvent(PreBehaviorRemovedEvent<TagsBehavior> e)
+    {
+        OnTagBehaviorMutated(e.Entity);
+    }
+    
+    private void OnTagBehaviorMutated(Entity entity)
+    {
+        // senior-dev: TagRegistry handles selector dirty marking
+        // We don't need to do anything here since TagRegistry.RegisterSelector
+        // tracks selectors and marks them dirty during tag mutations
+        // This event handler exists to satisfy the interface but delegates to TagRegistry
     }
 }

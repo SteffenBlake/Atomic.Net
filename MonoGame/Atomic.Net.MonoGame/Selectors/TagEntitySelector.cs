@@ -1,5 +1,6 @@
 using System.Text;
 using Atomic.Net.MonoGame.Core;
+using Atomic.Net.MonoGame.Tags;
 
 namespace Atomic.Net.MonoGame.Selectors;
 
@@ -41,13 +42,25 @@ public class TagEntitySelector(
 
         if (shouldRecalc)
         {
-            // senior-dev: Reset dirty flag even though implementation is pending
-            // Stage 1: parsing only, no actual tag matching yet
-            _dirty = false;
-            
-            // senior-dev: In Stage 1, we just clear matches and return
-            // Tag registry will be implemented in Stage 2
             Matches.Clear();
+            
+            // Resolve all entities with this tag from TagRegistry
+            if (TagRegistry.Instance.TryResolve(tag, out var tagMatches))
+            {
+                // Iterate all entities that have this tag
+                foreach (var (entityIndex, _) in tagMatches)
+                {
+                    // Intersect with prior selector if present
+                    var priorMatches = prior?.Matches.HasValue(entityIndex) ?? true;
+                    if (priorMatches)
+                    {
+                        Matches.Set(entityIndex, true);
+                    }
+                }
+            }
+            
+            // senior-dev: Reset dirty flag after recalc to prevent unnecessary recomputation
+            _dirty = false;
         }
 
         return shouldRecalc;
