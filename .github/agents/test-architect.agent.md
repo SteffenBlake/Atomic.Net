@@ -107,7 +107,7 @@ public class SceneLoader
 ```
 
 ## What NOT To Do
-- ❌ Modify production code (that's senior-dev's job unless creating stubs)
+- ❌ Modify domain layer code (that's senior-dev's job unless creating stubs)
 - ❌ Write tests without Arrange/Act/Assert structure
 - ❌ Mix unit and integration tests in same file without `[Trait]` attributes
 - ❌ Leave `@test-architect` pings unresolved (always change to `#test-architect` after responding)
@@ -121,6 +121,7 @@ public class SceneLoader
 - Add `[Fact(Skip = "reason")]` for tests that can't run yet (e.g., waiting on implementation)
 - Request a code review from specifically the `code-reviewer` custom sub agent
 - NOTE: THATS NOT THE "Copilot code review" agent, its the custom sub agent `code-reviewer`
+- ENSURE YOU DIDNT BREAK EXISTING TESTS, ALL PRIOR EXISTING TESTS SHOULD STILL PASS
 
 ## Performance Considerations
 - Unit tests should complete in milliseconds

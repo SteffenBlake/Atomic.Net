@@ -53,9 +53,8 @@ Build a **data-driven, zero runtime allocation game engine** where entire games 
 ---
 
 ### Query + Command System
-- [ ] Can query entity state from data (distances, properties, etc.)
-- [ ] Can modify entity state from data (change scenes, fire events, etc.)
-- [ ] Can connect queries to commands in data ("when X, do Y")
+- [x] Can query entity state from data (distances, properties, etc.)
+- [ ] Can modify entity state from data
 
 This is the big and hard one, this will likely require us to develop an entire sql-esque or css-esque language to select from one
 selector, and then pass that to an operator
@@ -63,6 +62,9 @@ selector, and then pass that to an operator
 This should HEAVILY be cooked on to really hash out a very performance approach. This is THE engine, a LOT of our work has been leading to this feature, this is what we have been laying down all the groundwork for.
 
 ---
+
+### Tag system
+- [ ] TagBehavior needs to be implemented with TagRegistry, and it has to be wired up to properly work with the tag EntitySelector and be tracked in the SelectorRegistry
 
 ### Time-Based Logic
 - [ ] Can script sequences over time (animations, transitions, cutscenes)
@@ -81,6 +83,7 @@ This should HEAVILY be cooked on to really hash out a very performance approach.
 
 ### Physics
 - [ ] With all the pieces in place, we will want to make at least a half decent physics engine to go with everything, we can start with fairly basic RigidBody stuff, we can add more stuff later as needed but we can just start with things like making groups of entities into a whole body, anchoring joints and etc from 1 entity to another, the sort of basic stuff that is important for physics to baseline work
+- [ ] careful consideration on how to efficiently make this wire into the CollisionEnter entity selector and CollisionExit entity selectors.
 - [ ] We should be able to now actually make our first game using all the above!
 
 ---

@@ -1,8 +1,8 @@
 # Agent Instructions
 
 # CRITICAL: PLEASE READ THIS ENTIRE FILE, NOT JUST PORTIONS OF IT
-
 # CRITICAL: DO NOT NEST YOURSELF AS A SUB AGENT
+# CRITICAL: YOU HAVE TO ACTUALLY EXECUTE THE INSTRUCTIONS IN THIS FILE, NOT JUST READ THEM
 
 A very common issue I see agents make is spinning a copy of THEMSELF up as a sub agent, which seems to cause a shit tonne of problems with loading up context and info
 
@@ -10,7 +10,7 @@ DO NOT DO THIS, STAY IN YOUR TOP LAYER
 
 ## Before You Start
 
-1. Read your role-specific `.agent.md` file for detailed responsibilities
+1. Read your role-specific `.agent.md` file for detailed responsibilities located in `.github/agents/...`
 2. Read `.github/agents/ROADMAP.md` - Current goals + progress checklist
 3. Read `.github/agents/DISCOVERIES.md` - Performance findings (benchmark-backed)
 4. Check active sprint in `.github/agents/sprints/` (if any)
@@ -275,6 +275,27 @@ Assert.True(TryGetBar(out var bar));
 ```
 
 ---
+
+## Directives from the human are the ultimate source of truth
+- Whatever the human declares overrides test assertions, it overrides comments, it overrides existing logic
+- If an existing test conflicts with the human's directives, its likely the test was just written wrong
+- If existing domain layer code conflicts with the human's directives, its likely the domain layer code having been implemented wrong
+
+## CRITICAL: UNDERSTAND, ABOVE ALL ELSE
+Take the time to UNDERSTAND the system. Its INCREDIBLY common you agents will just start making wild assumptions about how things work without first reading and understanding not just the 1 chunk of code but HOW IT FITS INTO EVERYTHING
+
+You need to first ask "what is the commanders intent" of a given system you are working on BEFORE you make changes to it. WHY was it written the way it was, WHY was it asked to be made, WHAT purpose does it serve.
+
+Do not get as focused on "tests must pass", focus more on INTENT behind systems, reason about how they would be consumed and used.
+
+Go back and read sprint files if you dont remember
+
+## ALWAYS ask yourself if something has been done before
+Whenever you go to implement something new, its INCREDIBLY likely something similiar has been done before. Perform MULTIPLE searches for similiar code and look at how the problem has been solved in other places in the codebase
+
+Its extremely common agents skip this critical step and proceed to "re-invent the wheel" or just get the solution wrong because they just failed to go learn how it was solved before.
+
+There is a huge massive codebase of already existing example code, read it and follow its patterns and examples.
 
 ## Performance Expectations
 
