@@ -23,6 +23,7 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
     public static RuleRegistry Instance { get; private set; } = null!;
 
     private readonly SparseArray<JsonRule> _rules = new(Constants.MaxRules);
+    private readonly SparseArray<bool> _active = new(Constants.MaxRules);
 
     /// <summary>
     /// Public accessor for rules SparseArray for iteration and testing.
