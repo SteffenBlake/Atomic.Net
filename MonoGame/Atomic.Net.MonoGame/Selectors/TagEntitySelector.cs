@@ -22,14 +22,14 @@ public class TagEntitySelector(
 
     internal void WriteTo(StringBuilder stringBuilder)
     {
-        // senior-dev: Print self first, then prior (to match input order)
-        stringBuilder.Append('#');
-        stringBuilder.Append(tag);
+        // senior-dev: Print prior first (left), then self (right) to match input order
         if (prior != null)
         {
-            stringBuilder.Append(':');
             prior.WriteTo(stringBuilder);
+            stringBuilder.Append(':');
         }
+        stringBuilder.Append('#');
+        stringBuilder.Append(tag);
     }
 
     public void MarkDirty() => _dirty = true;

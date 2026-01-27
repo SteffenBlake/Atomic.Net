@@ -163,21 +163,14 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
         foreach (var rule in scene.Rules)
         {
-            try
+            // senior-dev: Allocate to appropriate partition based on loader method
+            if (useGlobalPartition)
             {
-                // senior-dev: Allocate to appropriate partition based on loader method
-                if (useGlobalPartition)
-                {
-                    RuleRegistry.Instance.ActivateGlobal(rule);
-                }
-                else
-                {
-                    RuleRegistry.Instance.Activate(rule);
-                }
+                RuleRegistry.Instance.ActivateGlobal(rule);
             }
-            catch (Exception ex)
+            else
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent($"Failed to load rule: {ex.Message}"));
+                RuleRegistry.Instance.Activate(rule);
             }
         }
     }

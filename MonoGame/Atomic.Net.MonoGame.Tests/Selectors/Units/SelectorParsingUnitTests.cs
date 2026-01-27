@@ -139,9 +139,10 @@ public sealed class SelectorParsingUnitTests : IDisposable
         Assert.True(success, "Should successfully parse !enter:#enemies");
         Assert.NotNull(selector);
         
-        // senior-dev: Per sprint doc: !enter:#enemies → CollisionEnter(Prior: Tagged("enemies"))
-        Assert.True(selector.TryMatch(out CollisionEnterEntitySelector? enterSelector), "Should be CollisionEnterEntitySelector");
-        Assert.NotNull(enterSelector);
+        // senior-dev: Per sprint doc: "!enter:#enemies" → Tag("enemies", Prior: CollisionEnter())
+        // The rightmost selector is the root (Tag), leftmost is its prior (CollisionEnter)
+        Assert.True(selector.TryMatch(out TagEntitySelector? tagSelector), "Should be TagEntitySelector");
+        Assert.NotNull(tagSelector);
         // senior-dev: Verify toString shows input format
         Assert.Equal("!enter:#enemies", selector.ToString());
     }

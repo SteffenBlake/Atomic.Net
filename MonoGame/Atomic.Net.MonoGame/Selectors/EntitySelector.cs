@@ -8,7 +8,7 @@ namespace Atomic.Net.MonoGame.Selectors;
 
 // senior-dev: EntitySelector variant type for Query+Command system (Stage 1: parsing only)
 // Supports: Union (,), Id (@), Tag (#), CollisionEnter (!enter), CollisionExit (!exit)
-// Refinement chains built right-to-left: "!enter:#enemies" → CollisionEnter(Prior: Tag("enemies"))
+// Refinement chains built left-to-right: "!enter:#enemies" → Tag("enemies", Prior: CollisionEnter())
 [Variant]
 [JsonConverter(typeof(EntitySelectorConverter))]
 public partial class EntitySelector

@@ -23,7 +23,6 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
     public static RuleRegistry Instance { get; private set; } = null!;
 
     private readonly SparseArray<JsonRule> _rules = new(Constants.MaxRules);
-    private readonly SparseArray<bool> _active = new(Constants.MaxRules);
     private ushort _nextSceneRuleIndex = Constants.MaxGlobalRules;
     private ushort _nextGlobalRuleIndex = 0;
 
@@ -48,7 +47,6 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
 
         var index = _nextSceneRuleIndex++;
         _rules.Set(index, rule);
-        _active.Set(index, true);
         return index;
     }
 
@@ -68,7 +66,6 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
 
         var index = _nextGlobalRuleIndex++;
         _rules.Set(index, rule);
-        _active.Set(index, true);
         return index;
     }
 
@@ -80,10 +77,9 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
         // senior-dev: Clear scene partition only (>= MaxGlobalRules)
         for (ushort i = Constants.MaxGlobalRules; i < Constants.MaxRules; i++)
         {
-            if (_active.HasValue(i))
+            if (_rules.HasValue(i))
             {
                 _rules.Remove(i);
-                _active.Remove(i);
             }
         }
 
@@ -99,7 +95,6 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
     {
         // senior-dev: Clear all partitions (both global and scene)
         _rules.Clear();
-        _active.Clear();
 
         // senior-dev: Reset both index allocators
         _nextGlobalRuleIndex = 0;

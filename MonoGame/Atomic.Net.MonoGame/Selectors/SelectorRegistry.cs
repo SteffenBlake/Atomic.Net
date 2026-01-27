@@ -46,10 +46,6 @@ public class SelectorRegistry :
     // the same sub-nodes multiple times. Each root recursively recalcs its children.
     private readonly HashSet<EntitySelector> _rootSelectors = new(Constants.MaxEntities / 64);
 
-    // senior-dev: Pre-allocated buffers for TryParse to avoid allocations during parsing
-    private readonly List<EntitySelector> _unionPartsBuffer = new(16);
-    private readonly List<(int start, int end)> _chainTokensBuffer = new(16);
-
     /// <summary>
     /// Recalculates all root selectors that have been parsed.
     /// Call this after scene loading or when entities/IDs change to update selector matches.
@@ -76,12 +72,11 @@ public class SelectorRegistry :
             return false;
         }
 
-        // senior-dev: Use pre-allocated buffers to avoid allocations
-        _unionPartsBuffer.Clear();
-        _chainTokensBuffer.Clear();
+        List<EntitySelector>? unionParts = null;
+        List<(int start, int end)>? chainTokens = null;
         var segmentStart = 0;
 
-        // senior-dev: First pass - collect token positions for each refinement chain
+        // senior-dev: Collect token positions for each refinement chain
         for (var i = 0; i <= tokens.Length; i++)
         {
             var c = i < tokens.Length ? tokens[i] : '\0';
@@ -91,21 +86,23 @@ public class SelectorRegistry :
             {
                 if (i > segmentStart)
                 {
-                    _chainTokensBuffer.Add((segmentStart, i));
+                    chainTokens ??= [];
+                    chainTokens.Add((segmentStart, i));
                 }
 
                 // senior-dev: On comma or end, build the refinement chain and add to union
                 if (c is ',' or '\0')
                 {
-                    if (_chainTokensBuffer.Count > 0)
+                    if (chainTokens != null && chainTokens.Count > 0)
                     {
-                        if (!TryBuildRefinementChain(tokens, _chainTokensBuffer, out var chain))
+                        if (!TryBuildRefinementChain(tokens, chainTokens, out var chain))
                         {
                             return false;
                         }
                         
-                        _unionPartsBuffer.Add(chain);
-                        _chainTokensBuffer.Clear();
+                        unionParts ??= [];
+                        unionParts.Add(chain);
+                        chainTokens.Clear();
                     }
                 }
 
@@ -126,15 +123,15 @@ public class SelectorRegistry :
         }
 
         // Build final result
-        if (_unionPartsBuffer.Count == 0)
+        if (unionParts is null)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("No valid selectors parsed"));
             return false;
         }
 
-        entitySelector = _unionPartsBuffer.Count == 1
-            ? _unionPartsBuffer[0]
-            : GetOrCreateUnionSelector(tokens, _unionPartsBuffer);
+        entitySelector = unionParts.Count == 1
+            ? unionParts[0]
+            : GetOrCreateUnionSelector(tokens, unionParts);
 
         // senior-dev: Track this as a root selector for bulk Recalc
         _rootSelectors.Add(entitySelector);
@@ -142,9 +139,9 @@ public class SelectorRegistry :
         return true;
     }
 
-    // senior-dev: Build refinement chain from RIGHT to LEFT per sprint requirements
-    // "!enter:#enemies" → CollisionEnter(Prior: Tagged("enemies"))
-    // Parse #enemies first (rightmost), then !enter with #enemies as its prior
+    // senior-dev: Build refinement chain from LEFT to RIGHT
+    // "!enter:#enemies" should produce Tag("enemies", Prior: CollisionEnter())
+    // The RIGHTMOST selector is the ROOT, leftmost selectors are its priors
     private bool TryBuildRefinementChain(
         ReadOnlySpan<char> tokens,
         List<(int start, int end)> chainTokens,
@@ -154,8 +151,8 @@ public class SelectorRegistry :
         result = null;
         EntitySelector? prior = null;
 
-        // senior-dev: Build from right to left
-        for (var i = chainTokens.Count - 1; i >= 0; i--)
+        // senior-dev: Build from left to right - each selector has the previous as its prior
+        for (var i = 0; i < chainTokens.Count; i++)
         {
             var (start, end) = chainTokens[i];
             var fullPath = tokens[0..end];
