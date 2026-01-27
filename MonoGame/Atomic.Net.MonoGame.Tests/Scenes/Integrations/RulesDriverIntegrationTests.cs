@@ -4,6 +4,7 @@ using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Properties;
 using Atomic.Net.MonoGame.Scenes;
 using Atomic.Net.MonoGame.Ids;
+using Xunit.Abstractions;
 
 namespace Atomic.Net.MonoGame.Tests.Scenes.Integrations;
 
@@ -15,9 +16,12 @@ namespace Atomic.Net.MonoGame.Tests.Scenes.Integrations;
 [Trait("Category", "Integration")]
 public sealed class RulesDriverIntegrationTests : IDisposable
 {
-    public RulesDriverIntegrationTests()
+    private readonly ErrorEventLogger _errorLogger;
+
+    public RulesDriverIntegrationTests(ITestOutputHelper output)
     {
         // Arrange: Initialize systems before each test
+        _errorLogger = new ErrorEventLogger(output);
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
@@ -26,6 +30,7 @@ public sealed class RulesDriverIntegrationTests : IDisposable
     {
         // Clean up ALL entities (both global and scene) between tests
         EventBus<ShutdownEvent>.Push(new());
+        _errorLogger.Dispose();
     }
 
     [Fact]

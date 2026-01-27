@@ -70,23 +70,32 @@ public class RulesDriver : IEventHandler<InitializeEvent>, IEventHandler<Shutdow
 
     private bool TryExecuteRule(JsonRule rule, float deltaTime, ushort ruleIndex)
     {
-        try
-        {
-            // senior-dev: Step 1 - Get matched entities from selector
-            var matches = rule.From.Matches;
+        // senior-dev: Step 1 - Get matched entities from selector
+        var matches = rule.From.Matches;
 
-            // senior-dev: Step 2 - Build World context with deltaTime and matched entities
-            var worldContext = BuildWorldContext(deltaTime, matches);
-            if (worldContext == null)
-            {
-                return true; // senior-dev: No entities matched, not an error
-            }
+        // senior-dev: Step 2 - Build World context with deltaTime and matched entities
+        var worldContext = BuildWorldContext(deltaTime, matches);
+        if (worldContext == null)
+        {
+            return true; // senior-dev: No entities matched, not an error
+        }
 
             // senior-dev: Step 3 - Evaluate WHERE clause (if present)
             JsonArray? entitiesToMutate = null;
             if (rule.Where != null)
             {
-                var whereResult = JsonLogic.Apply(rule.Where, worldContext);
+                JsonNode? whereResult;
+                try
+                {
+                    whereResult = JsonLogic.Apply(rule.Where, worldContext);
+                }
+                catch (Exception ex)
+                {
+                    EventBus<ErrorEvent>.Push(new ErrorEvent(
+                        $"Rule {ruleIndex}: WHERE clause JsonLogic evaluation failed: {ex.Message}. Rule will be removed."
+                    ));
+                    return false;
+                }
                 
                 // senior-dev: WHERE can return boolean or array
                 if (whereResult is JsonValue boolValue && boolValue.TryGetValue<bool>(out var boolResult))
@@ -125,7 +134,10 @@ public class RulesDriver : IEventHandler<InitializeEvent>, IEventHandler<Shutdow
             // senior-dev: Step 4 - Build context for DO clause with filtered entities
             var doContext = new JsonObject
             {
-                ["world"] = worldContext["world"],
+                ["world"] = new JsonObject
+                {
+                    ["deltaTime"] = deltaTime
+                },
                 ["entities"] = entitiesToMutate
             };
 
@@ -138,7 +150,18 @@ public class RulesDriver : IEventHandler<InitializeEvent>, IEventHandler<Shutdow
                 return false;
             }
 
-            var doResult = JsonLogic.Apply(mutCommand.Mut, doContext);
+            JsonNode? doResult;
+            try
+            {
+                doResult = JsonLogic.Apply(mutCommand.Mut, doContext);
+            }
+            catch (Exception ex)
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Rule {ruleIndex}: DO clause JsonLogic evaluation failed: {ex.Message}. Rule will be removed."
+                ));
+                return false;
+            }
             
             if (doResult is not JsonArray mutations)
             {
@@ -152,14 +175,6 @@ public class RulesDriver : IEventHandler<InitializeEvent>, IEventHandler<Shutdow
             ApplyMutations(mutations, ruleIndex);
 
             return true;
-        }
-        catch (Exception ex)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Rule {ruleIndex}: JsonLogic evaluation failed: {ex.Message}. Rule will be removed."
-            ));
-            return false;
-        }
     }
 
     /// <summary>
@@ -195,6 +210,7 @@ public class RulesDriver : IEventHandler<InitializeEvent>, IEventHandler<Shutdow
 
         // senior-dev: Serialize to JsonNode for JsonLogic
         // Based on DISCOVERIES.md: Standard JsonSerializer is fastest, no pooling needed
+        // IMPORTANT: We need to serialize fresh for each call to avoid "node already has a parent" error
         var entitiesJson = JsonSerializer.SerializeToNode(_entityBuffer);
 
         var worldContext = new JsonObject
@@ -264,7 +280,13 @@ public class RulesDriver : IEventHandler<InitializeEvent>, IEventHandler<Shutdow
                 continue;
             }
 
-            var mutation = mutationNode.AsObject();
+            if (mutationNode is not JsonObject mutation)
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Rule {ruleIndex}: Mutation must be a JsonObject, got {mutationNode.GetType().Name}. Skipping mutation."
+                ));
+                continue;
+            }
 
             // senior-dev: Extract _index to identify target entity
             if (!mutation.TryGetPropertyValue("_index", out var indexNode) || indexNode == null)
