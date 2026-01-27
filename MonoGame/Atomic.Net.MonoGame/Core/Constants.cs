@@ -17,20 +17,20 @@ public static class Constants
     public const ushort MaxEntities = 8192;
 #endif
 
-#if MAX_PERSISTENT_ENTITIES
+#if MAX_GLOBAL_ENTITIES
     /// <summary>
-    /// Partition point between persistent and scene entities.
-    /// Entities with indices less than MaxPersistentEntities are persistent entities.
-    /// Entities with indices greater than or equal to MaxPersistentEntities are scene entities.
+    /// Partition point between global and scene entities.
+    /// Entities with indices less than MaxGlobalEntities are global entities.
+    /// Entities with indices greater than or equal to MaxGlobalEntities are scene entities.
     /// </summary>
-    public const ushort MaxPersistentEntities = MAX_PERSISTENT_ENTITIES;
+    public const ushort MaxGlobalEntities = MAX_GLOBAL_ENTITIES;
 #else
     /// <summary>
-    /// Partition point between persistent and scene entities.
-    /// Entities with indices less than MaxPersistentEntities are persistent entities.
-    /// Entities with indices greater than or equal to MaxPersistentEntities are scene entities.
+    /// Partition point between global and scene entities.
+    /// Entities with indices less than MaxGlobalEntities are global entities.
+    /// Entities with indices greater than or equal to MaxGlobalEntities are scene entities.
     /// </summary>
-    public const ushort MaxPersistentEntities = 256;
+    public const ushort MaxGlobalEntities = 256;
 #endif
 
 #if DEFAULT_ALLOC_PROPERTYBAG 
