@@ -35,14 +35,14 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
     /// Activate the next available scene rule (index greater than or equal to MaxGlobalRules).
     /// </summary>
     /// <param name="rule">The rule to activate.</param>
-    /// <returns>The index of the activated rule.</returns>
+    /// <returns>The index of the activated rule, or ushort.MaxValue on error.</returns>
     public ushort Activate(JsonRule rule)
     {
         // senior-dev: Allocate from scene partition (>= MaxGlobalRules)
         if (_nextSceneRuleIndex >= Constants.MaxRules)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Scene rule capacity exceeded"));
-            return 0;
+            return ushort.MaxValue;
         }
 
         var index = _nextSceneRuleIndex++;
@@ -54,14 +54,14 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
     /// Activate the next available global rule (index less than MaxGlobalRules).
     /// </summary>
     /// <param name="rule">The rule to activate.</param>
-    /// <returns>The index of the activated rule.</returns>
+    /// <returns>The index of the activated rule, or ushort.MaxValue on error.</returns>
     public ushort ActivateGlobal(JsonRule rule)
     {
         // senior-dev: Allocate from global partition (< MaxGlobalRules)
         if (_nextGlobalRuleIndex >= Constants.MaxGlobalRules)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Global rule capacity exceeded"));
-            return 0;
+            return ushort.MaxValue;
         }
 
         var index = _nextGlobalRuleIndex++;
