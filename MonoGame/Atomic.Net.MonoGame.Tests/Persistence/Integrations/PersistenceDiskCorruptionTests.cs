@@ -250,7 +250,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         Assert.NotNull(props.Value.Properties);
         Assert.Equal("scene", props.Value.Properties["partition"]);
         
-        // test-architect: FINDING: This validates that persistent partition vs disk persistence
+        // test-architect: FINDING: This validates that global partition vs disk persistence
         // are completely separate concepts. Disk persistence works in EITHER partition.
     }
 }

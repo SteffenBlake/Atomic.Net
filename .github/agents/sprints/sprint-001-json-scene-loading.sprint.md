@@ -71,7 +71,7 @@
 - **File:** `Atomic.Net.MonoGame.Scenes/SceneLoader.cs`
   - Singleton pattern via `ISingleton<SceneLoader>`
   - Method: `LoadGameScene(string scenePath)` - loads game scene JSON (uses `EntityRegistry.Activate()`)
-  - Method: `LoadGlobalScene(string scenePath)` - loads persistent scene JSON (uses `EntityRegistry.ActivatePersistent()`)
+  - Method: `LoadGlobalScene(string scenePath)` - loads global scene JSON (uses `EntityRegistry.ActivateGlobal()`)
   - Two-pass loading:
     - **Pass 1:** Create all entities, apply behaviors (Transform, EntityId)
     - **Pass 2:** Resolve parent references, fire error events for unresolved IDs
@@ -86,7 +86,7 @@
 
 #### 6. Integration with Existing Systems
 - Uses `EntityRegistry.Instance.Activate()` for game scene entities (indices ≥256)
-- Uses `EntityRegistry.Instance.ActivatePersistent()` for global scene entities (indices <256)
+- Uses `EntityRegistry.Instance.ActivateGlobal()` for global scene entities (indices <256)
 - Uses `BehaviorRegistry<TransformBehavior>.Instance.SetBehavior()` to apply transforms
 - Uses `BehaviorRegistry<Parent>.Instance.SetBehavior()` to set parent relationships
 - Uses `BehaviorRegistry<EntityId>.Instance.SetBehavior()` to track entity IDs
@@ -98,7 +98,7 @@
 1. User calls `SceneLoader.Instance.LoadGameScene("Content/scenes/main-menu.json")` or `LoadGlobalScene(...)`
 2. SceneLoader reads file, deserializes JSON using `System.Text.Json`
 3. **Pass 1:** For each `JsonEntity`:
-   - Call `EntityRegistry.Instance.Activate()` (or `ActivatePersistent()`) to spawn entity
+   - Call `EntityRegistry.Instance.Activate()` (or `ActivateGlobal()`) to spawn entity
    - If `jsonEntity.Transform != null`, call `BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(entity, behavior => behavior = jsonEntity.Transform.Value)`
    - If `jsonEntity.Id != null`, call `BehaviorRegistry<EntityId>.Instance.SetBehavior(entity, behavior => behavior = new EntityId(jsonEntity.Id))`
 4. **Pass 2:** For each entity with `jsonEntity.Parent != null`:

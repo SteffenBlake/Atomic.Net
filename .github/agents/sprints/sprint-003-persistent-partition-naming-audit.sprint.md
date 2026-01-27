@@ -36,17 +36,17 @@ The "loading partition" name is misleading because:
 
 **Partition Terminology:**
 - "loading partition" → **"global partition"**
-- "loading entities" → **"persistent entities"**
+- "loading entities" → **"global entities"**
 - "scene partition" → **"scene partition"** (no change, already clear)
 - "scene entities" → **"scene entities"** (no change, already clear)
 
 **Constant Naming:**
-- `MaxLoadingEntities` → **`MaxPersistentEntities`**
+- `MaxGlobalEntities` → **`MaxGlobalEntities`**
 - Preprocessor: `MAX_LOADING_ENTITIES` → **`MAX_GLOBAL_ENTITIES`**
 
 **Method Naming:**
 - `ActivateLoading()` → **`ActivateGlobal()`**
-- `GetLoadingRoot()` → **`GetPersistentRoot()`**
+- `GetLoadingRoot()` → **`GetGlobalRoot()`**
 - `LoadLoadingScene()` → **`LoadGlobalScene()`**
 
 **Variable Naming:**
@@ -90,11 +90,11 @@ No integration changes required — this is a pure naming refactor. The partitio
 
 ### Code Changes (Core Library)
 
-- [ ] Rename `Constants.MaxLoadingEntities` to `Constants.MaxPersistentEntities` in `Atomic.Net.MonoGame.Core/Constants.cs`
+- [ ] Rename `Constants.MaxGlobalEntities` to `Constants.MaxGlobalEntities` in `Atomic.Net.MonoGame.Core/Constants.cs`
 - [ ] Update preprocessor symbol from `MAX_LOADING_ENTITIES` to `MAX_GLOBAL_ENTITIES` in `Constants.cs`
 - [ ] Update all XML doc comments in `Constants.cs` to use "persistent" terminology
 - [ ] Rename `EntityRegistry.ActivateLoading()` to `EntityRegistry.ActivateGlobal()` in `EntityRegistry.cs`
-- [ ] Rename `EntityRegistry.GetLoadingRoot()` to `EntityRegistry.GetPersistentRoot()` in `EntityRegistry.cs`
+- [ ] Rename `EntityRegistry.GetLoadingRoot()` to `EntityRegistry.GetGlobalRoot()` in `EntityRegistry.cs`
 - [ ] Rename `_nextLoadingIndex` to `_nextGlobalIndex` in `EntityRegistry.cs`
 - [ ] Update all XML doc comments in `EntityRegistry.cs` to use "persistent" terminology
 - [ ] Update inline comments in `EntityRegistry.cs` mentioning partition behavior
@@ -112,7 +112,7 @@ No integration changes required — this is a pure naming refactor. The partitio
 
 - [ ] Rename test method `LoadLoadingScene_AllocatesLoadingEntity` to `LoadGlobalScene_AllocatesPersistentEntity` in `EntityRegistryIntegrationTests.cs`
 - [ ] Rename test method `LoadLoadingScene_AllocatesSequentialIndices` to `LoadGlobalScene_AllocatesSequentialIndices` in `EntityRegistryIntegrationTests.cs`
-- [ ] Rename test method `GetLoadingRoot_ReturnsFirstLoadingEntity` to `GetPersistentRoot_ReturnsFirstPersistentEntity` in `EntityRegistryIntegrationTests.cs`
+- [ ] Rename test method `GetLoadingRoot_ReturnsFirstLoadingEntity` to `GetGlobalRoot_ReturnsFirstPersistentEntity` in `EntityRegistryIntegrationTests.cs`
 - [ ] Rename test method `ResetEvent_DeactivatesOnlySceneEntities` variables `loadingPath`, `loadingEntity` to `globalPath`, `globalEntity`
 - [ ] Update all test comments in `EntityRegistryIntegrationTests.cs` to use "persistent" terminology
 - [ ] Rename test method `LoadLoadingScene_WithBasicEntities_SpawnsEntitiesInLoadingPartition` to `LoadGlobalScene_WithBasicEntities_SpawnsEntitiesInPersistentPartition` in `SceneLoaderIntegrationTests.cs`
@@ -173,7 +173,7 @@ No integration changes required — this is a pure naming refactor. The partitio
 
 ### Gap 3: Partition Size Configuration
 
-**Current behavior:** `MaxPersistentEntities` is hardcoded to 256 (or compile-time override)
+**Current behavior:** `MaxGlobalEntities` is hardcoded to 256 (or compile-time override)
 
 **Gap:** No runtime warning when global partition is nearing capacity
 
@@ -185,7 +185,7 @@ No integration changes required — this is a pure naming refactor. The partitio
 
 ### Gap 4: Documentation of Partition Use Cases
 
-**Current behavior:** No formal documentation of when to use persistent vs scene partition
+**Current behavior:** No formal documentation of when to use global vs scene partition
 
 **Gap:** Designers may not understand best practices for partition usage
 
@@ -193,7 +193,7 @@ No integration changes required — this is a pure naming refactor. The partitio
 - Add design guidelines document explaining:
   - Persistent partition: player state, inventory, quest progress, global UI
   - Scene partition: level geometry, NPCs, interactable objects
-  - Rule of thumb: "Would this survive a scene transition?" → persistent
+  - Rule of thumb: "Would this survive a scene transition?" → global
 
 **Priority:** Medium — helps onboard new designers
 
@@ -233,7 +233,7 @@ No integration changes required — this is a pure naming refactor. The partitio
 
 ```csharp
 // Constants.cs
-public const ushort MaxLoadingEntities = 256;
+public const ushort MaxGlobalEntities = 256;
 
 // EntityRegistry.cs
 public Entity ActivateLoading() { ... }
@@ -247,11 +247,11 @@ public void LoadLoadingScene(string scenePath = "Content/Scenes/loading.json") {
 
 ```csharp
 // Constants.cs
-public const ushort MaxPersistentEntities = 256;
+public const ushort MaxGlobalEntities = 256;
 
 // EntityRegistry.cs
 public Entity ActivateGlobal() { ... }
-public Entity GetPersistentRoot() => _entities[0];
+public Entity GetGlobalRoot() => _entities[0];
 
 // SceneLoader.cs
 public void LoadGlobalScene(string scenePath = "Content/Scenes/global.json") { ... }
@@ -266,7 +266,7 @@ public void LoadLoadingScene_AllocatesLoadingEntity()
     var scenePath = "Core/Fixtures/single-loading-entity.json";
     SceneLoader.Instance.LoadLoadingScene(scenePath);
     Assert.True(EntityIdRegistry.Instance.TryResolve("loading-entity", out var entity));
-    Assert.True(entity.Value.Index < Constants.MaxLoadingEntities);
+    Assert.True(entity.Value.Index < Constants.MaxGlobalEntities);
 }
 ```
 
@@ -279,7 +279,7 @@ public void LoadGlobalScene_AllocatesPersistentEntity()
     var scenePath = "Core/Fixtures/single-global-entity.json";
     SceneLoader.Instance.LoadGlobalScene(scenePath);
     Assert.True(EntityIdRegistry.Instance.TryResolve("persistent-entity", out var entity));
-    Assert.True(entity.Value.Index < Constants.MaxPersistentEntities);
+    Assert.True(entity.Value.Index < Constants.MaxGlobalEntities);
 }
 ```
 
