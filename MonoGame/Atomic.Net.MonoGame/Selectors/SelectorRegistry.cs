@@ -305,9 +305,6 @@ public class SelectorRegistry :
 
         _tagSelectorRegistry[hash] = newSelector;
         _tagSelectorLookup[tag] = newSelector;
-        
-        // senior-dev: Register selector with TagRegistry for dirty flag propagation
-        TagRegistry.Instance.RegisterSelector(tag, newSelector);
 
         selector = newSelector;
         return true;
@@ -440,29 +437,36 @@ public class SelectorRegistry :
     
     public void OnEvent(BehaviorAddedEvent<TagsBehavior> e)
     {
-        OnTagBehaviorMutated(e.Entity);
+        MarkTagSelectorsAsDirty(e.Entity);
     }
 
     public void OnEvent(PreBehaviorUpdatedEvent<TagsBehavior> e)
     {
-        OnTagBehaviorMutated(e.Entity);
+        MarkTagSelectorsAsDirty(e.Entity);
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<TagsBehavior> e)
     {
-        OnTagBehaviorMutated(e.Entity);
+        MarkTagSelectorsAsDirty(e.Entity);
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<TagsBehavior> e)
     {
-        OnTagBehaviorMutated(e.Entity);
+        MarkTagSelectorsAsDirty(e.Entity);
     }
     
-    private void OnTagBehaviorMutated(Entity entity)
+    private void MarkTagSelectorsAsDirty(Entity entity)
     {
-        // senior-dev: TagRegistry handles selector dirty marking
-        // We don't need to do anything here since TagRegistry.RegisterSelector
-        // tracks selectors and marks them dirty during tag mutations
-        // This event handler exists to satisfy the interface but delegates to TagRegistry
+        // senior-dev: When tags change on an entity, mark all selectors for those tags as dirty
+        if (entity.TryGetBehavior<TagsBehavior>(out var behavior))
+        {
+            foreach (var tag in behavior.Value.Tags)
+            {
+                if (_tagSelectorLookup.TryGetValue(tag, out var selector))
+                {
+                    selector.MarkDirty();
+                }
+            }
+        }
     }
 }

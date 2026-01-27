@@ -47,12 +47,15 @@ public class TagEntitySelector(
             // Resolve all entities with this tag from TagRegistry
             if (TagRegistry.Instance.TryResolve(tag, out var tagMatches))
             {
-                // Iterate all entities that have this tag
-                foreach (var (entityIndex, _) in tagMatches)
+                if (prior != null)
                 {
-                    // Intersect with prior selector if present
-                    var priorMatches = prior?.Matches.HasValue(entityIndex) ?? true;
-                    if (priorMatches)
+                    // senior-dev: Use TensorSparse for fast SIMD intersection
+                    TensorSparse.And(tagMatches, prior.Matches, Matches);
+                }
+                else
+                {
+                    // No prior selector, copy all tag matches
+                    foreach (var (entityIndex, _) in tagMatches)
                     {
                         Matches.Set(entityIndex, true);
                     }
