@@ -33,7 +33,6 @@ public partial class TagsBehaviorConverter : JsonConverter<TagsBehavior>
         }
         
         var builder = ImmutableHashSet.CreateBuilder<string>(StringComparer.OrdinalIgnoreCase);
-        var seenTags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         
         while (reader.Read())
         {
@@ -76,13 +75,11 @@ public partial class TagsBehaviorConverter : JsonConverter<TagsBehavior>
             }
             
             // Guard: duplicate tag
-            if (!seenTags.Add(normalizedTag))
+            if (!builder.Add(normalizedTag))
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent($"Duplicate tag '{tag}' in entity (skipped)"));
                 continue;
             }
-            
-            builder.Add(normalizedTag);
         }
         
         return new TagsBehavior
@@ -93,11 +90,6 @@ public partial class TagsBehaviorConverter : JsonConverter<TagsBehavior>
     
     public override void Write(Utf8JsonWriter writer, TagsBehavior value, JsonSerializerOptions options)
     {
-        writer.WriteStartArray();
-        foreach (var tag in value.Tags)
-        {
-            writer.WriteStringValue(tag);
-        }
-        writer.WriteEndArray();
+        JsonSerializer.Serialize(writer, value.Tags, options);
     }
 }
