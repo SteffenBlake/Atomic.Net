@@ -149,7 +149,7 @@ All 5 units get `enemyCount: 3`, `allyCount: 2`
 **Approach:**
 
 The World context needs to serialize entities to JSON for JsonLogic evaluation. Based on DISCOVERIES.md:
-- Standard `JsonSerializer.Serialize()` is fastest (no pooling needed per LiteDB benchmarks)
+- Standard `JsonSerializer.SerializeToNode()` is fastest (no pooling needed per LiteDB benchmarks)
 - Serialize to JsonNode for JsonLogic compatibility
 - Pre-allocate serialization buffers to reduce allocations
 
@@ -175,20 +175,14 @@ The World context needs to serialize entities to JSON for JsonLogic evaluation. 
 
 **Implementation Strategy:**
 1. Iterate matched entities from selector's Matches SparseArray
-2. For each matched entity:
-   - Get _index (entity index in EntityRegistry)
-   - Get id (via EntityIdRegistry if present)
-   - Get properties (via PropertiesRegistry if present)
-   - Get tags (via TagRegistry if present)
-   - Serialize to JsonObject
+2. For each matched entity, convert it to a JsonRuleEntity struct (look at JsonEntity, you are pretty much copying that but this one has _index on it)
 3. Build World context JsonObject with deltaTime and entities array
 4. Pass to JsonLogic evaluator
 
 **Allocation Strategy:**
-- Use `List<JsonObject>` pre-allocated to MaxEntities capacity (allocated once at driver init)
+- Use `List<JsonRuleEntity>` pre-allocated to MaxEntities capacity (allocated once at driver init)
 - Clear and reuse list each frame
 - JsonNode serialization may allocate (acceptable during frame execution for MVP)
-- Request @benchmarker to test pooling strategies if allocations are excessive
 
 #### 3. JsonLogic Integration
 **Library:** `json-everything` (already in dependencies from sprint-005)
@@ -197,9 +191,7 @@ The World context needs to serialize entities to JSON for JsonLogic evaluation. 
 - Input: World context with entities array
 - JsonLogic expression evaluates to boolean or filter result
 - If result is array, use filtered array for DO clause
-- If result is boolean true, use all matched entities for DO
-- If result is boolean false, skip DO clause
-- If result is non-boolean/non-array, fire ErrorEvent and skip rule
+- If result is non-boolean/non-array, fire ErrorEvent and skip rule and remove the rule so it doesnt cause errors in future iterations (include this in the error message)
 
 **DO Clause Execution:**
 - Input: World context with filtered entities (from WHERE or original matches)
@@ -227,6 +219,7 @@ After DO clause evaluation, mutations need to be applied back to entities:
    - Look up entity by index in EntityRegistry
    - Extract changed properties from mutation
    - Update entity behaviors (PropertiesBehavior, etc.)
+   - Once again, look at JsonEntity for examples on how to do this, it should pretty much be 1:1
 
 **Behavior Updates:**
 - Properties: Use PropertiesRegistry to update PropertiesBehavior
@@ -242,7 +235,7 @@ After DO clause evaluation, mutations need to be applied back to entities:
 - Missing _index: Fire ErrorEvent, skip mutation
 - Out-of-bounds _index: Fire ErrorEvent, skip mutation
 - Invalid JSON structure: Fire ErrorEvent, skip mutation
-- Entity deactivated mid-frame: Fire ErrorEvent, skip mutation
+- For all above, include that the rule will be ignored moving forward and remove the rule from the list so it doesnt spam the error
 
 #### 5. Event Lifecycle
 **Events to Handle:**
@@ -306,12 +299,6 @@ After DO clause evaluation, mutations need to be applied back to entities:
 - Entity serialization may not be cache-optimal (acceptable for MVP)
 - Future optimization: batch serialization, SIMD operations
 
-#### Benchmarking Requests
-- @benchmarker: Test entity serialization approaches (JsonSerializer vs manual JsonObject construction)
-- @benchmarker: Test World context building with/without pooling
-- @benchmarker: Stress test 1K entities, 10 rules, verify <10ms target
-- @benchmarker: Allocation tracking to verify zero gameplay allocations
-
 ---
 
 ## Tasks
@@ -324,7 +311,7 @@ After DO clause evaluation, mutations need to be applied back to entities:
   - Pre-allocate entity serialization buffers (List<JsonObject> with MaxEntities capacity)
   - Event handlers for InitializeEvent, ShutdownEvent
 
-- [ ] Task 2: Implement entity serialization to JsonObject with _index, properties, tags, id
+- [ ] Task 2: Implement entity serialization to JsonRuleEntity with _index, properties, tags, id, transform, world transform, ALL BEHAVIORS SHOULD BE ON IT THAT IT HAS
   - SerializeEntity(Entity entity) method
   - Extract properties via PropertiesRegistry
   - Extract tags via TagRegistry
@@ -466,17 +453,5 @@ Initial implementation may allocate during JsonNode serialization. This is accep
 2. Json-everything library may require JsonNode input
 3. Premature optimization without benchmarks is anti-pattern
 4. Benchmarking will guide optimization if needed
-
-If benchmarks show excessive allocations:
-- Test Utf8JsonWriter with pooled buffers (per DISCOVERIES.md, may not help)
-- Test manual JsonObject construction vs JsonSerializer
-- Test entity serialization caching (if entities unchanged)
-
-### Future Performance Optimizations (Out of Scope)
-- Incremental evaluation (only process dirty entities)
-- Parallel rule execution (if rules don't conflict)
-- SIMD-based JsonLogic operations
-- Entity serialization caching
-- Custom JsonLogic evaluator (avoid json-everything allocations)
 
 These optimizations should be benchmarked before implementation to ensure value.
