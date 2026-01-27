@@ -72,11 +72,10 @@ public class SelectorRegistry :
             return false;
         }
 
+        EntitySelector? current = null;
         List<EntitySelector>? unionParts = null;
-        List<(int start, int end)>? chainTokens = null;
         var segmentStart = 0;
 
-        // senior-dev: Collect token positions for each refinement chain
         for (var i = 0; i <= tokens.Length; i++)
         {
             var c = i < tokens.Length ? tokens[i] : '\0';
@@ -84,26 +83,20 @@ public class SelectorRegistry :
             // Process delimiters and end of input
             if (c is ':' or ',' or '\0')
             {
-                if (i > segmentStart)
+                if (!TryProcessToken(tokens, segmentStart, i, current, out current))
                 {
-                    chainTokens ??= [];
-                    chainTokens.Add((segmentStart, i));
+                    return false;
                 }
 
-                // senior-dev: On comma or end, build the refinement chain and add to union
+                // Add to union only on comma or end (not on colon)
                 if (c is ',' or '\0')
                 {
-                    if (chainTokens != null && chainTokens.Count > 0)
+                    if (current != null)
                     {
-                        if (!TryBuildRefinementChain(tokens, chainTokens, out var chain))
-                        {
-                            return false;
-                        }
-                        
                         unionParts ??= [];
-                        unionParts.Add(chain);
-                        chainTokens.Clear();
+                        unionParts.Add(current);
                     }
+                    current = null;
                 }
 
                 segmentStart = i + 1;
@@ -139,35 +132,35 @@ public class SelectorRegistry :
         return true;
     }
 
-    // senior-dev: Build refinement chain from LEFT to RIGHT
-    // "!enter:#enemies" should produce Tag("enemies", Prior: CollisionEnter())
-    // The RIGHTMOST selector is the ROOT, leftmost selectors are its priors
-    private bool TryBuildRefinementChain(
+    private bool TryProcessToken(
         ReadOnlySpan<char> tokens,
-        List<(int start, int end)> chainTokens,
-        [NotNullWhen(true)] out EntitySelector? result
+        int segmentStart,
+        int segmentEnd,
+        EntitySelector? prior,
+        out EntitySelector? result
     )
     {
         result = null;
-        EntitySelector? prior = null;
 
-        // senior-dev: Build from left to right - each selector has the previous as its prior
-        for (var i = 0; i < chainTokens.Count; i++)
+        // Guard: empty token
+        if (segmentEnd == segmentStart)
         {
-            var (start, end) = chainTokens[i];
-            var fullPath = tokens[0..end];
-            var token = tokens[start..end];
-            var hash = string.GetHashCode(fullPath);
-
-            if (!TryGetOrCreateSelector(token, hash, prior, out var selector))
-            {
-                return false;
-            }
-
-            prior = selector;
+            EventBus<ErrorEvent>.Push(
+                new ErrorEvent($"Empty token at position {segmentEnd}")
+            );
+            return false;
         }
 
-        result = prior!;
+        var fullPath = tokens[0..segmentEnd];
+        var token = tokens[segmentStart..segmentEnd];
+        var hash = string.GetHashCode(fullPath);
+
+        if (!TryGetOrCreateSelector(token, hash, prior, out var selector))
+        {
+            return false;
+        }
+
+        result = selector;
         return true;
     }
 
