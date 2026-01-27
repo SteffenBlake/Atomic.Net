@@ -5,6 +5,7 @@ using Atomic.Net.MonoGame.Ids;
 using Atomic.Net.MonoGame.Scenes;
 using Atomic.Net.MonoGame.Tags;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Atomic.Net.MonoGame.Tests.Tags.Integrations;
 
@@ -12,8 +13,11 @@ namespace Atomic.Net.MonoGame.Tests.Tags.Integrations;
 [Trait("Category", "Integration")]
 public sealed class TagErrorHandlingTests : IDisposable
 {
-    public TagErrorHandlingTests()
+    private readonly ErrorEventLogger _errorLogger;
+    
+    public TagErrorHandlingTests(ITestOutputHelper output)
     {
+        _errorLogger = new ErrorEventLogger(output);
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
@@ -21,6 +25,7 @@ public sealed class TagErrorHandlingTests : IDisposable
     public void Dispose()
     {
         EventBus<ShutdownEvent>.Push(new());
+        _errorLogger.Dispose();
     }
 
     #region Error Event Validation
@@ -29,7 +34,7 @@ public sealed class TagErrorHandlingTests : IDisposable
     public void TagErrorHandling_NullTag_FiresErrorEventWithMessage()
     {
         // Arrange
-        var scenePath = "MonoGame/Atomic.Net.MonoGame.Tests/Tags/Fixtures/tags-invalid.json";
+        var scenePath = "Tags/Fixtures/tags-invalid.json";
         var errorListener = new FakeEventListener<ErrorEvent>();
 
         // Act
@@ -47,7 +52,7 @@ public sealed class TagErrorHandlingTests : IDisposable
     public void TagErrorHandling_EmptyStringTag_FiresErrorEvent()
     {
         // Arrange
-        var scenePath = "MonoGame/Atomic.Net.MonoGame.Tests/Tags/Fixtures/tags-invalid.json";
+        var scenePath = "Tags/Fixtures/tags-invalid.json";
         var errorListener = new FakeEventListener<ErrorEvent>();
 
         // Act
@@ -65,7 +70,7 @@ public sealed class TagErrorHandlingTests : IDisposable
     public void TagErrorHandling_WhitespaceOnlyTag_FiresErrorEvent()
     {
         // Arrange
-        var scenePath = "MonoGame/Atomic.Net.MonoGame.Tests/Tags/Fixtures/tags-invalid.json";
+        var scenePath = "Tags/Fixtures/tags-invalid.json";
         var errorListener = new FakeEventListener<ErrorEvent>();
 
         // Act
@@ -83,7 +88,7 @@ public sealed class TagErrorHandlingTests : IDisposable
     public void TagErrorHandling_DuplicateTag_FiresErrorEvent()
     {
         // Arrange
-        var scenePath = "MonoGame/Atomic.Net/MonoGame.Tests/Tags/Fixtures/tags-invalid.json";
+        var scenePath = "Tags/Fixtures/tags-invalid.json";
         var errorListener = new FakeEventListener<ErrorEvent>();
 
         // Act
@@ -100,7 +105,7 @@ public sealed class TagErrorHandlingTests : IDisposable
     public void TagErrorHandling_InvalidCharacters_FiresErrorEvent()
     {
         // Arrange
-        var scenePath = "MonoGame/Atomic.Net.MonoGame.Tests/Tags/Fixtures/tags-invalid.json";
+        var scenePath = "Tags/Fixtures/tags-invalid.json";
         var errorListener = new FakeEventListener<ErrorEvent>();
 
         // Act
@@ -118,7 +123,7 @@ public sealed class TagErrorHandlingTests : IDisposable
     public void TagErrorHandling_AllErrors_DoNotThrowExceptions()
     {
         // Arrange
-        var scenePath = "MonoGame/Atomic.Net.MonoGame.Tests/Tags/Fixtures/tags-invalid.json";
+        var scenePath = "Tags/Fixtures/tags-invalid.json";
 
         // Act & Assert - Should not throw
         var exception = Record.Exception(() => SceneLoader.Instance.LoadGameScene(scenePath));
@@ -133,7 +138,7 @@ public sealed class TagErrorHandlingTests : IDisposable
     public void TagErrorHandling_MixOfValidAndInvalidTags_ValidTagsRegistered()
     {
         // Arrange
-        var scenePath = "MonoGame/Atomic.Net.MonoGame.Tests/Tags/Fixtures/tags-invalid.json";
+        var scenePath = "Tags/Fixtures/tags-invalid.json";
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
@@ -193,8 +198,8 @@ public sealed class TagErrorHandlingTests : IDisposable
     public void TagErrorHandling_LoadSceneWithErrors_ThenLoadCleanScene_NewSceneLoadsClean()
     {
         // Arrange
-        var invalidScenePath = "MonoGame/Atomic.Net.MonoGame.Tests/Tags/Fixtures/tags-invalid.json";
-        var validScenePath = "MonoGame/Atomic.Net.MonoGame.Tests/Tags/Fixtures/tags-basic.json";
+        var invalidScenePath = "Tags/Fixtures/tags-invalid.json";
+        var validScenePath = "Tags/Fixtures/tags-basic.json";
 
         // Act - Load scene with errors
         var errorListener1 = new FakeEventListener<ErrorEvent>();
@@ -225,7 +230,7 @@ public sealed class TagErrorHandlingTests : IDisposable
     public void TagErrorHandling_SceneLoadingContinues_DespiteInvalidTags()
     {
         // Arrange
-        var scenePath = "MonoGame/Atomic.Net.MonoGame.Tests/Tags/Fixtures/tags-invalid.json";
+        var scenePath = "Tags/Fixtures/tags-invalid.json";
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);

@@ -6,6 +6,7 @@ using Atomic.Net.MonoGame.Ids;
 using Atomic.Net.MonoGame.Selectors;
 using Atomic.Net.MonoGame.Tags;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Atomic.Net.MonoGame.Tests.Tags.Integrations;
 
@@ -13,8 +14,11 @@ namespace Atomic.Net.MonoGame.Tests.Tags.Integrations;
 [Trait("Category", "Integration")]
 public sealed class TagEntitySelectorIntegrationTests : IDisposable
 {
-    public TagEntitySelectorIntegrationTests()
+    private readonly ErrorEventLogger _errorLogger;
+    
+    public TagEntitySelectorIntegrationTests(ITestOutputHelper output)
     {
+        _errorLogger = new ErrorEventLogger(output);
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
@@ -22,6 +26,7 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
     public void Dispose()
     {
         EventBus<ShutdownEvent>.Push(new());
+        _errorLogger.Dispose();
     }
 
     #region Selector Matching

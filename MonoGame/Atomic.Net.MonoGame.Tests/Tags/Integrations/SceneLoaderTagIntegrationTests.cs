@@ -6,6 +6,7 @@ using Atomic.Net.MonoGame.Scenes;
 using Atomic.Net.MonoGame.Selectors;
 using Atomic.Net.MonoGame.Tags;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Atomic.Net.MonoGame.Tests.Tags.Integrations;
 
@@ -13,8 +14,11 @@ namespace Atomic.Net.MonoGame.Tests.Tags.Integrations;
 [Trait("Category", "Integration")]
 public sealed class SceneLoaderTagIntegrationTests : IDisposable
 {
-    public SceneLoaderTagIntegrationTests()
+    private readonly ErrorEventLogger _errorLogger;
+    
+    public SceneLoaderTagIntegrationTests(ITestOutputHelper output)
     {
+        _errorLogger = new ErrorEventLogger(output);
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
@@ -22,6 +26,7 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
     public void Dispose()
     {
         EventBus<ShutdownEvent>.Push(new());
+        _errorLogger.Dispose();
     }
 
     #region Scene Loading
@@ -30,7 +35,7 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
     public void SceneLoader_LoadBasicTagScene_EntitiesHaveTagsRegistered()
     {
         // Arrange
-        var scenePath = "MonoGame/Atomic.Net.MonoGame.Tests/Tags/Fixtures/tags-basic.json";
+        var scenePath = "Tags/Fixtures/tags-basic.json";
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
@@ -60,7 +65,7 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
     public void SceneLoader_EntityWithEmptyTagsArray_HasBehaviorButNoTags()
     {
         // Arrange
-        var scenePath = "MonoGame/Atomic.Net.MonoGame.Tests/Tags/Fixtures/tags-edge-cases.json";
+        var scenePath = "Tags/Fixtures/tags-edge-cases.json";
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
@@ -79,7 +84,7 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
     public void SceneLoader_EntityMissingTagsField_DoesNotHaveTagsBehavior()
     {
         // Arrange
-        var scenePath = "MonoGame/Atomic.Net.MonoGame.Tests/Tags/Fixtures/tags-edge-cases.json";
+        var scenePath = "Tags/Fixtures/tags-edge-cases.json";
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
@@ -93,7 +98,7 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
     public void SceneLoader_TagsWithMixedCase_NormalizedToLowercase()
     {
         // Arrange
-        var scenePath = "MonoGame/Atomic.Net.MonoGame.Tests/Tags/Fixtures/tags-edge-cases.json";
+        var scenePath = "Tags/Fixtures/tags-edge-cases.json";
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
@@ -116,7 +121,7 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
     public void SceneLoader_ManyTags_AllRegisteredCorrectly()
     {
         // Arrange
-        var scenePath = "MonoGame/Atomic.Net.MonoGame.Tests/Tags/Fixtures/tags-many.json";
+        var scenePath = "Tags/Fixtures/tags-many.json";
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
@@ -141,7 +146,7 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
     public void SceneLoader_NullTagInArray_FiresErrorAndSkipsTag()
     {
         // Arrange
-        var scenePath = "MonoGame/Atomic.Net.MonoGame.Tests/Tags/Fixtures/tags-invalid.json";
+        var scenePath = "Tags/Fixtures/tags-invalid.json";
         var errorListener = new FakeEventListener<ErrorEvent>();
 
         // Act
@@ -165,7 +170,7 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
     public void SceneLoader_EmptyStringTag_FiresErrorAndSkipsTag()
     {
         // Arrange
-        var scenePath = "MonoGame/Atomic.Net.MonoGame.Tests/Tags/Fixtures/tags-invalid.json";
+        var scenePath = "Tags/Fixtures/tags-invalid.json";
         var errorListener = new FakeEventListener<ErrorEvent>();
 
         // Act
@@ -189,7 +194,7 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
     public void SceneLoader_WhitespaceTag_FiresErrorAndSkipsTag()
     {
         // Arrange
-        var scenePath = "MonoGame/Atomic.Net.MonoGame.Tests/Tags/Fixtures/tags-invalid.json";
+        var scenePath = "Tags/Fixtures/tags-invalid.json";
         var errorListener = new FakeEventListener<ErrorEvent>();
 
         // Act
@@ -213,7 +218,7 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
     public void SceneLoader_DuplicateTags_FiresErrorAndKeepsFirst()
     {
         // Arrange
-        var scenePath = "MonoGame/Atomic.Net.MonoGame.Tests/Tags/Fixtures/tags-invalid.json";
+        var scenePath = "Tags/Fixtures/tags-invalid.json";
         var errorListener = new FakeEventListener<ErrorEvent>();
 
         // Act
@@ -234,7 +239,7 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
     public void SceneLoader_InvalidCharactersInTag_FiresErrorAndSkipsTag()
     {
         // Arrange
-        var scenePath = "MonoGame/Atomic.Net.MonoGame.Tests/Tags/Fixtures/tags-invalid.json";
+        var scenePath = "Tags/Fixtures/tags-invalid.json";
         var errorListener = new FakeEventListener<ErrorEvent>();
 
         // Act
@@ -295,7 +300,7 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
     public void SceneLoader_LoadGameSceneWithTags_TagsClearedOnReset()
     {
         // Arrange
-        var scenePath = "MonoGame/Atomic.Net.MonoGame.Tests/Tags/Fixtures/tags-basic.json";
+        var scenePath = "Tags/Fixtures/tags-basic.json";
 
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
@@ -327,7 +332,7 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
 }");
 
         SceneLoader.Instance.LoadGlobalScene(globalScenePath);
-        SceneLoader.Instance.LoadGameScene("MonoGame/Atomic.Net.MonoGame.Tests/Tags/Fixtures/tags-basic.json");
+        SceneLoader.Instance.LoadGameScene("Tags/Fixtures/tags-basic.json");
 
         Assert.True(EntityIdRegistry.Instance.TryResolve("global-enemy", out var globalEntity));
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin-1", out var sceneEntity));

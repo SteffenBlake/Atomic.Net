@@ -4,6 +4,7 @@ using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Tags;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Atomic.Net.MonoGame.Tests.Tags.Units;
 
@@ -11,8 +12,11 @@ namespace Atomic.Net.MonoGame.Tests.Tags.Units;
 [Trait("Category", "Unit")]
 public sealed class TagRegistryUnitTests : IDisposable
 {
-    public TagRegistryUnitTests()
+    private readonly ErrorEventLogger _errorLogger;
+    
+    public TagRegistryUnitTests(ITestOutputHelper output)
     {
+        _errorLogger = new ErrorEventLogger(output);
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
@@ -20,6 +24,7 @@ public sealed class TagRegistryUnitTests : IDisposable
     public void Dispose()
     {
         EventBus<ShutdownEvent>.Push(new());
+        _errorLogger.Dispose();
     }
 
     #region Positive Tests
