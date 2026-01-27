@@ -47,7 +47,7 @@ Build a **data-driven, zero runtime allocation game engine** where entire games 
 ---
 
 ### Persist data between scenes and game runs
-- [x] Expand the behavior of the "Persistent" partition to do more than just store persistent entities. We need to have other types of stuff persisted between scenes (user inventory, experience points, game state overall, that sort of stuff)
+- [x] Expand the behavior of the "Global" partition to do more than just store global entities. We need to have other types of stuff persisted between scenes (user inventory, experience points, game state overall, that sort of stuff)
 - [x] Save and persist data into a LiteDB database between games (Save data) 
 
 ---

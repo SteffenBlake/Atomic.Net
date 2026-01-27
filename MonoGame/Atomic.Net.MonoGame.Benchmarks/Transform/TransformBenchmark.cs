@@ -9,7 +9,7 @@ namespace Atomic.Net.MonoGame.Benchmarks.Transform;
 [MemoryDiagnoser]
 public class TransformBenchmark
 {
-    // Block size is 16 (SIMD width), MaxEntities = 8192, MaxPersistentEntities = 256
+    // Block size is 16 (SIMD width), MaxEntities = 8192, MaxGlobalEntities = 256
     // Scene entities: indices 256-8191 = 7936 total available
     private const int LowEntityCount = 200;      // 4 blocks - simple scene
     private const int MediumEntityCount = 1000;  // 16 blocks - typical game scene  
@@ -129,7 +129,7 @@ public class TransformBenchmark
 
             if (_parentIndices[i] >= 0)
             {
-                ushort parentIndex = (ushort)(Constants.MaxPersistentEntities + _parentIndices[i]);
+                ushort parentIndex = (ushort)(Constants.MaxGlobalEntities + _parentIndices[i]);
                 entity.WithParent(EntityRegistry.Instance[parentIndex]);
             }
         }

@@ -1,15 +1,17 @@
-# Sprint: Persistent Partition Naming Audit
+# Sprint: Global Partition Naming Audit (formerly Persistent)
 
 ## Non-Technical Requirements
 
-- Audit all code, documentation, constants, and comments related to the persistent partition for clarity of intent and correct naming.
-- Rename all instances of "loading partition" and related terminology to clearly express their purpose (e.g., "persistent partition", "persistent entities", `PersistentPartitionSize`, etc.).
+- Audit all code, documentation, constants, and comments related to the global partition for clarity of intent and correct naming.
+- Rename all instances of "loading partition" and related terminology to clearly express their purpose (e.g., "global partition", "global entities", `GlobalPartitionSize`, etc.).
 - Ensure all references (e.g., function names, constants, doc comments, API surface) are updated for maximum clarity and consistent domain language.
+- **CRITICAL**: Distinguish "global" partition (entities surviving scene transitions) from database "persistence" (PersistToDiskBehavior, Persistence namespace).
 - If architectural changes or technical scope expansion are found (e.g., functionality gaps), document them as additional requirements in your output.
 
 ### Success Criteria
 
-- No remaining "loading" terminology for persistent entities/partition in code, docs, or API surface.
+- No remaining "loading" or "global partition" terminology in code, docs, or API surface.
+- Clear distinction between "global" entities (survive ResetEvent) and database-persisted entities (PersistToDiskBehavior).
 - All project contributors (design, code, docs) can intuitively understand the partition's role and usage.
 - Any additional functional/architectural gaps discovered during the audit are captured and scheduled for future sprints.
 
@@ -33,28 +35,28 @@ The "loading partition" name is misleading because:
 #### Proposed Naming Convention
 
 **Partition Terminology:**
-- "loading partition" → **"persistent partition"**
+- "loading partition" → **"global partition"**
 - "loading entities" → **"persistent entities"**
 - "scene partition" → **"scene partition"** (no change, already clear)
 - "scene entities" → **"scene entities"** (no change, already clear)
 
 **Constant Naming:**
 - `MaxLoadingEntities` → **`MaxPersistentEntities`**
-- Preprocessor: `MAX_LOADING_ENTITIES` → **`MAX_PERSISTENT_ENTITIES`**
+- Preprocessor: `MAX_LOADING_ENTITIES` → **`MAX_GLOBAL_ENTITIES`**
 
 **Method Naming:**
-- `ActivateLoading()` → **`ActivatePersistent()`**
+- `ActivateLoading()` → **`ActivateGlobal()`**
 - `GetLoadingRoot()` → **`GetPersistentRoot()`**
-- `LoadLoadingScene()` → **`LoadPersistentScene()`**
+- `LoadLoadingScene()` → **`LoadGlobalScene()`**
 
 **Variable Naming:**
-- `_nextLoadingIndex` → **`_nextPersistentIndex`**
-- `useLoadingPartition` → **`usePersistentPartition`**
-- `loadingPath`, `loadingEntity`, etc. → **`persistentPath`, `persistentEntity`**, etc.
+- `_nextLoadingIndex` → **`_nextGlobalIndex`**
+- `useLoadingPartition` → **`useGlobalPartition`**
+- `loadingPath`, `loadingEntity`, etc. → **`globalPath`, `globalEntity`**, etc.
 
 **File Naming:**
-- Test fixture: `single-loading-entity.json` → **`single-persistent-entity.json`**
-- Default scene path: `"Content/Scenes/loading.json"` → **`"Content/Scenes/persistent.json"`** (or keep as `loading.json` if it's for loading screen UI specifically)
+- Test fixture: `single-loading-entity.json` → **`single-global-entity.json`**
+- Default scene path: `"Content/Scenes/loading.json"` → **`"Content/Scenes/global.json"`** (or keep as `loading.json` if it's for loading screen UI specifically)
 
 **Comment & Documentation Updates:**
 - All XML doc comments mentioning "loading entities/partition"
@@ -66,7 +68,7 @@ The "loading partition" name is misleading because:
 ### Integration Points
 
 No integration changes required — this is a pure naming refactor. The partition behavior remains identical:
-- Persistent partition entities survive `ResetEvent` (scene transitions)
+- Global partition entities survive `ResetEvent` (scene transitions)
 - Scene partition entities are cleared on `ResetEvent`
 - `ShutdownEvent` clears both partitions (full cleanup)
 
@@ -89,42 +91,42 @@ No integration changes required — this is a pure naming refactor. The partitio
 ### Code Changes (Core Library)
 
 - [ ] Rename `Constants.MaxLoadingEntities` to `Constants.MaxPersistentEntities` in `Atomic.Net.MonoGame.Core/Constants.cs`
-- [ ] Update preprocessor symbol from `MAX_LOADING_ENTITIES` to `MAX_PERSISTENT_ENTITIES` in `Constants.cs`
+- [ ] Update preprocessor symbol from `MAX_LOADING_ENTITIES` to `MAX_GLOBAL_ENTITIES` in `Constants.cs`
 - [ ] Update all XML doc comments in `Constants.cs` to use "persistent" terminology
-- [ ] Rename `EntityRegistry.ActivateLoading()` to `EntityRegistry.ActivatePersistent()` in `EntityRegistry.cs`
+- [ ] Rename `EntityRegistry.ActivateLoading()` to `EntityRegistry.ActivateGlobal()` in `EntityRegistry.cs`
 - [ ] Rename `EntityRegistry.GetLoadingRoot()` to `EntityRegistry.GetPersistentRoot()` in `EntityRegistry.cs`
-- [ ] Rename `_nextLoadingIndex` to `_nextPersistentIndex` in `EntityRegistry.cs`
+- [ ] Rename `_nextLoadingIndex` to `_nextGlobalIndex` in `EntityRegistry.cs`
 - [ ] Update all XML doc comments in `EntityRegistry.cs` to use "persistent" terminology
 - [ ] Update inline comments in `EntityRegistry.cs` mentioning partition behavior
 - [ ] Update `ShutdownEvent.cs` doc comment from "both loading and scene" to "both persistent and scene"
 
 ### Code Changes (Scene Loading)
 
-- [ ] Rename `SceneLoader.LoadLoadingScene()` to `SceneLoader.LoadPersistentScene()` in `SceneLoader.cs`
-- [ ] Rename `useLoadingPartition` parameter to `usePersistentPartition` in `SceneLoader.cs`
+- [ ] Rename `SceneLoader.LoadLoadingScene()` to `SceneLoader.LoadGlobalScene()` in `SceneLoader.cs`
+- [ ] Rename `useLoadingPartition` parameter to `useGlobalPartition` in `SceneLoader.cs`
 - [ ] Update XML doc comments in `SceneLoader.cs` to use "persistent" terminology
-- [ ] Update default scene path parameter from `"Content/Scenes/loading.json"` to `"Content/Scenes/persistent.json"` (if applicable)
+- [ ] Update default scene path parameter from `"Content/Scenes/loading.json"` to `"Content/Scenes/global.json"` (if applicable)
 - [ ] Update inline comments in `SceneLoader.cs` explaining partition selection
 
 ### Test Changes
 
-- [ ] Rename test method `LoadLoadingScene_AllocatesLoadingEntity` to `LoadPersistentScene_AllocatesPersistentEntity` in `EntityRegistryIntegrationTests.cs`
-- [ ] Rename test method `LoadLoadingScene_AllocatesSequentialIndices` to `LoadPersistentScene_AllocatesSequentialIndices` in `EntityRegistryIntegrationTests.cs`
+- [ ] Rename test method `LoadLoadingScene_AllocatesLoadingEntity` to `LoadGlobalScene_AllocatesPersistentEntity` in `EntityRegistryIntegrationTests.cs`
+- [ ] Rename test method `LoadLoadingScene_AllocatesSequentialIndices` to `LoadGlobalScene_AllocatesSequentialIndices` in `EntityRegistryIntegrationTests.cs`
 - [ ] Rename test method `GetLoadingRoot_ReturnsFirstLoadingEntity` to `GetPersistentRoot_ReturnsFirstPersistentEntity` in `EntityRegistryIntegrationTests.cs`
-- [ ] Rename test method `ResetEvent_DeactivatesOnlySceneEntities` variables `loadingPath`, `loadingEntity` to `persistentPath`, `persistentEntity`
+- [ ] Rename test method `ResetEvent_DeactivatesOnlySceneEntities` variables `loadingPath`, `loadingEntity` to `globalPath`, `globalEntity`
 - [ ] Update all test comments in `EntityRegistryIntegrationTests.cs` to use "persistent" terminology
-- [ ] Rename test method `LoadLoadingScene_WithBasicEntities_SpawnsEntitiesInLoadingPartition` to `LoadPersistentScene_WithBasicEntities_SpawnsEntitiesInPersistentPartition` in `SceneLoaderIntegrationTests.cs`
+- [ ] Rename test method `LoadLoadingScene_WithBasicEntities_SpawnsEntitiesInLoadingPartition` to `LoadGlobalScene_WithBasicEntities_SpawnsEntitiesInPersistentPartition` in `SceneLoaderIntegrationTests.cs`
 - [ ] Update test comments in `SceneLoaderIntegrationTests.cs` to use "persistent" terminology
 - [ ] Rename test method `ResetEvent_PreservesLoadingEntityHierarchy` to `ResetEvent_PreservesPersistentEntityHierarchy` in `HierarchyRegistryIntegrationTests.cs`
 - [ ] Update variable names `loadingParent`, `loadingChild` to `persistentParent`, `persistentChild` in `HierarchyRegistryIntegrationTests.cs`
 - [ ] Update all test cleanup comments from "both loading and scene" to "both persistent and scene"
-- [ ] Rename test fixture file `single-loading-entity.json` to `single-persistent-entity.json`
+- [ ] Rename test fixture file `single-loading-entity.json` to `single-global-entity.json`
 - [ ] Update JSON fixture content: `"id": "loading-entity"` to `"id": "persistent-entity"`
-- [ ] Update all test file references from `single-loading-entity.json` to `single-persistent-entity.json`
+- [ ] Update all test file references from `single-loading-entity.json` to `single-global-entity.json`
 
 ### Documentation Changes
 
-- [ ] Update ROADMAP.md milestone description from "Loading Scene partition" to "Persistent partition"
+- [ ] Update ROADMAP.md milestone description from "Loading Scene partition" to "Global partition"
 - [ ] Update sprint-001-json-scene-loading.sprint.md references from "loading scene" to "persistent scene" where appropriate
 - [ ] Update sprint-001-json-scene-loading.sprint.md method names and descriptions
 - [ ] Update sprint-002-property-bag.sprint.md test comments if any mention "loading entities"
@@ -144,21 +146,21 @@ No integration changes required — this is a pure naming refactor. The partitio
 
 ### Gap 1: Persistent Scene Default Path
 
-**Current behavior:** `LoadPersistentScene()` defaults to `"Content/Scenes/loading.json"`
+**Current behavior:** `LoadGlobalScene()` defaults to `"Content/Scenes/loading.json"`
 
 **Gap:** The filename `loading.json` still implies loading screen UI, not persistent game state.
 
 **Recommendation for future sprint:**
 - Consider separating "loading screen UI scene" from "persistent game state scene"
-- Option A: Rename to `persistent.json` (breaking change for existing projects)
-- Option B: Support both `loading.json` (deprecated) and `persistent.json` (preferred)
+- Option A: Rename to `global.json` (breaking change for existing projects)
+- Option B: Support both `loading.json` (deprecated) and `global.json` (preferred)
 - Option C: Allow multiple persistent scenes (inventory, player state, UI state) loaded independently
 
 **Priority:** Low — can be deferred to M2 when scene system is expanded
 
 ### Gap 2: No Explicit Persistent/Scene Distinction in JSON
 
-**Current behavior:** Designer must remember to call `LoadPersistentScene()` vs `LoadGameScene()` to control partition
+**Current behavior:** Designer must remember to call `LoadGlobalScene()` vs `LoadGameScene()` to control partition
 
 **Gap:** No JSON-level marker to indicate "this scene should be persistent" vs "this scene should be cleared on reset"
 
@@ -173,10 +175,10 @@ No integration changes required — this is a pure naming refactor. The partitio
 
 **Current behavior:** `MaxPersistentEntities` is hardcoded to 256 (or compile-time override)
 
-**Gap:** No runtime warning when persistent partition is nearing capacity
+**Gap:** No runtime warning when global partition is nearing capacity
 
 **Recommendation for future sprint:**
-- Add optional warning event when persistent partition >80% full
+- Add optional warning event when global partition >80% full
 - Helps designers catch over-allocation early
 
 **Priority:** Low — nice-to-have for debugging
@@ -248,11 +250,11 @@ public void LoadLoadingScene(string scenePath = "Content/Scenes/loading.json") {
 public const ushort MaxPersistentEntities = 256;
 
 // EntityRegistry.cs
-public Entity ActivatePersistent() { ... }
+public Entity ActivateGlobal() { ... }
 public Entity GetPersistentRoot() => _entities[0];
 
 // SceneLoader.cs
-public void LoadPersistentScene(string scenePath = "Content/Scenes/persistent.json") { ... }
+public void LoadGlobalScene(string scenePath = "Content/Scenes/global.json") { ... }
 ```
 
 ### Test Before
@@ -272,10 +274,10 @@ public void LoadLoadingScene_AllocatesLoadingEntity()
 
 ```csharp
 [Fact]
-public void LoadPersistentScene_AllocatesPersistentEntity()
+public void LoadGlobalScene_AllocatesPersistentEntity()
 {
-    var scenePath = "Core/Fixtures/single-persistent-entity.json";
-    SceneLoader.Instance.LoadPersistentScene(scenePath);
+    var scenePath = "Core/Fixtures/single-global-entity.json";
+    SceneLoader.Instance.LoadGlobalScene(scenePath);
     Assert.True(EntityIdRegistry.Instance.TryResolve("persistent-entity", out var entity));
     Assert.True(entity.Value.Index < Constants.MaxPersistentEntities);
 }

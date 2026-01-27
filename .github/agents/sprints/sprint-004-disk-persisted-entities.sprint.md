@@ -10,8 +10,8 @@
 An entity can be:
 1. Scene partition + no disk persistence (cleared on ResetEvent, not saved to disk)
 2. Scene partition + disk persistence (cleared on ResetEvent, but saved to disk and can be reloaded)
-3. Persistent partition + no disk persistence (survives ResetEvent in-memory, not saved to disk)
-4. Persistent partition + disk persistence (survives ResetEvent in-memory AND saved to disk)
+3. Global partition + no disk persistence (survives ResetEvent in-memory, not saved to disk)
+4. Global partition + disk persistence (survives ResetEvent in-memory AND saved to disk)
 
 ### Core Behavior
 - `PersistToDiskBehavior(string Key)` marks entity for disk persistence, key is the DB pointer
@@ -341,7 +341,7 @@ On `BehaviorAddedEvent<PersistToDiskBehavior>` or `PostBehaviorUpdatedEvent<Pers
     - Missing disk file (use scene defaults, no error)
     - Partial entity save (disk has subset of behaviors, scene provides rest)
     - Database locked by external process (ErrorEvent, no crash)
-    - Persistent partition entity survives ResetEvent in-memory
+    - Global partition entity survives ResetEvent in-memory
     - Scene partition entity with `PersistToDiskBehavior` cleared on ResetEvent but disk persists
   - **Zero-allocation validation**: ⏭️ Skipped (will be validated via benchmarks, not chaos tests)
     - Save operation allocates zero bytes (event handling must be zero-alloc)
