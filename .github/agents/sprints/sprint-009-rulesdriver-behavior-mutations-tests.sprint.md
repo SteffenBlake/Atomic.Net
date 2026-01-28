@@ -18,32 +18,32 @@
     2. TagsBehavior
     3. TransformBehavior (fields: Position, Rotation, Scale, Anchor)
     4. ParentBehavior
-    5. AlignItemsBehavior
-    6. AlignSelfBehavior
-    7. BorderBottomBehavior
-    8. BorderLeftBehavior
-    9. BorderRightBehavior
-    10. BorderTopBehavior
+    5. FlexAlignItemsBehavior
+    6. FlexAlignSelfBehavior
+    7. FlexBorderBottomBehavior
+    8. FlexBorderLeftBehavior
+    9. FlexBorderRightBehavior
+    10. FlexBorderTopBehavior
     11. FlexDirectionBehavior
     12. FlexGrowBehavior
     13. FlexWrapBehavior
     14. FlexZOverride
-    15. HeightBehavior
-    16. JustifyContentBehavior
-    17. MarginBottomBehavior
-    18. MarginLeftBehavior
-    19. MarginRightBehavior
-    20. MarginTopBehavior
-    21. PaddingBottomBehavior
-    22. PaddingLeftBehavior
-    23. PaddingRightBehavior
-    24. PaddingTopBehavior
-    25. PositionBottomBehavior
-    26. PositionLeftBehavior
-    27. PositionRightBehavior
-    28. PositionTopBehavior
-    29. PositionTypeBehavior
-    30. WidthBehavior
+    15. FlexHeightBehavior
+    16. FlexJustifyContentBehavior
+    17. FlexMarginBottomBehavior
+    18. FlexMarginLeftBehavior
+    19. FlexMarginRightBehavior
+    20. FlexMarginTopBehavior
+    21. FlexPaddingBottomBehavior
+    22. FlexPaddingLeftBehavior
+    23. FlexPaddingRightBehavior
+    24. FlexPaddingTopBehavior
+    25. FlexPositionBottomBehavior
+    26. FlexPositionLeftBehavior
+    27. FlexPositionRightBehavior
+    28. FlexPositionTopBehavior
+    29. FlexPositionTypeBehavior
+    30. FlexWidthBehavior
 - WorldTransformBehavior and FlexBehavior must have negative tests to show attempts at mutation fail and produce errors
 - PersistToDiskBehavior is excluded (not accessible via rules)
 - Each test must load a representative scene fixture, apply a RulesDriver mutation, and assert correct mutation or correct error
@@ -98,43 +98,43 @@
     "anchor": { "x": 0, "y": 0, "z": 0 }
   },
   "parent": "#parentEntity",
-  "alignItems": "center",
-  "alignSelf": "flexStart",
-  "borderBottom": 5.0,
-  "borderLeft": 5.0,
-  "borderRight": 5.0,
-  "borderTop": 5.0,
+  "flexAlignItems": "center",
+  "flexAlignSelf": "flexStart",
+  "flexBorderBottom": 5.0,
+  "flexBorderLeft": 5.0,
+  "flexBorderRight": 5.0,
+  "flexBorderTop": 5.0,
   "flexDirection": "row",
   "flexGrow": 1.0,
   "flexWrap": "wrap",
   "flexZOverride": 10,
-  "height": 100.0,
-  "heightPercent": false,
-  "justifyContent": "spaceBetween",
-  "marginBottom": 10.0,
-  "marginLeft": 10.0,
-  "marginRight": 10.0,
-  "marginTop": 10.0,
-  "paddingBottom": 5.0,
-  "paddingLeft": 5.0,
-  "paddingRight": 5.0,
-  "paddingTop": 5.0,
-  "positionBottom": 0.0,
-  "positionBottomPercent": false,
-  "positionLeft": 0.0,
-  "positionLeftPercent": false,
-  "positionRight": 0.0,
-  "positionRightPercent": false,
-  "positionTop": 0.0,
-  "positionTopPercent": false,
-  "positionType": "relative",
-  "width": 200.0,
-  "widthPercent": false
+  "flexHeight": 100.0,
+  "flexHeightPercent": false,
+  "flexJustifyContent": "spaceBetween",
+  "flexMarginBottom": 10.0,
+  "flexMarginLeft": 10.0,
+  "flexMarginRight": 10.0,
+  "flexMarginTop": 10.0,
+  "flexPaddingBottom": 5.0,
+  "flexPaddingLeft": 5.0,
+  "flexPaddingRight": 5.0,
+  "flexPaddingTop": 5.0,
+  "flexPositionBottom": 0.0,
+  "flexPositionBottomPercent": false,
+  "flexPositionLeft": 0.0,
+  "flexPositionLeftPercent": false,
+  "flexPositionRight": 0.0,
+  "flexPositionRightPercent": false,
+  "flexPositionTop": 0.0,
+  "flexPositionTopPercent": false,
+  "flexPositionType": "relative",
+  "flexWidth": 200.0,
+  "flexWidthPercent": false
 }
 ```
 
 **Key Design Principles:**
-- **Behavior-to-JSON mapping:** Each behavior maps to its own JSON key (e.g., `BorderLeftBehavior` → `"borderLeft"`)
+- **Behavior-to-JSON mapping:** Each behavior maps to its own JSON key (e.g., `FlexBorderLeftBehavior` → `"flexBorderLeft"`)
 - **Composite behaviors use sub-objects:** TransformBehavior has multiple fields, so it uses a nested object
 - **FlexBehavior is read-only:** The computed `FlexBehavior` struct is NOT serialized (only individual flex behaviors)
 - **Lazy serialization:** Only serialize behaviors that exist on the entity (check TryGetBehavior first)
@@ -158,9 +158,9 @@
   - `{ "transform": { "scale": {...} } }` → Mutate TransformBehavior.Scale
   - `{ "transform": { "anchor": {...} } }` → Mutate TransformBehavior.Anchor
   - `{ "parent": "#selector" }` → Mutate ParentBehavior
-  - `{ "alignItems": "center" }` → Mutate AlignItemsBehavior
-  - `{ "alignSelf": "flexStart" }` → Mutate AlignSelfBehavior
-  - `{ "borderBottom": 5.0 }` → Mutate BorderBottomBehavior
+  - `{ "flexAlignItems": "center" }` → Mutate FlexAlignItemsBehavior
+  - `{ "flexAlignSelf": "flexStart" }` → Mutate FlexAlignSelfBehavior
+  - `{ "flexBorderBottom": 5.0 }` → Mutate FlexBorderBottomBehavior
   - (Similar patterns for all 30 individual flex behaviors listed in requirements)
 
 **Mutation Methods (NEW):**
@@ -203,15 +203,15 @@ private static bool ApplyToTarget(ushort entityIndex, JsonNode target, JsonNode 
     {
         return ApplyParentMutation(entityIndex, value);
     }
-    else if (targetObj.TryGetPropertyValue("alignItems", out _))
+    else if (targetObj.TryGetPropertyValue("flexAlignItems", out _))
     {
         return ApplyAlignItemsMutation(entityIndex, value);
     }
-    else if (targetObj.TryGetPropertyValue("alignSelf", out _))
+    else if (targetObj.TryGetPropertyValue("flexAlignSelf", out _))
     {
         return ApplyAlignSelfMutation(entityIndex, value);
     }
-    else if (targetObj.TryGetPropertyValue("borderBottom", out _))
+    else if (targetObj.TryGetPropertyValue("flexBorderBottom", out _))
     {
         return ApplyBorderBottomMutation(entityIndex, value);
     }
@@ -222,13 +222,13 @@ private static bool ApplyToTarget(ushort entityIndex, JsonNode target, JsonNode 
         var validTargets = string.Join(", ", new[]
         {
             "properties", "id", "tags", "transform", "parent",
-            "alignItems", "alignSelf", "borderBottom", "borderLeft", "borderRight", "borderTop",
+            "flexAlignItems", "flexAlignSelf", "flexBorderBottom", "flexBorderLeft", "flexBorderRight", "flexBorderTop",
             "flexDirection", "flexGrow", "flexWrap", "flexZOverride",
-            "height", "justifyContent",
-            "marginBottom", "marginLeft", "marginRight", "marginTop",
-            "paddingBottom", "paddingLeft", "paddingRight", "paddingTop",
-            "positionBottom", "positionLeft", "positionRight", "positionTop", "positionType",
-            "width"
+            "flexHeight", "flexJustifyContent",
+            "flexMarginBottom", "flexMarginLeft", "flexMarginRight", "flexMarginTop",
+            "flexPaddingBottom", "flexPaddingLeft", "flexPaddingRight", "flexPaddingTop",
+            "flexPositionBottom", "flexPositionLeft", "flexPositionRight", "flexPositionTop", "flexPositionType",
+            "flexWidth"
         });
         EventBus<ErrorEvent>.Push(new ErrorEvent(
             $"Unrecognized target for entity {entityIndex}. Expected one of: {validTargets}"
@@ -433,8 +433,8 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
 - `id-mutation.json` / `id-mutation-invalid.json`
 - `tags-mutation.json` / `tags-mutation-invalid.json`
 - `transform-position-mutation.json` / `transform-position-mutation-invalid.json`
-- `alignitems-mutation.json` / `alignitems-mutation-invalid.json`
-- `borderleft-mutation.json` / `borderleft-mutation-invalid.json`
+- `flex-align-items-mutation.json` / `flex-align-items-mutation-invalid.json`
+- `flex-border-left-mutation.json` / `flex-border-left-mutation-invalid.json`
 
 **Fixture Structure (Positive Example):**
 ```json
@@ -473,7 +473,7 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
   "entities": [
     {
       "id": "entity1",
-      "alignItems": "center"
+      "flexAlignItems": "center"
     }
   ],
   "rules": [
@@ -483,7 +483,7 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
       "do": {
         "mut": [
           {
-            "target": { "alignItems": true },
+            "target": { "flexAlignItems": true },
             "value": "invalidEnumValue"
           }
         ]
@@ -509,6 +509,20 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
 ---
 
 ## Tasks
+
+- [ ] **Task 0:** Rename flex behavior classes to include "Flex" prefix
+  - Rename all individual flex behavior classes to include "Flex" prefix for clarity and consistency
+  - Examples:
+    - `AlignItemsBehavior` → `FlexAlignItemsBehavior`
+    - `BorderLeftBehavior` → `FlexBorderLeftBehavior`
+    - `HeightBehavior` → `FlexHeightBehavior`
+    - `MarginBottomBehavior` → `FlexMarginBottomBehavior`
+    - `PaddingLeftBehavior` → `FlexPaddingLeftBehavior`
+    - `PositionTopBehavior` → `FlexPositionTopBehavior`
+    - etc. (apply to all 30 individual flex behaviors that don't already have "Flex" prefix)
+  - Note: `FlexDirectionBehavior`, `FlexGrowBehavior`, `FlexWrapBehavior`, and `FlexZOverride` already have "Flex" prefix
+  - Update all references in registries, serialization code, and tests
+  - Ensure JSON key mapping reflects new class names (e.g., `FlexBorderLeftBehavior` → `"flexBorderLeft"`)
 
 - [ ] **Task 1:** Extend RulesDriver.BuildEntitiesArray() to serialize all writable behaviors
   - Add TransformBehavior serialization (position, rotation, scale, anchor as nested JsonObject)
@@ -538,10 +552,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
   - Write integration tests: 2 tests total
 
 - [ ] **Task 5:** Implement mutation methods for Flex behaviors (AlignItems, AlignSelf, Borders)
-  - Implement mutations for: AlignItemsBehavior, AlignSelfBehavior, BorderBottomBehavior, BorderLeftBehavior, BorderRightBehavior, BorderTopBehavior
+  - Implement mutations for: FlexAlignItemsBehavior, FlexAlignSelfBehavior, FlexBorderBottomBehavior, FlexBorderLeftBehavior, FlexBorderRightBehavior, FlexBorderTopBehavior
   - Add enum parsing with validation (Align enum)
   - Add float parsing with range validation for borders
-  - Note: Each behavior is a separate root-level key in target object (e.g., `{ "alignItems": ... }`)
+  - Note: Each behavior is a separate root-level key in target object (e.g., `{ "flexAlignItems": ... }`)
   - Create JSON fixtures: 12 fixtures (6 behaviors × 2 directions)
   - Write integration tests: 12 tests total
 
@@ -553,34 +567,34 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
   - Write integration tests: 8 tests total
 
 - [ ] **Task 7:** Implement mutation methods for Flex behaviors (Dimensions)
-  - Implement mutations for: HeightBehavior, WidthBehavior
+  - Implement mutations for: FlexHeightBehavior, FlexWidthBehavior
   - Add parsing for value + percent flag (two-field behaviors)
   - Add validation for non-negative dimensions
   - Create JSON fixtures: 4 fixtures (2 behaviors × 2 directions)
   - Write integration tests: 4 tests total
 
 - [ ] **Task 8:** Implement mutation methods for Flex behaviors (JustifyContent)
-  - Implement mutation for: JustifyContentBehavior
+  - Implement mutation for: FlexJustifyContentBehavior
   - Add enum parsing with validation (Justify enum)
   - Create JSON fixtures: 2 fixtures (1 behavior × 2 directions)
   - Write integration tests: 2 tests total
 
 - [ ] **Task 9:** Implement mutation methods for Flex behaviors (Margins)
-  - Implement mutations for: MarginBottomBehavior, MarginLeftBehavior, MarginRightBehavior, MarginTopBehavior
+  - Implement mutations for: FlexMarginBottomBehavior, FlexMarginLeftBehavior, FlexMarginRightBehavior, FlexMarginTopBehavior
   - Add float parsing with validation
   - Create JSON fixtures: 8 fixtures (4 behaviors × 2 directions)
   - Write integration tests: 8 tests total
 
 - [ ] **Task 10:** Implement mutation methods for Flex behaviors (Paddings)
-  - Implement mutations for: PaddingBottomBehavior, PaddingLeftBehavior, PaddingRightBehavior, PaddingTopBehavior
+  - Implement mutations for: FlexPaddingBottomBehavior, FlexPaddingLeftBehavior, FlexPaddingRightBehavior, FlexPaddingTopBehavior
   - Add float parsing with validation
   - Create JSON fixtures: 8 fixtures (4 behaviors × 2 directions)
   - Write integration tests: 8 tests total
 
 - [ ] **Task 11:** Implement mutation methods for Flex behaviors (Positions)
-  - Implement mutations for: PositionBottomBehavior, PositionLeftBehavior, PositionRightBehavior, PositionTopBehavior, PositionTypeBehavior
+  - Implement mutations for: FlexPositionBottomBehavior, FlexPositionLeftBehavior, FlexPositionRightBehavior, FlexPositionTopBehavior, FlexPositionTypeBehavior
   - Add parsing for value + percent flag for position behaviors
-  - Add enum parsing for PositionTypeBehavior
+  - Add enum parsing for FlexPositionTypeBehavior
   - Create JSON fixtures: 10 fixtures (5 behaviors × 2 directions)
   - Write integration tests: 10 tests total
 
@@ -610,8 +624,8 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
   - `TagsBehavior` → `"tags"`
   - `TransformBehavior` → `"transform"` (sub-object with position/rotation/scale/anchor)
   - `ParentBehavior` → `"parent"`
-  - `AlignItemsBehavior` → `"alignItems"`
-  - `BorderLeftBehavior` → `"borderLeft"`
+  - `FlexAlignItemsBehavior` → `"flexAlignItems"`
+  - `FlexBorderLeftBehavior` → `"flexBorderLeft"`
   - `FlexGrowBehavior` → `"flexGrow"`
   - etc.
 
