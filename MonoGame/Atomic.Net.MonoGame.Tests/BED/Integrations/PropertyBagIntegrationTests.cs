@@ -360,7 +360,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         // test-architect: Update properties by modifying the dictionary
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(goblin1.Value, (ref behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("max-health", 200f) };
+            behavior = behavior with { Properties = behavior.Properties.With("max-health", 200f) };
         });
 
         // Assert

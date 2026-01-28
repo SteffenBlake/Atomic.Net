@@ -305,4 +305,44 @@ public class JsonLogicObjectLiteralTests
         Assert.Equal(197.5m, results[1]["properties"]!["health"]!.GetValue<decimal>());
     }
 
+    [Fact]
+    public void Apply_ArrayIndexingWithConcatenatedPath_ReturnsCorrectValue()
+    {
+        // Arrange
+        var entities = new JsonArray
+        {
+            new JsonObject { ["health"] = 100 },
+            new JsonObject { ["health"] = 50 },
+            new JsonObject { ["health"] = 75 }
+        };
+        
+        var context = new JsonObject
+        {
+            ["entities"] = entities,
+            ["index"] = 1
+        };
+        
+        var rule = new JsonObject
+        {
+            ["var"] = new JsonObject
+            {
+                ["cat"] = new JsonArray
+                {
+                    "entities.",
+                    new JsonObject { ["var"] = "index" },
+                    ".health"
+                }
+            }
+        };
+        
+        // Act
+        var result = JsonLogic.Apply(rule, context);
+        
+        // Assert
+        Assert.NotNull(result);
+        var value = result as JsonValue;
+        Assert.True(value is not null, $"Expected JsonValue, actually got: {result.ToJsonString()}");
+        var actual = value.GetValue<int>();
+        Assert.True(actual == 50, $"Expected 50, got {actual}");
+    }
 }

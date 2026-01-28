@@ -56,7 +56,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("id", "first") };
+            behavior = behavior with { Properties = behavior.Properties.With("id", "first") };
         });
         
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
@@ -65,7 +65,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("id", "second") };
+            behavior = behavior with { Properties = behavior.Properties.With("id", "second") };
         });
         
         // Act: Flush both entities
@@ -97,7 +97,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("scene", "scene1") };
+            behavior = behavior with { Properties = behavior.Properties.With("scene", "scene1") };
         });
         DatabaseRegistry.Instance.Flush();
         
@@ -109,7 +109,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         // Add PersistToDiskBehavior LAST to prevent it from loading and then being overwritten
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("scene", "scene2") };
+            behavior = behavior with { Properties = behavior.Properties.With("scene", "scene2") };
         });
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
         {
@@ -133,7 +133,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("test", "value") };
+            behavior = behavior with { Properties = behavior.Properties.With("test", "value") };
         });
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
@@ -172,7 +172,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("test", "whitespace") };
+            behavior = behavior with { Properties = behavior.Properties.With("test", "whitespace") };
         });
         
         // test-architect: Whitespace key should fire ErrorEvent

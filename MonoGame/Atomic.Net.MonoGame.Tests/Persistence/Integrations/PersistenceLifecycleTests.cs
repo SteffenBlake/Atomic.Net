@@ -55,7 +55,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("health", 100f) };
+            behavior = behavior with { Properties = behavior.Properties.With("health", 100f) };
         });
         
         // Act: Flush to write to disk, then fire ResetEvent
@@ -90,7 +90,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("mana", 50f) };
+            behavior = behavior with { Properties = behavior.Properties.With("mana", 50f) };
         });
         
         // Act: Flush to write to disk, then fire ShutdownEvent
@@ -129,7 +129,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("level", 10f) };
+            behavior = behavior with { Properties = behavior.Properties.With("level", 10f) };
         });
         DatabaseRegistry.Instance.Flush();
         
@@ -163,14 +163,14 @@ public sealed class PersistenceLifecycleTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("experience", 5000f) };
+            behavior = behavior with { Properties = behavior.Properties.With("experience", 5000f) };
         });
         DatabaseRegistry.Instance.Flush();
         
         // Act: Modify entity, remove PersistToDiskBehavior, then flush
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("experience", 10000f) };
+            behavior = behavior with { Properties = behavior.Properties.With("experience", 10000f) };
         });
         entity.RemoveBehavior<PersistToDiskBehavior>();
         
@@ -191,7 +191,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         // test-architect: Modify entity again and flush - should NOT update disk (no PersistToDiskBehavior)
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("experience", 20000f) };
+            behavior = behavior with { Properties = behavior.Properties.With("experience", 20000f) };
         });
         DatabaseRegistry.Instance.Flush();
         

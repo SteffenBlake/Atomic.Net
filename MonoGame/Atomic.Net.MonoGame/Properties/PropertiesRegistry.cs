@@ -38,9 +38,9 @@ public sealed class PropertiesRegistry : ISingleton<PropertiesRegistry>,
     /// <summary>
     /// Indexes all properties for an entity.
     /// </summary>
-    public void IndexProperties(Entity entity, ImmutableDictionary<string, PropertyValue> properties)
+    public void IndexProperties(Entity entity, FluentDictionary<string, PropertyValue> properties)
     {
-        // senior-dev: No null check needed - ImmutableDictionary never returns null from getter
+        // senior-dev: No null check needed - FluentDictionary never returns null from getter
         foreach (var (key, value) in properties)
         {
             if (!_keyIndex.TryGetValue(key, out var keyEntities))
@@ -68,9 +68,9 @@ public sealed class PropertiesRegistry : ISingleton<PropertiesRegistry>,
     /// <summary>
     /// Removes all indexed properties for an entity.
     /// </summary>
-    public void RemoveProperties(Entity entity, ImmutableDictionary<string, PropertyValue> properties)
+    public void RemoveProperties(Entity entity, FluentDictionary<string, PropertyValue> properties)
     {
-        // senior-dev: No null check needed - ImmutableDictionary never returns null from getter
+        // senior-dev: No null check needed - FluentDictionary never returns null from getter
         foreach (var (key, value) in properties)
         {
             if (_keyIndex.TryGetValue(key, out var keyEntities))

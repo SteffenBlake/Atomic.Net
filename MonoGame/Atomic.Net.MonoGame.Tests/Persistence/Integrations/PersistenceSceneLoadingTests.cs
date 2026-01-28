@@ -88,8 +88,8 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
             behavior = behavior with
             {
                 Properties = behavior.Properties 
-                    .SetItem("fromDisk", "yes")  // This value is from disk
-                    .SetItem("hp", 999f)          // Different from scene
+                    .With("fromDisk", "yes")  // This value is from disk
+                    .With("hp", 999f)          // Different from scene
             };
         });
         DatabaseRegistry.Instance.Flush();
@@ -123,7 +123,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("initial", "saved") };
+            behavior = behavior with { Properties = behavior.Properties.With("initial", "saved") };
         });
         DatabaseRegistry.Instance.Flush();
         
@@ -134,8 +134,8 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
             behavior = behavior with
             {
                 Properties = behavior.Properties 
-                    .SetItem("initial", "saved")
-                    .SetItem("duringDisabled", "should-not-persist")
+                    .With("initial", "saved")
+                    .With("duringDisabled", "should-not-persist")
             };
         });
         DatabaseRegistry.Instance.Flush(); // Should be no-op (disabled)
@@ -147,9 +147,9 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
             behavior = behavior with
             {
                 Properties = behavior.Properties 
-                    .SetItem("initial", "saved")
-                    .SetItem("duringDisabled", "should-not-persist")
-                    .SetItem("afterEnabled", "should-persist")
+                    .With("initial", "saved")
+                    .With("duringDisabled", "should-not-persist")
+                    .With("afterEnabled", "should-persist")
             };
         });
         DatabaseRegistry.Instance.Flush(); // Should write now (includes both properties)
@@ -186,8 +186,8 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
             behavior = behavior with
             {
                 Properties = behavior.Properties 
-                    .SetItem("modified", "yes")
-                    .SetItem("value", 777f)
+                    .With("modified", "yes")
+                    .With("value", 777f)
             };
         });
         DatabaseRegistry.Instance.Flush();
@@ -222,7 +222,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         // Modify entity and flush
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(nonPersistentEntity.Value, static (ref behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("test", "should-not-save") };
+            behavior = behavior with { Properties = behavior.Properties.With("test", "should-not-save") };
         });
         DatabaseRegistry.Instance.Flush();
         
@@ -253,8 +253,8 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
             behavior = behavior with
             {
                 Properties = behavior.Properties 
-                    .SetItem("originalData", "first-write")
-                    .SetItem("counter", 1f)
+                    .With("originalData", "first-write")
+                    .With("counter", 1f)
             };
         });
         DatabaseRegistry.Instance.Flush();
@@ -268,8 +268,8 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
             behavior = behavior with
             {
                 Properties = behavior.Properties 
-                    .SetItem("originalData", "second-write") // Different from disk
-                    .SetItem("counter", 2f)                   // Different from disk
+                    .With("originalData", "second-write") // Different from disk
+                    .With("counter", 2f)                   // Different from disk
             };
         });
         

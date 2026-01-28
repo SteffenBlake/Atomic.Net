@@ -104,7 +104,7 @@ This benchmark establishes a performance baseline for RulesDriver executing comp
 
 Based on this baseline, key optimization targets:
 
-1. **Reduce property mutation allocations** - ImmutableDictionary.SetItem creates new instances
+1. **Reduce property mutation allocations** - ImmutableDictionary.With creates new instances
 2. **Cache selector results** - Avoid recalculating #poisoned matches every frame
 3. **Optimize JsonLogic evaluation** - Profile WHERE filter execution
 4. **Batch mutations** - Process entities in SIMD-friendly batches

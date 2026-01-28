@@ -14,7 +14,7 @@
       "mut": [
         {
           "target": { "properties": "health" },
-          "value": { "-": [{ "var": "self.properties.health" }, { "*": [{ "var": "self.properties.burnDPS" }, { "var": "world.deltaTime" }] }] }
+          "value": { "-": [{ "var": { "cat": ["entities.", { "var": "index" }, ".properties.health"] } }, { "*": [{ "var": { "cat": ["entities.", { "var": "index" }, ".properties.burnDPS"] } }, { "var": "world.deltaTime" }] }] }
         }
       ]
     }

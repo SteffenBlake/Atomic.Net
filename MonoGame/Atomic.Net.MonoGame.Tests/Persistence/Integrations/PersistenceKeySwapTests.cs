@@ -54,14 +54,14 @@ public sealed class PersistenceKeySwapTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("hp", 100f) };
+            behavior = behavior with { Properties = behavior.Properties.With("hp", 100f) };
         });
         DatabaseRegistry.Instance.Flush();
         
         // Act: Modify entity and swap to different key
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("hp", 75f) };
+            behavior = behavior with { Properties = behavior.Properties.With("hp", 75f) };
         });
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
         {
@@ -111,7 +111,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
         var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("data", "final") };
+            behavior = behavior with { Properties = behavior.Properties.With("data", "final") };
         });
         
         // Act: Rapidly swap between multiple keys in same frame
@@ -164,14 +164,14 @@ public sealed class PersistenceKeySwapTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref  behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("value", 50f) };
+            behavior = behavior with { Properties = behavior.Properties.With("value", 50f) };
         });
         DatabaseRegistry.Instance.Flush();
         
         // Act: Mutate and swap key in same frame (before Flush)
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("value", 100f) };
+            behavior = behavior with { Properties = behavior.Properties.With("value", 100f) };
         });
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
         {
@@ -215,7 +215,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, (ref behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("slot", "A") };
+            behavior = behavior with { Properties = behavior.Properties.With("slot", "A") };
         });
         DatabaseRegistry.Instance.Flush();
         
@@ -226,7 +226,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, (ref behavior) =>
         {
-            behavior = behavior with { Properties = behavior.Properties.SetItem("slot", "B") };
+            behavior = behavior with { Properties = behavior.Properties.With("slot", "B") };
         });
         DatabaseRegistry.Instance.Flush();
         

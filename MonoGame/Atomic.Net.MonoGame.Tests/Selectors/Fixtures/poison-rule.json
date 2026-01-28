@@ -15,7 +15,7 @@
         "mut": [
           {
             "target": { "properties": "health" },
-            "value": { "-": [{ "var": "self.properties.health" }, 1] }
+            "value": { "-": [{ "var": { "cat": ["entities.", { "var": "index" }, ".properties.health"] } }, 1] }
           }
         ]
       }

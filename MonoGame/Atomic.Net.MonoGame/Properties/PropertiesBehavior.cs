@@ -14,12 +14,12 @@ public readonly record struct PropertiesBehavior : IBehavior<PropertiesBehavior>
 {
     // senior-dev: ImmutableDictionary allocation is approved (following TagsBehavior pattern)
     // This is a load-time allocation, not a gameplay allocation
-    private readonly ImmutableDictionary<string, PropertyValue>? _properties;
+    private readonly FluentDictionary<string, PropertyValue>? _properties;
     
-    public ImmutableDictionary<string, PropertyValue> Properties
+    public FluentDictionary<string, PropertyValue> Properties
     {
         init => _properties = value;
-        get => _properties ?? ImmutableDictionary<string, PropertyValue>.Empty.WithComparers(StringComparer.OrdinalIgnoreCase);
+        get => _properties ?? new(8, StringComparer.InvariantCultureIgnoreCase);
     }
     
     public static PropertiesBehavior CreateFor(Entity entity)

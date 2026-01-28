@@ -19,8 +19,8 @@
           "target": { "properties": "health" },
           "value": {
             "-": [
-              { "var": "self.properties.health" },
-              { "var": "self.properties.poisonStacks" }
+              { "var": { "cat": ["entities.", { "var": "index" }, ".properties.health"] } },
+              { "var": { "cat": ["entities.", { "var": "index" }, ".properties.poisonStacks"] } }
             ]
           }
         },
@@ -28,7 +28,7 @@
           "target": { "properties": "poisonStacks" },
           "value": {
             "-": [
-              { "var": "self.properties.poisonStacks" },
+              { "var": { "cat": ["entities.", { "var": "index" }, ".properties.poisonStacks"] } },
               1
             ]
           }

@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Atomic.Net.MonoGame.Core;
@@ -26,8 +25,8 @@ public class PropertiesBehaviorConverter : JsonConverter<PropertiesBehavior>
             EventBus<ErrorEvent>.Push(new ErrorEvent($"Properties must be an object, found {reader.TokenType}"));
             return default;
         }
-        
-        var builder = ImmutableDictionary.CreateBuilder<string, PropertyValue>(StringComparer.OrdinalIgnoreCase);
+       
+        FluentDictionary<string, PropertyValue> result = new(8, StringComparer.InvariantCultureIgnoreCase);
 
         while (reader.Read())
         {
@@ -51,7 +50,7 @@ public class PropertiesBehaviorConverter : JsonConverter<PropertiesBehavior>
             }
 
             // Guard: duplicate keys (case-insensitive)
-            if (builder.ContainsKey(key))
+            if (result.ContainsKey(key))
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent($"Duplicate property key '{key}' detected (keys are case-insensitive)"));
                 return default;
@@ -68,12 +67,12 @@ public class PropertiesBehaviorConverter : JsonConverter<PropertiesBehavior>
                 continue;
             }
 
-            builder.Add(key, value);
+            result.Add(key, value);
         }
 
         return new PropertiesBehavior
         {
-            Properties = builder.ToImmutable()
+            Properties = result
         };
     }
 

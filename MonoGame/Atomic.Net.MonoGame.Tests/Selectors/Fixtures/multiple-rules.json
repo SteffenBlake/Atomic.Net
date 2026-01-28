@@ -15,7 +15,7 @@
         "mut": [
           {
             "target": { "properties": "health" },
-            "value": { "-": [{ "var": "self.properties.health" }, { "var": "self.properties.poisonStacks" }] }
+            "value": { "-": [{ "var": { "cat": ["entities.", { "var": "index" }, ".properties.health"] } }, { "var": { "cat": ["entities.", { "var": "index" }, ".properties.poisonStacks"] } }] }
           }
         ]
       }
@@ -32,7 +32,7 @@
         "mut": [
           {
             "target": { "properties": "health" },
-            "value": { "-": [{ "var": "self.properties.health" }, { "*": [{ "var": "self.properties.burnStacks" }, 2] }] }
+            "value": { "-": [{ "var": { "cat": ["entities.", { "var": "index" }, ".properties.health"] } }, { "*": [{ "var": { "cat": ["entities.", { "var": "index" }, ".properties.burnStacks"] } }, 2] }] }
           }
         ]
       }

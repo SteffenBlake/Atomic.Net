@@ -16,6 +16,15 @@ namespace Atomic.Net.MonoGame.Scenes;
 public sealed class RulesDriver : 
     ISingleton<RulesDriver>
 {
+    private readonly JsonObject _worldContext = new()
+    {
+        ["world"] = new JsonObject()
+        {
+            ["deltaTime"] = 0.0f
+        },
+        ["entities"] = new JsonArray()
+    };
+
     internal static void Initialize()
     {
         if (Instance != null)
@@ -27,10 +36,6 @@ public sealed class RulesDriver :
     }
 
     public static RulesDriver Instance { get; private set; } = null!;
-
-    private readonly JsonArray _entities = [];
-    private readonly JsonObject _whereContext = [];
-    private readonly JsonObject _doContext = [];
 
     /// <summary>
     /// Executes all active rules for a single frame.
@@ -51,16 +56,14 @@ public sealed class RulesDriver :
     private void ProcessRule(JsonRule rule, float deltaTime)
     {
         var selectorMatches = rule.From.Matches;
-        PopulateEntitiesArray(selectorMatches);
-        
-        // CRITICAL: Use DeepClone to avoid "node already has a parent" errors when reusing contexts
-        _whereContext["world"] = new JsonObject { ["deltaTime"] = deltaTime };
-        _whereContext["entities"] = _entities.DeepClone();
+        _worldContext["world"]!["deltaTime"] = deltaTime;
+        _worldContext["index"] = -1;
+        BuildEntitiesArray(selectorMatches);
 
         JsonNode? filteredResult;
         try
         {
-            filteredResult = JsonLogic.Apply(rule.Where, _whereContext);
+            filteredResult = JsonLogic.Apply(rule.Where, _worldContext);
         }
         catch (Exception ex)
         {
@@ -83,10 +86,6 @@ public sealed class RulesDriver :
             return;
         }
 
-        // CRITICAL: DeepClone to avoid "node already has a parent" errors
-        _doContext["world"] = _whereContext["world"]!.DeepClone();
-        _doContext["entities"] = filteredEntities.DeepClone();
-
         for (var i = 0; i < filteredEntities.Count; i++)
         {
             var entity = filteredEntities[i];
@@ -96,9 +95,9 @@ public sealed class RulesDriver :
                 continue;
             }
 
-            _doContext["self"] = entity.DeepClone();
+            _worldContext["index"] = i;
             
-            ProcessEntityMutations(entity, mutations, _doContext);
+            ProcessEntityMutations(entity, mutations, _worldContext);
         }
     }
 
@@ -106,10 +105,10 @@ public sealed class RulesDriver :
     /// Serializes entities that match the selector into a JsonArray.
     /// Note: Array buffer is reused, but JsonObject instances are allocated per call.
     /// </summary>
-    private void PopulateEntitiesArray(SparseArray<bool> selectorMatches)
+    private void BuildEntitiesArray(SparseArray<bool> selectorMatches)
     {
-        _entities.Clear();
-
+        var entities = (JsonArray)_worldContext["entities"]!;
+        entities.Clear();
         foreach (var (entityIndex, _) in selectorMatches)
         {
             var entity = EntityRegistry.Instance[entityIndex];
@@ -158,7 +157,7 @@ public sealed class RulesDriver :
                 entityObj["properties"] = propertiesJson;
             }
 
-            _entities.Add(entityObj);
+            entities.Add(entityObj);
         }
     }
 
@@ -358,11 +357,11 @@ public sealed class RulesDriver :
 
         // Wrap in a tuple to pass into the anti-closure overload
         var setter = (propertyKey, propertyValue.Value);
-        // senior-dev: Use SetItem to add/update property in ImmutableDictionary
+        // senior-dev: Use With to add/update property in FluentDictionary
         entity.SetBehavior<PropertiesBehavior, (string Key, PropertyValue Value)>(
             ref setter,
             (ref readonly _setter, ref b) => b = b with { 
-                Properties = b.Properties.SetItem(_setter.Key, setter.Value) 
+                Properties = b.Properties.With(_setter.Key, setter.Value) 
             }
         );
 
