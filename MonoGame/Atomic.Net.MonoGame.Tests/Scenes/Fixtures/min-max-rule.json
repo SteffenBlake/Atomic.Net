@@ -1,0 +1,52 @@
+{
+  "entities": [
+    { "id": "e1", "tags": ["enemy"], "properties": { "health": 250 } },
+    { "id": "e2", "tags": ["enemy"], "properties": { "health": 50 } },
+    { "id": "e3", "tags": ["enemy"], "properties": { "health": 150 } }
+  ],
+  "rules": [{
+    "from": "#enemy",
+    "where": {
+      "filter": [
+        { "var": "entities" },
+        true
+      ]
+    },
+    "do": {
+      "mut": [
+        {
+          "target": { "properties": "weakestEnemyHealth" },
+          "value": {
+            "reduce": [
+              { "var": "entities" },
+              {
+                "if": [
+                  { "<": [{ "var": "current.properties.health" }, { "var": "accumulator" }] },
+                  { "var": "current.properties.health" },
+                  { "var": "accumulator" }
+                ]
+              },
+              99999
+            ]
+          }
+        },
+        {
+          "target": { "properties": "strongestEnemyHealth" },
+          "value": {
+            "reduce": [
+              { "var": "entities" },
+              {
+                "if": [
+                  { ">": [{ "var": "current.properties.health" }, { "var": "accumulator" }] },
+                  { "var": "current.properties.health" },
+                  { "var": "accumulator" }
+                ]
+              },
+              0
+            ]
+          }
+        }
+      ]
+    }
+  }]
+}

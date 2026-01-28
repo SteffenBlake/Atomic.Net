@@ -228,4 +228,80 @@ public sealed class RulesDriverIntegrationTests : IDisposable
             () => Assert.Fail("Expected float, got empty")
         );
     }
+
+    [Fact]
+    public void RunFrame_WithAverageCalculation_CalculatesCorrectly()
+    {
+        // Arrange
+        var scenePath = "Scenes/Fixtures/average-calculation-rule.json";
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        
+        // Act
+        RulesDriver.Instance.RunFrame(0.016f);
+        
+        // Assert
+        // senior-dev: Check for errors first
+        Assert.Empty(_errorListener.ReceivedEvents);
+        
+        // senior-dev: All 4 party members should have avgPartyHealth = 70 ((100+80+60+40)/4)
+        Assert.True(EntityIdRegistry.Instance.TryResolve("p1", out var p1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("p2", out var p2));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("p3", out var p3));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("p4", out var p4));
+        
+        // senior-dev: Check all party members
+        foreach (var (id, entity) in new[] { ("p1", p1), ("p2", p2), ("p3", p3), ("p4", p4) })
+        {
+            Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity.Value, out var props));
+            Assert.NotNull(props.Value.Properties);
+            Assert.True(props.Value.Properties.TryGetValue("avgPartyHealth", out var avgValue));
+            avgValue.Visit(
+                s => Assert.Fail($"{id}: Expected float, got string"),
+                f => Assert.Equal(70f, f),
+                b => Assert.Fail($"{id}: Expected float, got bool"),
+                () => Assert.Fail($"{id}: Expected float, got empty")
+            );
+        }
+    }
+
+    [Fact]
+    public void RunFrame_WithMinMaxAggregates_CalculatesCorrectly()
+    {
+        // Arrange
+        var scenePath = "Scenes/Fixtures/min-max-rule.json";
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        
+        // Act
+        RulesDriver.Instance.RunFrame(0.016f);
+        
+        // Assert
+        // senior-dev: All enemies should have weakestEnemyHealth = 50, strongestEnemyHealth = 250
+        Assert.True(EntityIdRegistry.Instance.TryResolve("e1", out var e1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("e2", out var e2));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("e3", out var e3));
+        
+        foreach (var (id, entity) in new[] { ("e1", e1), ("e2", e2), ("e3", e3) })
+        {
+            Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity.Value, out var props));
+            Assert.NotNull(props.Value.Properties);
+            
+            // senior-dev: Check weakest
+            Assert.True(props.Value.Properties.TryGetValue("weakestEnemyHealth", out var weakValue));
+            weakValue.Visit(
+                s => Assert.Fail($"{id}: Expected float for weakest, got string"),
+                f => Assert.Equal(50f, f),
+                b => Assert.Fail($"{id}: Expected float for weakest, got bool"),
+                () => Assert.Fail($"{id}: Expected float for weakest, got empty")
+            );
+            
+            // senior-dev: Check strongest
+            Assert.True(props.Value.Properties.TryGetValue("strongestEnemyHealth", out var strongValue));
+            strongValue.Visit(
+                s => Assert.Fail($"{id}: Expected float for strongest, got string"),
+                f => Assert.Equal(250f, f),
+                b => Assert.Fail($"{id}: Expected float for strongest, got bool"),
+                () => Assert.Fail($"{id}: Expected float for strongest, got empty")
+            );
+        }
+    }
 }
