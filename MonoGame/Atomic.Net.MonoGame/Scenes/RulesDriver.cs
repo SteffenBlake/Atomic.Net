@@ -28,7 +28,6 @@ public sealed class RulesDriver :
 
     public static RulesDriver Instance { get; private set; } = null!;
 
-    // senior-dev: Pre-allocated buffers reused across frames
     private readonly JsonArray _entities = [];
     private readonly JsonObject _whereContext = [];
     private readonly JsonObject _doContext = [];
@@ -40,7 +39,6 @@ public sealed class RulesDriver :
     /// <param name="deltaTime">Time elapsed since last frame in seconds</param>
     public void RunFrame(float deltaTime)
     {
-        // senior-dev: Process all active rules using SparseArray iteration (only iterates active items)
         foreach (var (_, rule) in RuleRegistry.Instance.Rules)
         {
             ProcessRule(rule, deltaTime);
@@ -52,18 +50,13 @@ public sealed class RulesDriver :
     /// </summary>
     private void ProcessRule(JsonRule rule, float deltaTime)
     {
-        // senior-dev: Get entities that match the FROM selector
         var selectorMatches = rule.From.Matches;
-        
-        // senior-dev: Serialize only the matched entities to JsonArray
         PopulateEntitiesArray(selectorMatches);
         
-        // senior-dev: Build WHERE context with world data and entities (following POC pattern)
         // CRITICAL: Use DeepClone to avoid "node already has a parent" errors when reusing contexts
         _whereContext["world"] = new JsonObject { ["deltaTime"] = deltaTime };
         _whereContext["entities"] = _entities.DeepClone();
 
-        // senior-dev: Evaluate WHERE clause to filter entities
         JsonNode? filteredResult;
         try
         {
@@ -74,30 +67,26 @@ public sealed class RulesDriver :
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Failed to evaluate WHERE clause: {ex.Message}"
             ));
-            return; // Continue to next rule
+            return;
         }
 
-        // senior-dev: Validate WHERE returns JsonArray
         if (filteredResult is not JsonArray filteredEntities)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"WHERE clause did not return JsonArray (got: {filteredResult?.GetType().Name ?? "null"})"
             ));
-            return; // Continue to next rule
+            return;
         }
 
-        // senior-dev: Extract mutations from DO command
         if (!TryGetMutations(rule.Do, out var mutations))
         {
-            return; // Not a mutation command, skip
+            return;
         }
 
-        // senior-dev: Setup reusable DO context once per rule (following POC pattern)
         // CRITICAL: DeepClone to avoid "node already has a parent" errors
         _doContext["world"] = _whereContext["world"]!.DeepClone();
         _doContext["entities"] = filteredEntities.DeepClone();
 
-        // senior-dev: Process each filtered entity
         for (var i = 0; i < filteredEntities.Count; i++)
         {
             var entity = filteredEntities[i];
@@ -106,7 +95,6 @@ public sealed class RulesDriver :
                 continue;
             }
 
-            // senior-dev: Update context (reuse, don't reallocate) - following POC pattern
             _doContext["self"] = entity.DeepClone();
             
             ProcessEntityMutations(entity, mutations, _doContext);
@@ -119,26 +107,21 @@ public sealed class RulesDriver :
     /// </summary>
     private void PopulateEntitiesArray(SparseArray<bool> selectorMatches)
     {
-        // senior-dev: Clear the array but keep the allocated capacity
         _entities.Clear();
 
-        // senior-dev: Iterate only the entities that match the selector
         foreach (var (entityIndex, _) in selectorMatches)
         {
             var entity = EntityRegistry.Instance[entityIndex];
-            // senior-dev: Create entity object with required fields
             var entityObj = new JsonObject
             {
                 ["_index"] = entity.Index
             };
 
-            // senior-dev: Add id if present
             if (BehaviorRegistry<IdBehavior>.Instance.TryGetBehavior(entity, out var idBehavior))
             {
                 entityObj["id"] = idBehavior.Value.Id;
             }
 
-            // senior-dev: Add tags if present
             if (BehaviorRegistry<TagsBehavior>.Instance.TryGetBehavior(entity, out var tagBehavior))
             {
                 var tagsArray = new JsonArray();
@@ -152,7 +135,6 @@ public sealed class RulesDriver :
                 entityObj["tags"] = tagsArray;
             }
 
-            // senior-dev: Add properties if present
             if (BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out var propertiesBehavior))
             {
                 var propertiesObj = new JsonObject();
@@ -160,7 +142,7 @@ public sealed class RulesDriver :
                 {
                     foreach (var (key, value) in propertiesBehavior.Value.Properties)
                     {
-                        // senior-dev: PropertyValue is a variant type, need to extract the actual value
+                        // PropertyValue is a variant type, extract actual value
                         var jsonValue = value.Visit(
                             s => (JsonNode?)JsonValue.Create(s),
                             f => JsonValue.Create(f),
@@ -190,12 +172,10 @@ public sealed class RulesDriver :
         out MutOperation[]? mutations
     )
     {
-
-        // senior-dev: SceneCommand is a variant type, extract MutCommand
+        // SceneCommand is a variant type - extract MutCommand if present
         if (!command.TryMatch(out MutCommand mutCommand))
         {
-            // senior-dev: This is not necessarily an error - rule might have other command types
-            // For now, just skip silently as only mut commands are supported
+            // Not an error - rule might have other command types
             mutations = null;
             return false;
         }
@@ -213,10 +193,8 @@ public sealed class RulesDriver :
         JsonObject doContext
     )
     {
-        // senior-dev: Apply each mutation operation using the pre-built context
         foreach (var operation in mutations)
         {
-            // senior-dev: ApplyMutation handles errors internally, just continue on failure
             ApplyMutation(entity, operation, doContext);
         }
     }
@@ -228,13 +206,11 @@ public sealed class RulesDriver :
         JsonNode entityJson, MutOperation operation, JsonObject context
     )
     {
-        // senior-dev: Extract entity index from JSON
         if (!TryGetEntityIndex(entityJson, out var entityIndex))
         {
             return false;
         }
 
-        // senior-dev: Evaluate the value expression using JsonLogic
         JsonNode? computedValue;
         try
         {
@@ -256,7 +232,6 @@ public sealed class RulesDriver :
             return false;
         }
 
-        // senior-dev: Parse target path and apply mutation
         return ApplyToTarget(entityIndex.Value, operation.Target, computedValue);
     }
 
@@ -289,7 +264,7 @@ public sealed class RulesDriver :
 
         try
         {
-            // senior-dev: _index is stored as ushort in JSON, try that first
+            // Try ushort first, then fallback to int for flexibility
             if (indexNode is JsonValue jsonValue && 
                 jsonValue.TryGetValue<ushort>(out var ushortValue)
             )
@@ -298,7 +273,6 @@ public sealed class RulesDriver :
                 return true;
             }
 
-            // senior-dev: Fallback to int conversion for flexibility
             var indexValue = indexNode.GetValue<int>();
             if (indexValue < 0 || indexValue >= Constants.MaxEntities)
             {
@@ -336,13 +310,11 @@ public sealed class RulesDriver :
             return false;
         }
 
-        // senior-dev: Check if this is a properties mutation
         if (targetObj.TryGetPropertyValue("properties", out var propertyKeyNode) && propertyKeyNode != null)
         {
             return ApplyPropertyMutation(entityIndex, propertyKeyNode, value);
         }
 
-        // senior-dev: Unsupported target path format
         EventBus<ErrorEvent>.Push(new ErrorEvent(
             $"Unsupported target path format for entity {entityIndex}. Only 'properties' is currently supported."
         ));
@@ -367,7 +339,6 @@ public sealed class RulesDriver :
             return false;
         }
 
-        // senior-dev: Convert JsonNode value to PropertyValue
         if (!TryConvertToPropertyValue(value, out var propertyValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
@@ -376,9 +347,7 @@ public sealed class RulesDriver :
             return false;
         }
 
-        // senior-dev: Get or create entity
         var entity = EntityRegistry.Instance[entityIndex];
-        
         if (!entity.Active)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
@@ -387,7 +356,6 @@ public sealed class RulesDriver :
             return false;
         }
 
-        // senior-dev: Get existing properties or create new dictionary
         var existingProperties = BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out var behavior)
             ? behavior.Value.Properties
             : null;
@@ -420,17 +388,16 @@ public sealed class RulesDriver :
     {
         try
         {
-            // senior-dev: Try each variant type in order
+            // Try types in order: bool (most specific) → numeric → string (least specific)
             if (value is JsonValue jsonValue)
             {
-                // senior-dev: Try bool first (most specific)
                 if (jsonValue.TryGetValue<bool>(out var boolVal))
                 {
                     propertyValue = boolVal;
                     return true;
                 }
 
-                // senior-dev: Try float (covers decimal values from JsonLogic)
+                // JsonLogic returns decimal for arithmetic operations
                 if (jsonValue.TryGetValue<decimal>(out var decimalVal))
                 {
                     propertyValue = (float)decimalVal;
@@ -449,7 +416,6 @@ public sealed class RulesDriver :
                     return true;
                 }
 
-                // senior-dev: Try string last (least specific)
                 if (jsonValue.TryGetValue<string>(out var stringVal))
                 {
                     propertyValue = stringVal;
