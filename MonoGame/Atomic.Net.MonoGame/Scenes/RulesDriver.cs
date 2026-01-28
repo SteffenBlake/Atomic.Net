@@ -315,7 +315,7 @@ public sealed class RulesDriver :
         }
 
         EventBus<ErrorEvent>.Push(new ErrorEvent(
-            $"Unsupported target path format for entity {entityIndex}. Only 'properties' is currently supported."
+            $"Unsupported target path format for entity {entityIndex}. Expected one of: [properties]"
         ));
         return false;
     }
@@ -356,9 +356,14 @@ public sealed class RulesDriver :
             return false;
         }
 
+        // Wrap in a tuple to pass into the anti-closure overload
+        var setter = (propertyKey, propertyValue.Value);
         // senior-dev: Use SetItem to add/update property in ImmutableDictionary
-        entity.SetBehavior<PropertiesBehavior>(
-            (ref b) => b = b with { Properties = b.Properties.SetItem(propertyKey, propertyValue.Value) }
+        entity.SetBehavior<PropertiesBehavior, (string Key, PropertyValue Value)>(
+            ref setter,
+            (ref readonly _setter, ref b) => b = b with { 
+                Properties = b.Properties.SetItem(_setter.Key, setter.Value) 
+            }
         );
 
         return true;
