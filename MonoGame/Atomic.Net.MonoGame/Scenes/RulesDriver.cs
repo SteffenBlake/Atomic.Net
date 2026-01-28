@@ -90,6 +90,7 @@ public sealed class RulesDriver :
         for (var i = 0; i < filteredEntities.Count; i++)
         {
             var entity = filteredEntities[i];
+            // JsonLogic filter can return null entries in sparse results
             if (entity == null)
             {
                 continue;
@@ -124,20 +125,20 @@ public sealed class RulesDriver :
 
             if (BehaviorRegistry<TagsBehavior>.Instance.TryGetBehavior(entity, out var tagBehavior))
             {
-                var tagsArray = new JsonArray();
+                var tagsJson = new JsonArray();
                 if (tagBehavior.Value.Tags != null)
                 {
                     foreach (var tag in tagBehavior.Value.Tags)
                     {
-                        tagsArray.Add(tag);
+                        tagsJson.Add(tag);
                     }
                 }
-                entityObj["tags"] = tagsArray;
+                entityObj["tags"] = tagsJson;
             }
 
             if (BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out var propertiesBehavior))
             {
-                var propertiesObj = new JsonObject();
+                var propertiesJson = new JsonObject();
                 if (propertiesBehavior.Value.Properties != null)
                 {
                     foreach (var (key, value) in propertiesBehavior.Value.Properties)
@@ -152,11 +153,11 @@ public sealed class RulesDriver :
                         
                         if (jsonValue != null)
                         {
-                            propertiesObj[key] = jsonValue;
+                            propertiesJson[key] = jsonValue;
                         }
                     }
                 }
-                entityObj["properties"] = propertiesObj;
+                entityObj["properties"] = propertiesJson;
             }
 
             _entities.Add(entityObj);
