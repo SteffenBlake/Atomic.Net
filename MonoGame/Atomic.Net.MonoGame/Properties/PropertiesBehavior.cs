@@ -28,4 +28,3 @@ public readonly record struct PropertiesBehavior(
         return new();
     }
 }
-

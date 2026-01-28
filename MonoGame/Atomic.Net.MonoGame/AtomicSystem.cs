@@ -84,5 +84,6 @@ public static class AtomicSystem
 
         // Scene System
         SceneLoader.Initialize();
+        RulesDriver.Initialize();
     }
 }

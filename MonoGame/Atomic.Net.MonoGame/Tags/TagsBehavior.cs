@@ -19,7 +19,7 @@ public readonly record struct TagsBehavior : IBehavior<TagsBehavior>
     public ImmutableHashSet<string> Tags
     {
         init => _tags = value;
-        get => _tags ?? ImmutableHashSet<string>.Empty;
+        get => _tags ?? [];
     }
     
     public static TagsBehavior CreateFor(Entity entity)

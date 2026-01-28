@@ -1,0 +1,22 @@
+{
+  "entities": [
+    { "id": "goblin", "tags": ["burning"], "properties": { "health": 100, "burnDPS": 10 } }
+  ],
+  "rules": [{
+    "from": "#burning",
+    "where": {
+      "filter": [
+        { "var": "entities" },
+        { ">": [{ "var": "properties.burnDPS" }, 0] }
+      ]
+    },
+    "do": {
+      "mut": [
+        {
+          "target": { "properties": "health" },
+          "value": { "-": [{ "var": "self.properties.health" }, { "*": [{ "var": "self.properties.burnDPS" }, { "var": "world.deltaTime" }] }] }
+        }
+      ]
+    }
+  }]
+}
