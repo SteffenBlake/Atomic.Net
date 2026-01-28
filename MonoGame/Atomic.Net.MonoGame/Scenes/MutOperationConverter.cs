@@ -4,6 +4,10 @@ using System.Text.Json.Serialization;
 
 namespace Atomic.Net.MonoGame.Scenes;
 
+/// <summary>
+/// Custom JSON converter for MutOperation that validates target and value properties
+/// are present and non-null during deserialization.
+/// </summary>
 public class MutOperationConverter : JsonConverter<MutOperation>
 {
     public override MutOperation Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
