@@ -33,11 +33,9 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
         EventBus<ShutdownEvent>.Unregister(this);
     }
 
-    // senior-dev: Pre-allocated buffers reused across frames for zero allocations
+    // senior-dev: Pre-allocated buffers reused across frames
     private readonly JsonArray _entitiesArray = new();
-    private readonly JsonObject _whereContext = new();
     private readonly JsonObject _doContext = new();
-    private readonly JsonObject _worldObject = new();
 
     /// <summary>
     /// Executes all active rules for a single frame.
@@ -66,7 +64,11 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
         var entities = SerializeEntities(selectorMatches);
         
         // senior-dev: Build WHERE context with world data and entities
-        var whereContext = BuildWhereContext(deltaTime, entities);
+        var whereContext = new JsonObject
+        {
+            ["world"] = new JsonObject { ["deltaTime"] = deltaTime },
+            ["entities"] = entities
+        };
 
         // senior-dev: Evaluate WHERE clause to filter entities
         JsonNode? filteredResult;
@@ -97,6 +99,11 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
             return; // Not a mutation command, skip
         }
 
+        // senior-dev: Setup reusable DO context once per rule (following POC pattern)
+        // CRITICAL: DeepClone to avoid "node already has a parent" errors
+        _doContext["world"] = whereContext["world"]!.DeepClone();
+        _doContext["entities"] = filteredEntities.DeepClone();
+
         // senior-dev: Process each filtered entity
         for (var i = 0; i < filteredEntities.Count; i++)
         {
@@ -106,7 +113,10 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
                 continue;
             }
 
-            ProcessEntityMutations(entity, mutations, whereContext);
+            // senior-dev: Update context (reuse, don't reallocate) - following POC pattern
+            _doContext["self"] = entity.DeepClone();
+            
+            ProcessEntityMutations(entity, mutations, _doContext);
         }
     }
 
@@ -181,36 +191,6 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
     }
 
     /// <summary>
-    /// Builds WHERE clause context with world data and entities array.
-    /// Reuses pre-allocated JsonObject for zero allocations.
-    /// </summary>
-    private JsonObject BuildWhereContext(float deltaTime, JsonArray entities)
-    {
-        // senior-dev: Update world object with current deltaTime
-        _worldObject["deltaTime"] = deltaTime;
-
-        // senior-dev: Update WHERE context (reuse existing object)
-        _whereContext["world"] = _worldObject;
-        _whereContext["entities"] = entities;
-
-        return _whereContext;
-    }
-
-    /// <summary>
-    /// Builds DO clause context with world data, entities array, and self entity.
-    /// Reuses pre-allocated JsonObject for zero allocations.
-    /// </summary>
-    private JsonObject BuildDoContext(JsonObject whereContext, JsonNode self)
-    {
-        // senior-dev: Reuse world and entities from whereContext (reference sharing)
-        _doContext["world"] = whereContext["world"];
-        _doContext["entities"] = whereContext["entities"];
-        _doContext["self"] = self;
-
-        return _doContext;
-    }
-
-    /// <summary>
     /// Extracts mutation operations from a SceneCommand.
     /// </summary>
     private bool TryGetMutations(
@@ -239,13 +219,10 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
     private void ProcessEntityMutations(
         JsonNode entity,
         MutOperation[] mutations,
-        JsonObject whereContext
+        JsonObject doContext
     )
     {
-        // senior-dev: Build DO context with self = current entity
-        var doContext = BuildDoContext(whereContext, entity);
-
-        // senior-dev: Apply each mutation operation
+        // senior-dev: Apply each mutation operation using the pre-built context
         foreach (var operation in mutations)
         {
             // senior-dev: ApplyMutation handles errors internally, just continue on failure

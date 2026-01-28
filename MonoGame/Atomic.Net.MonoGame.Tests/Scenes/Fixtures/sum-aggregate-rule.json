@@ -1,0 +1,30 @@
+{
+  "entities": [
+    { "id": "enemy1", "tags": ["enemy"], "properties": { "health": 100 } },
+    { "id": "enemy2", "tags": ["enemy"], "properties": { "health": 200 } },
+    { "id": "enemy3", "tags": ["enemy"], "properties": { "health": 50 } }
+  ],
+  "rules": [{
+    "from": "#enemy",
+    "where": {
+      "filter": [
+        { "var": "entities" },
+        true
+      ]
+    },
+    "do": {
+      "mut": [
+        {
+          "target": { "properties": "totalEnemyHealth" },
+          "value": {
+            "reduce": [
+              { "var": "entities" },
+              { "+": [{ "var": "accumulator" }, { "var": "current.properties.health" }] },
+              0
+            ]
+          }
+        }
+      ]
+    }
+  }]
+}
