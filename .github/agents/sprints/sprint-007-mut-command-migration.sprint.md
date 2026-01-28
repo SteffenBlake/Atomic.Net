@@ -65,7 +65,7 @@
 1. **Old**: `mut` is a single JsonLogic object (typically `map` with `merge`)
 2. **New**: `mut` is an array of operation objects, each with `target` and `value`
 3. **Old**: Uses `{ "var": "entities" }` and `{ "var": "" }` for context
-4. **New**: Uses `{ "var": "self.properties.health" }` for explicit paths
+4. **New**: Uses `{ "var": "self.properties.health" }` for explicit paths within the current entity being mutated
 5. **Old**: Nested structure with `map`/`merge` wrappers
 6. **New**: Flat array structure, each operation is independent
 
@@ -80,14 +80,15 @@ public readonly record struct MutCommand(JsonNode Mut);
 
 **Required State:**
 ```csharp
-public readonly record struct MutCommand(JsonArray Operations);
+public readonly record struct MutCommand(MutOperation[] Operations);
 ```
 
 **Rationale:**
-- Enforces array structure at the type level
-- Prevents accidental acceptance of old object format
-- Makes iteration explicit in future execution code
-- JsonArray is the correct type for array nodes in System.Text.Json
+- **Greedy Deserialization:** JsonRules are immutable and loaded once at scene load, never mutate after
+- **Zero Runtime Allocations:** All parsing and allocation happens during scene load
+- **Performance:** Pre-parsed array ready for iteration during rule execution
+- **Type Safety:** Enforces correct structure at the type level, prevents old object format
+- **Cache-Friendly:** Array of structs provides better cache locality than JsonArray iteration
 
 #### 2. MutOperation Record
 
@@ -105,9 +106,12 @@ public readonly record struct MutOperation(
 - Represents a single mutation operation
 - `Target` holds path object (e.g., `{ "properties": "health" }`)
 - `Value` holds JsonLogic expression to evaluate
-- Will be deserialized from each array element in `mut`
+- Deserialized eagerly from each array element in `mut` at scene load time
 
-**Note:** This is a data-holder only (Stage 1 parsing). Future work will execute these operations.
+**Rationale:**
+- Struct type for zero-allocation iteration
+- Immutable after construction (readonly record struct)
+- Simple data holder, execution logic lives elsewhere
 
 #### 3. SceneCommandConverter Update
 
@@ -121,12 +125,14 @@ public readonly record struct MutOperation(
 - Read `mut` property value
 - Validate it's a JsonArray (not JsonObject or other type)
 - Throw JsonException if not an array
-- For each array element:
+- Allocate `MutOperation[]` with length matching array size
+- For each array element at index i:
   - Validate it's a JsonObject
   - Validate it has `target` and `value` properties
   - Validate both properties are not null
+  - Create `MutOperation(target, value)` and store at index i
   - Throw JsonException for any validation failure
-- Pass JsonArray to MutCommand constructor
+- Pass `MutOperation[]` to MutCommand constructor
 
 **Error Messages:**
 - "Expected 'mut' to be an array" (if not JsonArray)
@@ -140,6 +146,7 @@ public readonly record struct MutOperation(
 - Strict validation at parse time prevents runtime errors
 - Clear error messages help designers fix JSON quickly
 - Reject old format explicitly (object vs array type check)
+- Greedy deserialization optimizes for immutable, load-once-use-many pattern
 
 #### 4. JSON Scene File Migrations
 
@@ -182,8 +189,12 @@ public readonly record struct MutOperation(
 ```
 
 **Context Variable Changes:**
-- `{ "var": "entities.properties.health" }` → `{ "var": "self.properties.health" }`
-- `{ "var": "properties.health" }` → `{ "var": "self.properties.health" }` (inside map body)
+- **Within `value` expressions:** Access current entity being mutated via `self.*`
+  - `{ "var": "properties.health" }` → `{ "var": "self.properties.health" }` (inside old map body)
+  - Example: `{ "-": [{ "var": "self.properties.health" }, 1] }`
+- **Accessing other entities in where clause:** Continue using `entities` array
+  - Where clause still has access to full entity array for filtering
+  - Example in where: `{ "filter": [{ "var": "entities" }, { ">": [{ "var": "properties.health" }, 0] }] }`
 - Remove all `map` and `merge` wrappers
 - Each property mutation becomes a separate array element
 
@@ -223,7 +234,7 @@ public readonly record struct MutOperation(
 #### SceneLoader
 - **File:** `MonoGame/Atomic.Net.MonoGame/Scenes/SceneLoader.cs`
 - **Current State:** Already deserializes rules via SceneCommandConverter
-- **No Changes Needed:** Converter handles format validation
+- **No Changes Needed:** Converter handles format validation and deserialization to MutOperation[]
 
 #### Test Infrastructure
 - **Files:** All test files using rules fixtures
@@ -234,38 +245,44 @@ public readonly record struct MutOperation(
 
 #### Parsing Performance
 - **Old Format:** Single JsonNode, minimal validation
-- **New Format:** JsonArray iteration + per-element validation
-- **Impact:** Negligible (parsing happens at load time only)
-- **Benefit:** Strict validation catches errors early
+- **New Format:** JsonArray iteration + per-element validation + eager MutOperation[] allocation
+- **Impact:** Slightly more work at load time (acceptable - happens once)
+- **Benefit:** Strict validation catches errors early + zero runtime overhead
 
 #### Runtime Allocation
-- **No Change:** Both formats store JsonNode/JsonArray (reference types)
-- **Future Work:** Execution will iterate array elements (zero-alloc iteration)
-- **Target:** Zero allocations during gameplay (allocations only at load)
+- **Old Format:** JsonNode stored, iteration/parsing deferred to runtime
+- **New Format:** MutOperation[] pre-allocated at load time
+- **Runtime:** Zero allocations - just iterate pre-parsed struct array
+- **Target:** All allocations at scene load, zero allocations during gameplay execution
 
 #### Validation Overhead
 - **Cost:** O(n) where n = number of operations in array
-- **Typical Case:** 1-5 operations per rule (low overhead)
-- **Edge Case:** 50+ operations (still acceptable at load time)
+- **Typical Case:** 1-5 operations per rule (negligible load time overhead)
+- **Edge Case:** 50+ operations (still acceptable, happens once at scene load)
 
 ### Data Structure Design Decisions
 
-#### Why JsonArray instead of MutOperation[]?
+#### Why MutOperation[] instead of JsonArray?
 
-**Decision:** Use `JsonArray` in MutCommand, not `MutOperation[]`
+**Decision:** Use `MutOperation[]` in MutCommand, not `JsonArray`
 
 **Rationale:**
-1. **Stage 1 Parsing Only:** We're not executing yet, just validating structure
-2. **Deferred Deserialization:** Don't parse `target`/`value` until execution time
-3. **Flexibility:** Target/value parsing may change (e.g., compiled paths in future)
-4. **Zero Extra Allocation:** Don't allocate MutOperation[] if we won't use it yet
-5. **Consistent with Current Design:** JsonRule stores JsonNode, not parsed objects
+1. **Immutable Load-Once Pattern:** JsonRules load at scene load and never mutate - optimize for this
+2. **Greedy Deserialization:** Do all parsing work at load time for zero runtime cost
+3. **Zero Runtime Allocations:** Pre-parsed struct array ready for iteration
+4. **Cache-Friendly:** Contiguous array of structs better than JsonNode traversal
+5. **Type Safety:** Enforces schema at deserialization, no runtime validation needed
+6. **Simpler Execution:** Future execution code just iterates array, no parsing
 
-**Future Work (Stage 2):**
-- When implementing execution, iterate JsonArray
-- Parse each element to MutOperation on-the-fly
-- Evaluate `target` path and `value` expression
-- MutOperation struct may evolve based on execution needs
+**Performance Impact:**
+- **Load Time:** Slightly more work (parse all operations immediately)
+- **Runtime:** Zero overhead - just array iteration
+- **Memory:** Pre-allocated array vs deferred parsing (acceptable tradeoff)
+
+**Alignment with Project Principles:**
+- Follows zero-allocation gameplay constraint (all allocs at load)
+- Matches pattern used elsewhere (pre-parse, pre-allocate, execute fast)
+- Data-driven design: JSON → strongly-typed structs → fast execution
 
 #### Why Validate Array Elements?
 
@@ -284,7 +301,7 @@ public readonly record struct MutOperation(
 ### Code Changes
 
 - [ ] **Task 1:** Update MutCommand structure
-  - Change `JsonNode Mut` to `JsonArray Operations`
+  - Change `JsonNode Mut` to `MutOperation[] Operations`
   - Update file: `MonoGame/Atomic.Net.MonoGame/Scenes/MutCommand.cs`
 
 - [ ] **Task 2:** Create MutOperation record
@@ -295,7 +312,8 @@ public readonly record struct MutOperation(
 - [ ] **Task 3:** Update SceneCommandConverter validation
   - Update file: `MonoGame/Atomic.Net.MonoGame/Scenes/SceneCommandConverter.cs`
   - Add JsonArray type check for `mut` property
-  - Add per-element validation loop
+  - Allocate `MutOperation[]` array with correct size
+  - Add per-element parsing loop that creates MutOperation structs
   - Add error messages for all failure cases
   - Throw JsonException for old object format
   - Throw JsonException for missing/null target/value
@@ -304,7 +322,7 @@ public readonly record struct MutOperation(
 
 - [ ] **Task 4:** Migrate poison-rule.json
   - Convert `map` + `merge` to array of operations
-  - Update context variables (`entities.*` → `self.*`)
+  - Update context variables (inside map: `properties.*` → `self.properties.*`)
   - Test file loads without errors
 
 - [ ] **Task 5:** Migrate multiple-rules.json
@@ -408,7 +426,7 @@ public readonly record struct MutOperation(
 2. Single operation object with `target` and `value`
 3. `target` is path object: `{ "properties": "health" }`
 4. `value` is the expression: `{ "-": [...] }`
-5. Context variable changed: `properties.health` → `self.properties.health`
+5. Context variable changed: `properties.health` → `self.properties.health` (within the mutation value)
 6. Removed `map` and `merge` wrappers
 
 ### Example 2: Multiple Properties (Multi-Operation Array)
@@ -459,7 +477,7 @@ public readonly record struct MutOperation(
 1. Each property mutation is a separate array element
 2. First operation mutates `health`
 3. Second operation mutates `poisonStacks`
-4. All context variables updated to `self.*` prefix
+4. All context variables updated to `self.*` prefix (within mutation values)
 5. Removed all `map` and `merge` wrappers
 
 ### Example 3: Invalid Format (Should Fail)
@@ -506,11 +524,36 @@ For each JSON file migration, verify:
 - [ ] File deserializes without JsonException
 - [ ] `mut` is a JsonArray, not JsonObject
 - [ ] Each array element has both `target` and `value` properties
-- [ ] No `map` or `merge` JsonLogic operators remain
-- [ ] All `{ "var": "entities.*" }` changed to `{ "var": "self.*" }`
-- [ ] All `{ "var": "properties.*" }` changed to `{ "var": "self.properties.*" }`
+- [ ] No `map` or `merge` JsonLogic operators remain in the `mut` section
+- [ ] Context variables in mutation `value` expressions use `self.*` for the current entity being mutated
+- [ ] Context variables in `where` clauses can still use `entities` to access the full entity array
+- [ ] All `{ "var": "properties.*" }` (inside old map body) changed to `{ "var": "self.properties.*" }`
 - [ ] Multi-property mutations split into separate array elements
 - [ ] Tests using the file still pass
+
+---
+
+## World Object Structure Reference
+
+**For Execution (Future Work):**
+
+The world object structure during rule evaluation will be:
+
+```typescript
+{
+  deltaTime: number,      // Frame delta time
+  entities: Entity[],     // Full array of entities being evaluated (for where clause)
+  self: Entity           // Current entity being mutated (for do.mut value expressions)
+}
+```
+
+**Usage in JSON:**
+- **In `where` clause:** Use `{ "var": "entities" }` to access array for filtering
+  - Example: `{ "filter": [{ "var": "entities" }, { ">": [{ "var": "properties.health" }, 0] }] }`
+- **In `do.mut` value:** Use `{ "var": "self.properties.X" }` to access current entity
+  - Example: `{ "-": [{ "var": "self.properties.health" }, 1] }`
+
+**Note:** This sprint only changes the JSON structure. Execution implementation is future work.
 
 ---
 
@@ -548,10 +591,11 @@ For each JSON file migration, verify:
 ### Stage 1 vs Stage 2 Separation
 
 **Stage 1 (This Sprint):**
-- ✅ Change data structure (JsonNode → JsonArray)
+- ✅ Change data structure (JsonNode → MutOperation[])
 - ✅ Update validation rules
 - ✅ Migrate all JSON files
 - ✅ Ensure parsing works
+- ✅ Greedy deserialization at load time
 - ❌ NO execution of operations (future work)
 
 **Stage 2 (Future Sprint):**
@@ -562,17 +606,21 @@ For each JSON file migration, verify:
 - Handle errors during execution (not parsing)
 
 **Boundary:**
-- This sprint: "Can we parse the new format?"
+- This sprint: "Can we parse and validate the new format into MutOperation[]?"
 - Next sprint: "Can we execute the parsed operations?"
 
-### Why MutOperation Struct Now?
+### Why MutOperation Now?
 
-**Question:** If we're not executing, why define MutOperation?
+**Question:** Why define and use MutOperation if we're not executing yet?
 
 **Answer:**
-1. **Documents Intent:** Shows future consumers what structure to expect
-2. **Type Safety:** Enables future execution code to deserialize cleanly
+1. **Greedy Deserialization:** Parse JSON into typed structs at load time (zero runtime cost)
+2. **Type Safety:** Ensures all operations conform to schema before execution exists
 3. **Testing:** Tests can validate structure without full execution
-4. **Minimal Cost:** Tiny struct, no runtime overhead
+4. **Performance:** Pre-parsed array ready for fast iteration in future execution code
+5. **Immutable Pattern:** Matches JsonRule load-once-use-many design
 
-**Note:** MutOperation is NOT deserialized during parsing (we keep JsonArray). It's a schema definition for future use.
+**Usage:**
+- MutOperation[] is created during SceneCommandConverter.Read()
+- Stored in MutCommand.Operations
+- Ready for iteration when execution is implemented
