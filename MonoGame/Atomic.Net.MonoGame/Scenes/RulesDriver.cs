@@ -35,6 +35,7 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
 
     // senior-dev: Pre-allocated buffers reused across frames
     private readonly JsonArray _entitiesArray = new();
+    private readonly JsonObject _whereContext = new();
     private readonly JsonObject _doContext = new();
 
     /// <summary>
@@ -63,18 +64,16 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
         // senior-dev: Serialize only the matched entities to JsonArray
         var entities = SerializeEntities(selectorMatches);
         
-        // senior-dev: Build WHERE context with world data and entities
-        var whereContext = new JsonObject
-        {
-            ["world"] = new JsonObject { ["deltaTime"] = deltaTime },
-            ["entities"] = entities
-        };
+        // senior-dev: Build WHERE context with world data and entities (following POC pattern)
+        // CRITICAL: Use DeepClone to avoid "node already has a parent" errors when reusing contexts
+        _whereContext["world"] = new JsonObject { ["deltaTime"] = deltaTime };
+        _whereContext["entities"] = entities.DeepClone();
 
         // senior-dev: Evaluate WHERE clause to filter entities
         JsonNode? filteredResult;
         try
         {
-            filteredResult = JsonLogic.Apply(rule.Where, whereContext);
+            filteredResult = JsonLogic.Apply(rule.Where, _whereContext);
         }
         catch (Exception ex)
         {
@@ -101,7 +100,7 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
 
         // senior-dev: Setup reusable DO context once per rule (following POC pattern)
         // CRITICAL: DeepClone to avoid "node already has a parent" errors
-        _doContext["world"] = whereContext["world"]!.DeepClone();
+        _doContext["world"] = _whereContext["world"]!.DeepClone();
         _doContext["entities"] = filteredEntities.DeepClone();
 
         // senior-dev: Process each filtered entity
