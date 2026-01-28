@@ -103,7 +103,7 @@ public sealed class RulesDriver :
 
     /// <summary>
     /// Serializes entities that match the selector into a JsonArray.
-    /// Reuses pre-allocated JsonArray buffer for zero allocations.
+    /// Note: Array buffer is reused, but JsonObject instances are allocated per call.
     /// </summary>
     private void PopulateEntitiesArray(SparseArray<bool> selectorMatches)
     {
@@ -264,7 +264,7 @@ public sealed class RulesDriver :
 
         try
         {
-            // Try ushort first, then fallback to int for flexibility
+            // Entity index is ushort, but JsonLogic may serialize as int
             if (indexNode is JsonValue jsonValue && 
                 jsonValue.TryGetValue<ushort>(out var ushortValue)
             )
@@ -348,6 +348,7 @@ public sealed class RulesDriver :
         }
 
         var entity = EntityRegistry.Instance[entityIndex];
+        
         if (!entity.Active)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(

@@ -249,9 +249,10 @@ public sealed class RulesDriverIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("p3", out var p3));
         Assert.True(EntityIdRegistry.Instance.TryResolve("p4", out var p4));
         
-        // senior-dev: Check all party members
+        // Check all party members
         foreach (var (id, entity) in new[] { ("p1", p1), ("p2", p2), ("p3", p3), ("p4", p4) })
         {
+            Assert.True(entity.HasValue);
             Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity.Value, out var props));
             Assert.NotNull(props.Value.Properties);
             Assert.True(props.Value.Properties.TryGetValue("avgPartyHealth", out var avgValue));
@@ -282,10 +283,11 @@ public sealed class RulesDriverIntegrationTests : IDisposable
         
         foreach (var (id, entity) in new[] { ("e1", e1), ("e2", e2), ("e3", e3) })
         {
+            Assert.True(entity.HasValue);
             Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity.Value, out var props));
             Assert.NotNull(props.Value.Properties);
             
-            // senior-dev: Check weakest
+            // Check weakest
             Assert.True(props.Value.Properties.TryGetValue("weakestEnemyHealth", out var weakValue));
             weakValue.Visit(
                 s => Assert.Fail($"{id}: Expected float for weakest, got string"),
@@ -294,7 +296,7 @@ public sealed class RulesDriverIntegrationTests : IDisposable
                 () => Assert.Fail($"{id}: Expected float for weakest, got empty")
             );
             
-            // senior-dev: Check strongest
+            // Check strongest
             Assert.True(props.Value.Properties.TryGetValue("strongestEnemyHealth", out var strongValue));
             strongValue.Visit(
                 s => Assert.Fail($"{id}: Expected float for strongest, got string"),
