@@ -13,7 +13,8 @@ namespace Atomic.Net.MonoGame.Scenes;
 /// Executes all active rules in a single frame.
 /// Processes global and scene rules in SparseArray order.
 /// </summary>
-public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<ShutdownEvent>
+public sealed class RulesDriver : 
+    ISingleton<RulesDriver>
 {
     internal static void Initialize()
     {
@@ -23,20 +24,14 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
         }
 
         Instance = new();
-        EventBus<ShutdownEvent>.Register(Instance);
     }
 
     public static RulesDriver Instance { get; private set; } = null!;
 
-    public void OnEvent(ShutdownEvent _)
-    {
-        EventBus<ShutdownEvent>.Unregister(this);
-    }
-
     // senior-dev: Pre-allocated buffers reused across frames
-    private readonly JsonArray _entitiesArray = new();
-    private readonly JsonObject _whereContext = new();
-    private readonly JsonObject _doContext = new();
+    private readonly JsonArray _entities = [];
+    private readonly JsonObject _whereContext = [];
+    private readonly JsonObject _doContext = [];
 
     /// <summary>
     /// Executes all active rules for a single frame.
@@ -46,8 +41,7 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
     public void RunFrame(float deltaTime)
     {
         // senior-dev: Process all active rules using SparseArray iteration (only iterates active items)
-        var rules = RuleRegistry.Instance.Rules;
-        foreach (var (_, rule) in rules)
+        foreach (var (_, rule) in RuleRegistry.Instance.Rules)
         {
             ProcessRule(rule, deltaTime);
         }
@@ -62,12 +56,12 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
         var selectorMatches = rule.From.Matches;
         
         // senior-dev: Serialize only the matched entities to JsonArray
-        var entities = SerializeEntities(selectorMatches);
+        PopulateEntitiesArray(selectorMatches);
         
         // senior-dev: Build WHERE context with world data and entities (following POC pattern)
         // CRITICAL: Use DeepClone to avoid "node already has a parent" errors when reusing contexts
         _whereContext["world"] = new JsonObject { ["deltaTime"] = deltaTime };
-        _whereContext["entities"] = entities.DeepClone();
+        _whereContext["entities"] = _entities.DeepClone();
 
         // senior-dev: Evaluate WHERE clause to filter entities
         JsonNode? filteredResult;
@@ -123,10 +117,10 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
     /// Serializes entities that match the selector into a JsonArray.
     /// Reuses pre-allocated JsonArray buffer for zero allocations.
     /// </summary>
-    private JsonArray SerializeEntities(SparseArray<bool> selectorMatches)
+    private void PopulateEntitiesArray(SparseArray<bool> selectorMatches)
     {
         // senior-dev: Clear the array but keep the allocated capacity
-        _entitiesArray.Clear();
+        _entities.Clear();
 
         // senior-dev: Iterate only the entities that match the selector
         foreach (var (entityIndex, _) in selectorMatches)
@@ -183,28 +177,26 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
                 entityObj["properties"] = propertiesObj;
             }
 
-            _entitiesArray.Add(entityObj);
+            _entities.Add(entityObj);
         }
-
-        return _entitiesArray;
     }
 
     /// <summary>
     /// Extracts mutation operations from a SceneCommand.
     /// </summary>
-    private bool TryGetMutations(
+    private static bool TryGetMutations(
         SceneCommand command,
-        out MutOperation[] mutations
+        [NotNullWhen(true)]
+        out MutOperation[]? mutations
     )
     {
-        mutations = [];
 
         // senior-dev: SceneCommand is a variant type, extract MutCommand
-        var hasMut = command.TryMatch(out MutCommand mutCommand);
-        if (!hasMut)
+        if (!command.TryMatch(out MutCommand mutCommand))
         {
             // senior-dev: This is not necessarily an error - rule might have other command types
             // For now, just skip silently as only mut commands are supported
+            mutations = null;
             return false;
         }
 
@@ -215,7 +207,7 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
     /// <summary>
     /// Processes all mutation operations for a single entity.
     /// </summary>
-    private void ProcessEntityMutations(
+    private static void ProcessEntityMutations(
         JsonNode entity,
         MutOperation[] mutations,
         JsonObject doContext
@@ -232,7 +224,9 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
     /// <summary>
     /// Applies a mutation operation to an entity.
     /// </summary>
-    private bool ApplyMutation(JsonNode entityJson, MutOperation operation, JsonObject context)
+    private static bool ApplyMutation(
+        JsonNode entityJson, MutOperation operation, JsonObject context
+    )
     {
         // senior-dev: Extract entity index from JSON
         if (!TryGetEntityIndex(entityJson, out var entityIndex))
@@ -263,24 +257,24 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
         }
 
         // senior-dev: Parse target path and apply mutation
-        return ApplyToTarget(entityIndex, operation.Target, computedValue);
+        return ApplyToTarget(entityIndex.Value, operation.Target, computedValue);
     }
 
     /// <summary>
     /// Extracts the _index property from entity JSON.
     /// </summary>
-    private bool TryGetEntityIndex(
+    private static bool TryGetEntityIndex(
         JsonNode entityJson,
-        out ushort entityIndex
+        [NotNullWhen(true)]
+        out ushort? entityIndex
     )
     {
-        entityIndex = 0;
-
         if (entityJson is not JsonObject entityObj)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 "Entity JSON is not a JsonObject"
             ));
+            entityIndex = null;
             return false;
         }
 
@@ -289,30 +283,33 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 "Entity missing _index property"
             ));
+            entityIndex = null;
             return false;
         }
 
         try
         {
             // senior-dev: _index is stored as ushort in JSON, try that first
-            if (indexNode is JsonValue jsonValue && jsonValue.TryGetValue<ushort>(out var ushortValue))
+            if (indexNode is JsonValue jsonValue && 
+                jsonValue.TryGetValue<ushort>(out var ushortValue)
+            )
             {
                 entityIndex = ushortValue;
+                return true;
             }
-            else
+
+            // senior-dev: Fallback to int conversion for flexibility
+            var indexValue = indexNode.GetValue<int>();
+            if (indexValue < 0 || indexValue >= Constants.MaxEntities)
             {
-                // senior-dev: Fallback to int conversion for flexibility
-                var indexValue = indexNode.GetValue<int>();
-                if (indexValue < 0 || indexValue >= Constants.MaxEntities)
-                {
-                    EventBus<ErrorEvent>.Push(new ErrorEvent(
-                        $"Entity _index {indexValue} out of bounds (max: {Constants.MaxEntities})"
-                    ));
-                    return false;
-                }
-                entityIndex = (ushort)indexValue;
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Entity _index {indexValue} out of bounds (max: {Constants.MaxEntities})"
+                ));
+                entityIndex = null;
+                return false;
             }
-            
+
+            entityIndex = (ushort)indexValue;
             return true;
         }
         catch (Exception ex)
@@ -320,6 +317,7 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Failed to parse _index: {ex.Message}"
             ));
+            entityIndex = null;
             return false;
         }
     }
@@ -328,7 +326,7 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
     /// Applies the computed value to the target path.
     /// Currently supports only properties mutations.
     /// </summary>
-    private bool ApplyToTarget(ushort entityIndex, JsonNode target, JsonNode value)
+    private static bool ApplyToTarget(ushort entityIndex, JsonNode target, JsonNode value)
     {
         if (target is not JsonObject targetObj)
         {
@@ -354,7 +352,7 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
     /// <summary>
     /// Applies a property mutation to an entity.
     /// </summary>
-    private bool ApplyPropertyMutation(ushort entityIndex, JsonNode propertyKeyNode, JsonNode value)
+    private static bool ApplyPropertyMutation(ushort entityIndex, JsonNode propertyKeyNode, JsonNode value)
     {
         string propertyKey;
         try
@@ -396,15 +394,13 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
 
         var newProperties = existingProperties != null
             ? new Dictionary<string, PropertyValue>(existingProperties)
-            : new Dictionary<string, PropertyValue>();
+            : [];
         
         newProperties[propertyKey] = propertyValue.Value;
 
-        // senior-dev: Set the updated properties behavior
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(
-            entity,
+        entity.SetBehavior<PropertiesBehavior, Dictionary<string, PropertyValue>>(
             ref newProperties,
-            static (ref readonly Dictionary<string, PropertyValue> props, ref PropertiesBehavior b) =>
+            static (ref readonly props, ref b) =>
             {
                 b = new PropertiesBehavior(props);
             }
@@ -416,14 +412,12 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
     /// <summary>
     /// Converts a JsonNode to a PropertyValue.
     /// </summary>
-    private bool TryConvertToPropertyValue(
+    private static bool TryConvertToPropertyValue(
         JsonNode value,
         [NotNullWhen(true)]
         out PropertyValue? propertyValue
     )
     {
-        propertyValue = null;
-
         try
         {
             // senior-dev: Try each variant type in order
@@ -451,7 +445,7 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
                 
                 if (jsonValue.TryGetValue<int>(out var intVal))
                 {
-                    propertyValue = (float)intVal;
+                    propertyValue = intVal;
                     return true;
                 }
 
@@ -463,10 +457,12 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
                 }
             }
 
+            propertyValue = null;
             return false;
         }
         catch
         {
+            propertyValue = null;
             return false;
         }
     }
