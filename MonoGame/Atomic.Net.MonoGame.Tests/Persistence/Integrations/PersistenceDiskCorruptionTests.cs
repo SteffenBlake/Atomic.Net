@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Xunit;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
@@ -122,7 +123,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "fromDisk", "yes" } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "fromDisk", "yes" } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
 
         // test-architect: Note - no Transform behavior saved
@@ -194,7 +195,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(globalEntity, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "partition", "global" } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "partition", "global" } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
 
         DatabaseRegistry.Instance.Flush();
@@ -229,7 +230,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
 
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(sceneEntity, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "partition", "scene" } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "partition", "scene" } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
 
         DatabaseRegistry.Instance.Flush();

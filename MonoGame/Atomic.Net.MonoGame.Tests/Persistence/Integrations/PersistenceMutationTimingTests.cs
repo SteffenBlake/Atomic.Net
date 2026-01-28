@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Xunit;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
@@ -53,21 +54,21 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "score", 1f } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "score", 1f } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
         
         // Act: Rapidly mutate property multiple times in same "frame" (before Flush)
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "score", 5f } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "score", 5f } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "score", 7f } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "score", 7f } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "score", 10f } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "score", 10f } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
         
         // test-architect: Only single write should occur (batched)
@@ -98,7 +99,7 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "counter", 500f } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "counter", 500f } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
         
         // test-architect: These mutations should NOT be tracked (disabled)
@@ -109,7 +110,7 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "counter", 1000f } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "counter", 1000f } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
         
         // test-architect: This mutation SHOULD be tracked (enabled)
@@ -136,7 +137,7 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "value", 999f } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "value", 999f } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
         
         // test-architect: Now add PersistToDiskBehavior (still disabled - entity NOT marked dirty)

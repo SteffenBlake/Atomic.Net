@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Xunit;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
@@ -84,10 +85,14 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { 
-                { "fromDisk", "yes" },  // This value is from disk
-                { "hp", 999f }          // Different from scene
-            });
+            behavior = new PropertiesBehavior 
+            { 
+                Properties = new Dictionary<string, PropertyValue>
+                { 
+                    { "fromDisk", "yes" },  // This value is from disk
+                    { "hp", 999f }          // Different from scene
+                }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase)
+            };
         });
         DatabaseRegistry.Instance.Flush();
         
@@ -120,7 +125,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "initial", "saved" } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "initial", "saved" } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
         DatabaseRegistry.Instance.Flush();
         
@@ -128,10 +133,14 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         DatabaseRegistry.Instance.Disable();
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { 
-                { "initial", "saved" },
-                {"duringDisabled", "should-not-persist"}
-            });
+            behavior = new PropertiesBehavior 
+            { 
+                Properties = new Dictionary<string, PropertyValue>
+                { 
+                    { "initial", "saved" },
+                    { "duringDisabled", "should-not-persist" }
+                }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase)
+            };
         });
         DatabaseRegistry.Instance.Flush(); // Should be no-op (disabled)
         
@@ -139,11 +148,15 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         DatabaseRegistry.Instance.Enable();
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { 
-                { "initial", "saved" },
-                {"duringDisabled", "should-not-persist"},
-                {"afterEnabled", "should-persist"}
-            });
+            behavior = new PropertiesBehavior 
+            { 
+                Properties = new Dictionary<string, PropertyValue>
+                { 
+                    { "initial", "saved" },
+                    { "duringDisabled", "should-not-persist" },
+                    { "afterEnabled", "should-persist" }
+                }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase)
+            };
         });
         DatabaseRegistry.Instance.Flush(); // Should write now (includes both properties)
         
@@ -176,10 +189,14 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         // Modify entity data
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(inventoryEntity.Value, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { 
-                { "modified", "yes" },
-                { "value", 777f }
-            });
+            behavior = new PropertiesBehavior 
+            { 
+                Properties = new Dictionary<string, PropertyValue>
+                { 
+                    { "modified", "yes" },
+                    { "value", 777f }
+                }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase)
+            };
         });
         DatabaseRegistry.Instance.Flush();
 
@@ -213,7 +230,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         // Modify entity and flush
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(nonPersistentEntity.Value, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "test", "should-not-save" } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "test", "should-not-save" } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
         DatabaseRegistry.Instance.Flush();
         
@@ -241,10 +258,14 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { 
-                { "originalData", "first-write" },
-                { "counter", 1f }
-            });
+            behavior = new PropertiesBehavior 
+            { 
+                Properties = new Dictionary<string, PropertyValue>
+                { 
+                    { "originalData", "first-write" },
+                    { "counter", 1f }
+                }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase)
+            };
         });
         DatabaseRegistry.Instance.Flush();
         EventBus<ResetEvent>.Push(new());
@@ -254,10 +275,14 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         var newEntity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(newEntity, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { 
-                { "originalData", "second-write" }, // Different from disk
-                { "counter", 2f }                   // Different from disk
-            });
+            behavior = new PropertiesBehavior 
+            { 
+                Properties = new Dictionary<string, PropertyValue>
+                { 
+                    { "originalData", "second-write" }, // Different from disk
+                    { "counter", 2f }                   // Different from disk
+                }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase)
+            };
         });
         
         // Now apply PersistToDiskBehavior - should load from disk, triggering PostBehaviorUpdatedEvent

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Xunit;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
@@ -54,7 +55,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "health", 100f } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "health", 100f } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
         
         // Act: Flush to write to disk, then fire ResetEvent
@@ -89,7 +90,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "mana", 50f } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "mana", 50f } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
         
         // Act: Flush to write to disk, then fire ShutdownEvent
@@ -128,7 +129,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "level", 10f } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "level", 10f } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
         DatabaseRegistry.Instance.Flush();
         
@@ -162,14 +163,14 @@ public sealed class PersistenceLifecycleTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "experience", 5000f } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "experience", 5000f } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
         DatabaseRegistry.Instance.Flush();
         
         // Act: Modify entity, remove PersistToDiskBehavior, then flush
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "experience", 10000f } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "experience", 10000f } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
         entity.RemoveBehavior<PersistToDiskBehavior>();
         
@@ -190,7 +191,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         // test-architect: Modify entity again and flush - should NOT update disk (no PersistToDiskBehavior)
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "experience", 20000f } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "experience", 20000f } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
         DatabaseRegistry.Instance.Flush();
         

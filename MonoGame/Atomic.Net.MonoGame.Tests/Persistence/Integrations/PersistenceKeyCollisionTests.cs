@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Xunit;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
@@ -55,7 +56,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "id", "first" } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "id", "first" } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
         
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
@@ -64,7 +65,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "id", "second" } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "id", "second" } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
         
         // Act: Flush both entities
@@ -96,7 +97,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "scene", "scene1" } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "scene", "scene1" } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
         DatabaseRegistry.Instance.Flush();
         
@@ -108,7 +109,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         // Add PersistToDiskBehavior LAST to prevent it from loading and then being overwritten
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "scene", "scene2" } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "scene", "scene2" } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
         {
@@ -132,7 +133,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "test", "value" } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "test", "value" } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
@@ -171,7 +172,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "test", "whitespace" } });
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "test", "whitespace" } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
         
         // test-architect: Whitespace key should fire ErrorEvent

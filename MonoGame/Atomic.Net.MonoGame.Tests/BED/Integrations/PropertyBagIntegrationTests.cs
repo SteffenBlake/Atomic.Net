@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Xunit;
 using Xunit.Abstractions;
 using Atomic.Net.MonoGame.Core;
@@ -359,7 +360,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         // test-architect: Update properties by modifying the dictionary
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(goblin1.Value, (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> {{"max-health", 200f }});
+            behavior = new PropertiesBehavior { Properties = new Dictionary<string, PropertyValue> { { "max-health", 200f } }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase) };
         });
 
         // Assert

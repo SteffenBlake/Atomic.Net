@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
 
@@ -37,15 +38,9 @@ public sealed class PropertiesRegistry : ISingleton<PropertiesRegistry>,
     /// <summary>
     /// Indexes all properties for an entity.
     /// </summary>
-    public void IndexProperties(Entity entity, IReadOnlyDictionary<string, PropertyValue>? properties)
+    public void IndexProperties(Entity entity, ImmutableDictionary<string, PropertyValue> properties)
     {
-        // senior-dev: Null check for defensive programming - properties can be null if
-        // PropertiesBehavior was default-initialized.
-        if (properties == null)
-        {
-            return;
-        }
-
+        // senior-dev: No null check needed - ImmutableDictionary never returns null from getter
         foreach (var (key, value) in properties)
         {
             if (!_keyIndex.TryGetValue(key, out var keyEntities))
@@ -73,16 +68,9 @@ public sealed class PropertiesRegistry : ISingleton<PropertiesRegistry>,
     /// <summary>
     /// Removes all indexed properties for an entity.
     /// </summary>
-    public void RemoveProperties(Entity entity, IReadOnlyDictionary<string, PropertyValue>? properties)
+    public void RemoveProperties(Entity entity, ImmutableDictionary<string, PropertyValue> properties)
     {
-        // senior-dev: Null check needed because PropertiesBehavior is a struct and can be
-        // default-initialized (e.g., in PropertiesBehaviorConverter when JSON is not StartObject),
-        // which leaves Properties as null instead of an empty dictionary.
-        if (properties == null)
-        {
-            return;
-        }
-
+        // senior-dev: No null check needed - ImmutableDictionary never returns null from getter
         foreach (var (key, value) in properties)
         {
             if (_keyIndex.TryGetValue(key, out var keyEntities))
