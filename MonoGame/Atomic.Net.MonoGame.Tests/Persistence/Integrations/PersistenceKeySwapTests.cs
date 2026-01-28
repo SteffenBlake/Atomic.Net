@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Xunit;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
@@ -53,14 +54,14 @@ public sealed class PersistenceKeySwapTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "hp", 100f } });
+            behavior = behavior with { Properties = behavior.Properties.SetItem("hp", 100f) };
         });
         DatabaseRegistry.Instance.Flush();
         
         // Act: Modify entity and swap to different key
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "hp", 75f } });
+            behavior = behavior with { Properties = behavior.Properties.SetItem("hp", 75f) };
         });
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
         {
@@ -110,7 +111,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
         var entity = EntityRegistry.Instance.Activate();
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "data", "final" } });
+            behavior = behavior with { Properties = behavior.Properties.SetItem("data", "final") };
         });
         
         // Act: Rapidly swap between multiple keys in same frame
@@ -163,14 +164,14 @@ public sealed class PersistenceKeySwapTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref  behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "value", 50f } });
+            behavior = behavior with { Properties = behavior.Properties.SetItem("value", 50f) };
         });
         DatabaseRegistry.Instance.Flush();
         
         // Act: Mutate and swap key in same frame (before Flush)
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "value", 100f } });
+            behavior = behavior with { Properties = behavior.Properties.SetItem("value", 100f) };
         });
         BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
         {
@@ -214,7 +215,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "slot", "A" } });
+            behavior = behavior with { Properties = behavior.Properties.SetItem("slot", "A") };
         });
         DatabaseRegistry.Instance.Flush();
         
@@ -225,7 +226,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
         });
         BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, (ref behavior) =>
         {
-            behavior = new(new Dictionary<string, PropertyValue> { { "slot", "B" } });
+            behavior = behavior with { Properties = behavior.Properties.SetItem("slot", "B") };
         });
         DatabaseRegistry.Instance.Flush();
         

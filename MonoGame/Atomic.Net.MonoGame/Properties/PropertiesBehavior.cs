@@ -1,30 +1,29 @@
+using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Properties;
 
-
-// IMPORTANT: Because Properties is a Ref type, it will be assigned a value of 
-// null, not [], when you instantiate it via `default` which is EXPECTED BEHAVIOR
-//
-// Behaviors are IMMUTABLE - Properties is IReadOnlyDictionary to enforce this.
-// To "update" a property, create a NEW PropertiesBehavior with a new dictionary.
-//
-// Example - setting a single property:
-//   behavior = new(new Dictionary<string, PropertyValue> { { "key", value } });
-//
-// Example - preserving existing properties while adding/updating:
-//   var dict = new Dictionary<string, PropertyValue>(behavior.Properties ?? []);
-//   dict["newKey"] = newValue;
-//   behavior = new(dict);
+/// <summary>
+/// Behavior that stores arbitrary key-value properties for an entity.
+/// Properties are stored as an immutable dictionary with case-insensitive keys.
+/// </summary>
 [JsonConverter(typeof(PropertiesBehaviorConverter))]
-public readonly record struct PropertiesBehavior(
-    IReadOnlyDictionary<string, PropertyValue>? Properties = null
-) : IBehavior<PropertiesBehavior>
+public readonly record struct PropertiesBehavior : IBehavior<PropertiesBehavior>
 {
+    // senior-dev: ImmutableDictionary allocation is approved (following TagsBehavior pattern)
+    // This is a load-time allocation, not a gameplay allocation
+    private readonly ImmutableDictionary<string, PropertyValue>? _properties;
+    
+    public ImmutableDictionary<string, PropertyValue> Properties
+    {
+        init => _properties = value;
+        get => _properties ?? ImmutableDictionary<string, PropertyValue>.Empty.WithComparers(StringComparer.OrdinalIgnoreCase);
+    }
+    
     public static PropertiesBehavior CreateFor(Entity entity)
     {
-        return new();
+        return new PropertiesBehavior();
     }
 }

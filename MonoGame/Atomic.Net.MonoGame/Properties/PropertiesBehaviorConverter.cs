@@ -1,25 +1,33 @@
+using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Properties;
 
+/// <summary>
+/// JSON converter for PropertiesBehavior.
+/// Validates property keys and fires ErrorEvents for invalid entries.
+/// </summary>
 public class PropertiesBehaviorConverter : JsonConverter<PropertiesBehavior>
 {
     public override PropertiesBehavior Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        return reader.TokenType switch
+        // Guard: null value
+        if (reader.TokenType == JsonTokenType.Null)
         {
-            JsonTokenType.StartObject => ReadDictionary(ref reader, options),
-            _ => default
-        };
-    }
-
-    private static PropertiesBehavior ReadDictionary(
-        ref Utf8JsonReader reader, JsonSerializerOptions options
-    )
-    {
-        var dict = new Dictionary<string, PropertyValue>(StringComparer.OrdinalIgnoreCase);
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Properties object cannot be null"));
+            return default;
+        }
+        
+        // Guard: not an object
+        if (reader.TokenType != JsonTokenType.StartObject)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent($"Properties must be an object, found {reader.TokenType}"));
+            return default;
+        }
+        
+        var builder = ImmutableDictionary.CreateBuilder<string, PropertyValue>(StringComparer.OrdinalIgnoreCase);
 
         while (reader.Read())
         {
@@ -35,24 +43,17 @@ public class PropertiesBehaviorConverter : JsonConverter<PropertiesBehavior>
 
             var key = reader.GetString();
 
-            // Validate key
+            // Guard: empty or whitespace key
             if (string.IsNullOrWhiteSpace(key))
             {
-                // test-architect: Per requirements, empty/whitespace keys fire ErrorEvent and throw
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Property key cannot be empty or whitespace"
-                ));
+                EventBus<ErrorEvent>.Push(new ErrorEvent("Property key cannot be empty or whitespace"));
                 return default;
             }
 
-            // Check for duplicate keys (case-insensitive)
-            if (dict.ContainsKey(key))
+            // Guard: duplicate keys (case-insensitive)
+            if (builder.ContainsKey(key))
             {
-                // test-architect: Per requirements, duplicate keys fire ErrorEvent and throw
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Duplicate property key '{key}' detected (keys are case-insensitive)"
-                ));
-
+                EventBus<ErrorEvent>.Push(new ErrorEvent($"Duplicate property key '{key}' detected (keys are case-insensitive)"));
                 return default;
             }
 
@@ -60,25 +61,24 @@ public class PropertiesBehaviorConverter : JsonConverter<PropertiesBehavior>
             reader.Read();
             var value = JsonSerializer.Deserialize<PropertyValue>(ref reader, options);
 
-            // test-architect: Per requirements, null values are skipped (not added to dictionary)
+            // Guard: null values are skipped (not added to dictionary)
             // PropertyValue default is "empty" type, which means null was encountered
             if (value.Equals(default))
             {
                 continue;
             }
 
-            dict[key] = value;
+            builder.Add(key, value);
         }
 
-        return new(dict);
+        return new PropertiesBehavior
+        {
+            Properties = builder.ToImmutable()
+        };
     }
 
     public override void Write(Utf8JsonWriter writer, PropertiesBehavior value, JsonSerializerOptions options)
     {
-        if (value.Properties == null)
-        {
-            return;
-        }
         JsonSerializer.Serialize(writer, value.Properties, options);
     }
 }

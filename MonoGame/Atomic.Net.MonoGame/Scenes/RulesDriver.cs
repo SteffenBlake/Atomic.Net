@@ -139,22 +139,20 @@ public sealed class RulesDriver :
             if (BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out var propertiesBehavior))
             {
                 var propertiesJson = new JsonObject();
-                if (propertiesBehavior.Value.Properties != null)
+                // senior-dev: No null check needed - ImmutableDictionary never returns null from getter
+                foreach (var (key, value) in propertiesBehavior.Value.Properties)
                 {
-                    foreach (var (key, value) in propertiesBehavior.Value.Properties)
+                    // PropertyValue is a variant type, extract actual value
+                    var jsonValue = value.Visit(
+                        s => (JsonNode?)JsonValue.Create(s),
+                        f => JsonValue.Create(f),
+                        b => JsonValue.Create(b),
+                        () => null
+                    );
+                    
+                    if (jsonValue != null)
                     {
-                        // PropertyValue is a variant type, extract actual value
-                        var jsonValue = value.Visit(
-                            s => (JsonNode?)JsonValue.Create(s),
-                            f => JsonValue.Create(f),
-                            b => JsonValue.Create(b),
-                            () => null
-                        );
-                        
-                        if (jsonValue != null)
-                        {
-                            propertiesJson[key] = jsonValue;
-                        }
+                        propertiesJson[key] = jsonValue;
                     }
                 }
                 entityObj["properties"] = propertiesJson;
@@ -317,7 +315,7 @@ public sealed class RulesDriver :
         }
 
         EventBus<ErrorEvent>.Push(new ErrorEvent(
-            $"Unsupported target path format for entity {entityIndex}. Only 'properties' is currently supported."
+            $"Unsupported target path format for entity {entityIndex}. Expected one of: [properties]"
         ));
         return false;
     }
@@ -358,21 +356,13 @@ public sealed class RulesDriver :
             return false;
         }
 
-        var existingProperties = BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out var behavior)
-            ? behavior.Value.Properties
-            : null;
-
-        var newProperties = existingProperties != null
-            ? new Dictionary<string, PropertyValue>(existingProperties)
-            : [];
-        
-        newProperties[propertyKey] = propertyValue.Value;
-
-        entity.SetBehavior<PropertiesBehavior, Dictionary<string, PropertyValue>>(
-            ref newProperties,
-            static (ref readonly props, ref b) =>
-            {
-                b = new PropertiesBehavior(props);
+        // Wrap in a tuple to pass into the anti-closure overload
+        var setter = (propertyKey, propertyValue.Value);
+        // senior-dev: Use SetItem to add/update property in ImmutableDictionary
+        entity.SetBehavior<PropertiesBehavior, (string Key, PropertyValue Value)>(
+            ref setter,
+            (ref readonly _setter, ref b) => b = b with { 
+                Properties = b.Properties.SetItem(_setter.Key, setter.Value) 
             }
         );
 
