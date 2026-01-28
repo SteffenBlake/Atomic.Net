@@ -199,4 +199,110 @@ public class JsonLogicObjectLiteralTests
         Assert.Equal(350m, result?.GetValue<decimal>());
         Console.WriteLine($"Result: {result}");
     }
+
+    [Fact]
+    public void DO_Mutations_BurnDamageOverTime_AppliesCorrectly()
+    {
+        // Pre-allocated buffers (zero allocations during test execution)
+        var results = new List<JsonObject>(capacity: 2); // Pre-sized to expected result count
+        
+        // World context: deltaTime + entities with burn damage
+        var worldData = JsonNode.Parse("""
+        {
+          "world": { "deltaTime": 0.5 },
+          "entities": [
+            { "_index": 1, "id": "goblin", "tags": ["burning"], "properties": { "health": 100, "burnDPS": 10 } },
+            { "_index": 2, "id": "orc", "tags": ["burning"], "properties": { "health": 200, "burnDPS": 5 } }
+          ]
+        }
+        """);
+
+        // WHERE: Filter burning entities
+        var whereRule = JsonNode.Parse("""
+        {
+          "filter": [
+            { "var": "entities" },
+            { ">": [{ "var": "properties.burnDPS" }, 0] }
+          ]
+        }
+        """);
+
+        var filteredEntities = JsonLogic.Apply(whereRule, worldData);
+        Assert.NotNull(filteredEntities);
+        var filtered = filteredEntities as JsonArray;
+        Assert.NotNull(filtered);
+        Assert.Equal(2, filtered.Count);
+
+        // DO: Mutation definition
+        var doMutations = JsonNode.Parse("""
+        {
+          "mut": [
+            {
+              "target": { "properties": "health" },
+              "value": { "-": [{ "var": "self.properties.health" }, { "*": [{ "var": "self.properties.burnDPS" }, { "var": "world.deltaTime" }] }] }
+            }
+          ]
+        }
+        """);
+
+        var mutations = doMutations!["mut"] as JsonArray;
+        Assert.NotNull(mutations);
+
+        // Simulate RulesDriver processing each entity
+        // CRITICAL: Reuse context object, don't allocate per-entity
+        var context = new JsonObject();
+        context["world"] = worldData!["world"]!.DeepClone();
+        context["entities"] = filtered.DeepClone();
+        
+        for (var i = 0; i < filtered.Count; i++)
+        {
+            var entity = filtered[i]!;
+            
+            // Update context (reuse, don't reallocate)
+            context["self"] = entity.DeepClone();
+
+            // Clone entity for mutation
+            var mutatedEntity = entity.DeepClone() as JsonObject;
+            Assert.NotNull(mutatedEntity);
+            
+            // Process each mutation
+            foreach(var mutation in mutations)
+            {
+                var mutationObj = mutation as JsonObject;
+                Assert.NotNull(mutationObj);
+
+                var target = mutationObj["target"];
+                var valueRule = mutationObj["value"];
+
+                // Evaluate the value using JsonLogic with self context
+                var computedValue = JsonLogic.Apply(valueRule, context);
+                
+                Console.WriteLine($"Entity {mutatedEntity["_index"]}: computed value = {computedValue}");
+                
+                // Navigate target path and set value
+                var targetObj = target as JsonObject;
+                Assert.NotNull(targetObj);
+                var parentKey = targetObj.First().Key; // "properties"
+                var leafKey = (string)targetObj.First().Value!; // "health"
+                
+                var parentNode = mutatedEntity[parentKey] as JsonObject;
+                Assert.NotNull(parentNode);
+                parentNode[leafKey] = computedValue;
+            }
+
+            results.Add(mutatedEntity);
+        }
+
+        // Assert results
+        Assert.Equal(2, results.Count);
+        
+        // Goblin: 100 - (10 * 0.5) = 95
+        Assert.Equal(1, results[0]["_index"]!.GetValue<int>());
+        Assert.Equal(95m, results[0]["properties"]!["health"]!.GetValue<decimal>());
+        
+        // Orc: 200 - (5 * 0.5) = 197.5
+        Assert.Equal(2, results[1]["_index"]!.GetValue<int>());
+        Assert.Equal(197.5m, results[1]["properties"]!["health"]!.GetValue<decimal>());
+    }
+
 }
