@@ -12,21 +12,12 @@
         ]
       },
       "do": {
-        "mut": {
-          "map": [
-            { "var": "entities" },
-            {
-              "merge": [
-                { "var": "" },
-                {
-                  "properties": {
-                    "health": { "-": [{ "var": "properties.health" }, 1] }
-                  }
-                }
-              ]
-            }
-          ]
-        }
+        "mut": [
+          {
+            "target": { "properties": "health" },
+            "value": { "-": [{ "var": "self.properties.health" }, 1] }
+          }
+        ]
       }
     }
   ]

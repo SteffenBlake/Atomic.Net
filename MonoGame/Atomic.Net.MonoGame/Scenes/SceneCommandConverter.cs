@@ -4,13 +4,15 @@ using System.Text.Json.Serialization;
 
 namespace Atomic.Net.MonoGame.Scenes;
 
+/// <summary>
+/// Custom JSON converter for SceneCommand that handles discriminator-based deserialization.
+/// Supports 'mut' command type and validates the command structure.
+/// </summary>
 public class SceneCommandConverter : JsonConverter<SceneCommand>
 {
     public override SceneCommand Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        var jsonNode = JsonNode.Parse(ref reader, new() {
-            PropertyNameCaseInsensitive = false
-        });
+        var jsonNode = JsonNode.Parse(ref reader);
 
         if (jsonNode is not JsonObject jsonObject)
         {
@@ -22,9 +24,9 @@ public class SceneCommandConverter : JsonConverter<SceneCommand>
 
         return propertyKey switch
         {
-            // senior-dev: Deserialize the VALUE of the property, not the whole object
             "mut" => firstProperty.Value is not null
-                ? new MutCommand(firstProperty.Value)
+                ? new MutCommand(firstProperty.Value.Deserialize<MutOperation[]>(options) 
+                    ?? throw new JsonException("Failed to deserialize 'mut' array"))
                 : throw new JsonException("'mut' command value cannot be null"),
             _ => throw new JsonException($"Unrecognized object discriminator key: '{propertyKey}'")
         };

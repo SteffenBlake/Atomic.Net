@@ -1,6 +1,8 @@
-using System.Text.Json.Nodes;
-
 namespace Atomic.Net.MonoGame.Scenes;
 
-public readonly record struct MutCommand(JsonNode Mut);
+/// <summary>
+/// Command that mutates entity properties via an array of operations.
+/// Each operation specifies a target path and a value expression.
+/// </summary>
+public readonly record struct MutCommand(MutOperation[] Operations);
 
