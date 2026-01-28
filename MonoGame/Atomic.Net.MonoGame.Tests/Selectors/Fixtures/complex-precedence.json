@@ -13,17 +13,12 @@
         ]
       },
       "do": {
-        "mut": {
-          "map": [
-            { "var": "entities" },
-            {
-              "merge": [
-                { "var": "" },
-                { "properties": { "inCombat": true } }
-              ]
-            }
-          ]
-        }
+        "mut": [
+          {
+            "target": { "properties": "inCombat" },
+            "value": true
+          }
+        ]
       }
     }
   ]
