@@ -54,7 +54,7 @@ Build a **data-driven, zero runtime allocation game engine** where entire games 
 
 ### Query + Command System
 - [x] Can query entity state from data (distances, properties, etc.)
-- [ ] Can modify entity state from data
+- [x] Can modify entity state from data
 
 This is the big and hard one, this will likely require us to develop an entire sql-esque or css-esque language to select from one
 selector, and then pass that to an operator
