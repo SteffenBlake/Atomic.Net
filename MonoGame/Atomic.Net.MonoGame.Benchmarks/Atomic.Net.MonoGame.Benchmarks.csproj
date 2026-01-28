@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -15,6 +15,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Atomic.Net.MonoGame\Atomic.Net.MonoGame.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="RulesDriver\Fixtures\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
