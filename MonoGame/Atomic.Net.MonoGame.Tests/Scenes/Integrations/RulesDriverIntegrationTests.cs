@@ -44,6 +44,9 @@ public sealed class RulesDriverIntegrationTests : IDisposable
         RulesDriver.Instance.RunFrame(0.016f);
         
         // Assert
+        // senior-dev: Check for any errors
+        Assert.Empty(_errorListener.ReceivedEvents);
+        
         // senior-dev: Verify goblin health decreased from 50 to 49 (poison-rule.json has poisonStacks: 3, but WHERE filters for >0, DO subtracts 1)
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin", out var goblin));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(goblin.Value, out var props));

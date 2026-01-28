@@ -295,16 +295,25 @@ public sealed class RulesDriver : ISingleton<RulesDriver>, IEventHandler<Shutdow
 
         try
         {
-            var indexValue = indexNode.GetValue<int>();
-            if (indexValue < 0 || indexValue >= Constants.MaxEntities)
+            // senior-dev: _index is stored as ushort in JSON, try that first
+            if (indexNode is JsonValue jsonValue && jsonValue.TryGetValue<ushort>(out var ushortValue))
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Entity _index {indexValue} out of bounds (max: {Constants.MaxEntities})"
-                ));
-                return false;
+                entityIndex = ushortValue;
             }
-
-            entityIndex = (ushort)indexValue;
+            else
+            {
+                // senior-dev: Fallback to int conversion for flexibility
+                var indexValue = indexNode.GetValue<int>();
+                if (indexValue < 0 || indexValue >= Constants.MaxEntities)
+                {
+                    EventBus<ErrorEvent>.Push(new ErrorEvent(
+                        $"Entity _index {indexValue} out of bounds (max: {Constants.MaxEntities})"
+                    ));
+                    return false;
+                }
+                entityIndex = (ushort)indexValue;
+            }
+            
             return true;
         }
         catch (Exception ex)
