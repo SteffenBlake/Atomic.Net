@@ -9,7 +9,7 @@ namespace Atomic.Net.MonoGame.Benchmarks.RulesDriver;
 
 /// <summary>
 /// Benchmark measuring RulesDriver performance with sparse entity distribution.
-/// Simulates realistic poison DOT mechanics with ~975 mutations per frame (7900 entities, ~25% poisoned, ~50% with stacks).
+/// Simulates realistic poison DOT mechanics with ~967 mutations per frame (7900 entities, ~25% poisoned, ~50% with stacks).
 /// </summary>
 [MemoryDiagnoser]
 public class SparsePoisonBenchmark
