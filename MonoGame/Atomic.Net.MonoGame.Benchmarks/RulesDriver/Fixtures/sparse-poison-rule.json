@@ -1,0 +1,39 @@
+{
+  "entities": [],
+  "rules": [{
+    "from": "#poisoned",
+    "where": {
+      "filter": [
+        { "var": "entities" },
+        {
+          "and": [
+            { ">": [{ "var": "properties.health" }, 0] },
+            { ">": [{ "var": "properties.poisonStacks" }, 0] }
+          ]
+        }
+      ]
+    },
+    "do": {
+      "mut": [
+        {
+          "target": { "properties": "health" },
+          "value": {
+            "-": [
+              { "var": "self.properties.health" },
+              { "var": "self.properties.poisonStacks" }
+            ]
+          }
+        },
+        {
+          "target": { "properties": "poisonStacks" },
+          "value": {
+            "-": [
+              { "var": "self.properties.poisonStacks" },
+              1
+            ]
+          }
+        }
+      ]
+    }
+  }]
+}
