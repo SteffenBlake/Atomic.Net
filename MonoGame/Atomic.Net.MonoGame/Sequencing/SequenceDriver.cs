@@ -306,8 +306,8 @@ public sealed class SequenceDriver :
         _doStepContext.Remove("self");
         _doStepContext["self"] = entityJson;
 
-        // Execute command, passing entityJson to mutate in-place
-        ExecuteSequenceCommand(doStep.Do, _doStepContext, entityJson, entityIndex);
+        // Execute command, mutating entityJson in-place
+        ExecuteSequenceCommand(doStep.Do, _doStepContext, entityIndex);
 
         // Advance to next step immediately, carry forward all deltaTime
         nextStepIndex = (ushort)(state.StepIndex + 1);
@@ -337,7 +337,7 @@ public sealed class SequenceDriver :
             _tweenContext.Remove("self");
             _tweenContext["self"] = entityJson;
 
-            ExecuteSequenceCommand(tween.Do, _tweenContext, entityJson, entityIndex);
+            ExecuteSequenceCommand(tween.Do, _tweenContext, entityIndex);
 
             nextStepIndex = (ushort)(state.StepIndex + 1);
             leftoverTime = newElapsedTime - tween.Duration;
@@ -353,7 +353,7 @@ public sealed class SequenceDriver :
             _tweenContext.Remove("self");
             _tweenContext["self"] = entityJson;
 
-            ExecuteSequenceCommand(tween.Do, _tweenContext, entityJson, entityIndex);
+            ExecuteSequenceCommand(tween.Do, _tweenContext, entityIndex);
 
             // Update elapsed time
             var updatedState = new SequenceState(state.StepIndex, newElapsedTime);
