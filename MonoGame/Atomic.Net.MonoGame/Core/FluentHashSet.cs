@@ -15,4 +15,10 @@ public class FluentHashSet<T>(
         Remove(item);
         return this;
     }
+
+    public new FluentHashSet<T> Clear()
+    {
+        base.Clear();
+        return this;
+    }
 }

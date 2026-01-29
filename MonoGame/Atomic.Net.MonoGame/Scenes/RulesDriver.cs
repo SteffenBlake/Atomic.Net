@@ -31,12 +31,6 @@ public sealed class RulesDriver :
         ["entities"] = new JsonArray()
     };
 
-    private readonly List<string> _tempTagsList = new(32);
-    
-    // senior-dev: Pre-allocated FluentHashSet to reduce allocations when setting tags
-    // Reusing the same instance avoids allocating a new HashSet for every mutation
-    private readonly FluentHashSet<string> _tagsHashSet = new(32, StringComparer.OrdinalIgnoreCase);
-
     internal static void Initialize()
     {
         if (Instance != null)
@@ -811,7 +805,20 @@ public sealed class RulesDriver :
             return false;
         }
 
-        _tempTagsList.Clear();
+        var entity = EntityRegistry.Instance[entityIndex];
+        if (!entity.Active)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Cannot mutate inactive entity {entityIndex}"
+            ));
+            return false;
+        }
+
+        // Clear existing tags first
+        entity.SetBehavior<TagsBehavior>(
+            static (ref b) => b = b with { Tags = b.Tags.Clear() }
+        );
+
         for (var i = 0; i < tagsArray.Count; i++)
         {
             var tagNode = tagsArray[i];
@@ -844,28 +851,11 @@ public sealed class RulesDriver :
                 return false;
             }
 
-            _tempTagsList.Add(tag);
+            entity.SetBehavior<TagsBehavior, string>(
+                in tag,
+                static (ref readonly _tag, ref b) => b = b with { Tags = b.Tags.With(_tag) }
+            );
         }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Cannot mutate inactive entity {entityIndex}"
-            ));
-            return false;
-        }
-
-        _tagsHashSet.Clear();
-        foreach (var tag in _tempTagsList)
-        {
-            _tagsHashSet.Add(tag);
-        }
-        
-        entity.SetBehavior<TagsBehavior, FluentHashSet<string>>(
-            in _tagsHashSet,
-            static (ref readonly _tags, ref b) => b = b with { Tags = _tags }
-        );
 
         return true;
     }
