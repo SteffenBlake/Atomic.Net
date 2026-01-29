@@ -34,38 +34,38 @@
 
 #### Data Structures (JSON Layer)
 
-**File: `MonoGame/Atomic.Net.MonoGame/Scenes/JsonSequence.cs`**
+**File: `MonoGame/Atomic.Net.MonoGame/Sequencing/JsonSequence.cs`**
 - `JsonSequence` record struct containing:
   - `string Id` - unique identifier for lookup
   - `JsonSequenceStep[] Steps` - array of steps to execute
 
-**File: `MonoGame/Atomic.Net.MonoGame/Scenes/JsonSequenceStep.cs`**
+**File: `MonoGame/Atomic.Net.MonoGame/Sequencing/JsonSequenceStep.cs`**
 - `JsonSequenceStep` variant type (using dotVariant) with cases:
   - `DelayStep` - contains `float Duration`
   - `DoStep` - contains `SceneCommand Do`
   - `TweenStep` - contains `float From`, `float To`, `float Duration`, `SceneCommand Do`
   - `RepeatStep` - contains `float Every`, `JsonNode Until`, `SceneCommand Do`
 
-**File: `MonoGame/Atomic.Net.MonoGame/Scenes/JsonSequenceStepConverter.cs`**
+**File: `MonoGame/Atomic.Net.MonoGame/Sequencing/JsonSequenceStepConverter.cs`**
 - Custom JSON converter for `JsonSequenceStep` variant
 - Deserializes based on presence of discriminator fields (`delay`, `do`, `tween`, `repeat`)
 - Similar pattern to `SceneCommandConverter`
 
-**File: `MonoGame/Atomic.Net.MonoGame/Scenes/DelayStep.cs`**
+**File: `MonoGame/Atomic.Net.MonoGame/Sequencing/DelayStep.cs`**
 - `readonly record struct DelayStep(float Duration)`
 
-**File: `MonoGame/Atomic.Net.MonoGame/Scenes/DoStep.cs`**
+**File: `MonoGame/Atomic.Net.MonoGame/Sequencing/DoStep.cs`**
 - `readonly record struct DoStep(SceneCommand Do)`
 
-**File: `MonoGame/Atomic.Net.MonoGame/Scenes/TweenStep.cs`**
+**File: `MonoGame/Atomic.Net.MonoGame/Sequencing/TweenStep.cs`**
 - `readonly record struct TweenStep(float From, float To, float Duration, SceneCommand Do)`
 
-**File: `MonoGame/Atomic.Net.MonoGame/Scenes/RepeatStep.cs`**
+**File: `MonoGame/Atomic.Net.MonoGame/Sequencing/RepeatStep.cs`**
 - `readonly record struct RepeatStep(float Every, JsonNode Until, SceneCommand Do)`
 
 #### Registry & State Management
 
-**File: `MonoGame/Atomic.Net.MonoGame/Scenes/SequenceRegistry.cs`**
+**File: `MonoGame/Atomic.Net.MonoGame/Sequencing/SequenceRegistry.cs`**
 - Manages sequence definitions loaded from JSON
 - Pattern identical to `RuleRegistry` and `EntityRegistry`
 - Fields:
@@ -83,50 +83,49 @@
   - `OnEvent(ShutdownEvent)` - clears all partitions
 - Enforce unique IDs within each partition
 
-**File: `MonoGame/Atomic.Net.MonoGame/Scenes/ActiveSequenceRegistry.cs`**
-- Tracks actively running sequences per-entity
-- Fields:
-  - `SparseArray<SparseArray<ushort>> _activeSequences` - outer: entity index, inner: sequence indices
-  - Pre-allocated at load time with `Constants.MaxEntities` × `Constants.MaxActiveSequencesPerEntity`
-- Methods:
-  - `void StartSequence(ushort entityIndex, ushort sequenceIndex)`
-  - `void StopSequence(ushort entityIndex, ushort sequenceIndex)`
-  - `void ResetSequence(ushort entityIndex, ushort sequenceIndex)`
-  - `void StopAllForEntity(ushort entityIndex)` - called on entity deactivation
-  - `IEnumerable<(ushort entityIndex, ushort sequenceIndex)> GetActiveSequences()`
-- Event handlers:
-  - `OnEvent(PreEntityDeactivatedEvent)` - stops all sequences for that entity
-
-**File: `MonoGame/Atomic.Net.MonoGame/Scenes/SequenceStateRegistry.cs`**
-- Tracks runtime state per active sequence instance
-- Uses composite key: `(ushort entityIndex, ushort sequenceIndex)`
-- Fields:
-  - `Dictionary<(ushort, ushort), SequenceState> _states` - pre-allocated with capacity
-- Methods:
-  - `SequenceState GetOrCreate((ushort entityIndex, ushort sequenceIndex) key)`
-  - `void Remove((ushort entityIndex, ushort sequenceIndex) key)`
-  - `void Clear()` - for reset/shutdown
-  
-**File: `MonoGame/Atomic.Net.MonoGame/Scenes/SequenceState.cs`**
-- Mutable class tracking execution state of a sequence instance
+**File: `MonoGame/Atomic.Net.MonoGame/Sequencing/SequenceState.cs`**
+- `readonly record struct SequenceState` tracking execution state of a sequence instance
 - Fields:
   - `ushort CurrentStepIndex` - which step is currently executing
   - `float StepElapsedTime` - time elapsed in current step (for delay, tween, repeat)
   - `float RepeatNextTrigger` - for repeat steps, when to next execute
-  - `bool IsComplete` - whether sequence has finished all steps
-- No allocations during gameplay - reused when sequences restart
+
+**File: `MonoGame/Atomic.Net.MonoGame/Sequencing/SequenceDriver.cs`**
+- Singleton that processes all active sequences per-frame
+- Called from main game loop after RulesDriver
+- Fields:
+  - `SparseReferenceArray<SparseArray<SequenceState>> _activeSequences` - outer index: entity, inner index: sequence
+  - Pre-allocated at load time with `Constants.MaxEntities` × `Constants.MaxActiveSequencesPerEntity`
+- Methods:
+  - `void RunFrame(float deltaTime)` - main entry point
+  - `void StartSequence(ushort entityIndex, ushort sequenceIndex)` - called by command drivers
+  - `void StopSequence(ushort entityIndex, ushort sequenceIndex)` - called by command drivers
+  - `void ResetSequence(ushort entityIndex, ushort sequenceIndex)` - called by command drivers
+  - Private helper methods for processing different step types
+- Responsibilities:
+  - Iterate over all active sequences (entity-first, then sequence)
+  - Retrieve sequence definition from `SequenceRegistry`
+  - Track state per active sequence instance
+  - Execute current step based on step type
+  - Build context JsonNode for command execution
+  - Call appropriate command driver
+  - Track time and advance steps
+  - Auto-remove from registry when sequence completes (delete entry from `_activeSequences`)
+  - Process all sequences for an entity, then apply mutations once via `ApplyToTarget` helper
+- Event handlers:
+  - `OnEvent(PreEntityDeactivatedEvent)` - removes all sequences for that entity from `_activeSequences`
 
 #### Command Layer (Execution)
 
-**File: `MonoGame/Atomic.Net.MonoGame/Scenes/SequenceStartCommand.cs`**
+**File: `MonoGame/Atomic.Net.MonoGame/Sequencing/SequenceStartCommand.cs`**
 - `readonly record struct SequenceStartCommand(string SequenceId)`
 - Added to `SceneCommand` variant
 
-**File: `MonoGame/Atomic.Net.MonoGame/Scenes/SequenceStopCommand.cs`**
+**File: `MonoGame/Atomic.Net.MonoGame/Sequencing/SequenceStopCommand.cs`**
 - `readonly record struct SequenceStopCommand(string SequenceId)`
 - Added to `SceneCommand` variant
 
-**File: `MonoGame/Atomic.Net.MonoGame/Scenes/SequenceResetCommand.cs`**
+**File: `MonoGame/Atomic.Net.MonoGame/Sequencing/SequenceResetCommand.cs`**
 - `readonly record struct SequenceResetCommand(string SequenceId)`
 - Added to `SceneCommand` variant
 
@@ -136,58 +135,59 @@
 **Update: `MonoGame/Atomic.Net.MonoGame/Scenes/SceneCommandConverter.cs`**
 - Handle deserialization of `sequence-start`, `sequence-stop`, `sequence-reset` fields
 
-#### Driver Layer (Orchestration)
+#### Driver Layer (Command Drivers)
 
-**File: `MonoGame/Atomic.Net.MonoGame/Scenes/SequenceDriver.cs`**
-- Singleton that processes all active sequences per-frame
-- Called from main game loop after RulesDriver
+**File: `MonoGame/Atomic.Net.MonoGame/Sequencing/SequenceStartCmdDriver.cs`**
+- Executes sequence-start command
 - Methods:
-  - `void RunFrame(float deltaTime)` - main entry point
-  - `void ProcessSequence(ushort entityIndex, ushort sequenceIndex, float deltaTime)` - private
-  - `void ProcessDelayStep(...)` - private
-  - `void ProcessDoStep(...)` - private
-  - `void ProcessTweenStep(...)` - private
-  - `void ProcessRepeatStep(...)` - private
-  - `void AdvanceToNextStep(...)` - private
-  - `void CompleteSequence(...)` - private, removes from active registry
-- Responsibilities:
-  - Iterate over `ActiveSequenceRegistry.GetActiveSequences()`
-  - Retrieve sequence definition from `SequenceRegistry`
-  - Retrieve/update state from `SequenceStateRegistry`
-  - Execute current step based on step type
-  - Build context JsonNode for command execution
-  - Call appropriate command driver
-  - Track time and advance steps
-  - Auto-complete when all steps done
-
-**File: `MonoGame/Atomic.Net.MonoGame/Scenes/SequenceCommandDriver.cs`**
-- Executes sequence-start/stop/reset commands
-- Methods:
-  - `void ExecuteStart(ushort entityIndex, string sequenceId)`
-  - `void ExecuteStop(ushort entityIndex, string sequenceId)`
-  - `void ExecuteReset(ushort entityIndex, string sequenceId)`
+  - `void Execute(ushort entityIndex, string sequenceId)`
 - Error handling:
   - Push `ErrorEvent` if sequence ID not found
   - Push `ErrorEvent` if entity not active
-  - Ignore no-op cases (e.g., stopping non-running sequence)
+- Calls `SequenceDriver.StartSequence(entityIndex, sequenceIndex)`
 
-**Refactor: `MonoGame/Atomic.Net.MonoGame/Scenes/MutCommandDriver.cs`**
+**File: `MonoGame/Atomic.Net.MonoGame/Sequencing/SequenceStopCmdDriver.cs`**
+- Executes sequence-stop command
+- Methods:
+  - `void Execute(ushort entityIndex, string sequenceId)`
+- Error handling:
+  - Push `ErrorEvent` if sequence ID not found
+  - Ignore no-op cases (stopping non-running sequence)
+- Calls `SequenceDriver.StopSequence(entityIndex, sequenceIndex)`
+
+**File: `MonoGame/Atomic.Net.MonoGame/Sequencing/SequenceResetCmdDriver.cs`**
+- Executes sequence-reset command
+- Methods:
+  - `void Execute(ushort entityIndex, string sequenceId)`
+- Error handling:
+  - Push `ErrorEvent` if sequence ID not found
+  - Ignore no-op cases (resetting non-running sequence)
+- Calls `SequenceDriver.ResetSequence(entityIndex, sequenceIndex)`
+
+**Refactor: `MonoGame/Atomic.Net.MonoGame/Scenes/MutCmdDriver.cs`**
 - Extract mutation logic from `RulesDriver` into separate driver class
 - Methods:
   - `void Execute(MutCommand command, JsonNode context, ushort entityIndex)`
 - Remove tight coupling to RuleContext - accept any JsonNode
 - Called by both `RulesDriver` and `SequenceDriver`
 
+**Refactor: Extract `RulesDriver.ApplyToTarget` to Shared Helper**
+- Extract `RulesDriver.ApplyToTarget` (and all its child logic) into a shared helper function
+- This helper converts mutations from JsonNode into actual entity behavior updates
+- Reused by both `RulesDriver` and `SequenceDriver`
+- SequenceDriver should run all sequences for an entity on the JsonNode, then call this helper once to apply all mutations
+
 **Update: `MonoGame/Atomic.Net.MonoGame/Scenes/RulesDriver.cs`**
 - Rename context variable from generic `context` to `ruleContext` for clarity
-- Delegate `MutCommand` execution to `MutCommandDriver`
-- Handle new sequence commands via `SequenceCommandDriver`
+- Delegate `MutCommand` execution to `MutCmdDriver`
+- Handle new sequence commands via appropriate command drivers
+- Use extracted `ApplyToTarget` helper
 
 #### Constants & Configuration
 
 **Update: `MonoGame/Atomic.Net.MonoGame/Core/Constants.cs`**
 - Add `MaxSequences` - total capacity (default 512)
-- Add `MaxGlobalSequences` - partition boundary (default 64)
+- Add `MaxGlobalSequences` - partition boundary (default 256)
 - Add `MaxActiveSequencesPerEntity` - concurrent sequences per entity (default 8)
 
 #### Scene Loading
@@ -197,27 +197,35 @@
 
 **Update: `MonoGame/Atomic.Net.MonoGame/Scenes/SceneLoader.cs`**
 - Load sequences from JSON and register in `SequenceRegistry`
-- Call `SequenceRegistry.Activate()` or `ActivateGlobal()` based on partition hint (future: use scene metadata)
+- Call `SequenceRegistry.Activate()` or `ActivateGlobal()` based on partition
 
 #### Initialization
 
 **Update: `MonoGame/Atomic.Net.MonoGame/Core/AtomicEngine.cs`** (or equivalent initialization point)
 - Initialize `SequenceRegistry`
-- Initialize `ActiveSequenceRegistry`
-- Initialize `SequenceStateRegistry`
 - Initialize `SequenceDriver`
 - Wire `SequenceDriver.RunFrame()` into main game loop
 
 ### Integration Points
 
 #### Context Building for Commands
-When executing commands within sequence steps, build context as follows:
+When executing commands within sequence steps, build context as follows.
+
+**IMPORTANT**: The `self` object must include ALL entity behaviors (not just properties). This logic already exists in `RulesDriver` for building entity JsonNodes and should be extracted to a helper function for reuse.
 
 **For `do` steps (SequenceDoContext):**
 ```json
 {
   "world": { "deltaTime": 0.016667 },
-  "self": { "_index": 42, "properties": {...} }
+  "self": { 
+    "_index": 42, 
+    "properties": {...},
+    "transform": {...},
+    "tags": [...],
+    "id": "...",
+    "flexWidth": ...,
+    "parent": "..."
+  }
 }
 ```
 
@@ -225,7 +233,15 @@ When executing commands within sequence steps, build context as follows:
 ```json
 {
   "tween": 0.73,
-  "self": { "_index": 42, "properties": {...} }
+  "self": { 
+    "_index": 42, 
+    "properties": {...},
+    "transform": {...},
+    "tags": [...],
+    "id": "...",
+    "flexWidth": ...,
+    "parent": "..."
+  }
 }
 ```
 
@@ -233,49 +249,50 @@ When executing commands within sequence steps, build context as follows:
 ```json
 {
   "elapsed": 2.35,
-  "self": { "_index": 42, "properties": {...} }
+  "self": { 
+    "_index": 42, 
+    "properties": {...},
+    "transform": {...},
+    "tags": [...],
+    "id": "...",
+    "flexWidth": ...,
+    "parent": "..."
+  }
 }
 ```
 
 Context is built dynamically per-frame by `SequenceDriver` using entity index and current step state.
 
 #### Event Handling
-- `PreEntityDeactivatedEvent` → `ActiveSequenceRegistry.StopAllForEntity(entity.Index)`
-- `ResetEvent` → `SequenceRegistry` clears scene sequences, `ActiveSequenceRegistry` clears scene entities
-- `ShutdownEvent` → All registries clear all data
+- `PreEntityDeactivatedEvent` → `SequenceDriver` removes all sequences for that entity
+- `ResetEvent` → `SequenceRegistry` clears scene sequences
+- `ShutdownEvent` → `SequenceRegistry` clears all sequences
 
 #### Command Execution Flow
 1. `RulesDriver` evaluates rule → `sequence-start: "id"` command
-2. `RulesDriver` → `SequenceCommandDriver.ExecuteStart(entityIndex, "id")`
-3. `SequenceCommandDriver` → `SequenceRegistry.TryResolveById("id")` → gets index
-4. `SequenceCommandDriver` → `ActiveSequenceRegistry.StartSequence(entityIndex, sequenceIndex)`
+2. `RulesDriver` → `SequenceStartCmdDriver.Execute(entityIndex, "id")`
+3. `SequenceStartCmdDriver` → `SequenceRegistry.TryResolveById("id")` → gets index
+4. `SequenceStartCmdDriver` → `SequenceDriver.StartSequence(entityIndex, sequenceIndex)`
 5. Next frame: `SequenceDriver.RunFrame()` processes active sequence
-6. `SequenceDriver` → builds context → `MutCommandDriver.Execute(command, context, entityIndex)`
-7. On completion: `SequenceDriver` → `ActiveSequenceRegistry` removes entry
+6. `SequenceDriver` → builds context → `MutCmdDriver.Execute(command, context, entityIndex)`
+7. `SequenceDriver` → after all sequences for entity complete, calls `ApplyToTarget` helper once
+8. On sequence completion: `SequenceDriver` → removes entry from `_activeSequences`
 
 ### Performance Considerations
 
 #### Allocation Hotspots
-- **Context JsonNode creation**: Built per-frame for each active sequence step. Use pooled JsonObject instances or pre-allocated structure.
-  - **@benchmarker**: Test if pooling JsonObject instances provides benefit vs. allocation per-frame for small objects
-- **Dictionary lookups**: `SequenceStateRegistry` uses `Dictionary<(ushort, ushort), SequenceState>`. Tuple key may cause boxing.
-  - **@benchmarker**: Compare `Dictionary<(ushort, ushort), T>` vs `Dictionary<uint, T>` with manual key packing `(entityIndex << 16) | sequenceIndex`
-- **String ID lookups**: `SequenceRegistry._idToIndex` uses string keys. Case-insensitive lookups may allocate.
-  - Use `StringComparer.OrdinalIgnoreCase` for dictionary. Normalize IDs at load time.
+- **Context JsonNode creation**: Built per-frame for each active sequence step. Reuse entity JsonNode across multiple sequences for same entity.
+- **String ID lookups**: `SequenceRegistry._idToIndex` uses string keys. Use `StringComparer.OrdinalIgnoreCase` for dictionary. Normalize IDs at load time.
 
-#### SIMD/Cache-Friendly Concerns
-- Active sequences stored as `SparseArray<SparseArray<ushort>>` - iteration is cache-friendly
-- `SequenceStateRegistry` uses Dictionary - not cache-friendly, but small working set expected (max ~64 active sequences typical)
-- Consider: If `MaxActiveSequencesPerEntity` is small (e.g., 8), could use `SparseArray<SequenceState>` with packed key instead of Dictionary
-  - **@benchmarker**: Test Dictionary vs SparseArray for 10-100 active sequences (realistic game scenario)
-
-#### Lazy Evaluation
-- Delay steps: simple timer, no command execution
-- Tween steps: linear interpolation, no complex math
-- Repeat steps: condition evaluation via JsonLogic (existing pattern, allocates minimally)
+#### Data Structure Optimization
+- Store sequences as `SparseReferenceArray<SparseArray<SequenceState>>` with entity index first, sequence index second
+- This allows easy cleanup when entity deactivates (clear entire entity's sequences)
+- Allows reusing entity JsonNode across all sequences for that entity
+- Enables batched mutation application (run all sequences, apply once)
 
 #### Command Driver Separation
-- Extracting `MutCommandDriver` enables reuse without duplication
+- Extracting `MutCmdDriver` enables reuse without duplication
+- Extracting `ApplyToTarget` helper prevents duplication between RulesDriver and SequenceDriver
 - Prevents inline allocation patterns in multiple places
 
 ---
@@ -283,35 +300,33 @@ Context is built dynamically per-frame by `SequenceDriver` using entity index an
 ## Tasks
 
 ### Phase 1: Data Structures & Registry
-- [ ] Create JsonSequence, JsonSequenceStep variant and related step structs (DelayStep, DoStep, TweenStep, RepeatStep)
+- [ ] Create JsonSequence, JsonSequenceStep variant and related step structs (DelayStep, DoStep, TweenStep, RepeatStep) in `Sequencing/` folder
 - [ ] Create JsonSequenceStepConverter for deserialization
 - [ ] Create SequenceRegistry with ID↔index lookup and global/scene partitioning
-- [ ] Create ActiveSequenceRegistry to track running sequences per entity
-- [ ] Create SequenceStateRegistry and SequenceState for runtime tracking
-- [ ] Update Constants.cs with MaxSequences, MaxGlobalSequences, MaxActiveSequencesPerEntity
+- [ ] Create SequenceState struct for tracking runtime state
+- [ ] Update Constants.cs with MaxSequences (512), MaxGlobalSequences (256), MaxActiveSequencesPerEntity (8)
 - [ ] Update JsonScene to include Sequences list
 
 ### Phase 2: Command Layer
-- [ ] Create SequenceStartCommand, SequenceStopCommand, SequenceResetCommand structs
+- [ ] Create SequenceStartCommand, SequenceStopCommand, SequenceResetCommand structs in `Sequencing/` folder
 - [ ] Update SceneCommand variant to include new sequence commands
 - [ ] Update SceneCommandConverter to deserialize sequence-start/stop/reset fields
-- [ ] Extract MutCommandDriver from RulesDriver with generic JsonNode context parameter
-- [ ] Create SequenceCommandDriver for executing sequence lifecycle commands
-- [ ] Update RulesDriver to use MutCommandDriver and rename context to ruleContext
+- [ ] Extract MutCmdDriver from RulesDriver with generic JsonNode context parameter
+- [ ] Extract ApplyToTarget helper from RulesDriver for reuse
+- [ ] Create SequenceStartCmdDriver, SequenceStopCmdDriver, SequenceResetCmdDriver in `Sequencing/` folder
+- [ ] Update RulesDriver to use MutCmdDriver, rename context to ruleContext, and use extracted ApplyToTarget helper
 
 ### Phase 3: Driver Implementation
-- [ ] Create SequenceDriver.RunFrame() skeleton with active sequence iteration
-- [ ] Implement ProcessDelayStep with timer logic
-- [ ] Implement ProcessDoStep with SequenceDoContext building and command execution
-- [ ] Implement ProcessTweenStep with interpolation and SequenceTweenContext building
-- [ ] Implement ProcessRepeatStep with interval timer and SequenceRepeatContext building
-- [ ] Implement AdvanceToNextStep and CompleteSequence with cleanup
+- [ ] Create SequenceDriver with `SparseReferenceArray<SparseArray<SequenceState>> _activeSequences` field
+- [ ] Implement StartSequence, StopSequence, ResetSequence methods
+- [ ] Implement RunFrame() with entity-first iteration (process all sequences per entity, then apply mutations once)
+- [ ] Implement step processing logic (delay, do, tween, repeat)
+- [ ] Implement PreEntityDeactivatedEvent handler to cleanup sequences
 - [ ] Wire SequenceDriver.RunFrame into main game loop (after RulesDriver)
 
 ### Phase 4: Scene Loading & Initialization
 - [ ] Update SceneLoader to load sequences from JSON and register in SequenceRegistry
-- [ ] Initialize all sequence registries and driver in AtomicEngine (or equivalent)
-- [ ] Register ActiveSequenceRegistry for PreEntityDeactivatedEvent to cleanup sequences
+- [ ] Initialize SequenceRegistry and SequenceDriver in AtomicEngine
 
 ### Phase 5: Testing & Validation
 - [ ] Write integration tests for delay steps (pause and advance)
@@ -324,12 +339,6 @@ Context is built dynamically per-frame by `SequenceDriver` using entity index an
 - [ ] Write negative tests for invalid sequence IDs and malformed steps
 - [ ] Write tests for concurrent sequences on same entity
 - [ ] Write tests for sequence restart after completion
-
-### Phase 6: Performance Validation
-- [ ] @benchmarker Compare JsonObject pooling vs allocation for context building (10-100 active sequences)
-- [ ] @benchmarker Compare Dictionary<(ushort,ushort)> vs Dictionary<uint> with packed keys for SequenceStateRegistry
-- [ ] @benchmarker Test Dictionary vs SparseArray for active sequence tracking (10-100 instances)
-- [ ] Profile full sequence pipeline (start → delay → tween → repeat → complete) for allocation hotspots
 
 ---
 
@@ -347,6 +356,7 @@ Context is built dynamically per-frame by `SequenceDriver` using entity index an
 - **Repeat with indeterminate duration**: Track per-entity step index, not global
 - **Sequence restart after completion**: Reset state, re-add to active registry
 - **Tag/selector change after start**: Sequence continues (locked to entity index)
+- **Sequence completion**: Entry is deleted from `_activeSequences` (no IsComplete flag needed)
 
 ### Alignment with Existing Patterns
 - Use `ISingleton<T>` for registries and drivers
@@ -355,6 +365,12 @@ Context is built dynamically per-frame by `SequenceDriver` using entity index an
 - Use `dotVariant` for step types (like `SceneCommand`)
 - Use `SparseArray` for entity-indexed data
 - No allocations in `RunFrame()` after initialization
+
+### Batched Mutation Application
+- Process all sequences for an entity on the entity's JsonNode
+- After all sequences for that entity complete, call `ApplyToTarget` helper once
+- This minimizes repeated writes to entity behaviors
+- Example: 8 parallel sequences on 1 entity = 1 `ApplyToTarget` call, not 8
 
 ### Future Extensibility
 - Additional step types (e.g., `parallel`, `random`) can be added to `JsonSequenceStep` variant
