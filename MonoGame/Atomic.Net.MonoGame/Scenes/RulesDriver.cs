@@ -113,7 +113,16 @@ public sealed class RulesDriver :
 
     /// <summary>
     /// Serializes entities that match the selector into a JsonArray.
-    /// Note: Array buffer is reused, but JsonObject instances are allocated per call.
+    /// 
+    /// senior-dev: KNOWN PERFORMANCE ISSUE - This method allocates JsonObject instances per entity per frame.
+    /// This is required for JsonLogic evaluation but violates zero-alloc principle.
+    /// 
+    /// TODO: Investigate alternatives:
+    /// 1. Object pooling for JsonObject instances
+    /// 2. Custom JsonLogic evaluator that works directly with entity data
+    /// 3. Cache serialized entities and only update on mutation
+    /// 
+    /// Estimated allocation: ~1-2 KB per entity per frame (100 entities = 100-200 KB/frame at 60 FPS = 6-12 MB/s GC pressure)
     /// </summary>
     private void BuildEntitiesArray(SparseArray<bool> selectorMatches)
     {
