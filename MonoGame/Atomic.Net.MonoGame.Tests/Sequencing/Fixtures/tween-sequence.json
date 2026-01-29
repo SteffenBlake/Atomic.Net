@@ -1,0 +1,46 @@
+{
+  "entities": [
+    {
+      "id": "player",
+      "tags": ["player"],
+      "properties": {
+        "health": 100,
+        "opacity": 0
+      }
+    }
+  ],
+  "rules": [
+    {
+      "from": "@player",
+      "where": {
+        "filter": [
+          { "var": "entities" },
+          { "==": [{ "var": "properties.health" }, 100] }
+        ]
+      },
+      "do": {
+        "sequence-start": "tween-test"
+      }
+    }
+  ],
+  "sequences": [
+    {
+      "id": "tween-test",
+      "steps": [
+        {
+          "tween": {
+            "from": 0,
+            "to": 1,
+            "duration": 1.0,
+            "do": {
+              "mut": [{
+                "target": { "properties": "opacity" },
+                "value": { "var": "tween" }
+              }]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

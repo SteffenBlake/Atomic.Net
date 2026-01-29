@@ -1,0 +1,46 @@
+{
+  "entities": [
+    {
+      "id": "player",
+      "tags": ["player"],
+      "properties": {
+        "step1": false,
+        "step2": false
+      }
+    }
+  ],
+  "rules": [],
+  "sequences": [
+    {
+      "id": "first-sequence",
+      "steps": [
+        {
+          "do": {
+            "mut": [{
+              "target": { "properties": "step1" },
+              "value": true
+            }]
+          }
+        },
+        {
+          "do": {
+            "sequence-start": "second-sequence"
+          }
+        }
+      ]
+    },
+    {
+      "id": "second-sequence",
+      "steps": [
+        {
+          "do": {
+            "mut": [{
+              "target": { "properties": "step2" },
+              "value": true
+            }]
+          }
+        }
+      ]
+    }
+  ]
+}

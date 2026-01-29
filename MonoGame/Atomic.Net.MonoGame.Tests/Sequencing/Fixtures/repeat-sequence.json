@@ -1,0 +1,53 @@
+{
+  "entities": [
+    {
+      "id": "player",
+      "tags": ["player"],
+      "properties": {
+        "health": 100,
+        "counter": 0
+      }
+    }
+  ],
+  "rules": [
+    {
+      "from": "@player",
+      "where": {
+        "filter": [
+          { "var": "entities" },
+          { "==": [{ "var": "properties.health" }, 100] }
+        ]
+      },
+      "do": {
+        "sequence-start": "repeat-test"
+      }
+    }
+  ],
+  "sequences": [
+    {
+      "id": "repeat-test",
+      "steps": [
+        {
+          "repeat": {
+            "every": 0.5,
+            "until": { ">=": [{ "var": "elapsed" }, 2.0] },
+            "do": {
+              "mut": [{
+                "target": { "properties": "counter" },
+                "value": { "+": [{ "var": "self.properties.counter" }, 1] }
+              }]
+            }
+          }
+        },
+        {
+          "do": {
+            "mut": [{
+              "target": { "properties": "repeatComplete" },
+              "value": "true"
+            }]
+          }
+        }
+      ]
+    }
+  ]
+}

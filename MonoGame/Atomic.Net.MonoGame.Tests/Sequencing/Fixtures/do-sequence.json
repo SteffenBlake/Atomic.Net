@@ -1,0 +1,40 @@
+{
+  "entities": [
+    {
+      "id": "player",
+      "tags": ["player"],
+      "properties": {
+        "health": 100
+      }
+    }
+  ],
+  "rules": [
+    {
+      "from": "@player",
+      "where": {
+        "filter": [
+          { "var": "entities" },
+          { "==": [{ "var": "properties.health" }, 100] }
+        ]
+      },
+      "do": {
+        "sequence-start": "do-test"
+      }
+    }
+  ],
+  "sequences": [
+    {
+      "id": "do-test",
+      "steps": [
+        {
+          "do": {
+            "mut": [{
+              "target": { "properties": "stepExecuted" },
+              "value": "true"
+            }]
+          }
+        }
+      ]
+    }
+  ]
+}

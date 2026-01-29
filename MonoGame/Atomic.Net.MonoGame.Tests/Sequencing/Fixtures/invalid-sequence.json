@@ -1,0 +1,11 @@
+{
+  "entities": [
+    {
+      "id": "player",
+      "tags": ["player"],
+      "properties": {}
+    }
+  ],
+  "rules": [],
+  "sequences": []
+}

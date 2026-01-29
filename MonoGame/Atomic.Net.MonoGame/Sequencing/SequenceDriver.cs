@@ -203,19 +203,20 @@ public sealed class SequenceDriver :
             float leftoverTime = 0f;
             
             // senior-dev: Use TryMatch instead of Visit to avoid closure allocations
-            if (currentStep.TryMatch(out DelayStep? delay))
+            // Note: Per dotVariant pattern, TryMatch guarantees non-null on true return
+            if (currentStep.TryMatch(out DelayStep delay))
             {
                 stepCompleted = ProcessDelayStep(entityIndex, sequenceIndex, currentState, delay, newElapsedTime, out nextStepIndex, out leftoverTime);
             }
-            else if (currentStep.TryMatch(out DoStep? doStep))
+            else if (currentStep.TryMatch(out DoStep doStep))
             {
                 stepCompleted = ProcessDoStep(entityIndex, sequenceIndex, currentState, doStep, entityJson, remainingTime, out nextStepIndex, out leftoverTime);
             }
-            else if (currentStep.TryMatch(out TweenStep? tween))
+            else if (currentStep.TryMatch(out TweenStep tween))
             {
                 stepCompleted = ProcessTweenStep(entityIndex, sequenceIndex, currentState, tween, entityJson, newElapsedTime, out nextStepIndex, out leftoverTime);
             }
-            else if (currentStep.TryMatch(out RepeatStep? repeat))
+            else if (currentStep.TryMatch(out RepeatStep repeat))
             {
                 stepCompleted = ProcessRepeatStep(entityIndex, sequenceIndex, currentState, repeat, entityJson, newElapsedTime, out nextStepIndex, out leftoverTime);
             }
@@ -397,7 +398,7 @@ public sealed class SequenceDriver :
         {
             conditionResult = JsonLogic.Apply(repeat.Until, _repeatContext);
         }
-        catch (JsonException ex)
+        catch (Exception ex)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Failed to evaluate repeat condition for sequence {sequenceIndex} on entity {entityIndex}: {ex.Message}"
@@ -449,28 +450,28 @@ public sealed class SequenceDriver :
     private static void ExecuteSequenceCommand(SceneCommand command, JsonObject context, ushort entityIndex)
     {
         // Handle MutCommand
-        if (command.TryMatch(out MutCommand? mutCommand))
+        if (command.TryMatch(out MutCommand mutCommand))
         {
             MutCmdDriver.Execute(mutCommand, context, entityIndex);
             return;
         }
 
         // Handle SequenceStartCommand (sequence chaining)
-        if (command.TryMatch(out SequenceStartCommand? seqStartCmd))
+        if (command.TryMatch(out SequenceStartCommand seqStartCmd))
         {
             SequenceStartCmdDriver.Execute(entityIndex, seqStartCmd.SequenceId);
             return;
         }
 
         // Handle SequenceStopCommand
-        if (command.TryMatch(out SequenceStopCommand? seqStopCmd))
+        if (command.TryMatch(out SequenceStopCommand seqStopCmd))
         {
             SequenceStopCmdDriver.Execute(entityIndex, seqStopCmd.SequenceId);
             return;
         }
 
         // Handle SequenceResetCommand
-        if (command.TryMatch(out SequenceResetCommand? seqResetCmd))
+        if (command.TryMatch(out SequenceResetCommand seqResetCmd))
         {
             SequenceResetCmdDriver.Execute(entityIndex, seqResetCmd.SequenceId);
             return;

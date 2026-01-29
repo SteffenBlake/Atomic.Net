@@ -1,0 +1,30 @@
+{
+  "entities": [
+    {
+      "id": "player",
+      "tags": ["player"],
+      "properties": {
+        "value": 0
+      }
+    }
+  ],
+  "rules": [],
+  "sequences": [
+    {
+      "id": "test-sequence",
+      "steps": [
+        {
+          "delay": 0.5
+        },
+        {
+          "do": {
+            "mut": [{
+              "target": { "properties": "value" },
+              "value": 42
+            }]
+          }
+        }
+      ]
+    }
+  ]
+}
