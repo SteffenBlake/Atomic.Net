@@ -327,7 +327,7 @@ public sealed class SequenceDriver :
         var sequenceStates = _activeSequences[entityIndex];
         if (sequenceStates == null)
         {
-            sequenceStates = new SparseArray<SequenceState>(Constants.MaxActiveSequencesPerEntity);
+            sequenceStates = new SparseArray<SequenceState>(8);
             _activeSequences[entityIndex] = sequenceStates;
         }
 

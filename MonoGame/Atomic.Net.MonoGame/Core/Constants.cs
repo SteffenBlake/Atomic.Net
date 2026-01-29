@@ -114,17 +114,5 @@ public static class Constants
     /// </summary>
     public const ushort MaxGlobalSequences = 256;
 #endif
-
-#if MAX_ACTIVE_SEQUENCES_PER_ENTITY
-    /// <summary>
-    /// Maximum number of active sequences per entity.
-    /// </summary>
-    public const byte MaxActiveSequencesPerEntity = MAX_ACTIVE_SEQUENCES_PER_ENTITY;
-#else
-    /// <summary>
-    /// Maximum number of active sequences per entity.
-    /// </summary>
-    public const byte MaxActiveSequencesPerEntity = 8;
-#endif
 }
 
