@@ -29,9 +29,24 @@ public class BenchmarkJsonEntity
 
 public class BenchmarkTransform
 {
-    public float[] Position { get; set; } = [0, 0, 0];
-    public float[] Rotation { get; set; } = [0, 0, 0, 1];
-    public float[] Scale { get; set; } = [1, 1, 1];
+    public BenchmarkVector3 Position { get; set; } = new() { X = 0, Y = 0, Z = 0 };
+    public BenchmarkQuaternion Rotation { get; set; } = new() { X = 0, Y = 0, Z = 0, W = 1 };
+    public BenchmarkVector3 Scale { get; set; } = new() { X = 1, Y = 1, Z = 1 };
+}
+
+public class BenchmarkVector3
+{
+    public float X { get; set; }
+    public float Y { get; set; }
+    public float Z { get; set; }
+}
+
+public class BenchmarkQuaternion
+{
+    public float X { get; set; }
+    public float Y { get; set; }
+    public float Z { get; set; }
+    public float W { get; set; }
 }
 
 /// <summary>
@@ -93,9 +108,9 @@ public class JsonEntityDeserializationBenchmark
             Id = $"test-entity-{rng.Next(1000)}",
             Transform = new BenchmarkTransform
             {
-                Position = [rng.Next(100), rng.Next(100), 0],
-                Rotation = [0, 0, 0, 1],
-                Scale = [1, 1, 1]
+                Position = new BenchmarkVector3 { X = rng.Next(100), Y = rng.Next(100), Z = 0 },
+                Rotation = new BenchmarkQuaternion { X = 0, Y = 0, Z = 0, W = 1 },
+                Scale = new BenchmarkVector3 { X = 1, Y = 1, Z = 1 }
             },
             PersistKey = $"save-slot-{rng.Next(1000)}"
         };
