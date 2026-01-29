@@ -85,14 +85,14 @@ public sealed class RulesDriver :
         // Process command for each filtered entity
         for (var i = 0; i < filteredEntities.Count; i++)
         {
-            var entity = filteredEntities[i];
+            var entityJson = filteredEntities[i];
             // JsonLogic filter can return null entries in sparse results
-            if (entity == null)
+            if (entityJson == null)
             {
                 continue;
             }
 
-            if (!TryGetEntityIndex(entity, out var entityIndex))
+            if (!TryGetEntityIndex(entityJson, out var entityIndex))
             {
                 continue;
             }
@@ -100,28 +100,24 @@ public sealed class RulesDriver :
             _ruleContext["index"] = i;
             
             // Execute command on this entity
-            ProcessCommand(rule.Do, entityIndex, entity, _ruleContext);
+            ProcessCommand(rule.Do, entityIndex, entityJson, _ruleContext);
         }
     }
 
     /// <summary>
     /// Processes a command on an entity.
+    /// All commands are delegated to SceneCommandDriver.
     /// </summary>
     private void ProcessCommand(SceneCommand command, ushort entityIndex, JsonNode entityJson, JsonObject ruleContext)
     {
-        if (command.TryMatch(out MutCommand mutCommand))
+        // Execute the command using SceneCommandDriver
+        SceneCommandDriver.Execute(command, ruleContext, entityJson, entityIndex);
+        
+        // For MutCommand, we also need to write the mutated entityJson back to the actual entity
+        if (command.TryMatch(out MutCommand _))
         {
-            // Use MutCmdDriver to apply mutations to the entityJson
-            MutCmdDriver.Execute(mutCommand, ruleContext, entityJson);
-            
-            // Write the mutated entityJson back to the actual entity
             var entity = EntityRegistry.Instance[entityIndex];
             JsonEntityConverter.Write(entityJson, entity);
-        }
-        else
-        {
-            // Delegate to SceneCommandDriver for other command types
-            SceneCommandDriver.Execute(command, ruleContext, entityJson, entityIndex);
         }
     }
 

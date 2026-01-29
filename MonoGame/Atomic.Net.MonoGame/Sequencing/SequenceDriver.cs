@@ -189,10 +189,11 @@ public sealed class SequenceDriver :
         float deltaTime
     )
     {
-        // Build context for do step (reuse pre-allocated context to avoid allocations)
+        // Clear and rebuild context for do step (reuse pre-allocated context to avoid allocations)
+        _stepContext.Clear();
         _worldContext["deltaTime"] = deltaTime;
         _stepContext["world"] = _worldContext;
-        _stepContext["self"] = entityJson;  // entityJson is already isolated per entity, no clone needed
+        _stepContext["self"] = entityJson;
 
         // Execute command using shared SceneCommandDriver
         SceneCommandDriver.Execute(doStep.Do, _stepContext, entityJson, entityIndex);
@@ -217,9 +218,10 @@ public sealed class SequenceDriver :
         var t = newElapsed / tween.Duration;
         var tweenValue = tween.From + (tween.To - tween.From) * t;
 
-        // Build context for tween step (reuse pre-allocated context)
+        // Clear and rebuild context for tween step (reuse pre-allocated context)
+        _stepContext.Clear();
         _stepContext["tween"] = tweenValue;
-        _stepContext["self"] = entityJson;  // entityJson is already isolated, no clone needed
+        _stepContext["self"] = entityJson;
 
         // Execute command using shared SceneCommandDriver
         SceneCommandDriver.Execute(tween.Do, _stepContext, entityJson, entityIndex);
@@ -248,35 +250,58 @@ public sealed class SequenceDriver :
         {
             var triggerElapsed = (lastTrigger + i + 1) * repeat.Every;
 
+            _stepContext.Clear();
             _stepContext["elapsed"] = triggerElapsed;
-            _stepContext["self"] = entityJson;  // entityJson is already isolated, no clone needed
+            _stepContext["self"] = entityJson;
 
             // Execute command using shared SceneCommandDriver
             SceneCommandDriver.Execute(repeat.Do, _stepContext, entityJson, entityIndex);
         }
 
         // Check if repeat condition is met (until clause)
-        _repeatContext["elapsed"] = newElapsed;
-        _repeatContext["self"] = entityJson;  // entityJson is already isolated, no clone needed
+        if (!TryEvaluateUntilCondition(repeat.Until, newElapsed, entityJson, out var completed))
+        {
+            // Evaluation failed, stop the repeat step
+            completed = true;
+        }
 
-        var completed = false;
+        return (completed, deltaTime);
+    }
+
+    private bool TryEvaluateUntilCondition(
+        JsonNode until,
+        float elapsed,
+        JsonNode entityJson,
+        out bool completed
+    )
+    {
+        _repeatContext.Clear();
+        _repeatContext["elapsed"] = elapsed;
+        _repeatContext["self"] = entityJson;
+
         try
         {
-            var result = JsonLogic.Apply(repeat.Until, _repeatContext);
+            var result = JsonLogic.Apply(until, _repeatContext);
             if (result is JsonValue jsonValue && jsonValue.TryGetValue<bool>(out var boolResult))
             {
                 completed = boolResult;
+                return true;
             }
+
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                "Repeat 'until' condition did not return a boolean value"
+            ));
+            completed = true;
+            return false;
         }
         catch (Exception ex)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Failed to evaluate repeat 'until' condition: {ex.Message}"
             ));
-            completed = true; // Stop on error
+            completed = true;
+            return false;
         }
-
-        return (completed, deltaTime);
     }
 
     /// <summary>
@@ -297,6 +322,8 @@ public sealed class SequenceDriver :
         var sequenceStates = _activeSequences[entityIndex];
         if (sequenceStates == null)
         {
+            // Allocate SparseArray for this entity's sequences
+            // This is a one-time allocation per entity (acceptable cost)
             sequenceStates = new SparseArray<SequenceState>(8);
             _activeSequences[entityIndex] = sequenceStates;
         }

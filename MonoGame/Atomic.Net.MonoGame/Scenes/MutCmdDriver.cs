@@ -24,12 +24,6 @@ public static class MutCmdDriver
         "flexWidth"
     ];
 
-    /// <summary>
-    /// Executes a MutCommand by applying all operations to the entity JsonNode.
-    /// </summary>
-    /// <param name="command">The mutation command to execute</param>
-    /// <param name="context">The context JsonNode containing variables for JsonLogic evaluation</param>
-    /// <param name="entityJson">The entity JsonNode to mutate in-place</param>
     public static void Execute(MutCommand command, JsonNode context, JsonNode entityJson)
     {
         foreach (var operation in command.Operations)
@@ -42,25 +36,48 @@ public static class MutCmdDriver
     {
         if (entityJson is not JsonObject entityObj)
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                "Entity JSON is not a JsonObject"
-            ));
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Entity JSON is not a JsonObject"));
             return;
         }
 
         if (!TryApplyJsonLogic(operation.Value, context, out var computedValue))
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                "Failed to evaluate mutation value"
-            ));
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Failed to evaluate mutation value"));
             return;
+        }
+
+        // De-parent the computed value if it has a parent
+        // The result from JsonLogic.Apply might be a node from the logic tree or context
+        if (computedValue.Parent != null)
+        {
+            if (computedValue.Parent is JsonObject parentObj)
+            {
+                // Find and remove
+                foreach (var (key, val) in parentObj.ToList())
+                {
+                    if (ReferenceEquals(val, computedValue))
+                    {
+                        parentObj.Remove(key);
+                        break;
+                    }
+                }
+            }
+            else if (computedValue.Parent is JsonArray parentArray)
+            {
+                for (var i = 0; i < parentArray.Count; i++)
+                {
+                    if (ReferenceEquals(parentArray[i], computedValue))
+                    {
+                        parentArray.RemoveAt(i);
+                        break;
+                    }
+                }
+            }
         }
 
         if (operation.Target is not JsonObject targetObj)
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                "Target is not a JsonObject"
-            ));
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Target is not a JsonObject"));
             return;
         }
 
@@ -115,17 +132,14 @@ public static class MutCmdDriver
                 transformObj = (JsonObject)transformNode;
             }
 
-            // transformTarget is like { "position": "x" } or { "scale": null } (meaning the whole scale)
             foreach (var (transformPropName, transformPropTarget) in transformTargetObj)
             {
                 if (transformPropTarget is null)
                 {
-                    // Setting entire property (e.g., entire "position" Vector3)
                     transformObj[transformPropName] = value;
                 }
                 else if (transformPropTarget is JsonValue propValue && propValue.TryGetValue<string>(out var componentName))
                 {
-                    // Setting specific component (e.g., "position": "x")
                     if (!transformObj.TryGetPropertyValue(transformPropName, out var existingPropNode) || existingPropNode is not JsonObject existingPropObj)
                     {
                         existingPropObj = new JsonObject();
@@ -255,18 +269,11 @@ public static class MutCmdDriver
         else
         {
             var validTargets = string.Join(", ", ValidTargets);
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Unrecognized target. Expected one of: {validTargets}"
-            ));
+            EventBus<ErrorEvent>.Push(new ErrorEvent($"Unrecognized target. Expected one of: {validTargets}"));
         }
     }
 
-    private static bool TryApplyJsonLogic(
-        JsonNode logic,
-        JsonNode data,
-        [NotNullWhen(true)]
-        out JsonNode? result
-    )
+    private static bool TryApplyJsonLogic(JsonNode logic, JsonNode data, [NotNullWhen(true)] out JsonNode? result)
     {
         try
         {
@@ -281,11 +288,7 @@ public static class MutCmdDriver
         }
     }
 
-    private static bool TryGetStringValue(
-        JsonNode? node,
-        [NotNullWhen(true)]
-        out string? value
-    )
+    private static bool TryGetStringValue(JsonNode? node, [NotNullWhen(true)] out string? value)
     {
         if (node is not JsonValue jsonValue)
         {
