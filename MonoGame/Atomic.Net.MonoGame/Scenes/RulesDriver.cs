@@ -32,8 +32,11 @@ public sealed class RulesDriver :
         ["entities"] = new JsonArray()
     };
 
-    // senior-dev: Pre-allocated list for tag mutation to avoid allocations during gameplay
     private readonly List<string> _tempTagsList = new(32);
+    
+    // senior-dev: Pre-allocated builder to reduce allocations when creating ImmutableHashSet
+    // ToImmutable() still allocates, but reusing the builder is more efficient than ToImmutableHashSet()
+    private readonly ImmutableHashSet<string>.Builder _tagsBuilder = ImmutableHashSet.CreateBuilder<string>();
 
     internal static void Initialize()
     {
@@ -854,7 +857,9 @@ public sealed class RulesDriver :
             return false;
         }
 
-        var tagsToSet = _tempTagsList.ToImmutableHashSet();
+        _tagsBuilder.Clear();
+        _tagsBuilder.UnionWith(_tempTagsList);
+        var tagsToSet = _tagsBuilder.ToImmutable();
         entity.SetBehavior<TagsBehavior, ImmutableHashSet<string>>(
             in tagsToSet,
             static (ref readonly _tags, ref b) => b = b with { Tags = _tags }
