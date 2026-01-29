@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using Atomic.Net.MonoGame.Scenes;
 
 namespace Atomic.Net.MonoGame.Sequencing;
 
@@ -28,40 +27,20 @@ public class JsonSequenceStepConverter : JsonConverter<JsonSequenceStep>
 
         if (jsonObject.TryGetPropertyValue("do", out var doNode) && doNode != null)
         {
-            var command = doNode.Deserialize<SceneCommand>(options);
-            return new DoStep(command);
+            var step = doNode.Deserialize<DoStep>(options);
+            return step;
         }
 
-        if (jsonObject.TryGetPropertyValue("tween", out var tweenNode) && tweenNode is JsonObject tweenObj)
+        if (jsonObject.TryGetPropertyValue("tween", out var tweenNode) && tweenNode != null)
         {
-            var from = tweenObj["from"]?.Deserialize<float>(options) 
-                ?? throw new JsonException("Tween step missing 'from' field");
-            var to = tweenObj["to"]?.Deserialize<float>(options) 
-                ?? throw new JsonException("Tween step missing 'to' field");
-            var duration = tweenObj["duration"]?.Deserialize<float>(options) 
-                ?? throw new JsonException("Tween step missing 'duration' field");
-            var doCmd = tweenObj["do"]?.Deserialize<SceneCommand>(options);
-            if (doCmd == null)
-            {
-                throw new JsonException("Tween step missing 'do' field");
-            }
-            
-            return new TweenStep(from, to, duration, doCmd.Value);
+            var step = tweenNode.Deserialize<TweenStep>(options);
+            return step;
         }
 
-        if (jsonObject.TryGetPropertyValue("repeat", out var repeatNode) && repeatNode is JsonObject repeatObj)
+        if (jsonObject.TryGetPropertyValue("repeat", out var repeatNode) && repeatNode != null)
         {
-            var every = repeatObj["every"]?.Deserialize<float>(options) 
-                ?? throw new JsonException("Repeat step missing 'every' field");
-            var until = repeatObj["until"]?.AsObject() 
-                ?? throw new JsonException("Repeat step missing 'until' field");
-            var doCmd = repeatObj["do"]?.Deserialize<SceneCommand>(options);
-            if (doCmd == null)
-            {
-                throw new JsonException("Repeat step missing 'do' field");
-            }
-            
-            return new RepeatStep(every, until, doCmd.Value);
+            var step = repeatNode.Deserialize<RepeatStep>(options);
+            return step;
         }
 
         throw new JsonException("Unrecognized sequence step type. Expected 'delay', 'do', 'tween', or 'repeat'");
