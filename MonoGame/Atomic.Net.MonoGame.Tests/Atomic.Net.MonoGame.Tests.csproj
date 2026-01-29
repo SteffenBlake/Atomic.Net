@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FlexLayoutSharp" Version="1.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.4" />
     <PackageReference Include="xunit" Version="2.*" />
