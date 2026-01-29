@@ -11,7 +11,8 @@ namespace Atomic.Net.MonoGame.Sequencing;
 /// </summary>
 public sealed class SequenceDriver : 
     ISingleton<SequenceDriver>,
-    IEventHandler<PreEntityDeactivatedEvent>
+    IEventHandler<PreEntityDeactivatedEvent>,
+    IEventHandler<UpdateFrameEvent>
 {
     private readonly SparseReferenceArray<SparseArray<SequenceState>> _activeSequences = 
         new(Constants.MaxEntities);
@@ -25,9 +26,18 @@ public sealed class SequenceDriver :
 
         Instance = new();
         EventBus<PreEntityDeactivatedEvent>.Register(Instance);
+        EventBus<UpdateFrameEvent>.Register(Instance);
     }
 
     public static SequenceDriver Instance { get; private set; } = null!;
+
+    /// <summary>
+    /// Handles update frame event by running all sequences.
+    /// </summary>
+    public void OnEvent(UpdateFrameEvent e)
+    {
+        RunFrame((float)e.Elapsed.TotalSeconds);
+    }
 
     /// <summary>
     /// Executes all active sequences for a single frame.

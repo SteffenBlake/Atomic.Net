@@ -7,6 +7,7 @@ using Atomic.Net.MonoGame.Hierarchy;
 using Atomic.Net.MonoGame.Ids;
 using Atomic.Net.MonoGame.Properties;
 using Atomic.Net.MonoGame.Selectors;
+using Atomic.Net.MonoGame.Sequencing;
 using Atomic.Net.MonoGame.Tags;
 using Atomic.Net.MonoGame.Transform;
 using FlexLayoutSharp;
@@ -20,7 +21,8 @@ namespace Atomic.Net.MonoGame.Scenes;
 /// Processes global and scene rules in SparseArray order.
 /// </summary>
 public sealed class RulesDriver : 
-    ISingleton<RulesDriver>
+    ISingleton<RulesDriver>,
+    IEventHandler<UpdateFrameEvent>
 {
     private readonly JsonObject _worldContext = new()
     {
@@ -39,9 +41,18 @@ public sealed class RulesDriver :
         }
 
         Instance = new();
+        EventBus<UpdateFrameEvent>.Register(Instance);
     }
 
     public static RulesDriver Instance { get; private set; } = null!;
+
+    /// <summary>
+    /// Handles update frame event by running all rules.
+    /// </summary>
+    public void OnEvent(UpdateFrameEvent e)
+    {
+        RunFrame((float)e.Elapsed.TotalSeconds);
+    }
 
     /// <summary>
     /// Executes all active rules for a single frame.
@@ -82,11 +93,7 @@ public sealed class RulesDriver :
             return;
         }
 
-        if (!TryGetMutations(rule.Do, out var mutations))
-        {
-            return;
-        }
-
+        // Process command for each filtered entity
         for (var i = 0; i < filteredEntities.Count; i++)
         {
             var entity = filteredEntities[i];
@@ -96,9 +103,38 @@ public sealed class RulesDriver :
                 continue;
             }
 
+            if (!TryGetEntityIndex(entity, out var entityIndex))
+            {
+                continue;
+            }
+
             _worldContext["index"] = i;
             
-            ProcessEntityMutations(entity, mutations, _worldContext);
+            // Handle different command types
+            ProcessCommand(rule.Do, entityIndex.Value, entity, _worldContext);
+        }
+    }
+
+    /// <summary>
+    /// Processes a command on an entity.
+    /// </summary>
+    private void ProcessCommand(SceneCommand command, ushort entityIndex, JsonNode entity, JsonObject context)
+    {
+        if (command.TryMatch(out MutCommand mutCommand))
+        {
+            ProcessEntityMutations(entity, mutCommand.Operations, context);
+        }
+        else if (command.TryMatch(out Sequencing.SequenceStartCommand startCmd))
+        {
+            SequenceStartCmdDriver.Execute(entityIndex, startCmd.SequenceId);
+        }
+        else if (command.TryMatch(out Sequencing.SequenceStopCommand stopCmd))
+        {
+            SequenceStopCmdDriver.Execute(entityIndex, stopCmd.SequenceId);
+        }
+        else if (command.TryMatch(out Sequencing.SequenceResetCommand resetCmd))
+        {
+            SequenceResetCmdDriver.Execute(entityIndex, resetCmd.SequenceId);
         }
     }
 
