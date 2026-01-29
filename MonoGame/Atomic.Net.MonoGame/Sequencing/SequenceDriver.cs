@@ -16,6 +16,11 @@ public sealed class SequenceDriver :
 {
     private readonly SparseReferenceArray<SparseArray<SequenceState>> _activeSequences = 
         new(Constants.MaxEntities);
+    
+    // Pre-allocated context objects to avoid allocations in hot path (zero-alloc principle)
+    private readonly JsonObject _stepContext = new();
+    private readonly JsonObject _worldContext = new() { ["deltaTime"] = 0f };
+    private readonly JsonObject _repeatContext = new();
 
     internal static void Initialize()
     {
@@ -181,23 +186,16 @@ public sealed class SequenceDriver :
         float deltaTime
     )
     {
-        // Build context for do step
-        var context = new JsonObject
-        {
-            ["world"] = new JsonObject
-            {
-                ["deltaTime"] = deltaTime
-            },
-            ["self"] = entityJson.DeepClone()
-        };
+        // Build context for do step (reuse pre-allocated context to avoid allocations)
+        _worldContext["deltaTime"] = deltaTime;
+        _stepContext["world"] = _worldContext;
+        _stepContext["self"] = entityJson;  // entityJson is already isolated per entity, no clone needed
 
         // Execute command
         if (doStep.Do.TryMatch(out MutCommand mutCommand))
         {
-            MutCmdDriver.Execute(mutCommand, context, entityJson);
+            MutCmdDriver.Execute(mutCommand, _stepContext, entityJson);
         }
-        // For other command types (sequence-start, etc), we'd handle them here
-        // but for now we only support mut commands in sequences
 
         // Do step completes immediately (advances on next frame)
         return (true, 0f);
@@ -219,17 +217,14 @@ public sealed class SequenceDriver :
         var t = newElapsed / tween.Duration;
         var tweenValue = tween.From + (tween.To - tween.From) * t;
 
-        // Build context for tween step
-        var context = new JsonObject
-        {
-            ["tween"] = tweenValue,
-            ["self"] = entityJson.DeepClone()
-        };
+        // Build context for tween step (reuse pre-allocated context)
+        _stepContext["tween"] = tweenValue;
+        _stepContext["self"] = entityJson;  // entityJson is already isolated, no clone needed
 
         // Execute command
         if (tween.Do.TryMatch(out MutCommand mutCommand))
         {
-            MutCmdDriver.Execute(mutCommand, context, entityJson);
+            MutCmdDriver.Execute(mutCommand, _stepContext, entityJson);
         }
 
         var completed = newElapsed >= tween.Duration;
@@ -251,39 +246,36 @@ public sealed class SequenceDriver :
         var currentTrigger = (int)(newElapsed / repeat.Every);
         var triggerCount = currentTrigger - lastTrigger;
 
-        // Execute command for each trigger
+        // Execute command for each trigger (reuse context to avoid allocations)
         for (var i = 0; i < triggerCount; i++)
         {
             var triggerElapsed = (lastTrigger + i + 1) * repeat.Every;
 
-            // Build context for repeat step
-            var context = new JsonObject
-            {
-                ["elapsed"] = triggerElapsed,
-                ["self"] = entityJson.DeepClone()
-            };
+            _stepContext["elapsed"] = triggerElapsed;
+            _stepContext["self"] = entityJson;  // entityJson is already isolated, no clone needed
 
             // Execute command
             if (repeat.Do.TryMatch(out MutCommand mutCommand))
             {
-                MutCmdDriver.Execute(mutCommand, context, entityJson);
+                MutCmdDriver.Execute(mutCommand, _stepContext, entityJson);
             }
         }
 
         // Check if repeat condition is met (until clause)
-        var untilContext = new JsonObject
-        {
-            ["elapsed"] = newElapsed,
-            ["self"] = entityJson.DeepClone()
-        };
+        _repeatContext["elapsed"] = newElapsed;
+        _repeatContext["self"] = entityJson;  // entityJson is already isolated, no clone needed
 
         var completed = false;
         try
         {
+            // senior-dev: FINDING: We deserialize the Rule every frame here, which is suboptimal.
+            // Ideally, we'd parse it once at sequence load time and cache it. However, that would
+            // require changing the JsonSequence structure to store parsed Rules, which is a larger
+            // refactor. For now, this is acceptable given repeat steps are typically short-lived.
             var untilRule = System.Text.Json.JsonSerializer.Deserialize<Rule>(repeat.Until.ToJsonString());
             if (untilRule != null)
             {
-                var result = untilRule.Apply(untilContext);
+                var result = untilRule.Apply(_repeatContext);
                 if (result != null && result is JsonValue jsonValue && jsonValue.TryGetValue<bool>(out var boolResult))
                 {
                     completed = boolResult;
