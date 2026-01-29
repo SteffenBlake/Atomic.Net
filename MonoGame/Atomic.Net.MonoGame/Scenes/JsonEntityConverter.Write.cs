@@ -23,42 +23,49 @@ public static partial class JsonEntityConverter
     /// Writes a mutated JsonNode back to the Entity behaviors.
     /// This applies all changes from the JsonNode to the actual Entity.
     /// </summary>
-    public static void Write(JsonNode entityJson, ushort entityIndex)
+    public static void Write(JsonNode entityJson, Entity entity)
     {
         if (entityJson is not JsonObject entityObj)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Cannot write entity - JSON is not a JsonObject for entity {entityIndex}"
+                "Cannot write entity - JSON is not a JsonObject"
             ));
             return;
         }
 
-        var entity = EntityRegistry.Instance[entityIndex];
         if (!entity.Active)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Cannot write to inactive entity {entityIndex}"
+                "Cannot write to inactive entity"
             ));
             return;
         }
 
         // Apply each behavior field from the JsonNode
-        WriteProperties(entityObj, entityIndex);
-        WriteId(entityObj, entityIndex);
-        WriteTags(entityObj, entityIndex);
-        WriteTransform(entityObj, entityIndex);
-        WriteParent(entityObj, entityIndex);
-        WriteFlexBehaviors(entityObj, entityIndex);
+        WriteProperties(entityObj, entity);
+        WriteId(entityObj, entity);
+        WriteTags(entityObj, entity);
+        WriteTransform(entityObj, entity);
+        WriteParent(entityObj, entity);
+        WriteFlexBehaviors(entityObj, entity);
     }
 
-    private static void WriteProperties(JsonObject entityObj, ushort entityIndex)
+    private static void WriteProperties(JsonObject entityObj, Entity entity)
     {
         if (!entityObj.TryGetPropertyValue("properties", out var propertiesNode) || propertiesNode is not JsonObject propertiesObj)
         {
             return;
         }
 
-        var entity = EntityRegistry.Instance[entityIndex];
+        // Clear existing properties first
+        entity.SetBehavior<PropertiesBehavior>(
+            static (ref b) =>
+            {
+                b.Properties.Clear();
+                b = b with { Properties = b.Properties };
+            }
+        );
+
         foreach (var (key, valueNode) in propertiesObj)
         {
             if (valueNode == null)
@@ -69,7 +76,7 @@ public static partial class JsonEntityConverter
             if (!TryConvertToPropertyValue(valueNode, out var propertyValue))
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Failed to convert property '{key}' value for entity {entityIndex}"
+                    $"Failed to convert property '{key}' value"
                 ));
                 continue;
             }
@@ -84,7 +91,7 @@ public static partial class JsonEntityConverter
         }
     }
 
-    private static void WriteId(JsonObject entityObj, ushort entityIndex)
+    private static void WriteId(JsonObject entityObj, Entity entity)
     {
         if (!entityObj.TryGetPropertyValue("id", out var idNode) || idNode == null)
         {
@@ -94,34 +101,23 @@ public static partial class JsonEntityConverter
         if (!TryGetStringValue(idNode, out var newId))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse id value for entity {entityIndex}. Id must be a string."
+                "Failed to parse id value. Id must be a string."
             ));
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(newId))
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Id value cannot be null, empty, or whitespace for entity {entityIndex}"
-            ));
-            return;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
         entity.SetBehavior<IdBehavior, string>(
             in newId,
             static (ref readonly _newId, ref b) => b = b with { Id = _newId }
         );
     }
 
-    private static void WriteTags(JsonObject entityObj, ushort entityIndex)
+    private static void WriteTags(JsonObject entityObj, Entity entity)
     {
         if (!entityObj.TryGetPropertyValue("tags", out var tagsNode) || tagsNode is not JsonArray tagsArray)
         {
             return;
         }
-
-        var entity = EntityRegistry.Instance[entityIndex];
 
         // Clear existing tags first
         entity.SetBehavior<TagsBehavior>(
@@ -134,7 +130,7 @@ public static partial class JsonEntityConverter
             if (tagNode == null)
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Tag at index {i} is null for entity {entityIndex}"
+                    $"Tag at index {i} is null"
                 ));
                 continue;
             }
@@ -142,15 +138,7 @@ public static partial class JsonEntityConverter
             if (!TryGetStringValue(tagNode, out var tag))
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Failed to parse tag at index {i} for entity {entityIndex}. Tags must be strings."
-                ));
-                continue;
-            }
-
-            if (string.IsNullOrWhiteSpace(tag))
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Tag at index {i} cannot be null, empty, or whitespace for entity {entityIndex}"
+                    $"Failed to parse tag at index {i}. Tags must be strings."
                 ));
                 continue;
             }
@@ -162,21 +150,20 @@ public static partial class JsonEntityConverter
         }
     }
 
-    private static void WriteTransform(JsonObject entityObj, ushort entityIndex)
+    private static void WriteTransform(JsonObject entityObj, Entity entity)
     {
         if (!entityObj.TryGetPropertyValue("transform", out var transformNode) || transformNode is not JsonObject transformObj)
         {
             return;
         }
 
-        var entity = EntityRegistry.Instance[entityIndex];
-
         if (transformObj.TryGetPropertyValue("position", out var posNode) && posNode != null)
         {
-            if (TryParseVector3(posNode, entityIndex, "position", out var vector))
+            if (TryParseVector3(posNode, "position", out var vector))
             {
+                var val = vector.Value;
                 entity.SetBehavior<TransformBehavior, Vector3>(
-                    in vector,
+                    in val,
                     static (ref readonly _vec, ref b) => b.Position = _vec
                 );
             }
@@ -184,10 +171,11 @@ public static partial class JsonEntityConverter
 
         if (transformObj.TryGetPropertyValue("rotation", out var rotNode) && rotNode != null)
         {
-            if (TryParseQuaternion(rotNode, entityIndex, "rotation", out var quat))
+            if (TryParseQuaternion(rotNode, "rotation", out var quat))
             {
+                var val = quat.Value;
                 entity.SetBehavior<TransformBehavior, Quaternion>(
-                    in quat,
+                    in val,
                     static (ref readonly _quat, ref b) => b.Rotation = _quat
                 );
             }
@@ -195,10 +183,11 @@ public static partial class JsonEntityConverter
 
         if (transformObj.TryGetPropertyValue("scale", out var scaleNode) && scaleNode != null)
         {
-            if (TryParseVector3(scaleNode, entityIndex, "scale", out var vector))
+            if (TryParseVector3(scaleNode, "scale", out var vector))
             {
+                var val = vector.Value;
                 entity.SetBehavior<TransformBehavior, Vector3>(
-                    in vector,
+                    in val,
                     static (ref readonly _vec, ref b) => b.Scale = _vec
                 );
             }
@@ -206,53 +195,29 @@ public static partial class JsonEntityConverter
 
         if (transformObj.TryGetPropertyValue("anchor", out var anchorNode) && anchorNode != null)
         {
-            if (TryParseVector3(anchorNode, entityIndex, "anchor", out var vector))
+            if (TryParseVector3(anchorNode, "anchor", out var vector))
             {
+                var val = vector.Value;
                 entity.SetBehavior<TransformBehavior, Vector3>(
-                    in vector,
+                    in val,
                     static (ref readonly _vec, ref b) => b.Anchor = _vec
                 );
             }
         }
     }
 
-    private static void WriteParent(JsonObject entityObj, ushort entityIndex)
+    private static void WriteParent(JsonObject entityObj, Entity entity)
     {
         if (!entityObj.TryGetPropertyValue("parent", out var parentNode) || parentNode == null)
         {
             return;
         }
 
-        string selectorString;
-        try
+        if (!TryGetParentSelector(parentNode, out var selector))
         {
-            selectorString = parentNode.GetValue<string>();
-        }
-        catch
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse parent selector for entity {entityIndex}. Parent must be a string."
-            ));
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(selectorString))
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Parent selector cannot be null, empty, or whitespace for entity {entityIndex}"
-            ));
-            return;
-        }
-
-        if (!SelectorRegistry.Instance.TryParse(selectorString.AsSpan(), out var selector))
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse parent selector '{selectorString}' for entity {entityIndex}"
-            ));
-            return;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
         var parentBehavior = new ParentBehavior(selector);
         entity.SetBehavior<ParentBehavior, ParentBehavior>(
             in parentBehavior,
@@ -260,16 +225,41 @@ public static partial class JsonEntityConverter
         );
     }
 
-    private static void WriteFlexBehaviors(JsonObject entityObj, ushort entityIndex)
+    private static bool TryGetParentSelector(
+        JsonNode parentNode,
+        [NotNullWhen(true)]
+        out EntitySelector? selector
+    )
     {
-        var entity = EntityRegistry.Instance[entityIndex];
+        if (!TryGetStringValue(parentNode, out var selectorString))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                "Failed to parse parent selector. Parent must be a string."
+            ));
+            selector = null;
+            return false;
+        }
 
+        if (!SelectorRegistry.Instance.TryParse(selectorString.AsSpan(), out selector))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Failed to parse parent selector '{selectorString}'"
+            ));
+            return false;
+        }
+
+        return true;
+    }
+
+    private static void WriteFlexBehaviors(JsonObject entityObj, Entity entity)
+    {
         if (entityObj.TryGetPropertyValue("flexAlignItems", out var alignItemsNode) && alignItemsNode != null)
         {
-            if (TryParseEnum<Align>(alignItemsNode, entityIndex, "flexAlignItems", out var value))
+            if (TryParseEnum<Align>(alignItemsNode, "flexAlignItems", out var value))
             {
+                var val = value.Value;
                 entity.SetBehavior<FlexAlignItemsBehavior, Align>(
-                    in value,
+                    in val,
                     static (ref readonly _val, ref b) => b = b with { Value = _val }
                 );
             }
@@ -277,10 +267,11 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexAlignSelf", out var alignSelfNode) && alignSelfNode != null)
         {
-            if (TryParseEnum<Align>(alignSelfNode, entityIndex, "flexAlignSelf", out var value))
+            if (TryParseEnum<Align>(alignSelfNode, "flexAlignSelf", out var value))
             {
+                var val = value.Value;
                 entity.SetBehavior<FlexAlignSelfBehavior, Align>(
-                    in value,
+                    in val,
                     static (ref readonly _val, ref b) => b = b with { Value = _val }
                 );
             }
@@ -288,10 +279,11 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexBorderBottom", out var borderBottomNode) && borderBottomNode != null)
         {
-            if (TryParseFloat(borderBottomNode, entityIndex, "flexBorderBottom", out var value))
+            if (TryParseFloat(borderBottomNode, "flexBorderBottom", out var value))
             {
+                var val = value.Value;
                 entity.SetBehavior<FlexBorderBottomBehavior, float>(
-                    in value,
+                    in val,
                     static (ref readonly _val, ref b) => b = b with { Value = _val }
                 );
             }
@@ -299,10 +291,11 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexBorderLeft", out var borderLeftNode) && borderLeftNode != null)
         {
-            if (TryParseFloat(borderLeftNode, entityIndex, "flexBorderLeft", out var value))
+            if (TryParseFloat(borderLeftNode, "flexBorderLeft", out var value))
             {
+                var val = value.Value;
                 entity.SetBehavior<FlexBorderLeftBehavior, float>(
-                    in value,
+                    in val,
                     static (ref readonly _val, ref b) => b = b with { Value = _val }
                 );
             }
@@ -310,10 +303,11 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexBorderRight", out var borderRightNode) && borderRightNode != null)
         {
-            if (TryParseFloat(borderRightNode, entityIndex, "flexBorderRight", out var value))
+            if (TryParseFloat(borderRightNode, "flexBorderRight", out var value))
             {
+                var val = value.Value;
                 entity.SetBehavior<FlexBorderRightBehavior, float>(
-                    in value,
+                    in val,
                     static (ref readonly _val, ref b) => b = b with { Value = _val }
                 );
             }
@@ -321,10 +315,11 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexBorderTop", out var borderTopNode) && borderTopNode != null)
         {
-            if (TryParseFloat(borderTopNode, entityIndex, "flexBorderTop", out var value))
+            if (TryParseFloat(borderTopNode, "flexBorderTop", out var value))
             {
+                var val = value.Value;
                 entity.SetBehavior<FlexBorderTopBehavior, float>(
-                    in value,
+                    in val,
                     static (ref readonly _val, ref b) => b = b with { Value = _val }
                 );
             }
@@ -332,10 +327,11 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexDirection", out var directionNode) && directionNode != null)
         {
-            if (TryParseEnum<FlexDirection>(directionNode, entityIndex, "flexDirection", out var value))
+            if (TryParseEnum<FlexDirection>(directionNode, "flexDirection", out var value))
             {
+                var val = value.Value;
                 entity.SetBehavior<FlexDirectionBehavior, FlexDirection>(
-                    in value,
+                    in val,
                     static (ref readonly _val, ref b) => b = b with { Value = _val }
                 );
             }
@@ -343,10 +339,11 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexGrow", out var growNode) && growNode != null)
         {
-            if (TryParseFloat(growNode, entityIndex, "flexGrow", out var value))
+            if (TryParseFloat(growNode, "flexGrow", out var value))
             {
+                var val = value.Value;
                 entity.SetBehavior<FlexGrowBehavior, float>(
-                    in value,
+                    in val,
                     static (ref readonly _val, ref b) => b = b with { Value = _val }
                 );
             }
@@ -354,10 +351,11 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexWrap", out var wrapNode) && wrapNode != null)
         {
-            if (TryParseEnum<Wrap>(wrapNode, entityIndex, "flexWrap", out var value))
+            if (TryParseEnum<Wrap>(wrapNode, "flexWrap", out var value))
             {
+                var val = value.Value;
                 entity.SetBehavior<FlexWrapBehavior, Wrap>(
-                    in value,
+                    in val,
                     static (ref readonly _val, ref b) => b = b with { Value = _val }
                 );
             }
@@ -365,10 +363,11 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexZOverride", out var zOverrideNode) && zOverrideNode != null)
         {
-            if (TryParseInt(zOverrideNode, entityIndex, "flexZOverride", out var value))
+            if (TryParseInt(zOverrideNode, "flexZOverride", out var value))
             {
+                var val = value.Value;
                 entity.SetBehavior<FlexZOverride, int>(
-                    in value,
+                    in val,
                     static (ref readonly _val, ref b) => b = b with { ZIndex = _val }
                 );
             }
@@ -376,7 +375,7 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexHeight", out var heightNode) && heightNode != null)
         {
-            if (TryParseFloat(heightNode, entityIndex, "flexHeight", out var value))
+            if (TryParseFloat(heightNode, "flexHeight", out var value))
             {
                 var percent = false;
                 if (entityObj.TryGetPropertyValue("flexHeightPercent", out var percentNode) && percentNode != null)
@@ -384,7 +383,7 @@ public static partial class JsonEntityConverter
                     percent = percentNode.GetValue<bool>();
                 }
                 
-                var behavior = new FlexHeightBehavior(value, percent);
+                var behavior = new FlexHeightBehavior(value.Value, percent);
                 entity.SetBehavior<FlexHeightBehavior, FlexHeightBehavior>(
                     in behavior,
                     static (ref readonly _b, ref b) => b = _b
@@ -394,10 +393,11 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexJustifyContent", out var justifyNode) && justifyNode != null)
         {
-            if (TryParseEnum<Justify>(justifyNode, entityIndex, "flexJustifyContent", out var value))
+            if (TryParseEnum<Justify>(justifyNode, "flexJustifyContent", out var value))
             {
+                var val = value.Value;
                 entity.SetBehavior<FlexJustifyContentBehavior, Justify>(
-                    in value,
+                    in val,
                     static (ref readonly _val, ref b) => b = b with { Value = _val }
                 );
             }
@@ -405,10 +405,11 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexMarginBottom", out var marginBottomNode) && marginBottomNode != null)
         {
-            if (TryParseFloat(marginBottomNode, entityIndex, "flexMarginBottom", out var value))
+            if (TryParseFloat(marginBottomNode, "flexMarginBottom", out var value))
             {
+                var val = value.Value;
                 entity.SetBehavior<FlexMarginBottomBehavior, float>(
-                    in value,
+                    in val,
                     static (ref readonly _val, ref b) => b = b with { Value = _val }
                 );
             }
@@ -416,10 +417,11 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexMarginLeft", out var marginLeftNode) && marginLeftNode != null)
         {
-            if (TryParseFloat(marginLeftNode, entityIndex, "flexMarginLeft", out var value))
+            if (TryParseFloat(marginLeftNode, "flexMarginLeft", out var value))
             {
+                var val = value.Value;
                 entity.SetBehavior<FlexMarginLeftBehavior, float>(
-                    in value,
+                    in val,
                     static (ref readonly _val, ref b) => b = b with { Value = _val }
                 );
             }
@@ -427,10 +429,11 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexMarginRight", out var marginRightNode) && marginRightNode != null)
         {
-            if (TryParseFloat(marginRightNode, entityIndex, "flexMarginRight", out var value))
+            if (TryParseFloat(marginRightNode, "flexMarginRight", out var value))
             {
+                var val = value.Value;
                 entity.SetBehavior<FlexMarginRightBehavior, float>(
-                    in value,
+                    in val,
                     static (ref readonly _val, ref b) => b = b with { Value = _val }
                 );
             }
@@ -438,10 +441,11 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexMarginTop", out var marginTopNode) && marginTopNode != null)
         {
-            if (TryParseFloat(marginTopNode, entityIndex, "flexMarginTop", out var value))
+            if (TryParseFloat(marginTopNode, "flexMarginTop", out var value))
             {
+                var val = value.Value;
                 entity.SetBehavior<FlexMarginTopBehavior, float>(
-                    in value,
+                    in val,
                     static (ref readonly _val, ref b) => b = b with { Value = _val }
                 );
             }
@@ -449,10 +453,11 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexPaddingBottom", out var paddingBottomNode) && paddingBottomNode != null)
         {
-            if (TryParseFloat(paddingBottomNode, entityIndex, "flexPaddingBottom", out var value))
+            if (TryParseFloat(paddingBottomNode, "flexPaddingBottom", out var value))
             {
+                var val = value.Value;
                 entity.SetBehavior<FlexPaddingBottomBehavior, float>(
-                    in value,
+                    in val,
                     static (ref readonly _val, ref b) => b = b with { Value = _val }
                 );
             }
@@ -460,10 +465,11 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexPaddingLeft", out var paddingLeftNode) && paddingLeftNode != null)
         {
-            if (TryParseFloat(paddingLeftNode, entityIndex, "flexPaddingLeft", out var value))
+            if (TryParseFloat(paddingLeftNode, "flexPaddingLeft", out var value))
             {
+                var val = value.Value;
                 entity.SetBehavior<FlexPaddingLeftBehavior, float>(
-                    in value,
+                    in val,
                     static (ref readonly _val, ref b) => b = b with { Value = _val }
                 );
             }
@@ -471,10 +477,11 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexPaddingRight", out var paddingRightNode) && paddingRightNode != null)
         {
-            if (TryParseFloat(paddingRightNode, entityIndex, "flexPaddingRight", out var value))
+            if (TryParseFloat(paddingRightNode, "flexPaddingRight", out var value))
             {
+                var val = value.Value;
                 entity.SetBehavior<FlexPaddingRightBehavior, float>(
-                    in value,
+                    in val,
                     static (ref readonly _val, ref b) => b = b with { Value = _val }
                 );
             }
@@ -482,10 +489,11 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexPaddingTop", out var paddingTopNode) && paddingTopNode != null)
         {
-            if (TryParseFloat(paddingTopNode, entityIndex, "flexPaddingTop", out var value))
+            if (TryParseFloat(paddingTopNode, "flexPaddingTop", out var value))
             {
+                var val = value.Value;
                 entity.SetBehavior<FlexPaddingTopBehavior, float>(
-                    in value,
+                    in val,
                     static (ref readonly _val, ref b) => b = b with { Value = _val }
                 );
             }
@@ -493,7 +501,7 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexPositionBottom", out var posBottomNode) && posBottomNode != null)
         {
-            if (TryParseFloat(posBottomNode, entityIndex, "flexPositionBottom", out var value))
+            if (TryParseFloat(posBottomNode, "flexPositionBottom", out var value))
             {
                 var percent = false;
                 if (entityObj.TryGetPropertyValue("flexPositionBottomPercent", out var percentNode) && percentNode != null)
@@ -501,7 +509,7 @@ public static partial class JsonEntityConverter
                     percent = percentNode.GetValue<bool>();
                 }
                 
-                var behavior = new FlexPositionBottomBehavior(value, percent);
+                var behavior = new FlexPositionBottomBehavior(value.Value, percent);
                 entity.SetBehavior<FlexPositionBottomBehavior, FlexPositionBottomBehavior>(
                     in behavior,
                     static (ref readonly _b, ref b) => b = _b
@@ -511,7 +519,7 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexPositionLeft", out var posLeftNode) && posLeftNode != null)
         {
-            if (TryParseFloat(posLeftNode, entityIndex, "flexPositionLeft", out var value))
+            if (TryParseFloat(posLeftNode, "flexPositionLeft", out var value))
             {
                 var percent = false;
                 if (entityObj.TryGetPropertyValue("flexPositionLeftPercent", out var percentNode) && percentNode != null)
@@ -519,7 +527,7 @@ public static partial class JsonEntityConverter
                     percent = percentNode.GetValue<bool>();
                 }
                 
-                var behavior = new FlexPositionLeftBehavior(value, percent);
+                var behavior = new FlexPositionLeftBehavior(value.Value, percent);
                 entity.SetBehavior<FlexPositionLeftBehavior, FlexPositionLeftBehavior>(
                     in behavior,
                     static (ref readonly _b, ref b) => b = _b
@@ -529,7 +537,7 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexPositionRight", out var posRightNode) && posRightNode != null)
         {
-            if (TryParseFloat(posRightNode, entityIndex, "flexPositionRight", out var value))
+            if (TryParseFloat(posRightNode, "flexPositionRight", out var value))
             {
                 var percent = false;
                 if (entityObj.TryGetPropertyValue("flexPositionRightPercent", out var percentNode) && percentNode != null)
@@ -537,7 +545,7 @@ public static partial class JsonEntityConverter
                     percent = percentNode.GetValue<bool>();
                 }
                 
-                var behavior = new FlexPositionRightBehavior(value, percent);
+                var behavior = new FlexPositionRightBehavior(value.Value, percent);
                 entity.SetBehavior<FlexPositionRightBehavior, FlexPositionRightBehavior>(
                     in behavior,
                     static (ref readonly _b, ref b) => b = _b
@@ -547,7 +555,7 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexPositionTop", out var posTopNode) && posTopNode != null)
         {
-            if (TryParseFloat(posTopNode, entityIndex, "flexPositionTop", out var value))
+            if (TryParseFloat(posTopNode, "flexPositionTop", out var value))
             {
                 var percent = false;
                 if (entityObj.TryGetPropertyValue("flexPositionTopPercent", out var percentNode) && percentNode != null)
@@ -555,7 +563,7 @@ public static partial class JsonEntityConverter
                     percent = percentNode.GetValue<bool>();
                 }
                 
-                var behavior = new FlexPositionTopBehavior(value, percent);
+                var behavior = new FlexPositionTopBehavior(value.Value, percent);
                 entity.SetBehavior<FlexPositionTopBehavior, FlexPositionTopBehavior>(
                     in behavior,
                     static (ref readonly _b, ref b) => b = _b
@@ -565,10 +573,11 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexPositionType", out var posTypeNode) && posTypeNode != null)
         {
-            if (TryParseEnum<PositionType>(posTypeNode, entityIndex, "flexPositionType", out var value))
+            if (TryParseEnum<PositionType>(posTypeNode, "flexPositionType", out var value))
             {
+                var val = value.Value;
                 entity.SetBehavior<FlexPositionTypeBehavior, PositionType>(
-                    in value,
+                    in val,
                     static (ref readonly _val, ref b) => b = b with { Value = _val }
                 );
             }
@@ -576,7 +585,7 @@ public static partial class JsonEntityConverter
 
         if (entityObj.TryGetPropertyValue("flexWidth", out var widthNode) && widthNode != null)
         {
-            if (TryParseFloat(widthNode, entityIndex, "flexWidth", out var value))
+            if (TryParseFloat(widthNode, "flexWidth", out var value))
             {
                 var percent = false;
                 if (entityObj.TryGetPropertyValue("flexWidthPercent", out var percentNode) && percentNode != null)
@@ -584,7 +593,7 @@ public static partial class JsonEntityConverter
                     percent = percentNode.GetValue<bool>();
                 }
                 
-                var behavior = new FlexWidthBehavior(value, percent);
+                var behavior = new FlexWidthBehavior(value.Value, percent);
                 entity.SetBehavior<FlexWidthBehavior, FlexWidthBehavior>(
                     in behavior,
                     static (ref readonly _b, ref b) => b = _b
@@ -641,14 +650,19 @@ public static partial class JsonEntityConverter
         return false;
     }
 
-    private static bool TryParseVector3(JsonNode value, ushort entityIndex, string fieldName, out Vector3 result)
+    private static bool TryParseVector3(
+        JsonNode value,
+        string fieldName,
+        [NotNullWhen(true)]
+        out Vector3? result
+    )
     {
         if (value is not JsonObject vecObj)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"{fieldName} must be a JsonObject with x, y, z fields for entity {entityIndex}"
+                $"{fieldName} must be a JsonObject with x, y, z fields"
             ));
-            result = default;
+            result = null;
             return false;
         }
 
@@ -663,21 +677,26 @@ public static partial class JsonEntityConverter
         catch (Exception ex)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} for entity {entityIndex}: {ex.Message}"
+                $"Failed to parse {fieldName}: {ex.Message}"
             ));
-            result = default;
+            result = null;
             return false;
         }
     }
 
-    private static bool TryParseQuaternion(JsonNode value, ushort entityIndex, string fieldName, out Quaternion result)
+    private static bool TryParseQuaternion(
+        JsonNode value,
+        string fieldName,
+        [NotNullWhen(true)]
+        out Quaternion? result
+    )
     {
         if (value is not JsonObject quatObj)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"{fieldName} must be a JsonObject with x, y, z, w fields for entity {entityIndex}"
+                $"{fieldName} must be a JsonObject with x, y, z, w fields"
             ));
-            result = default;
+            result = null;
             return false;
         }
 
@@ -693,42 +712,55 @@ public static partial class JsonEntityConverter
         catch (Exception ex)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} for entity {entityIndex}: {ex.Message}"
+                $"Failed to parse {fieldName}: {ex.Message}"
             ));
-            result = default;
+            result = null;
             return false;
         }
     }
 
-    private static bool TryParseEnum<TEnum>(JsonNode value, ushort entityIndex, string fieldName, out TEnum result)
+    private static bool TryParseEnum<TEnum>(
+        JsonNode value,
+        string fieldName,
+        [NotNullWhen(true)]
+        out TEnum? result
+    )
         where TEnum : struct, Enum
     {
         if (!TryGetStringValue(value, out var stringValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} for entity {entityIndex}. Expected string value."
+                $"Failed to parse {fieldName}. Expected string value."
             ));
-            result = default;
+            result = null;
             return false;
         }
 
-        if (!Enum.TryParse<TEnum>(stringValue, ignoreCase: true, out result))
+        if (!Enum.TryParse<TEnum>(stringValue, ignoreCase: true, out var enumValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} value '{stringValue}' for entity {entityIndex}"
+                $"Failed to parse {fieldName} value '{stringValue}'"
             ));
+            result = null;
             return false;
         }
 
+        result = enumValue;
         return true;
     }
 
-    private static bool TryParseFloat(JsonNode value, ushort entityIndex, string fieldName, out float result)
+    private static bool TryParseFloat(
+        JsonNode value,
+        string fieldName,
+        [NotNullWhen(true)]
+        out float? result
+    )
     {
         try
         {
-            if (value is JsonValue jsonValue && jsonValue.TryGetValue<float>(out result))
+            if (value is JsonValue jsonValue && jsonValue.TryGetValue<float>(out var floatValue))
             {
+                result = floatValue;
                 return true;
             }
 
@@ -740,42 +772,48 @@ public static partial class JsonEntityConverter
             }
 
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} for entity {entityIndex}. Expected numeric value."
+                $"Failed to parse {fieldName}. Expected numeric value."
             ));
-            result = default;
+            result = null;
             return false;
         }
         catch (Exception ex)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} for entity {entityIndex}: {ex.Message}"
+                $"Failed to parse {fieldName}: {ex.Message}"
             ));
-            result = default;
+            result = null;
             return false;
         }
     }
 
-    private static bool TryParseInt(JsonNode value, ushort entityIndex, string fieldName, out int result)
+    private static bool TryParseInt(
+        JsonNode value,
+        string fieldName,
+        [NotNullWhen(true)]
+        out int? result
+    )
     {
         try
         {
-            if (value is JsonValue jsonValue && jsonValue.TryGetValue<int>(out result))
+            if (value is JsonValue jsonValue && jsonValue.TryGetValue<int>(out var intValue))
             {
+                result = intValue;
                 return true;
             }
 
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} for entity {entityIndex}. Expected integer value."
+                $"Failed to parse {fieldName}. Expected integer value."
             ));
-            result = default;
+            result = null;
             return false;
         }
         catch (Exception ex)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} for entity {entityIndex}: {ex.Message}"
+                $"Failed to parse {fieldName}: {ex.Message}"
             ));
-            result = default;
+            result = null;
             return false;
         }
     }
@@ -789,10 +827,13 @@ public static partial class JsonEntityConverter
         try
         {
             result = node.GetValue<string>();
-            return true;
+            return !string.IsNullOrWhiteSpace(result);
         }
-        catch
+        catch (Exception ex)
         {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Failed to get string value: {ex.Message}"
+            ));
             result = null;
             return false;
         }

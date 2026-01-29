@@ -64,8 +64,7 @@ public sealed class SequenceDriver :
             }
 
             // After processing all sequences for this entity, write changes back
-            var entity = EntityRegistry.Instance[entityIndex];
-            JsonEntityConverter.Write(entityJson, entity);
+            JsonEntityConverter.Write(entityJson, EntityRegistry.Instance[entityIndex]);
         }
     }
 
