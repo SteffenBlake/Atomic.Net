@@ -31,9 +31,24 @@ public sealed class SequenceDriver :
     // Outer index: entity, Inner index: sequence
     private readonly SparseReferenceArray<SparseArray<SequenceState>> _activeSequences = new(Constants.MaxEntities);
 
+    // senior-dev: Pre-allocated context objects to eliminate allocation in hot path
+    // These are reused every frame by updating their values rather than creating new instances
+    private readonly JsonObject _doStepContext = new();
+    private readonly JsonObject _doStepWorldContext = new();
+    private readonly JsonObject _tweenContext = new();
+    private readonly JsonObject _repeatContext = new();
+
     private SequenceDriver()
     {
-        // Don't pre-allocate - create inner arrays lazily when sequences start
+        // Initialize reusable context objects
+        _doStepContext["world"] = _doStepWorldContext;
+        _doStepContext["self"] = null!; // Will be set per-entity
+
+        _tweenContext["tween"] = 0f; // Will be updated per-frame
+        _tweenContext["self"] = null!; // Will be set per-entity
+
+        _repeatContext["elapsed"] = 0f; // Will be updated per-frame
+        _repeatContext["self"] = null!; // Will be set per-entity
     }
 
     /// <summary>
@@ -60,7 +75,8 @@ public sealed class SequenceDriver :
 
             var entity = EntityRegistry.Instance[entityIndex];
 
-            // Build entity JSON once for all sequences on this entity
+            // senior-dev: ALLOCATION WARNING - EntityJsonHelper.BuildEntityJsonNode allocates
+            // TODO: Future optimization - cache entity JSON and invalidate on mutation
             var entityJson = EntityJsonHelper.BuildEntityJsonNode(entity);
 
             // Process all sequences for this entity
@@ -168,6 +184,16 @@ public sealed class SequenceDriver :
         // Loop through steps, processing until one doesn't complete immediately
         while (currentState.StepIndex < sequence.Steps.Length)
         {
+            // senior-dev: Add bounds checking before array access
+            if (currentState.StepIndex >= sequence.Steps.Length)
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Sequence {sequenceIndex} step index {currentState.StepIndex} out of range (length: {sequence.Steps.Length})"
+                ));
+                StopSequence(entityIndex, sequenceIndex);
+                return;
+            }
+
             var currentStep = sequence.Steps[currentState.StepIndex];
             var newElapsedTime = currentState.StepElapsedTime + remainingTime;
             
@@ -176,19 +202,31 @@ public sealed class SequenceDriver :
             ushort nextStepIndex = currentState.StepIndex;
             float leftoverTime = 0f;
             
-            // Process step based on type
-            currentStep.Visit(
-                delay => stepCompleted = ProcessDelayStep(entityIndex, sequenceIndex, currentState, delay, newElapsedTime, out nextStepIndex, out leftoverTime),
-                doStep => stepCompleted = ProcessDoStep(entityIndex, sequenceIndex, currentState, doStep, entityJson, remainingTime, out nextStepIndex, out leftoverTime),
-                tween => stepCompleted = ProcessTweenStep(entityIndex, sequenceIndex, currentState, tween, entityJson, newElapsedTime, out nextStepIndex, out leftoverTime),
-                repeat => stepCompleted = ProcessRepeatStep(entityIndex, sequenceIndex, currentState, repeat, entityJson, newElapsedTime, out nextStepIndex, out leftoverTime),
-                () => {
-                    EventBus<ErrorEvent>.Push(new ErrorEvent(
-                        $"Unknown sequence step type for sequence {sequenceIndex} on entity {entityIndex}"
-                    ));
-                    StopSequence(entityIndex, sequenceIndex);
-                }
-            );
+            // senior-dev: Use TryMatch instead of Visit to avoid closure allocations
+            if (currentStep.TryMatch(out DelayStep? delay))
+            {
+                stepCompleted = ProcessDelayStep(entityIndex, sequenceIndex, currentState, delay, newElapsedTime, out nextStepIndex, out leftoverTime);
+            }
+            else if (currentStep.TryMatch(out DoStep? doStep))
+            {
+                stepCompleted = ProcessDoStep(entityIndex, sequenceIndex, currentState, doStep, entityJson, remainingTime, out nextStepIndex, out leftoverTime);
+            }
+            else if (currentStep.TryMatch(out TweenStep? tween))
+            {
+                stepCompleted = ProcessTweenStep(entityIndex, sequenceIndex, currentState, tween, entityJson, newElapsedTime, out nextStepIndex, out leftoverTime);
+            }
+            else if (currentStep.TryMatch(out RepeatStep? repeat))
+            {
+                stepCompleted = ProcessRepeatStep(entityIndex, sequenceIndex, currentState, repeat, entityJson, newElapsedTime, out nextStepIndex, out leftoverTime);
+            }
+            else
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Unknown sequence step type for sequence {sequenceIndex} on entity {entityIndex}"
+                ));
+                StopSequence(entityIndex, sequenceIndex);
+                return;
+            }
             
             if (stepCompleted)
             {
@@ -269,15 +307,12 @@ public sealed class SequenceDriver :
         out float leftoverTime
     )
     {
-        // Build context: { "world": { "deltaTime": ... }, "self": { ... } }
-        var context = new JsonObject
-        {
-            ["world"] = new JsonObject { ["deltaTime"] = deltaTime },
-            ["self"] = entityJson
-        };
+        // senior-dev: Reuse pre-allocated context objects instead of creating new ones
+        _doStepWorldContext["deltaTime"] = deltaTime;
+        _doStepContext["self"] = entityJson;
 
         // Execute command
-        ExecuteSequenceCommand(doStep.Do, context, entityIndex);
+        ExecuteSequenceCommand(doStep.Do, _doStepContext, entityIndex);
 
         // Advance to next step immediately, carry forward all deltaTime
         nextStepIndex = (ushort)(state.StepIndex + 1);
@@ -303,13 +338,11 @@ public sealed class SequenceDriver :
         if (newElapsedTime >= tween.Duration)
         {
             // Tween complete - execute at target value and advance with leftover time
-            var context = new JsonObject
-            {
-                ["tween"] = tween.To,
-                ["self"] = entityJson
-            };
+            // senior-dev: Reuse pre-allocated context object
+            _tweenContext["tween"] = tween.To;
+            _tweenContext["self"] = entityJson;
 
-            ExecuteSequenceCommand(tween.Do, context, entityIndex);
+            ExecuteSequenceCommand(tween.Do, _tweenContext, entityIndex);
 
             nextStepIndex = (ushort)(state.StepIndex + 1);
             leftoverTime = newElapsedTime - tween.Duration;
@@ -321,13 +354,11 @@ public sealed class SequenceDriver :
             var t = newElapsedTime / tween.Duration;
             var tweenValue = tween.From + (tween.To - tween.From) * t;
 
-            var context = new JsonObject
-            {
-                ["tween"] = tweenValue,
-                ["self"] = entityJson
-            };
+            // senior-dev: Reuse pre-allocated context object
+            _tweenContext["tween"] = tweenValue;
+            _tweenContext["self"] = entityJson;
 
-            ExecuteSequenceCommand(tween.Do, context, entityIndex);
+            ExecuteSequenceCommand(tween.Do, _tweenContext, entityIndex);
 
             // Update elapsed time
             var updatedState = new SequenceState(state.StepIndex, newElapsedTime);
@@ -356,20 +387,17 @@ public sealed class SequenceDriver :
         out float leftoverTime
     )
     {
-        // Build context for condition evaluation
-        var context = new JsonObject
-        {
-            ["elapsed"] = newElapsedTime,
-            ["self"] = entityJson
-        };
+        // senior-dev: Reuse pre-allocated context object
+        _repeatContext["elapsed"] = newElapsedTime;
+        _repeatContext["self"] = entityJson;
 
         // Check if condition is met
         JsonNode? conditionResult;
         try
         {
-            conditionResult = JsonLogic.Apply(repeat.Until, context);
+            conditionResult = JsonLogic.Apply(repeat.Until, _repeatContext);
         }
-        catch (Exception ex)
+        catch (JsonException ex)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Failed to evaluate repeat condition for sequence {sequenceIndex} on entity {entityIndex}: {ex.Message}"
@@ -400,7 +428,7 @@ public sealed class SequenceDriver :
 
             if (shouldExecute)
             {
-                ExecuteSequenceCommand(repeat.Do, context, entityIndex);
+                ExecuteSequenceCommand(repeat.Do, _repeatContext, entityIndex);
             }
 
             // Update elapsed time
@@ -421,28 +449,28 @@ public sealed class SequenceDriver :
     private static void ExecuteSequenceCommand(SceneCommand command, JsonObject context, ushort entityIndex)
     {
         // Handle MutCommand
-        if (command.TryMatch(out MutCommand mutCommand))
+        if (command.TryMatch(out MutCommand? mutCommand))
         {
             MutCmdDriver.Execute(mutCommand, context, entityIndex);
             return;
         }
 
         // Handle SequenceStartCommand (sequence chaining)
-        if (command.TryMatch(out SequenceStartCommand seqStartCmd))
+        if (command.TryMatch(out SequenceStartCommand? seqStartCmd))
         {
             SequenceStartCmdDriver.Execute(entityIndex, seqStartCmd.SequenceId);
             return;
         }
 
         // Handle SequenceStopCommand
-        if (command.TryMatch(out SequenceStopCommand seqStopCmd))
+        if (command.TryMatch(out SequenceStopCommand? seqStopCmd))
         {
             SequenceStopCmdDriver.Execute(entityIndex, seqStopCmd.SequenceId);
             return;
         }
 
         // Handle SequenceResetCommand
-        if (command.TryMatch(out SequenceResetCommand seqResetCmd))
+        if (command.TryMatch(out SequenceResetCommand? seqResetCmd))
         {
             SequenceResetCmdDriver.Execute(entityIndex, seqResetCmd.SequenceId);
             return;
