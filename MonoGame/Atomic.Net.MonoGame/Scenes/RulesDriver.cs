@@ -32,6 +32,9 @@ public sealed class RulesDriver :
         ["entities"] = new JsonArray()
     };
 
+    // senior-dev: Pre-allocated list for tag mutation to avoid allocations during gameplay
+    private readonly List<string> _tempTagsList = new(32);
+
     internal static void Initialize()
     {
         if (Instance != null)
@@ -387,7 +390,7 @@ public sealed class RulesDriver :
     /// <summary>
     /// Processes all mutation operations for a single entity.
     /// </summary>
-    private static void ProcessEntityMutations(
+    private void ProcessEntityMutations(
         JsonNode entity,
         MutOperation[] mutations,
         JsonObject doContext
@@ -402,7 +405,7 @@ public sealed class RulesDriver :
     /// <summary>
     /// Applies a mutation operation to an entity.
     /// </summary>
-    private static bool ApplyMutation(
+    private bool ApplyMutation(
         JsonNode entityJson, MutOperation operation, JsonObject context
     )
     {
@@ -499,7 +502,7 @@ public sealed class RulesDriver :
     /// <summary>
     /// Applies the computed value to the target path.
     /// </summary>
-    private static bool ApplyToTarget(ushort entityIndex, JsonNode target, JsonNode value)
+    private bool ApplyToTarget(ushort entityIndex, JsonNode target, JsonNode value)
     {
         if (target is not JsonObject targetObj)
         {
@@ -692,10 +695,11 @@ public sealed class RulesDriver :
         // Wrap in a tuple to pass into the anti-closure overload
         var setter = (propertyKey, propertyValue.Value);
         // senior-dev: Use With to add/update property in FluentDictionary
+        // senior-dev: CRITICAL - Must use _setter.Value not setter.Value to avoid closure
         entity.SetBehavior<PropertiesBehavior, (string Key, PropertyValue Value)>(
             ref setter,
             (ref readonly _setter, ref b) => b = b with { 
-                Properties = b.Properties.With(_setter.Key, setter.Value) 
+                Properties = b.Properties.With(_setter.Key, _setter.Value) 
             }
         );
 
@@ -808,7 +812,7 @@ public sealed class RulesDriver :
     /// Applies a Tags mutation to an entity.
     /// Tags are set holistically from a JsonArray of strings.
     /// </summary>
-    private static bool ApplyTagsMutation(ushort entityIndex, JsonNode value)
+    private bool ApplyTagsMutation(ushort entityIndex, JsonNode value)
     {
         if (value is not JsonArray tagsArray)
         {
@@ -818,7 +822,8 @@ public sealed class RulesDriver :
             return false;
         }
 
-        var newTags = new List<string>();
+        // senior-dev: Use pre-allocated list to avoid allocations during gameplay
+        _tempTagsList.Clear();
         for (var i = 0; i < tagsArray.Count; i++)
         {
             var tagNode = tagsArray[i];
@@ -851,7 +856,7 @@ public sealed class RulesDriver :
                 return false;
             }
 
-            newTags.Add(tag);
+            _tempTagsList.Add(tag);
         }
 
         var entity = EntityRegistry.Instance[entityIndex];
@@ -865,7 +870,7 @@ public sealed class RulesDriver :
         }
 
         // senior-dev: Use anti-closure overload to avoid allocations
-        var tagsToSet = newTags.ToImmutableHashSet();
+        var tagsToSet = _tempTagsList.ToImmutableHashSet();
         entity.SetBehavior<TagsBehavior, ImmutableHashSet<string>>(
             in tagsToSet,
             (ref readonly _tags, ref b) => b = b with { Tags = _tags }
