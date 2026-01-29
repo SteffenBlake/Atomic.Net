@@ -59,6 +59,9 @@ public sealed class SequenceDriverIntegrationTests : IDisposable
         // Act - Complete delay
         SequenceDriver.Instance.RunFrame(0.3f); // 0.6s total elapsed, delay complete
         
+        // Need one more frame to execute the do step after delay completes
+        SequenceDriver.Instance.RunFrame(0.016f);
+        
         // Assert - Property should now be set
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(player.Value, out var props2));
         Assert.True(props2.Value.Properties.TryGetValue("delayComplete", out var value));
