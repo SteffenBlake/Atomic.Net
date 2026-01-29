@@ -79,15 +79,15 @@ public static class MutCmdDriver
             }
 
             var propertiesObj = entityJson["properties"]!.AsObject();
-            propertiesObj[propertyKey] = value.DeepClone();
+            propertiesObj[propertyKey] = value;
         }
         else if (target.TryGetPropertyValue("id", out _))
         {
-            entityJson["id"] = value.DeepClone();
+            entityJson["id"] = value;
         }
         else if (target.TryGetPropertyValue("tags", out _))
         {
-            entityJson["tags"] = value.DeepClone();
+            entityJson["tags"] = value;
         }
         else if (target.TryGetPropertyValue("transform", out var transformField) && transformField != null)
         {
@@ -101,117 +101,117 @@ public static class MutCmdDriver
             {
                 foreach (var (key, _) in transformFieldObj)
                 {
-                    transformObj[key] = value.DeepClone();
+                    transformObj[key] = value;
                 }
             }
         }
         else if (target.TryGetPropertyValue("parent", out _))
         {
-            entityJson["parent"] = value.DeepClone();
+            entityJson["parent"] = value;
         }
         else if (target.TryGetPropertyValue("flexAlignItems", out _))
         {
-            entityJson["flexAlignItems"] = value.DeepClone();
+            entityJson["flexAlignItems"] = value;
         }
         else if (target.TryGetPropertyValue("flexAlignSelf", out _))
         {
-            entityJson["flexAlignSelf"] = value.DeepClone();
+            entityJson["flexAlignSelf"] = value;
         }
         else if (target.TryGetPropertyValue("flexBorderBottom", out _))
         {
-            entityJson["flexBorderBottom"] = value.DeepClone();
+            entityJson["flexBorderBottom"] = value;
         }
         else if (target.TryGetPropertyValue("flexBorderLeft", out _))
         {
-            entityJson["flexBorderLeft"] = value.DeepClone();
+            entityJson["flexBorderLeft"] = value;
         }
         else if (target.TryGetPropertyValue("flexBorderRight", out _))
         {
-            entityJson["flexBorderRight"] = value.DeepClone();
+            entityJson["flexBorderRight"] = value;
         }
         else if (target.TryGetPropertyValue("flexBorderTop", out _))
         {
-            entityJson["flexBorderTop"] = value.DeepClone();
+            entityJson["flexBorderTop"] = value;
         }
         else if (target.TryGetPropertyValue("flexDirection", out _))
         {
-            entityJson["flexDirection"] = value.DeepClone();
+            entityJson["flexDirection"] = value;
         }
         else if (target.TryGetPropertyValue("flexGrow", out _))
         {
-            entityJson["flexGrow"] = value.DeepClone();
+            entityJson["flexGrow"] = value;
         }
         else if (target.TryGetPropertyValue("flexWrap", out _))
         {
-            entityJson["flexWrap"] = value.DeepClone();
+            entityJson["flexWrap"] = value;
         }
         else if (target.TryGetPropertyValue("flexZOverride", out _))
         {
-            entityJson["flexZOverride"] = value.DeepClone();
+            entityJson["flexZOverride"] = value;
         }
         else if (target.TryGetPropertyValue("flexHeight", out _))
         {
-            entityJson["flexHeight"] = value.DeepClone();
+            entityJson["flexHeight"] = value;
         }
         else if (target.TryGetPropertyValue("flexJustifyContent", out _))
         {
-            entityJson["flexJustifyContent"] = value.DeepClone();
+            entityJson["flexJustifyContent"] = value;
         }
         else if (target.TryGetPropertyValue("flexMarginBottom", out _))
         {
-            entityJson["flexMarginBottom"] = value.DeepClone();
+            entityJson["flexMarginBottom"] = value;
         }
         else if (target.TryGetPropertyValue("flexMarginLeft", out _))
         {
-            entityJson["flexMarginLeft"] = value.DeepClone();
+            entityJson["flexMarginLeft"] = value;
         }
         else if (target.TryGetPropertyValue("flexMarginRight", out _))
         {
-            entityJson["flexMarginRight"] = value.DeepClone();
+            entityJson["flexMarginRight"] = value;
         }
         else if (target.TryGetPropertyValue("flexMarginTop", out _))
         {
-            entityJson["flexMarginTop"] = value.DeepClone();
+            entityJson["flexMarginTop"] = value;
         }
         else if (target.TryGetPropertyValue("flexPaddingBottom", out _))
         {
-            entityJson["flexPaddingBottom"] = value.DeepClone();
+            entityJson["flexPaddingBottom"] = value;
         }
         else if (target.TryGetPropertyValue("flexPaddingLeft", out _))
         {
-            entityJson["flexPaddingLeft"] = value.DeepClone();
+            entityJson["flexPaddingLeft"] = value;
         }
         else if (target.TryGetPropertyValue("flexPaddingRight", out _))
         {
-            entityJson["flexPaddingRight"] = value.DeepClone();
+            entityJson["flexPaddingRight"] = value;
         }
         else if (target.TryGetPropertyValue("flexPaddingTop", out _))
         {
-            entityJson["flexPaddingTop"] = value.DeepClone();
+            entityJson["flexPaddingTop"] = value;
         }
         else if (target.TryGetPropertyValue("flexPositionBottom", out _))
         {
-            entityJson["flexPositionBottom"] = value.DeepClone();
+            entityJson["flexPositionBottom"] = value;
         }
         else if (target.TryGetPropertyValue("flexPositionLeft", out _))
         {
-            entityJson["flexPositionLeft"] = value.DeepClone();
+            entityJson["flexPositionLeft"] = value;
         }
         else if (target.TryGetPropertyValue("flexPositionRight", out _))
         {
-            entityJson["flexPositionRight"] = value.DeepClone();
+            entityJson["flexPositionRight"] = value;
         }
         else if (target.TryGetPropertyValue("flexPositionTop", out _))
         {
-            entityJson["flexPositionTop"] = value.DeepClone();
+            entityJson["flexPositionTop"] = value;
         }
         else if (target.TryGetPropertyValue("flexPositionType", out _))
         {
-            entityJson["flexPositionType"] = value.DeepClone();
+            entityJson["flexPositionType"] = value;
         }
         else if (target.TryGetPropertyValue("flexWidth", out _))
         {
-            entityJson["flexWidth"] = value.DeepClone();
+            entityJson["flexWidth"] = value;
         }
         else
         {

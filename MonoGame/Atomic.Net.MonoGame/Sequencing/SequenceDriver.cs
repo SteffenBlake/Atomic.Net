@@ -151,13 +151,30 @@ public sealed class SequenceDriver :
         float deltaTime
     )
     {
-        return step.Visit(
-            delay => ProcessDelayStep(delay, stepElapsed, deltaTime),
-            doStep => ProcessDoStep(doStep, entityIndex, entityJson, deltaTime),
-            tween => ProcessTweenStep(tween, entityIndex, entityJson, stepElapsed, deltaTime),
-            repeat => ProcessRepeatStep(repeat, entityIndex, entityJson, stepElapsed, deltaTime),
-            () => (true, 0f) // Should never happen
-        );
+        // Use TryMatch instead of Visit to avoid closure allocations in hot path
+        // (Visit would capture variables and allocate closures every frame)
+        if (step.TryMatch(out DelayStep delay))
+        {
+            return ProcessDelayStep(delay, stepElapsed, deltaTime);
+        }
+        
+        if (step.TryMatch(out DoStep doStep))
+        {
+            return ProcessDoStep(doStep, entityIndex, entityJson, deltaTime);
+        }
+        
+        if (step.TryMatch(out TweenStep tween))
+        {
+            return ProcessTweenStep(tween, entityIndex, entityJson, stepElapsed, deltaTime);
+        }
+        
+        if (step.TryMatch(out RepeatStep repeat))
+        {
+            return ProcessRepeatStep(repeat, entityIndex, entityJson, stepElapsed, deltaTime);
+        }
+
+        // Should never happen - all step types handled above
+        return (true, 0f);
     }
 
     private (bool completed, float timeConsumed) ProcessDelayStep(
