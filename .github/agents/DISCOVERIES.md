@@ -259,3 +259,13 @@ var slices = myAppleOrOrange.Visit(
     () => throw new ....
 );
 ```
+
+# Json Objects and parent handling
+
+Json objects will throw an exception if they already have a parent they are assigned to.
+
+You do NOT need to deep clone them to re-parent them however, you just have to remove the reference to them off the parent, IE:
+```
+parent.Remove("child");
+```
+this re-enables the ability for you to assign your instance of `child` to a new parent, without having to copy it
