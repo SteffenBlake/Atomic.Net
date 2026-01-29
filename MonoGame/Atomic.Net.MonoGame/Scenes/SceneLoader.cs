@@ -143,6 +143,9 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         // senior-dev: Load rules into RuleRegistry (must be before selector recalc)
         LoadRules(scene, useGlobalPartition);
         
+        // senior-dev: Load sequences into SequenceRegistry
+        LoadSequences(scene, useGlobalPartition);
+        
         // CRITICAL: Recalc selectors first, then hierarchy
         // SelectorRegistry.Recalc() must run before HierarchyRegistry.Recalc()
         // to ensure parent selectors have valid Matches arrays
@@ -171,6 +174,31 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
             else
             {
                 RuleRegistry.Instance.Activate(rule);
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Loads sequences from scene into SequenceRegistry.
+    /// </summary>
+    private void LoadSequences(JsonScene scene, bool useGlobalPartition)
+    {
+        // senior-dev: Sequences are optional in scenes
+        if (scene.Sequences == null || scene.Sequences.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var sequence in scene.Sequences)
+        {
+            // senior-dev: Allocate to appropriate partition based on loader method
+            if (useGlobalPartition)
+            {
+                Sequencing.SequenceRegistry.Instance.ActivateGlobal(sequence);
+            }
+            else
+            {
+                Sequencing.SequenceRegistry.Instance.Activate(sequence);
             }
         }
     }
