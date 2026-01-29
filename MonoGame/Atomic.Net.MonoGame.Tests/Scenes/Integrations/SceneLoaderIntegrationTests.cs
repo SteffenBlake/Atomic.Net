@@ -279,8 +279,7 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
     {
         // Arrange: Create entity with initial ID
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<IdBehavior>.Instance.SetBehavior(
-            entity, (ref behavior) => behavior = new IdBehavior("initial-id")
+        entity.SetBehavior<IdBehavior>(static (ref behavior) => behavior = new IdBehavior("initial-id")
         );
         
         // Assert: Initial ID resolves
@@ -292,8 +291,7 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
 
         // Act: Change the ID by removing and re-adding the behavior
         BehaviorRegistry<IdBehavior>.Instance.Remove(entity);
-        BehaviorRegistry<IdBehavior>.Instance.SetBehavior(
-            entity, (ref behavior) => behavior = new IdBehavior("new-id")
+        entity.SetBehavior<IdBehavior>(static (ref behavior) => behavior = new IdBehavior("new-id")
         );
         
         // Assert: Old ID no longer resolves

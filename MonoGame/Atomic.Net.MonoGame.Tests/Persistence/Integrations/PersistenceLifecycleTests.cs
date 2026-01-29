@@ -49,11 +49,11 @@ public sealed class PersistenceLifecycleTests : IDisposable
     {
         // Arrange: Create entity with PersistToDiskBehavior in scene partition
         var entity = EntityRegistry.Instance.Activate(); // Fixed - entities must be activated first
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("reset-test-key");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("health", 100f) };
         });
@@ -68,7 +68,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         // test-architect: Verify database still contains the entity by creating a new entity
         // and adding PersistToDiskBehavior with same key - it should load health=100 from disk
         var newEntity = EntityRegistry.Instance.Activate(); // Fixed - entities must be activated first
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, static (ref behavior) =>
+        newEntity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("reset-test-key");
         });
@@ -84,11 +84,11 @@ public sealed class PersistenceLifecycleTests : IDisposable
     {
         // Arrange: Create entity with PersistToDiskBehavior
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("shutdown-test-key");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("mana", 50f) };
         });
@@ -108,7 +108,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         EventBus<InitializeEvent>.Push(new());
         
         var newEntity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, static (ref behavior) =>
+        newEntity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("shutdown-test-key");
         });
@@ -123,11 +123,11 @@ public sealed class PersistenceLifecycleTests : IDisposable
     {
         // Arrange: Create and persist entity
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("deactivate-test-key");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("level", 10f) };
         });
@@ -142,7 +142,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         // test-architect: Verify database still contains the entity
         // Create new entity with same key and verify it loads from disk
         var newEntity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, static (ref behavior) =>
+        newEntity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("deactivate-test-key");
         });
@@ -157,18 +157,18 @@ public sealed class PersistenceLifecycleTests : IDisposable
     {
         // Arrange: Create entity with persistence
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("removal-test-key");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("experience", 5000f) };
         });
         DatabaseRegistry.Instance.Flush();
         
         // Act: Modify entity, remove PersistToDiskBehavior, then flush
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("experience", 10000f) };
         });
@@ -180,7 +180,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         
         // Assert: Database should still have original state (5000), not the modified state (10000)
         var newEntity1 = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity1, static (ref behavior) =>
+        newEntity1.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("removal-test-key");
         });
@@ -189,7 +189,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         Assert.Equal(5000f, props1.Value.Properties["experience"]); // Original value, not 10000
         
         // test-architect: Modify entity again and flush - should NOT update disk (no PersistToDiskBehavior)
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("experience", 20000f) };
         });
@@ -197,7 +197,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         
         // Verify disk still has 5000 (not 20000)
         var newEntity2 = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity2, static (ref behavior) =>
+        newEntity2.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("removal-test-key");
         });

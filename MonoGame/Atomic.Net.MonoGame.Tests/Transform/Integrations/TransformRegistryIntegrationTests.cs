@@ -151,7 +151,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         TransformRegistry.Instance.Recalculate();
         
         // Modify parent transform to make it dirty
-        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(parent.Value, (ref t) =>
+        parent.Value.SetBehavior<TransformBehavior>(static (ref t) =>
         {
             t.Position = new Vector3(200f, 0f, 0f);
         });
@@ -342,7 +342,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity1));
         
-        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(entity1.Value, (ref t) =>
+        entity1.Value.SetBehavior<TransformBehavior>(static (ref t) =>
         {
             t.Position = new Vector3(999f, 999f, 999f);
         });
@@ -490,7 +490,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         TransformRegistry.Instance.Recalculate();
         
         // Modify only leaf
-        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(leaf.Value, (ref t) =>
+        leaf.Value.SetBehavior<TransformBehavior>(static (ref t) =>
         {
             t.Position = new Vector3(40f, 0f, 0f);
         });
@@ -517,7 +517,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         TransformRegistry.Instance.Recalculate();
         
         // Modify middle node
-        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(middle.Value, (ref t) =>
+        middle.Value.SetBehavior<TransformBehavior>(static (ref t) =>
         {
             t.Position = new Vector3(25f, 0f, 0f);
         });
@@ -544,7 +544,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         TransformRegistry.Instance.Recalculate();
         
         // Modify root
-        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(root.Value, (ref t) =>
+        root.Value.SetBehavior<TransformBehavior>(static (ref t) =>
         {
             t.Position = new Vector3(100f, 0f, 0f);
         });
@@ -592,7 +592,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         TransformRegistry.Instance.Recalculate();
         
         // Modify level2
-        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(level2.Value, (ref t) =>
+        level2.Value.SetBehavior<TransformBehavior>(static (ref t) =>
         {
             t.Position = new Vector3(20f, 0f, 0f);
         });
@@ -619,7 +619,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         TransformRegistry.Instance.Recalculate();
         
         // Modify left child
-        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(leftChild.Value, (ref t) =>
+        leftChild.Value.SetBehavior<TransformBehavior>(static (ref t) =>
         {
             t.Position = new Vector3(100f, 10f, 0f);
         });

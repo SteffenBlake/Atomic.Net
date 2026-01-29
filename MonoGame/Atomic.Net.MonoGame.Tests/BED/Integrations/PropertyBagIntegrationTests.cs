@@ -358,7 +358,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
 
         // Act
         // test-architect: Update properties by modifying the dictionary
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(goblin1.Value, (ref behavior) =>
+        goblin1.Value.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("max-health", 200f) };
         });
