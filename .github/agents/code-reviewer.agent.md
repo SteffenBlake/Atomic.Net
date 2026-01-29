@@ -43,3 +43,13 @@ The agents are EXTREMELY prone to bad code and choices, you MUST crack down on t
 9. SKIPPED TESTS STILL MUST SUCCESSFULLY COMPILE AND BUILD, AND NO, COMMENTING OUT BROKEN CODE DOESNT COUNT AS FIXING IT, AND NO, REMOVING CODE (WHICH MAKES THE TEST FAKE) DOESNT COUNT EITHER, THE TESTS MUST ACTUALLY BUILD AND BE VALID
     
 10. DO NOT ALLOW THE DEV WEASLE OUT OF THIS
+
+11. Check to make sure lambda functions are `static` and dont capture closures.
+
+12. Check for unnecessary Try/Catches (agents are very prone to shoving them all over for no reason)
+
+13. Check for anytime an if statement can be inverted to reduce nesting and be swapped to a guard clause
+
+14. Check for places where the agent has declared a variable unitialized, then assigns it in an inner scope (often happesn with try/catch stuff), tell them they MUST extract this out to be a TryDo result pattern function with NotNullWhen attribute to follow established patterns.
+
+15. Harp on them about littering the code with too many comments. Make sure they dont put useless comments all over, comments only should be reserved for cases when the code isnt exactly clear why it was done the way it was.
