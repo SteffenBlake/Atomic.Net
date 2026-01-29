@@ -15,7 +15,7 @@
     "do": {
       "mut": [
         {
-          "target": "properties.totalEnemyHealth",
+          "target": {"properties": "totalEnemyHealth"},
           "value": {
             "reduce": [
               { "var": "entities" },

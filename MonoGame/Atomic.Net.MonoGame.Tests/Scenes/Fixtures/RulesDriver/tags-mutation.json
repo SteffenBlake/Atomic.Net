@@ -11,7 +11,7 @@
     "do": {
       "mut": [
         {
-          "target": "tags",
+          "target": {"tags": true},
           "value": { "merge": [{ "var": { "cat": ["entities.", { "var": "index" }, ".tags"] } }, ["boss"]] }
         }
       ]

@@ -14,7 +14,7 @@
     "do": {
       "mut": [
         {
-          "target": "transform.anchor.x",
+          "target": {"transform": {"anchor": "x"}},
           "value": 0.5
         }
       ]

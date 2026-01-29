@@ -15,7 +15,7 @@
     "do": {
       "mut": [
         {
-          "target": "parent",
+          "target": {"parent": true},
           "value": "@parent-node"
         }
       ]

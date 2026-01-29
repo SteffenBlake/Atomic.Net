@@ -39,46 +39,83 @@ public static class MutCmdDriver
         // because the logic tree needs to be reused. DeepClone() is necessary here.
         var clonedValue = computedValue.DeepClone();
 
-        // Target must be a string representing the path to a leaf value
-        if (operation.Target is not JsonValue targetValue || !targetValue.TryGetValue<string>(out var targetPath))
+        // Target must be a nested JsonObject representing the path to the target field
+        // Examples: {"properties": "health"}, {"transform": {"position": "x"}}, {"id": true}
+        if (operation.Target is not JsonObject targetObj)
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent("Target must be a string path to a leaf value"));
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Target must be a JsonObject specifying the path"));
             return;
         }
 
-        // Parse the path and navigate to set the leaf value
-        SetLeafValue(entityObj, targetPath, clonedValue);
+        // Navigate the target path and set the value
+        SetValueAtPath(entityObj, targetObj, clonedValue);
     }
 
-    private static void SetLeafValue(JsonObject entityJson, string path, JsonNode value)
+    private static void SetValueAtPath(JsonObject entityJson, JsonObject targetPath, JsonNode value)
     {
-        var parts = path.Split('.');
+        // The target path is a nested JsonObject that mirrors the entity JSON structure
+        // Examples:
+        // {"properties": "health"} -> entityJson["properties"]["health"] = value
+        // {"transform": {"position": "x"}} -> entityJson["transform"]["position"]["x"] = value
+        // {"id": true} -> entityJson["id"] = value (the value in target doesn't matter for simple fields)
+        // {"flexGrow": true} -> entityJson["flexGrow"] = value
         
-        if (parts.Length == 1)
+        if (targetPath.Count != 1)
         {
-            // Simple field like "id", "flexGrow", "parent"
-            entityJson[parts[0]] = value;
+            EventBus<ErrorEvent>.Push(new ErrorEvent($"Target path must have exactly one root key, got {targetPath.Count}"));
             return;
         }
 
-        // Navigate to the parent of the leaf
-        JsonObject? current = entityJson;
-        for (int i = 0; i < parts.Length - 1; i++)
-        {
-            var part = parts[i];
-            
-            if (!current.TryGetPropertyValue(part, out var node) || node is not JsonObject obj)
-            {
-                // Create the intermediate object if it doesn't exist
-                obj = new JsonObject();
-                current[part] = obj;
-            }
-            
-            current = (JsonObject)obj;
-        }
+        var rootKey = targetPath.First().Key;
+        var rootValue = targetPath.First().Value;
 
-        // Set the leaf value
-        current[parts[^1]] = value;
+        // Navigate to the target location
+        if (rootValue is JsonObject nestedPath)
+        {
+            // Multi-level path like {"transform": {"position": "x"}}
+            // Ensure the intermediate object exists
+            if (!entityJson.TryGetPropertyValue(rootKey, out var intermediate) || intermediate is not JsonObject intermediateObj)
+            {
+                // Create intermediate object if it doesn't exist
+                intermediateObj = new JsonObject();
+                entityJson[rootKey] = intermediateObj;
+            }
+
+            // Recursively navigate deeper
+            SetValueAtPath((JsonObject)intermediateObj, nestedPath, value);
+        }
+        else if (rootValue is JsonValue leafValue)
+        {
+            // We're at a leaf in the path
+            // The value could be:
+            // 1. A string specifying the final key (e.g., "health" in {"properties": "health"})
+            // 2. A boolean/other value that's just a marker (e.g., true in {"id": true})
+            
+            if (leafValue.TryGetValue<string>(out var finalKey))
+            {
+                // Case 1: The leaf value is a string key (e.g., {"properties": "health"})
+                // Ensure the parent object exists
+                if (!entityJson.TryGetPropertyValue(rootKey, out var parent) || parent is not JsonObject parentObj)
+                {
+                    // Create parent object if it doesn't exist
+                    parentObj = new JsonObject();
+                    entityJson[rootKey] = parentObj;
+                }
+
+                // Set the value at the final key
+                parentObj[finalKey] = value;
+            }
+            else
+            {
+                // Case 2: The leaf value is just a marker (e.g., {"id": true})
+                // Set the value directly at the root key
+                entityJson[rootKey] = value;
+            }
+        }
+        else
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent($"Invalid target path structure at key '{rootKey}'"));
+        }
     }
 
     private static bool TryApplyJsonLogic(JsonNode logic, JsonNode data, [NotNullWhen(true)] out JsonNode? result)
