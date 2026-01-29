@@ -308,7 +308,7 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
 
         // Act - Swap tags (remove enemy, add ally)
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Remove("enemy").Add("ally") }
+            (ref b) => b = b with { Tags = b.Tags.Without("enemy").Add("ally") }
         );
         enemySelector.Recalc();
         allySelector.Recalc();

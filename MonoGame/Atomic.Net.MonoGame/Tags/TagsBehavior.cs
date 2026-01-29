@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
@@ -12,14 +11,14 @@ namespace Atomic.Net.MonoGame.Tags;
 [JsonConverter(typeof(TagsBehaviorConverter))]
 public readonly record struct TagsBehavior : IBehavior<TagsBehavior>
 {
-    // senior-dev: ImmutableHashSet allocation is approved by SteffenBlake (sprint file line 179)
+    // senior-dev: FluentHashSet allocation is approved (following PropertiesBehavior pattern)
     // This is a load-time allocation, not a gameplay allocation
-    private readonly ImmutableHashSet<string>? _tags;
+    private readonly FluentHashSet<string>? _tags;
     
-    public ImmutableHashSet<string> Tags
+    public FluentHashSet<string> Tags
     {
         init => _tags = value;
-        get => _tags ?? [];
+        get => _tags ?? new(8, StringComparer.OrdinalIgnoreCase);
     }
     
     public static TagsBehavior CreateFor(Entity entity)

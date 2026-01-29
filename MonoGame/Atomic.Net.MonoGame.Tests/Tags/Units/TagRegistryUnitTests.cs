@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using Atomic.Net.MonoGame;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
@@ -179,7 +178,7 @@ public sealed class TagRegistryUnitTests : IDisposable
 
         // Act - Update to remove "goblin" tag
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Remove("goblin") }
+            (ref b) => b = b with { Tags = b.Tags.Without("goblin") }
         );
 
         // Assert
@@ -251,7 +250,7 @@ public sealed class TagRegistryUnitTests : IDisposable
 
         // Act - Update fires PreBehaviorUpdatedEvent then PostBehaviorUpdatedEvent
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Remove("old-tag").Add("new-tag") }
+            (ref b) => b = b with { Tags = b.Tags.Without("old-tag").Add("new-tag") }
         );
 
         // Assert

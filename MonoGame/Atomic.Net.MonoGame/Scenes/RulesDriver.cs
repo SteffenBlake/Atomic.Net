@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Nodes;
 using Atomic.Net.MonoGame.BED;
@@ -34,9 +33,9 @@ public sealed class RulesDriver :
 
     private readonly List<string> _tempTagsList = new(32);
     
-    // senior-dev: Pre-allocated builder to reduce allocations when creating ImmutableHashSet
-    // ToImmutable() still allocates, but reusing the builder is more efficient than ToImmutableHashSet()
-    private readonly ImmutableHashSet<string>.Builder _tagsBuilder = ImmutableHashSet.CreateBuilder<string>();
+    // senior-dev: Pre-allocated FluentHashSet to reduce allocations when setting tags
+    // Reusing the same instance avoids allocating a new HashSet for every mutation
+    private readonly FluentHashSet<string> _tagsHashSet = new(32, StringComparer.OrdinalIgnoreCase);
 
     internal static void Initialize()
     {
@@ -857,11 +856,14 @@ public sealed class RulesDriver :
             return false;
         }
 
-        _tagsBuilder.Clear();
-        _tagsBuilder.UnionWith(_tempTagsList);
-        var tagsToSet = _tagsBuilder.ToImmutable();
-        entity.SetBehavior<TagsBehavior, ImmutableHashSet<string>>(
-            in tagsToSet,
+        _tagsHashSet.Clear();
+        foreach (var tag in _tempTagsList)
+        {
+            _tagsHashSet.Add(tag);
+        }
+        
+        entity.SetBehavior<TagsBehavior, FluentHashSet<string>>(
+            in _tagsHashSet,
             static (ref readonly _tags, ref b) => b = b with { Tags = _tags }
         );
 
