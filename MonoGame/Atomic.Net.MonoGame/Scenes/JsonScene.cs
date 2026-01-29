@@ -1,3 +1,5 @@
+using Atomic.Net.MonoGame.Sequencing;
+
 namespace Atomic.Net.MonoGame.Scenes;
 
 /// <summary>
@@ -14,4 +16,9 @@ public class JsonScene
     /// List of rules to spawn in the scene, optional.
     /// </summary>
     public List<JsonRule>? Rules { get; set; } = null;
+    
+    /// <summary>
+    /// List of sequences to register in the scene, optional.
+    /// </summary>
+    public List<JsonSequence>? Sequences { get; set; } = null;
 }
