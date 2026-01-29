@@ -306,8 +306,8 @@ public sealed class SequenceDriver :
         _doStepContext.Remove("self");
         _doStepContext["self"] = entityJson;
 
-        // Execute command
-        ExecuteSequenceCommand(doStep.Do, _doStepContext, entityIndex);
+        // Execute command, passing entityJson to mutate in-place
+        ExecuteSequenceCommand(doStep.Do, _doStepContext, entityJson, entityIndex);
 
         // Advance to next step immediately, carry forward all deltaTime
         nextStepIndex = (ushort)(state.StepIndex + 1);
@@ -337,7 +337,7 @@ public sealed class SequenceDriver :
             _tweenContext.Remove("self");
             _tweenContext["self"] = entityJson;
 
-            ExecuteSequenceCommand(tween.Do, _tweenContext, entityIndex);
+            ExecuteSequenceCommand(tween.Do, _tweenContext, entityJson, entityIndex);
 
             nextStepIndex = (ushort)(state.StepIndex + 1);
             leftoverTime = newElapsedTime - tween.Duration;
@@ -353,7 +353,7 @@ public sealed class SequenceDriver :
             _tweenContext.Remove("self");
             _tweenContext["self"] = entityJson;
 
-            ExecuteSequenceCommand(tween.Do, _tweenContext, entityIndex);
+            ExecuteSequenceCommand(tween.Do, _tweenContext, entityJson, entityIndex);
 
             // Update elapsed time
             var updatedState = new SequenceState(state.StepIndex, newElapsedTime);
@@ -412,7 +412,8 @@ public sealed class SequenceDriver :
 
         if (conditionMet)
         {
-            // Condition met - advance to next step (consumes all remaining time)
+            // Condition met - remove self from context and advance to next step
+            _repeatContext.Remove("self");
             nextStepIndex = (ushort)(state.StepIndex + 1);
             leftoverTime = 0f;
             return true;
@@ -432,7 +433,8 @@ public sealed class SequenceDriver :
                 ExecuteSequenceCommand(repeat.Do, _repeatContext, entityIndex);
             }
 
-            // Update elapsed time
+            // Update elapsed time (remove self before exiting)
+            _repeatContext.Remove("self");
             var updatedState = new SequenceState(state.StepIndex, newElapsedTime);
             if (_activeSequences.TryGetValue(entityIndex, out var entitySequences))
             {
@@ -450,10 +452,19 @@ public sealed class SequenceDriver :
     /// </summary>
     private static void ExecuteSequenceCommand(SceneCommand command, JsonObject context, ushort entityIndex)
     {
-        // Handle MutCommand - mutate JsonNode context, not entity
+        // Extract entityJson from context
+        if (!context.TryGetPropertyValue("self", out var selfNode) || selfNode is not JsonObject entityJson)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Context does not contain 'self' object for entity {entityIndex}"
+            ));
+            return;
+        }
+        
+        // Handle MutCommand - mutate entityJson via MutCmdDriver
         if (command.TryMatch(out MutCommand mutCommand))
         {
-            ApplyMutationToJsonNode(mutCommand, context, entityIndex);
+            MutCmdDriver.Execute(mutCommand, context, entityJson, entityIndex);
             return;
         }
 
@@ -484,102 +495,13 @@ public sealed class SequenceDriver :
     }
 
     /// <summary>
-    /// Applies a mutation command to the JsonNode context instead of the entity.
-    /// This allows sequential mutations in the same frame to compound.
+    /// Applies the accumulated mutations from entityJson to the actual entity.
+    /// Called once after all sequences for an entity have been processed.
+    /// Public wrapper for RulesDriver to use.
     /// </summary>
-    private static void ApplyMutationToJsonNode(MutCommand command, JsonObject context, ushort entityIndex)
+    public static void ApplyJsonToEntityPublic(ushort entityIndex, JsonObject entityJson)
     {
-        foreach (var operation in command.Operations)
-        {
-            JsonNode? computedValue;
-            try
-            {
-                computedValue = JsonLogic.Apply(operation.Value, context);
-            }
-            catch (Exception ex)
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Failed to evaluate mutation value for entity {entityIndex}: {ex.Message}"
-                ));
-                continue;
-            }
-
-            if (computedValue == null)
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Mutation value evaluation returned null for entity {entityIndex}"
-                ));
-                continue;
-            }
-
-            // Apply mutation to JsonNode context
-            if (operation.Target is not JsonObject targetObj)
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Target is not a JsonObject for entity {entityIndex}"
-                ));
-                continue;
-            }
-
-            // Get the self object from context
-            if (!context.TryGetPropertyValue("self", out var selfNode) || selfNode is not JsonObject selfObj)
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Context does not contain 'self' object for entity {entityIndex}"
-                ));
-                continue;
-            }
-
-            // Handle property mutations
-            if (targetObj.TryGetPropertyValue("properties", out var propertyKeyNode) && propertyKeyNode != null)
-            {
-                var propertyKey = propertyKeyNode.GetValue<string>();
-                
-                // Get or create properties object in self
-                if (!selfObj.TryGetPropertyValue("properties", out var propsNode) || propsNode is not JsonObject propertiesObj)
-                {
-                    propertiesObj = new JsonObject();
-                    selfObj["properties"] = propertiesObj;
-                }
-                else
-                {
-                    propertiesObj = (JsonObject)propsNode;
-                }
-                
-                // Apply the mutation to the properties object
-                // Clone the computed value to avoid parent conflicts
-                JsonNode? valueToAssign;
-                if (computedValue is JsonValue jsonVal)
-                {
-                    // For JsonValue, we can safely recreate it
-                    if (jsonVal.TryGetValue<string>(out var strVal))
-                    {
-                        valueToAssign = JsonValue.Create(strVal);
-                    }
-                    else if (jsonVal.TryGetValue<float>(out var floatVal))
-                    {
-                        valueToAssign = JsonValue.Create(floatVal);
-                    }
-                    else if (jsonVal.TryGetValue<bool>(out var boolVal))
-                    {
-                        valueToAssign = JsonValue.Create(boolVal);
-                    }
-                    else
-                    {
-                        // Fallback: deep clone
-                        valueToAssign = JsonNode.Parse(computedValue.ToJsonString());
-                    }
-                }
-                else
-                {
-                    // For complex types, deep clone
-                    valueToAssign = JsonNode.Parse(computedValue.ToJsonString());
-                }
-                
-                propertiesObj[propertyKey] = valueToAssign;
-            }
-            // Add support for other mutation types as needed (transform, tags, etc.)
-        }
+        ApplyJsonToEntity(entityIndex, entityJson);
     }
 
     /// <summary>

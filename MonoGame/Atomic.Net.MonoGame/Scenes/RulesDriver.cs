@@ -101,6 +101,9 @@ public sealed class RulesDriver :
             
             ProcessEntityCommand(entity, rule.Do, _worldContext);
         }
+        
+        // Apply all accumulated mutations from entityJson back to actual entities
+        ApplyEntitiesJsonToEntities(filteredEntities);
     }
 
     /// <summary>
@@ -145,7 +148,17 @@ public sealed class RulesDriver :
         // Handle MutCommand
         if (command.TryMatch(out MutCommand mutCommand))
         {
-            MutCmdDriver.Execute(mutCommand, ruleContext, entityIndex.Value);
+            // entity is already a JsonObject representing the entity
+            if (entity is not JsonObject entityJson)
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Entity is not a JsonObject for mutation on entity {entityIndex.Value}"
+                ));
+                return;
+            }
+            
+            // Don't apply to entity immediately - mutations accumulate in entityJson
+            MutCmdDriver.Execute(mutCommand, ruleContext, entityJson, entityIndex.Value, applyToEntity: false);
             return;
         }
 
@@ -233,6 +246,31 @@ public sealed class RulesDriver :
             ));
             entityIndex = null;
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Applies accumulated mutations from entityJson objects back to actual entities.
+    /// Called after all rules have been processed.
+    /// </summary>
+    private static void ApplyEntitiesJsonToEntities(JsonArray entities)
+    {
+        foreach (var entityNode in entities)
+        {
+            if (entityNode is not JsonObject entityJson)
+            {
+                continue;
+            }
+            
+            if (!entityJson.TryGetPropertyValue("_index", out var indexNode))
+            {
+                continue;
+            }
+            
+            var entityIndex = indexNode.GetValue<ushort>();
+            
+            // Use SequenceDriver's ApplyJsonToEntity helper
+            Sequencing.SequenceDriver.ApplyJsonToEntityPublic(entityIndex, entityJson);
         }
     }
 }
