@@ -11,7 +11,8 @@ namespace Atomic.Net.MonoGame.Sequencing;
 /// </summary>
 public sealed class SequenceDriver : 
     ISingleton<SequenceDriver>,
-    IEventHandler<PreEntityDeactivatedEvent>
+    IEventHandler<PreEntityDeactivatedEvent>,
+    IEventHandler<UpdateFrameEvent>
 {
     internal static void Initialize()
     {
@@ -22,6 +23,7 @@ public sealed class SequenceDriver :
 
         Instance = new();
         EventBus<PreEntityDeactivatedEvent>.Register(Instance);
+        EventBus<UpdateFrameEvent>.Register(Instance);
     }
 
     public static SequenceDriver Instance { get; private set; } = null!;
@@ -134,6 +136,14 @@ public sealed class SequenceDriver :
     }
 
     /// <summary>
+    /// Handles frame update event to process all sequences.
+    /// </summary>
+    public void OnEvent(UpdateFrameEvent evt)
+    {
+        RunFrame((float)evt.Elapsed.TotalSeconds);
+    }
+
+    /// <summary>
     /// Processes a single sequence on an entity.
     /// Loops through steps until one doesn't complete immediately, carrying over leftover time.
     /// </summary>
@@ -163,7 +173,7 @@ public sealed class SequenceDriver :
             
             // Track if step completed this iteration
             bool stepCompleted = false;
-            byte nextStepIndex = currentState.StepIndex;
+            ushort nextStepIndex = currentState.StepIndex;
             float leftoverTime = 0f;
             
             // Process step based on type
@@ -219,14 +229,14 @@ public sealed class SequenceDriver :
         SequenceState state,
         DelayStep delay,
         float newElapsedTime,
-        out byte nextStepIndex,
+        out ushort nextStepIndex,
         out float leftoverTime
     )
     {
         if (newElapsedTime >= delay.Duration)
         {
             // Delay complete - advance to next step with leftover time
-            nextStepIndex = (byte)(state.StepIndex + 1);
+            nextStepIndex = (ushort)(state.StepIndex + 1);
             leftoverTime = newElapsedTime - delay.Duration;
             return true;
         }
@@ -255,7 +265,7 @@ public sealed class SequenceDriver :
         DoStep doStep,
         JsonObject entityJson,
         float deltaTime,
-        out byte nextStepIndex,
+        out ushort nextStepIndex,
         out float leftoverTime
     )
     {
@@ -270,7 +280,7 @@ public sealed class SequenceDriver :
         ExecuteSequenceCommand(doStep.Do, context, entityIndex);
 
         // Advance to next step immediately, carry forward all deltaTime
-        nextStepIndex = (byte)(state.StepIndex + 1);
+        nextStepIndex = (ushort)(state.StepIndex + 1);
         leftoverTime = deltaTime;
         return true;
     }
@@ -286,7 +296,7 @@ public sealed class SequenceDriver :
         TweenStep tween,
         JsonObject entityJson,
         float newElapsedTime,
-        out byte nextStepIndex,
+        out ushort nextStepIndex,
         out float leftoverTime
     )
     {
@@ -301,7 +311,7 @@ public sealed class SequenceDriver :
 
             ExecuteSequenceCommand(tween.Do, context, entityIndex);
 
-            nextStepIndex = (byte)(state.StepIndex + 1);
+            nextStepIndex = (ushort)(state.StepIndex + 1);
             leftoverTime = newElapsedTime - tween.Duration;
             return true;
         }
@@ -342,7 +352,7 @@ public sealed class SequenceDriver :
         RepeatStep repeat,
         JsonObject entityJson,
         float newElapsedTime,
-        out byte nextStepIndex,
+        out ushort nextStepIndex,
         out float leftoverTime
     )
     {
@@ -379,7 +389,7 @@ public sealed class SequenceDriver :
         if (conditionMet)
         {
             // Condition met - advance to next step (consumes all remaining time)
-            nextStepIndex = (byte)(state.StepIndex + 1);
+            nextStepIndex = (ushort)(state.StepIndex + 1);
             leftoverTime = 0f;
             return true;
         }

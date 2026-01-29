@@ -1,6 +1,7 @@
 namespace Atomic.Net.MonoGame.Sequencing;
 
 /// <summary>
-/// Tracks execution state of a sequence instance.
+/// Runtime state of a sequence instance.
+/// Tracks which step is executing and elapsed time in that step.
 /// </summary>
-public readonly record struct SequenceState(byte StepIndex, float StepElapsedTime);
+public readonly record struct SequenceState(ushort StepIndex, float StepElapsedTime);
