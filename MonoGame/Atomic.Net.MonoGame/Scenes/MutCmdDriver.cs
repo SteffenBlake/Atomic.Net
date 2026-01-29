@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using Atomic.Net.MonoGame.Core;
 using Json.Logic;
@@ -12,6 +11,19 @@ namespace Atomic.Net.MonoGame.Scenes;
 /// </summary>
 public static class MutCmdDriver
 {
+    // Pre-allocated array to avoid allocation on every error
+    private static readonly string[] ValidTargets = [
+        "properties", "id", "tags", "transform", "parent",
+        "flexAlignItems", "flexAlignSelf",
+        "flexBorderBottom", "flexBorderLeft", "flexBorderRight", "flexBorderTop",
+        "flexDirection", "flexGrow", "flexWrap", "flexZOverride",
+        "flexHeight", "flexJustifyContent",
+        "flexMarginBottom", "flexMarginLeft", "flexMarginRight", "flexMarginTop",
+        "flexPaddingBottom", "flexPaddingLeft", "flexPaddingRight", "flexPaddingTop",
+        "flexPositionBottom", "flexPositionLeft", "flexPositionRight", "flexPositionTop", "flexPositionType",
+        "flexWidth"
+    ];
+
     /// <summary>
     /// Executes a MutCommand by applying all operations to the entity JsonNode.
     /// </summary>
@@ -44,14 +56,6 @@ public static class MutCmdDriver
             return;
         }
 
-        if (computedValue == null)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                "Mutation value evaluation returned null"
-            ));
-            return;
-        }
-
         if (operation.Target is not JsonObject targetObj)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
@@ -65,7 +69,7 @@ public static class MutCmdDriver
 
     private static void ApplyToEntityJson(JsonObject target, JsonNode value, JsonObject entityJson)
     {
-        if (target.TryGetPropertyValue("properties", out var propertyKeyNode) && propertyKeyNode != null)
+        if (target.TryGetPropertyValue("properties", out var propertyKeyNode))
         {
             if (!TryGetStringValue(propertyKeyNode, out var propertyKey))
             {
@@ -73,12 +77,16 @@ public static class MutCmdDriver
                 return;
             }
 
-            if (!entityJson.ContainsKey("properties"))
+            if (!entityJson.TryGetPropertyValue("properties", out var propsNode) || propsNode is not JsonObject propertiesObj)
             {
-                entityJson["properties"] = new JsonObject();
+                propertiesObj = new JsonObject();
+                entityJson["properties"] = propertiesObj;
+            }
+            else
+            {
+                propertiesObj = (JsonObject)propsNode;
             }
 
-            var propertiesObj = entityJson["properties"]!.AsObject();
             propertiesObj[propertyKey] = value;
         }
         else if (target.TryGetPropertyValue("id", out _))
@@ -89,19 +97,50 @@ public static class MutCmdDriver
         {
             entityJson["tags"] = value;
         }
-        else if (target.TryGetPropertyValue("transform", out var transformField) && transformField != null)
+        else if (target.TryGetPropertyValue("transform", out var transformTarget))
         {
-            if (!entityJson.ContainsKey("transform"))
+            if (transformTarget is not JsonObject transformTargetObj)
             {
-                entityJson["transform"] = new JsonObject();
+                EventBus<ErrorEvent>.Push(new ErrorEvent("Transform target must be a JsonObject specifying a property"));
+                return;
             }
 
-            var transformObj = entityJson["transform"]!.AsObject();
-            if (transformField is JsonObject transformFieldObj)
+            if (!entityJson.TryGetPropertyValue("transform", out var transformNode) || transformNode is not JsonObject transformObj)
             {
-                foreach (var (key, _) in transformFieldObj)
+                transformObj = new JsonObject();
+                entityJson["transform"] = transformObj;
+            }
+            else
+            {
+                transformObj = (JsonObject)transformNode;
+            }
+
+            // transformTarget is like { "position": "x" } or { "scale": null } (meaning the whole scale)
+            foreach (var (transformPropName, transformPropTarget) in transformTargetObj)
+            {
+                if (transformPropTarget is null)
                 {
-                    transformObj[key] = value;
+                    // Setting entire property (e.g., entire "position" Vector3)
+                    transformObj[transformPropName] = value;
+                }
+                else if (transformPropTarget is JsonValue propValue && propValue.TryGetValue<string>(out var componentName))
+                {
+                    // Setting specific component (e.g., "position": "x")
+                    if (!transformObj.TryGetPropertyValue(transformPropName, out var existingPropNode) || existingPropNode is not JsonObject existingPropObj)
+                    {
+                        existingPropObj = new JsonObject();
+                        transformObj[transformPropName] = existingPropObj;
+                    }
+                    else
+                    {
+                        existingPropObj = (JsonObject)existingPropNode;
+                    }
+
+                    existingPropObj[componentName] = value;
+                }
+                else
+                {
+                    EventBus<ErrorEvent>.Push(new ErrorEvent($"Invalid transform property target for '{transformPropName}'"));
                 }
             }
         }
@@ -215,18 +254,7 @@ public static class MutCmdDriver
         }
         else
         {
-            var validTargets = string.Join(", ", new[]
-            {
-                "properties", "id", "tags", "transform", "parent",
-                "flexAlignItems", "flexAlignSelf",
-                "flexBorderBottom", "flexBorderLeft", "flexBorderRight", "flexBorderTop",
-                "flexDirection", "flexGrow", "flexWrap", "flexZOverride",
-                "flexHeight", "flexJustifyContent",
-                "flexMarginBottom", "flexMarginLeft", "flexMarginRight", "flexMarginTop",
-                "flexPaddingBottom", "flexPaddingLeft", "flexPaddingRight", "flexPaddingTop",
-                "flexPositionBottom", "flexPositionLeft", "flexPositionRight", "flexPositionTop", "flexPositionType",
-                "flexWidth"
-            });
+            var validTargets = string.Join(", ", ValidTargets);
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Unrecognized target. Expected one of: {validTargets}"
             ));
@@ -234,28 +262,15 @@ public static class MutCmdDriver
     }
 
     private static bool TryApplyJsonLogic(
-        JsonNode? rule,
-        JsonNode? data,
+        JsonNode logic,
+        JsonNode data,
         [NotNullWhen(true)]
         out JsonNode? result
     )
     {
-        if (rule == null)
-        {
-            result = null;
-            return false;
-        }
-
         try
         {
-            var jsonLogicRule = JsonSerializer.Deserialize<Rule>(rule.ToJsonString());
-            if (jsonLogicRule == null)
-            {
-                result = null;
-                return false;
-            }
-
-            result = jsonLogicRule.Apply(data);
+            result = JsonLogic.Apply(logic, data);
             return result != null;
         }
         catch (Exception ex)
@@ -267,7 +282,7 @@ public static class MutCmdDriver
     }
 
     private static bool TryGetStringValue(
-        JsonNode node,
+        JsonNode? node,
         [NotNullWhen(true)]
         out string? value
     )

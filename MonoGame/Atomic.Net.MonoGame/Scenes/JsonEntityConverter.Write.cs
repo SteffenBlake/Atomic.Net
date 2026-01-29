@@ -57,13 +57,9 @@ public static partial class JsonEntityConverter
             return;
         }
 
-        // Clear existing properties first
+        // Clear existing properties first, then add new ones
         entity.SetBehavior<PropertiesBehavior>(
-            static (ref b) =>
-            {
-                b.Properties.Clear();
-                b = b with { Properties = b.Properties };
-            }
+            static (ref b) => b.Properties.Clear()
         );
 
         foreach (var (key, valueNode) in propertiesObj)
