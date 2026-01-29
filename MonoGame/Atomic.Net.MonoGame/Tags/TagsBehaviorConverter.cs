@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -32,7 +31,7 @@ public partial class TagsBehaviorConverter : JsonConverter<TagsBehavior>
             return default;
         }
         
-        var builder = ImmutableHashSet.CreateBuilder<string>(StringComparer.OrdinalIgnoreCase);
+        var tags = new FluentHashSet<string>(8, StringComparer.OrdinalIgnoreCase);
         
         while (reader.Read())
         {
@@ -75,7 +74,7 @@ public partial class TagsBehaviorConverter : JsonConverter<TagsBehavior>
             }
             
             // Guard: duplicate tag
-            if (!builder.Add(normalizedTag))
+            if (!tags.Add(normalizedTag))
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent($"Duplicate tag '{tag}' in entity (skipped)"));
                 continue;
@@ -84,7 +83,7 @@ public partial class TagsBehaviorConverter : JsonConverter<TagsBehavior>
         
         return new TagsBehavior
         {
-            Tags = builder.ToImmutable()
+            Tags = tags
         };
     }
     

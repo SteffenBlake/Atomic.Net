@@ -57,7 +57,7 @@ public class SparsePoisonBenchmark
             {
                 // Add #poisoned tag
                 entity.SetBehavior<TagsBehavior>((ref b) => 
-                    b = b with { Tags = b.Tags.Add("poisoned") }
+                    b = b with { Tags = b.Tags.With("poisoned") }
                 );
 
                 // 50% of poisoned entities get poisonStacks (90-100 range)

@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
@@ -126,7 +125,7 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
         }
     }
 
-    private void RegisterTags(Entity entity, ImmutableHashSet<string> tags)
+    private void RegisterTags(Entity entity, FluentHashSet<string> tags)
     {
         foreach (var tag in tags)
         {
@@ -142,7 +141,7 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
         }
     }
 
-    private void UnregisterTags(Entity entity, ImmutableHashSet<string> tags)
+    private void UnregisterTags(Entity entity, FluentHashSet<string> tags)
     {
         foreach (var tag in tags)
         {

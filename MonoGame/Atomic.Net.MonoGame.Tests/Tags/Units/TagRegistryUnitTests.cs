@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using Atomic.Net.MonoGame;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
@@ -37,7 +36,7 @@ public sealed class TagRegistryUnitTests : IDisposable
 
         // Act
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy") }
         );
 
         // Assert
@@ -53,7 +52,7 @@ public sealed class TagRegistryUnitTests : IDisposable
 
         // Act
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy").Add("goblin").Add("hostile") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy").With("goblin").With("hostile") }
         );
 
         // Assert
@@ -77,13 +76,13 @@ public sealed class TagRegistryUnitTests : IDisposable
 
         // Act
         entity1.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy") }
         );
         entity2.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy") }
         );
         entity3.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy") }
         );
 
         // Assert
@@ -99,12 +98,12 @@ public sealed class TagRegistryUnitTests : IDisposable
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy") }
         );
 
         // Act - Update with additional tags
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy").Add("boss") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy").With("boss") }
         );
 
         // Assert
@@ -121,7 +120,7 @@ public sealed class TagRegistryUnitTests : IDisposable
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy") }
         );
 
         // Act & Assert - All case variations should resolve to same entity
@@ -157,7 +156,7 @@ public sealed class TagRegistryUnitTests : IDisposable
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy").Add("goblin") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy").With("goblin") }
         );
 
         // Act - Remove behavior
@@ -174,12 +173,12 @@ public sealed class TagRegistryUnitTests : IDisposable
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy").Add("goblin").Add("hostile") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy").With("goblin").With("hostile") }
         );
 
         // Act - Update to remove "goblin" tag
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Remove("goblin") }
+            (ref b) => b = b with { Tags = b.Tags.Without("goblin") }
         );
 
         // Assert
@@ -202,7 +201,7 @@ public sealed class TagRegistryUnitTests : IDisposable
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy").Add("goblin") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy").With("goblin") }
         );
 
         // Act - Deactivate entity
@@ -232,7 +231,7 @@ public sealed class TagRegistryUnitTests : IDisposable
 
         // Act - SetBehavior fires BehaviorAddedEvent
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy") }
         );
 
         // Assert
@@ -246,12 +245,12 @@ public sealed class TagRegistryUnitTests : IDisposable
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("old-tag") }
+            (ref b) => b = b with { Tags = b.Tags.With("old-tag") }
         );
 
         // Act - Update fires PreBehaviorUpdatedEvent then PostBehaviorUpdatedEvent
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Remove("old-tag").Add("new-tag") }
+            (ref b) => b = b with { Tags = b.Tags.Without("old-tag").With("new-tag") }
         );
 
         // Assert
@@ -270,7 +269,7 @@ public sealed class TagRegistryUnitTests : IDisposable
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy").Add("boss") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy").With("boss") }
         );
 
         // Act - Remove fires PreBehaviorRemovedEvent
@@ -294,7 +293,7 @@ public sealed class TagRegistryUnitTests : IDisposable
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy") }
         );
 
         // Act - Deactivate triggers PreBehaviorRemovedEvent cascade
@@ -318,10 +317,10 @@ public sealed class TagRegistryUnitTests : IDisposable
         var globalEntity = EntityRegistry.Instance.ActivateGlobal();
         var sceneEntity = EntityRegistry.Instance.Activate();
         globalEntity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy") }
         );
         sceneEntity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy") }
         );
 
         // Act - ResetEvent clears scene entities

@@ -37,7 +37,7 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy") }
         );
 
         // Act
@@ -56,13 +56,13 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
         var entity2 = EntityRegistry.Instance.Activate();
         var entity3 = EntityRegistry.Instance.Activate();
         entity1.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy") }
         );
         entity2.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy") }
         );
         entity3.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy") }
         );
 
         // Act
@@ -81,7 +81,7 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy").Add("boss") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy").With("boss") }
         );
 
         // Act
@@ -128,15 +128,15 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
         var enemyBoss = EntityRegistry.Instance.Activate();
 
         enemyOnly.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy") }
         );
         
         bossOnly.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("boss") }
+            (ref b) => b = b with { Tags = b.Tags.With("boss") }
         );
         
         enemyBoss.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy").Add("boss") }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy").With("boss") }
         );
 
         // Act
@@ -160,14 +160,14 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
             (ref b) => b = b with { Id = "player" }
         );
         entity1.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy")  }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy")  }
         );
 
         entity2.SetBehavior<IdBehavior>(
             (ref b) => b = b with { Id = "npc" }
         );
         entity2.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy")  }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy")  }
         );
 
         // Act
@@ -192,13 +192,13 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
         var neither = EntityRegistry.Instance.Activate();
 
         enemyOnly.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy")  }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy")  }
         );
         bossOnly.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("boss")  }
+            (ref b) => b = b with { Tags = b.Tags.With("boss")  }
         );
         neither.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("friendly")  }
+            (ref b) => b = b with { Tags = b.Tags.With("friendly")  }
         );
 
         // Act
@@ -221,13 +221,13 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
         var noTags = EntityRegistry.Instance.Activate();
 
         tag1.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("tag1")  }
+            (ref b) => b = b with { Tags = b.Tags.With("tag1")  }
         );
         tag2.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("tag2")  }
+            (ref b) => b = b with { Tags = b.Tags.With("tag2")  }
         );
         tag3.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("tag3")  }
+            (ref b) => b = b with { Tags = b.Tags.With("tag3")  }
         );
 
         // Act
@@ -259,7 +259,7 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
 
         // Act - Add tag
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy")  }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy")  }
         );
         selector.Recalc();
 
@@ -273,7 +273,7 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy")  }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy")  }
         );
 
         Assert.True(SelectorRegistry.Instance.TryParse("#enemy", out var selector));
@@ -294,7 +294,7 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Add("enemy")  }
+            (ref b) => b = b with { Tags = b.Tags.With("enemy")  }
         );
 
         Assert.True(SelectorRegistry.Instance.TryParse("#enemy", out var enemySelector));
@@ -308,7 +308,7 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
 
         // Act - Swap tags (remove enemy, add ally)
         entity.SetBehavior<TagsBehavior>(
-            (ref b) => b = b with { Tags = b.Tags.Remove("enemy").Add("ally") }
+            (ref b) => b = b with { Tags = b.Tags.Without("enemy").With("ally") }
         );
         enemySelector.Recalc();
         allySelector.Recalc();

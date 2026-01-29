@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Nodes;
 using Atomic.Net.MonoGame.BED;
@@ -31,12 +30,6 @@ public sealed class RulesDriver :
         },
         ["entities"] = new JsonArray()
     };
-
-    private readonly List<string> _tempTagsList = new(32);
-    
-    // senior-dev: Pre-allocated builder to reduce allocations when creating ImmutableHashSet
-    // ToImmutable() still allocates, but reusing the builder is more efficient than ToImmutableHashSet()
-    private readonly ImmutableHashSet<string>.Builder _tagsBuilder = ImmutableHashSet.CreateBuilder<string>();
 
     internal static void Initialize()
     {
@@ -812,7 +805,20 @@ public sealed class RulesDriver :
             return false;
         }
 
-        _tempTagsList.Clear();
+        var entity = EntityRegistry.Instance[entityIndex];
+        if (!entity.Active)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Cannot mutate inactive entity {entityIndex}"
+            ));
+            return false;
+        }
+
+        // Clear existing tags first
+        entity.SetBehavior<TagsBehavior>(
+            static (ref b) => b = b with { Tags = b.Tags.Clear() }
+        );
+
         for (var i = 0; i < tagsArray.Count; i++)
         {
             var tagNode = tagsArray[i];
@@ -845,25 +851,11 @@ public sealed class RulesDriver :
                 return false;
             }
 
-            _tempTagsList.Add(tag);
+            entity.SetBehavior<TagsBehavior, string>(
+                in tag,
+                static (ref readonly _tag, ref b) => b = b with { Tags = b.Tags.With(_tag) }
+            );
         }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Cannot mutate inactive entity {entityIndex}"
-            ));
-            return false;
-        }
-
-        _tagsBuilder.Clear();
-        _tagsBuilder.UnionWith(_tempTagsList);
-        var tagsToSet = _tagsBuilder.ToImmutable();
-        entity.SetBehavior<TagsBehavior, ImmutableHashSet<string>>(
-            in tagsToSet,
-            static (ref readonly _tags, ref b) => b = b with { Tags = _tags }
-        );
 
         return true;
     }
