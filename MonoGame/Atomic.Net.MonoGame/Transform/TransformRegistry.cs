@@ -132,7 +132,7 @@ public sealed class TransformRegistry :
                 // Update world transform behavior
                 entity.SetBehavior<WorldTransformBehavior, Matrix>(
                     in worldTransform,
-                    (ref readonly input, ref wt) => wt.Value = input
+                    static (ref readonly input, ref wt) => wt.Value = input
                 );
 
                 // Use GetChildrenArray for allocation-free iteration
@@ -193,9 +193,8 @@ public sealed class TransformRegistry :
 
     public void OnEvent(BehaviorAddedEvent<TransformBehavior> e)
     {
-        BehaviorRegistry<WorldTransformBehavior>.Instance.SetBehavior(
-            e.Entity,
-            (ref _) => { }
+        e.Entity.SetBehavior<WorldTransformBehavior>(
+            static (ref _) => { }
         );
         MarkDirty(e.Entity);
     }
