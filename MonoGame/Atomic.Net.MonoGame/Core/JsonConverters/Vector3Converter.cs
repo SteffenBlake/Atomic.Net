@@ -4,6 +4,12 @@ using Microsoft.Xna.Framework;
 
 namespace Atomic.Net.MonoGame.Core.JsonConverters;
 
+/// <summary>
+/// JSON converter for Vector3 that serializes as object with x, y, z properties.
+/// Uses object format {"x": 1, "y": 2, "z": 3} instead of array [1, 2, 3] for
+/// better readability, self-documentation, and resilience to property order changes.
+/// Zero-allocation implementation using ValueTextEquals for property name comparison.
+/// </summary>
 public class Vector3Converter : JsonConverter<Vector3>
 {
     public override Vector3 Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -26,20 +32,24 @@ public class Vector3Converter : JsonConverter<Vector3>
                 continue;
             }
 
-            var propertyName = reader.GetString();
-            reader.Read();
-
-            switch (propertyName)
+            if (reader.ValueTextEquals("x"u8))
             {
-                case "x":
-                    x = reader.GetSingle();
-                    break;
-                case "y":
-                    y = reader.GetSingle();
-                    break;
-                case "z":
-                    z = reader.GetSingle();
-                    break;
+                reader.Read();
+                x = reader.GetSingle();
+            }
+            else if (reader.ValueTextEquals("y"u8))
+            {
+                reader.Read();
+                y = reader.GetSingle();
+            }
+            else if (reader.ValueTextEquals("z"u8))
+            {
+                reader.Read();
+                z = reader.GetSingle();
+            }
+            else
+            {
+                reader.Skip();
             }
         }
 

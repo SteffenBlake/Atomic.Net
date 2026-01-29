@@ -4,6 +4,12 @@ using Microsoft.Xna.Framework;
 
 namespace Atomic.Net.MonoGame.Core.JsonConverters;
 
+/// <summary>
+/// JSON converter for Quaternion that serializes as object with x, y, z, w properties.
+/// Uses object format {"x": 0, "y": 0, "z": 0, "w": 1} instead of array [0, 0, 0, 1] for
+/// better readability, self-documentation, and resilience to property order changes.
+/// Zero-allocation implementation using ValueTextEquals for property name comparison.
+/// </summary>
 public class QuaternionConverter : JsonConverter<Quaternion>
 {
     public override Quaternion Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -26,23 +32,29 @@ public class QuaternionConverter : JsonConverter<Quaternion>
                 continue;
             }
 
-            var propertyName = reader.GetString();
-            reader.Read();
-
-            switch (propertyName)
+            if (reader.ValueTextEquals("x"u8))
             {
-                case "x":
-                    x = reader.GetSingle();
-                    break;
-                case "y":
-                    y = reader.GetSingle();
-                    break;
-                case "z":
-                    z = reader.GetSingle();
-                    break;
-                case "w":
-                    w = reader.GetSingle();
-                    break;
+                reader.Read();
+                x = reader.GetSingle();
+            }
+            else if (reader.ValueTextEquals("y"u8))
+            {
+                reader.Read();
+                y = reader.GetSingle();
+            }
+            else if (reader.ValueTextEquals("z"u8))
+            {
+                reader.Read();
+                z = reader.GetSingle();
+            }
+            else if (reader.ValueTextEquals("w"u8))
+            {
+                reader.Read();
+                w = reader.GetSingle();
+            }
+            else
+            {
+                reader.Skip();
             }
         }
 
