@@ -15,8 +15,7 @@ public static class SequenceStartCmdDriver
     /// <param name="sequenceId">The ID of the sequence to start.</param>
     public static void Execute(ushort entityIndex, string sequenceId)
     {
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
+        if (!EntityRegistry.Instance.IsActive(new Entity(entityIndex)))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Cannot start sequence '{sequenceId}' on inactive entity {entityIndex}"

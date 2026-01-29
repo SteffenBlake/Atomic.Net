@@ -48,11 +48,15 @@ public sealed class SequenceDriver :
                 continue;
             }
 
-            var entity = EntityRegistry.Instance[entityIndex];
-            if (!entity.Active)
+            // Check if entity is active before accessing it
+            if (!EntityRegistry.Instance.IsActive(new Entity(entityIndex)))
             {
+                // Entity was deactivated - cleanup sequences
+                entitySequences.Clear();
                 continue;
             }
+
+            var entity = EntityRegistry.Instance[entityIndex];
 
             // Build entity JSON once for all sequences on this entity
             var entityJson = EntityJsonHelper.BuildEntityJsonNode(entity);
@@ -70,18 +74,16 @@ public sealed class SequenceDriver :
     /// </summary>
     public void StartSequence(ushort entityIndex, ushort sequenceIndex)
     {
-        // Validate entity exists
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
+        // Validate entity is active before accessing
+        if (!EntityRegistry.Instance.IsActive(new Entity(entityIndex)))
         {
             return;
         }
 
-        var entitySequences = _activeSequences[entityIndex];
-        if (entitySequences == null)
+        if (!_activeSequences.TryGetValue(entityIndex, out var entitySequences))
         {
             // Lazy initialization - create SparseArray when first sequence starts
-            entitySequences = new SparseArray<SequenceState>(Constants.MaxActiveSequencesPerEntity);
+            entitySequences = new SparseArray<SequenceState>(Constants.MaxSequences);
             _activeSequences[entityIndex] = entitySequences;
         }
 
@@ -95,8 +97,7 @@ public sealed class SequenceDriver :
     /// </summary>
     public void StopSequence(ushort entityIndex, ushort sequenceIndex)
     {
-        var entitySequences = _activeSequences[entityIndex];
-        if (entitySequences == null)
+        if (!_activeSequences.TryGetValue(entityIndex, out var entitySequences))
         {
             return;
         }
@@ -109,8 +110,7 @@ public sealed class SequenceDriver :
     /// </summary>
     public void ResetSequence(ushort entityIndex, ushort sequenceIndex)
     {
-        var entitySequences = _activeSequences[entityIndex];
-        if (entitySequences == null)
+        if (!_activeSequences.TryGetValue(entityIndex, out var entitySequences))
         {
             return;
         }
@@ -125,8 +125,7 @@ public sealed class SequenceDriver :
     /// </summary>
     public void OnEvent(PreEntityDeactivatedEvent evt)
     {
-        var entitySequences = _activeSequences[evt.Entity.Index];
-        if (entitySequences == null)
+        if (!_activeSequences.TryGetValue(evt.Entity.Index, out var entitySequences))
         {
             return;
         }
@@ -192,13 +191,19 @@ public sealed class SequenceDriver :
         {
             // Delay complete - advance to next step
             var nextState = new SequenceState((byte)(state.StepIndex + 1), 0f);
-            _activeSequences[entityIndex]!.Set(sequenceIndex, nextState);
+            if (_activeSequences.TryGetValue(entityIndex, out var entitySequences))
+            {
+                entitySequences.Set(sequenceIndex, nextState);
+            }
         }
         else
         {
             // Still waiting - update elapsed time
             var updatedState = new SequenceState(state.StepIndex, newElapsedTime);
-            _activeSequences[entityIndex]!.Set(sequenceIndex, updatedState);
+            if (_activeSequences.TryGetValue(entityIndex, out var entitySequences))
+            {
+                entitySequences.Set(sequenceIndex, updatedState);
+            }
         }
     }
 
@@ -226,7 +231,10 @@ public sealed class SequenceDriver :
 
         // Advance to next step immediately
         var nextState = new SequenceState((byte)(state.StepIndex + 1), 0f);
-        _activeSequences[entityIndex]!.Set(sequenceIndex, nextState);
+        if (_activeSequences.TryGetValue(entityIndex, out var entitySequences))
+        {
+            entitySequences.Set(sequenceIndex, nextState);
+        }
     }
 
     /// <summary>
@@ -253,7 +261,10 @@ public sealed class SequenceDriver :
             ExecuteSequenceCommand(tween.Do, context, entityIndex);
 
             var nextState = new SequenceState((byte)(state.StepIndex + 1), 0f);
-            _activeSequences[entityIndex]!.Set(sequenceIndex, nextState);
+            if (_activeSequences.TryGetValue(entityIndex, out var entitySequences))
+            {
+                entitySequences.Set(sequenceIndex, nextState);
+            }
         }
         else
         {
@@ -271,7 +282,10 @@ public sealed class SequenceDriver :
 
             // Update elapsed time
             var updatedState = new SequenceState(state.StepIndex, newElapsedTime);
-            _activeSequences[entityIndex]!.Set(sequenceIndex, updatedState);
+            if (_activeSequences.TryGetValue(entityIndex, out var entitySequences))
+            {
+                entitySequences.Set(sequenceIndex, updatedState);
+            }
         }
     }
 
@@ -319,7 +333,10 @@ public sealed class SequenceDriver :
         {
             // Condition met - advance to next step
             var nextState = new SequenceState((byte)(state.StepIndex + 1), 0f);
-            _activeSequences[entityIndex]!.Set(sequenceIndex, nextState);
+            if (_activeSequences.TryGetValue(entityIndex, out var entitySequences))
+            {
+                entitySequences.Set(sequenceIndex, nextState);
+            }
         }
         else
         {
@@ -333,7 +350,10 @@ public sealed class SequenceDriver :
 
             // Update elapsed time
             var updatedState = new SequenceState(state.StepIndex, newElapsedTime);
-            _activeSequences[entityIndex]!.Set(sequenceIndex, updatedState);
+            if (_activeSequences.TryGetValue(entityIndex, out var entitySequences))
+            {
+                entitySequences.Set(sequenceIndex, updatedState);
+            }
         }
     }
 
