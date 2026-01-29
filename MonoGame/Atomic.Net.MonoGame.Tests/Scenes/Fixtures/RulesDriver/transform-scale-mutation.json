@@ -14,8 +14,8 @@
     "do": {
       "mut": [
         {
-          "target": { "transform": { "scale": true } },
-          "value": { "x": 2, "y": 2, "z": 1 }
+          "target": { "transform": { "scale": "x" } },
+          "value": 2
         }
       ]
     }

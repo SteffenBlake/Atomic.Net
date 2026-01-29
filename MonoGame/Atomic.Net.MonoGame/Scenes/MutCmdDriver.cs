@@ -95,7 +95,13 @@ public static class MutCmdDriver
         {
             if (transformTarget is not JsonObject transformTargetObj)
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent("Transform target must be a JsonObject specifying a property"));
+                EventBus<ErrorEvent>.Push(new ErrorEvent("Transform target must be an object like { 'position': 'x' }"));
+                return;
+            }
+
+            if (transformTargetObj.Count != 1)
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent("Transform target must specify exactly one property"));
                 return;
             }
 
@@ -109,31 +115,27 @@ public static class MutCmdDriver
                 transformObj = (JsonObject)transformNode;
             }
 
-            foreach (var (transformPropName, transformPropTarget) in transformTargetObj)
+            // transformTarget is like { "position": "x" } - get the single property
+            var (propName, propTarget) = transformTargetObj.First();
+            
+            if (!TryGetStringValue(propTarget, out var componentName))
             {
-                if (transformPropTarget is null)
-                {
-                    transformObj[transformPropName] = value;
-                }
-                else if (transformPropTarget is JsonValue propValue && propValue.TryGetValue<string>(out var componentName))
-                {
-                    if (!transformObj.TryGetPropertyValue(transformPropName, out var existingPropNode) || existingPropNode is not JsonObject existingPropObj)
-                    {
-                        existingPropObj = new JsonObject();
-                        transformObj[transformPropName] = existingPropObj;
-                    }
-                    else
-                    {
-                        existingPropObj = (JsonObject)existingPropNode;
-                    }
-
-                    existingPropObj[componentName] = value;
-                }
-                else
-                {
-                    EventBus<ErrorEvent>.Push(new ErrorEvent($"Invalid transform property target for '{transformPropName}'"));
-                }
+                EventBus<ErrorEvent>.Push(new ErrorEvent("Transform property target must be a component name string (e.g., 'x', 'y', 'z', 'w')"));
+                return;
             }
+
+            // Get or create the property object
+            if (!transformObj.TryGetPropertyValue(propName, out var existingPropNode) || existingPropNode is not JsonObject existingPropObj)
+            {
+                existingPropObj = new JsonObject();
+                transformObj[propName] = existingPropObj;
+            }
+            else
+            {
+                existingPropObj = (JsonObject)existingPropNode;
+            }
+
+            existingPropObj[componentName] = value;
         }
         else if (target.TryGetPropertyValue("parent", out _))
         {

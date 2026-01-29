@@ -14,7 +14,7 @@
     "do": {
       "mut": [
         {
-          "target": { "transform": { "position": true } },
+          "target": { "transform": "position" },
           "value": "not a vector"
         }
       ]

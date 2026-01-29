@@ -14,7 +14,7 @@
     "do": {
       "mut": [
         {
-          "target": { "transform": { "anchor": true } },
+          "target": { "transform": "anchor" },
           "value": ["not", "a", "vector"]
         }
       ]

@@ -137,12 +137,12 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
         
-        // Assert: Position updated
+        // Assert: Position.X updated, Y and Z unchanged
         Assert.True(EntityIdRegistry.Instance.TryResolve("cube", out var entity));
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity.Value, out var transform));
         Assert.Equal(100f, transform.Value.Position.X);
-        Assert.Equal(200f, transform.Value.Position.Y);
-        Assert.Equal(50f, transform.Value.Position.Z);
+        Assert.Equal(0f, transform.Value.Position.Y);
+        Assert.Equal(0f, transform.Value.Position.Z);
     }
 
     [Fact]
@@ -172,11 +172,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
         
-        // Assert: Rotation updated
+        // Assert: Rotation.X updated, others default
         Assert.True(EntityIdRegistry.Instance.TryResolve("cube", out var entity));
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity.Value, out var transform));
-        Assert.Equal(0.707f, transform.Value.Rotation.Y, 0.001f);
-        Assert.Equal(0.707f, transform.Value.Rotation.W, 0.001f);
+        Assert.Equal(0.707f, transform.Value.Rotation.X, 0.001f);
     }
 
     [Fact]
@@ -206,11 +205,11 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
         
-        // Assert: Scale updated
+        // Assert: Scale.X updated, Y unchanged
         Assert.True(EntityIdRegistry.Instance.TryResolve("sprite", out var entity));
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity.Value, out var transform));
         Assert.Equal(2f, transform.Value.Scale.X);
-        Assert.Equal(2f, transform.Value.Scale.Y);
+        Assert.Equal(1f, transform.Value.Scale.Y);
     }
 
     [Fact]
@@ -240,11 +239,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
         
-        // Assert: Anchor updated
+        // Assert: Anchor.X updated, Y default
         Assert.True(EntityIdRegistry.Instance.TryResolve("ui-element", out var entity));
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity.Value, out var transform));
         Assert.Equal(0.5f, transform.Value.Anchor.X);
-        Assert.Equal(0.5f, transform.Value.Anchor.Y);
     }
 
     [Fact]
