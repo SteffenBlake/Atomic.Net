@@ -48,22 +48,22 @@ public sealed class PersistenceKeySwapTests : IDisposable
     {
         // Arrange: Create entity with initial key
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
+        entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("save-slot-1");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
+        entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("hp", 100f) };
         });
         DatabaseRegistry.Instance.Flush();
         
         // Act: Modify entity and swap to different key
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
+        entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("hp", 75f) };
         });
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
+        entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("save-slot-2");
         });
@@ -74,7 +74,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
         
         // Assert: Verify save-slot-2 has current state (75)
         var slot2Entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(slot2Entity, (ref behavior) =>
+        slot2Entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("save-slot-2");
         });
@@ -84,7 +84,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
         
         // test-architect: Verify save-slot-1 still has original state (100) - orphaned
         var slot1Entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(slot1Entity, (ref behavior) =>
+        slot1Entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("save-slot-1");
         });
@@ -93,7 +93,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
         Assert.Equal(100f, slot1Props.Value.Properties["hp"]);
         
         // Act: Swap back to save-slot-1
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
+        entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("save-slot-1");
         });
@@ -109,28 +109,28 @@ public sealed class PersistenceKeySwapTests : IDisposable
     {
         // Arrange: Create entity
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
+        entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("data", "final") };
         });
         
         // Act: Rapidly swap between multiple keys in same frame
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
+        entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("rapid-1");
         });
         
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
+        entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("rapid-2");
         });
         
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
+        entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("rapid-3");
         });
       
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
+        entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("rapid-4");
         });
@@ -140,7 +140,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
         
         // Assert: Final key should have final state
         var rapid4Entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(rapid4Entity, (ref  behavior) =>
+        rapid4Entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("rapid-4");
         });
@@ -158,22 +158,22 @@ public sealed class PersistenceKeySwapTests : IDisposable
     {
         // Arrange: Create and persist entity
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
+        entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("original-key");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref  behavior) =>
+        entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("value", 50f) };
         });
         DatabaseRegistry.Instance.Flush();
         
         // Act: Mutate and swap key in same frame (before Flush)
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
+        entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("value", 100f) };
         });
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, (ref behavior) =>
+        entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("swapped-key");
         });
@@ -181,7 +181,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
         
         // Assert: New key should have mutated value (100)
         var swappedEntity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(swappedEntity, (ref behavior) =>
+        swappedEntity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("swapped-key");
         });
@@ -191,7 +191,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
         
         // test-architect: Original key should still have old value (50)
         var originalEntity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(originalEntity, (ref behavior) =>
+        originalEntity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("original-key");
         });
@@ -209,29 +209,29 @@ public sealed class PersistenceKeySwapTests : IDisposable
     {
         // Arrange: Create two separate save slots
         var entity1 = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity1, (ref behavior) =>
+        entity1.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("slot-A");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, (ref behavior) =>
+        entity1.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("slot", "A") };
         });
         DatabaseRegistry.Instance.Flush();
         
         var entity2 = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, (ref behavior) =>
+        entity2.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("slot-B");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, (ref behavior) =>
+        entity2.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("slot", "B") };
         });
         DatabaseRegistry.Instance.Flush();
         
         // Act: Swap entity1 to slot-B (which already exists)
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
+        entity1.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("slot-B");
         });
@@ -243,7 +243,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
         
         // test-architect: slot-A should still exist with original data
         var slotAEntity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(slotAEntity, static (ref behavior) =>
+        slotAEntity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("slot-A");
         });

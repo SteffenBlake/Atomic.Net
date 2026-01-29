@@ -1,4 +1,5 @@
 using Xunit;
+using Xunit.Abstractions;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Scenes;
 using Atomic.Net.MonoGame.Ids;
@@ -9,8 +10,10 @@ namespace Atomic.Net.MonoGame.Tests.Core.Integrations;
 [Trait("Category", "Integration")]
 public sealed class EntityRegistryIntegrationTests : IDisposable
 {
-    public EntityRegistryIntegrationTests()
+    private readonly ErrorEventLogger _errorLogger;
+    public EntityRegistryIntegrationTests(ITestOutputHelper output)
     {
+        _errorLogger = new ErrorEventLogger(output);
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
@@ -18,6 +21,8 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
     public void Dispose()
     {
         // Clean up ALL entities (both global and scene) between tests
+        _errorLogger.Dispose();
+
         EventBus<ShutdownEvent>.Push(new());
     }
 

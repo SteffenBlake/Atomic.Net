@@ -20,7 +20,7 @@ public static class EntityExtensions
         this Entity entity, RefAction<TransformBehavior> mutate
     )
     {
-        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(entity, mutate);
+        entity.SetBehavior(mutate);
         return entity;
     }
 
@@ -32,7 +32,7 @@ public static class EntityExtensions
     /// <returns>The entity for fluent chaining.</returns>
     public static Entity WithTransform(this Entity entity)
     {
-        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(entity, (ref TransformBehavior t) =>
+        entity.SetBehavior<TransformBehavior>(static (ref TransformBehavior t) =>
         {
             t.Position = Vector3.Zero;
             t.Rotation = Quaternion.Identity;

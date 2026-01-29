@@ -50,20 +50,20 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         var entity1 = EntityRegistry.Instance.Activate();
         var entity2 = EntityRegistry.Instance.Activate();
         
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
+        entity1.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("duplicate-key");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
+        entity1.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("id", "first") };
         });
         
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
+        entity2.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("duplicate-key");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
+        entity2.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("id", "second") };
         });
@@ -74,7 +74,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         // Assert: Last write should win (entity2 with "second")
         // test-architect: Design decision - either fire ErrorEvent or use last-write-wins
         var newEntity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, static (ref behavior) =>
+        newEntity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("duplicate-key");
         });
@@ -91,11 +91,11 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
     {
         // Arrange: Create and persist entity in first "scene"
         var entity1 = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
+        entity1.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("cross-scene-key");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
+        entity1.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("scene", "scene1") };
         });
@@ -107,11 +107,11 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         // Create new entity with same key in second "scene"
         var entity2 = EntityRegistry.Instance.Activate();
         // Add PersistToDiskBehavior LAST to prevent it from loading and then being overwritten
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
+        entity2.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("scene", "scene2") };
         });
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
+        entity2.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("cross-scene-key");
         });
@@ -131,11 +131,11 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         
         // Act: Try to create entity with empty string key
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("test", "value") };
         });
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("");
         });
@@ -150,7 +150,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         // test-architect: Entity should NOT be written to database
         // Verify by trying to load with empty key - should not find anything
         var newEntity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, static (ref behavior) =>
+        newEntity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("");
         });
@@ -166,11 +166,11 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         
         // Act: Try to create entity with whitespace-only key
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("   ");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("test", "whitespace") };
         });
@@ -184,7 +184,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         
         // test-architect: Entity should NOT be written to database
         var newEntity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, static (ref behavior) =>
+        newEntity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("   ");
         });

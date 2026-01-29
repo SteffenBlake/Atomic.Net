@@ -68,7 +68,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         
         // Act: Try to load entity with corrupt JSON - should fire ErrorEvent when deserializing
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("corrupt-key");
         });
@@ -97,11 +97,11 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         EventBus<InitializeEvent>.Push(new());
         
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("missing-file-key");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = new();
         });
@@ -117,11 +117,11 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
     {
         // Arrange: Save entity with only some behaviors
         var entity1 = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
+        entity1.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("partial-key");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity1, static (ref behavior) =>
+        entity1.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("fromDisk", "yes") };
         });
@@ -133,12 +133,12 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         EventBus<ResetEvent>.Push(new());
         
         var entity2 = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<TransformBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
+        entity2.SetBehavior<TransformBehavior>(static (ref behavior) =>
         {
             behavior.Position = new Microsoft.Xna.Framework.Vector3(50, 75, 0);
         });
 
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity2, static (ref behavior) =>
+        entity2.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("partial-key");
         });
@@ -189,11 +189,11 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
     {
         // Arrange: Create entity in global partition (index < 256) - must use ActivateGlobal()
         var globalEntity = EntityRegistry.Instance.ActivateGlobal();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(globalEntity, static (ref behavior) =>
+        globalEntity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("global-partition-key");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(globalEntity, static (ref behavior) =>
+        globalEntity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("partition", "global") };
         });
@@ -208,7 +208,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         
         // test-architect: Disk should also have the entity
         var newEntity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, static (ref behavior) =>
+        newEntity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("global-partition-key");
         });
@@ -223,12 +223,12 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
     {
         // Arrange: Create entity in scene partition (index >= 256) with disk persistence
         var sceneEntity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(sceneEntity, static (ref behavior) =>
+        sceneEntity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("scene-partition-key");
         });
 
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(sceneEntity, static (ref behavior) =>
+        sceneEntity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("partition", "scene") };
         });
@@ -243,7 +243,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         
         // test-architect: But disk should still have the entity (can be reloaded)
         var newEntity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, static (ref behavior) =>
+        newEntity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("scene-partition-key");
         });

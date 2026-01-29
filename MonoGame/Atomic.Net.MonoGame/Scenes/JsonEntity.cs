@@ -98,7 +98,7 @@ public class JsonEntity
             var input = Transform.Value;
             entity.SetBehavior<TransformBehavior, TransformBehavior>(
                 in input,
-                (ref readonly _input, ref behavior) => behavior = _input
+                static (ref readonly _input, ref behavior) => behavior = _input
             );
         }
 
@@ -107,7 +107,7 @@ public class JsonEntity
             var input = Properties.Value;
             entity.SetBehavior<PropertiesBehavior, PropertiesBehavior>(
                 in input,
-                (ref readonly _input, ref behavior) => behavior = _input
+                static (ref readonly _input, ref behavior) => behavior = _input
             );
         }
 
@@ -116,7 +116,7 @@ public class JsonEntity
             var input = Id.Value;
             entity.SetBehavior<IdBehavior, IdBehavior>(
                 in input,
-                (ref readonly _input, ref behavior) => behavior = _input
+                static (ref readonly _input, ref behavior) => behavior = _input
             );
         }
         
@@ -125,7 +125,7 @@ public class JsonEntity
             var input = Tags.Value;
             entity.SetBehavior<TagsBehavior, TagsBehavior>(
                 in input,
-                (ref readonly _input, ref behavior) => behavior = _input
+                static (ref readonly _input, ref behavior) => behavior = _input
             );
         }
 
@@ -134,7 +134,7 @@ public class JsonEntity
             var input = Parent.Value;
             entity.SetBehavior<ParentBehavior, ParentBehavior>(
                 in input,
-                (ref readonly _input, ref behavior) => behavior = _input
+                static (ref readonly _input, ref behavior) => behavior = _input
             );
         }
     }

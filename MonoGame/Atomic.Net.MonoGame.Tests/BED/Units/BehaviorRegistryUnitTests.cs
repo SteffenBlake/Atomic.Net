@@ -1,4 +1,5 @@
 using Xunit;
+using Xunit.Abstractions;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
 
@@ -19,8 +20,10 @@ public struct TestBehavior : IBehavior<TestBehavior>
 [Trait("Category", "Unit")]
 public sealed class BehaviorRegistryUnitTests : IDisposable
 {
-    public BehaviorRegistryUnitTests()
+    private readonly ErrorEventLogger _errorLogger;
+    public BehaviorRegistryUnitTests(ITestOutputHelper output)
     {
+        _errorLogger = new ErrorEventLogger(output);
         AtomicSystem.Initialize();
         
         // CRITICAL: Must initialize BehaviorRegistry for each behavior type used in tests
@@ -33,6 +36,8 @@ public sealed class BehaviorRegistryUnitTests : IDisposable
 
     public void Dispose()
     {
+        _errorLogger.Dispose();
+
         EventBus<ShutdownEvent>.Push(new());
     }
 
@@ -43,7 +48,7 @@ public sealed class BehaviorRegistryUnitTests : IDisposable
         var entity = EntityRegistry.Instance.Activate();
         
         // Act
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref b) => b.Value = 42);
+        entity.SetBehavior<TestBehavior>(static (ref b) => b.Value = 42);
         
         // Assert
         var hasBehavior = BehaviorRegistry<TestBehavior>.Instance.TryGetBehavior(entity, out var retrieved);
@@ -56,7 +61,7 @@ public sealed class BehaviorRegistryUnitTests : IDisposable
     {
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref b) => b.Value = 42);
+        entity.SetBehavior<TestBehavior>(static (ref b) => b.Value = 42);
         Assert.True(BehaviorRegistry<TestBehavior>.Instance.HasBehavior(entity));
         
         // Act
@@ -71,7 +76,7 @@ public sealed class BehaviorRegistryUnitTests : IDisposable
     {
         // Arrange
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref b) => b.Value = 42);
+        entity.SetBehavior<TestBehavior>(static (ref b) => b.Value = 42);
         
         // Act
         EntityRegistry.Instance.Deactivate(entity);
@@ -86,7 +91,7 @@ public sealed class BehaviorRegistryUnitTests : IDisposable
     {
         // Arrange
         var entity1 = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity1, (ref b) => b.Value = 999);
+        entity1.SetBehavior<TestBehavior>(static (ref b) => b.Value = 999);
         Assert.True(BehaviorRegistry<TestBehavior>.Instance.HasBehavior(entity1));
         
         // Act
@@ -94,7 +99,7 @@ public sealed class BehaviorRegistryUnitTests : IDisposable
         var entity2 = EntityRegistry.Instance.Activate();
         Assert.Equal(entity1.Index, entity2.Index);
         Assert.False(BehaviorRegistry<TestBehavior>.Instance.HasBehavior(entity2));
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity2, (ref b) => b.Value = 111);
+        entity2.SetBehavior<TestBehavior>(static (ref b) => b.Value = 111);
         
         // Assert
         var hasBehavior = BehaviorRegistry<TestBehavior>.Instance.TryGetBehavior(entity2, out var retrieved);
@@ -110,7 +115,7 @@ public sealed class BehaviorRegistryUnitTests : IDisposable
         var entity = EntityRegistry.Instance.Activate();
         
         // Act
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref b) => b.Value = 42);
+        entity.SetBehavior<TestBehavior>(static (ref b) => b.Value = 42);
         
         // Assert
         Assert.Single(listener.ReceivedEvents);
@@ -123,7 +128,7 @@ public sealed class BehaviorRegistryUnitTests : IDisposable
         // Arrange
         using var listener = new FakeEventListener<PostBehaviorRemovedEvent<TestBehavior>>();
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref b) => b.Value = 42);
+        entity.SetBehavior<TestBehavior>(static (ref b) => b.Value = 42);
         
         // Act
         BehaviorRegistry<TestBehavior>.Instance.Remove(entity);
@@ -139,11 +144,11 @@ public sealed class BehaviorRegistryUnitTests : IDisposable
         // Arrange
         using var listener = new FakeEventListener<PostBehaviorUpdatedEvent<TestBehavior>>();
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref b) => b.Value = 42);
+        entity.SetBehavior<TestBehavior>(static (ref b) => b.Value = 42);
         listener.Clear();
         
         // Act
-        BehaviorRegistry<TestBehavior>.Instance.SetBehavior(entity, (ref b) => b.Value = 100);
+        entity.SetBehavior<TestBehavior>(static (ref b) => b.Value = 100);
         
         // Assert
         Assert.Single(listener.ReceivedEvents);

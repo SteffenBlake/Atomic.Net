@@ -44,7 +44,7 @@ public static class HierarchyEntityExtensions
         {
             child.SetBehavior<ParentBehavior, EntitySelector>(
                 in selector,
-                (ref readonly _selector, ref behavior) => behavior = new(_selector)
+                static (ref readonly _selector, ref behavior) => behavior = new(_selector)
             );
         }
 

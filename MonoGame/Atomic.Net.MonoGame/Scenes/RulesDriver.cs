@@ -66,15 +66,10 @@ public sealed class RulesDriver :
         _worldContext["index"] = -1;
         BuildEntitiesArray(selectorMatches);
 
-        JsonNode? filteredResult;
-        try
-        {
-            filteredResult = JsonLogic.Apply(rule.Where, _worldContext);
-        }
-        catch (Exception ex)
+        if (!TryApplyJsonLogic(rule.Where, _worldContext, out var filteredResult))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to evaluate WHERE clause: {ex.Message}"
+                "Failed to evaluate WHERE clause"
             ));
             return;
         }
@@ -410,15 +405,10 @@ public sealed class RulesDriver :
             return false;
         }
 
-        JsonNode? computedValue;
-        try
-        {
-            computedValue = JsonLogic.Apply(operation.Value, context);
-        }
-        catch (Exception ex)
+        if (!TryApplyJsonLogic(operation.Value, context, out var computedValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to evaluate mutation value for entity {entityIndex}: {ex.Message}"
+                $"Failed to evaluate mutation value for entity {entityIndex}"
             ));
             return false;
         }
@@ -656,15 +646,10 @@ public sealed class RulesDriver :
     /// </summary>
     private static bool ApplyPropertyMutation(ushort entityIndex, JsonNode propertyKeyNode, JsonNode value)
     {
-        string propertyKey;
-        try
-        {
-            propertyKey = propertyKeyNode.GetValue<string>();
-        }
-        catch (Exception ex)
+        if (!TryGetStringValue(propertyKeyNode, out var propertyKey))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse property key for entity {entityIndex}: {ex.Message}"
+                $"Failed to parse property key for entity {entityIndex}"
             ));
             return false;
         }
@@ -752,15 +737,10 @@ public sealed class RulesDriver :
     /// </summary>
     private static bool ApplyIdMutation(ushort entityIndex, JsonNode value)
     {
-        string newId;
-        try
-        {
-            newId = value.GetValue<string>();
-        }
-        catch (Exception ex)
+        if (!TryGetStringValue(value, out var newId))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse id value for entity {entityIndex}: {ex.Message}. Id must be a string."
+                $"Failed to parse id value for entity {entityIndex}. Id must be a string."
             ));
             return false;
         }
@@ -830,15 +810,10 @@ public sealed class RulesDriver :
                 return false;
             }
 
-            string tag;
-            try
-            {
-                tag = tagNode.GetValue<string>();
-            }
-            catch (Exception ex)
+            if (!TryGetStringValue(tagNode, out var tag))
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Failed to parse tag at index {i} for entity {entityIndex}: {ex.Message}. Tags must be strings."
+                    $"Failed to parse tag at index {i} for entity {entityIndex}. Tags must be strings."
                 ));
                 return false;
             }
@@ -1815,6 +1790,55 @@ public sealed class RulesDriver :
             ));
             floatValue = default;
             percentValue = default;
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Tries to apply JsonLogic to a rule or expression and catch any exceptions.
+    /// </summary>
+    private static bool TryApplyJsonLogic(
+        JsonNode rule,
+        JsonNode context,
+        [NotNullWhen(true)]
+        out JsonNode? result
+    )
+    {
+        try
+        {
+            var tempResult = JsonLogic.Apply(rule, context);
+            if (tempResult == null)
+            {
+                result = null;
+                return false;
+            }
+            result = tempResult;
+            return true;
+        }
+        catch
+        {
+            result = null;
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Tries to get a string value from a JsonNode.
+    /// </summary>
+    private static bool TryGetStringValue(
+        JsonNode node,
+        [NotNullWhen(true)]
+        out string? result
+    )
+    {
+        try
+        {
+            result = node.GetValue<string>();
+            return true;
+        }
+        catch
+        {
+            result = null;
             return false;
         }
     }

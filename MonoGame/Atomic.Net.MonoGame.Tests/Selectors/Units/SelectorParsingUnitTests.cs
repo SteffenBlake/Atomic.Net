@@ -1,4 +1,5 @@
 using Xunit;
+using Xunit.Abstractions;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Selectors;
 
@@ -12,10 +13,12 @@ namespace Atomic.Net.MonoGame.Tests.Selectors.Units;
 [Trait("Category", "Unit")]
 public sealed class SelectorParsingUnitTests : IDisposable
 {
+    private readonly ErrorEventLogger _errorLogger;
     private readonly FakeEventListener<ErrorEvent> _errorListener;
 
-    public SelectorParsingUnitTests()
+    public SelectorParsingUnitTests(ITestOutputHelper output)
     {
+        _errorLogger = new ErrorEventLogger(output);
         // Arrange: Initialize systems before each test
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
@@ -27,6 +30,8 @@ public sealed class SelectorParsingUnitTests : IDisposable
     {
         // Clean up between tests
         _errorListener.Dispose();
+        _errorLogger.Dispose();
+
         EventBus<ShutdownEvent>.Push(new());
     }
 

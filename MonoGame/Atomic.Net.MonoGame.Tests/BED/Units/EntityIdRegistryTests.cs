@@ -2,20 +2,25 @@ using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Ids;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Atomic.Net.MonoGame.Tests.BED.Units;
 
 [Collection("NonParallel")]
 public sealed class EntityIdRegistryUnitTests : IDisposable
 {
-    public EntityIdRegistryUnitTests()
+    private readonly ErrorEventLogger _errorLogger;
+    public EntityIdRegistryUnitTests(ITestOutputHelper output)
     {
+        _errorLogger = new ErrorEventLogger(output);
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
 
     public void Dispose()
     {
+        _errorLogger.Dispose();
+
         EventBus<ShutdownEvent>.Push(new());
     }
 
@@ -25,8 +30,7 @@ public sealed class EntityIdRegistryUnitTests : IDisposable
         var entity = EntityRegistry.Instance.Activate();
         
         // Set initial ID
-        BehaviorRegistry<IdBehavior>.Instance.SetBehavior(
-            entity, (ref b) => b = new IdBehavior("initial-id")
+        entity.SetBehavior<IdBehavior>(static (ref b) => b = new IdBehavior("initial-id")
         );
         
         Assert.True(EntityIdRegistry.Instance.TryResolve("initial-id", out var resolved1));
@@ -34,8 +38,7 @@ public sealed class EntityIdRegistryUnitTests : IDisposable
         
         // Change ID by removing and re-adding the behavior
         BehaviorRegistry<IdBehavior>.Instance.Remove(entity);
-        BehaviorRegistry<IdBehavior>.Instance.SetBehavior(
-            entity, (ref b) => b = new IdBehavior("changed-id")
+        entity.SetBehavior<IdBehavior>(static (ref b) => b = new IdBehavior("changed-id")
         );
         
         // Old ID should be gone

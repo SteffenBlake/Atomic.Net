@@ -47,8 +47,10 @@ public class SparsePoisonBenchmark
 
             // ALL entities get health property (0-6000 range, steps of 100)
             var health = random.Next(0, 61) * 100; // Range: 0, 100, 200, ..., 6000
-            entity.SetBehavior<PropertiesBehavior>((ref b) => 
-                b = b with { Properties = b.Properties.With("health", (PropertyValue)health) }
+            entity.SetBehavior<PropertiesBehavior, int>(
+                in health,
+                static (ref readonly h, ref b) => 
+                    b = b with { Properties = b.Properties.With("health", (PropertyValue)h) }
             );
 
             // 25% chance to get #poisoned tag
@@ -56,7 +58,7 @@ public class SparsePoisonBenchmark
             if (isPoisoned)
             {
                 // Add #poisoned tag
-                entity.SetBehavior<TagsBehavior>((ref b) => 
+                entity.SetBehavior<TagsBehavior>(static (ref b) => 
                     b = b with { Tags = b.Tags.With("poisoned") }
                 );
 
@@ -64,8 +66,10 @@ public class SparsePoisonBenchmark
                 if (random.NextDouble() < 0.5)
                 {
                     var poisonStacks = random.Next(90, 101);
-                    entity.SetBehavior<PropertiesBehavior>((ref b) => 
-                        b = b with { Properties = b.Properties.With("poisonStacks", (PropertyValue)poisonStacks) }
+                    entity.SetBehavior<PropertiesBehavior, int>(
+                        in poisonStacks,
+                        static (ref readonly ps, ref b) => 
+                            b = b with { Properties = b.Properties.With("poisonStacks", (PropertyValue)ps) }
                     );
                 }
             }

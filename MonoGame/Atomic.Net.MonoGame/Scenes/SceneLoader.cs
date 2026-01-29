@@ -133,7 +133,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
             var input = persistToDisk;
             entity.SetBehavior<PersistToDiskBehavior, PersistToDiskBehavior>(
                 in input,
-                (ref readonly _input, ref behavior) => behavior = _input
+                static (ref readonly _input, ref behavior) => behavior = _input
             );
         }
         

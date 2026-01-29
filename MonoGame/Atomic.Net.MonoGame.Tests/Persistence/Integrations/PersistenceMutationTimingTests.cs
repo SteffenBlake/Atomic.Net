@@ -48,25 +48,25 @@ public sealed class PersistenceMutationTimingTests : IDisposable
     {
         // Arrange: Create persistent entity
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("rapid-mutation-key");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("score", 1f) };
         });
         
         // Act: Rapidly mutate property multiple times in same "frame" (before Flush)
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("score", 5f) };
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("score", 7f) };
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("score", 10f) };
         });
@@ -76,7 +76,7 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         
         // Assert: Database should have final value (10), not intermediate values
         var newEntity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, static (ref behavior) =>
+        newEntity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("rapid-mutation-key");
         });
@@ -93,11 +93,11 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         
         // Act: Create entity and mutate during disabled period
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("scene-load-mutation-key");
         });
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("counter", 500f) };
         });
@@ -108,7 +108,7 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         // Re-enable and make additional mutations
         DatabaseRegistry.Instance.Enable();
         
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("counter", 1000f) };
         });
@@ -118,7 +118,7 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         
         // Assert: Database should have post-enable value (1000)
         var newEntity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, static (ref behavior) =>
+        newEntity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("scene-load-mutation-key");
         });
@@ -135,13 +135,13 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         
         // Act: Create entity and mutate BEFORE adding PersistToDiskBehavior
         var entity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PropertiesBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
             behavior = behavior with { Properties = behavior.Properties.With("value", 999f) };
         });
         
         // test-architect: Now add PersistToDiskBehavior (still disabled - entity NOT marked dirty)
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(entity, static (ref behavior) =>
+        entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("pre-behavior-key");
         });
@@ -154,7 +154,7 @@ public sealed class PersistenceMutationTimingTests : IDisposable
         
         // Assert: Verify entity was NOT written (no data in DB for this key)
         var newEntity = EntityRegistry.Instance.Activate();
-        BehaviorRegistry<PersistToDiskBehavior>.Instance.SetBehavior(newEntity, static (ref behavior) =>
+        newEntity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("pre-behavior-key");
         });

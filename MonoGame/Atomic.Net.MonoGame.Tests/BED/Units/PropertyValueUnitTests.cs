@@ -10,8 +10,7 @@ namespace Atomic.Net.MonoGame.Tests.BED.Units;
 [Collection("NonParallel")]
 [Trait("Category", "Unit")]
 public sealed class PropertyValueUnitTests
-{
-    [Fact]
+{    [Fact]
     public void ImplicitConversion_FromString_CreatesStringVariant()
     {
         // Arrange
