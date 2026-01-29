@@ -1,4 +1,5 @@
 using Xunit;
+using Xunit.Abstractions;
 using Microsoft.Xna.Framework;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
@@ -29,10 +30,12 @@ namespace Atomic.Net.MonoGame.Tests.Transform.Integrations;
 [Trait("Category", "Integration")]
 public sealed class TransformRegistryIntegrationTests : IDisposable
 {
+    private readonly ErrorEventLogger _errorLogger;
     private const float Tolerance = 0.0001f;
 
-    public TransformRegistryIntegrationTests()
+    public TransformRegistryIntegrationTests(ITestOutputHelper output)
     {
+        _errorLogger = new ErrorEventLogger(output);
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
@@ -40,6 +43,8 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
     public void Dispose()
     {
         // Clean up ALL entities (both global and scene) between tests
+        _errorLogger.Dispose();
+
         EventBus<ShutdownEvent>.Push(new());
     }
 

@@ -11,8 +11,7 @@ namespace Atomic.Net.MonoGame.Tests.BED.Units;
 [Collection("NonParallel")]
 [Trait("Category", "Unit")]
 public sealed class PropertyValueConverterUnitTests
-{
-    [Fact]
+{    [Fact]
     public void Deserialize_JsonString_CreatesStringPropertyValue()
     {
         // Arrange

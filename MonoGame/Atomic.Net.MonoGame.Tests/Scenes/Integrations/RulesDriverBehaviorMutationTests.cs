@@ -9,6 +9,7 @@ using Atomic.Net.MonoGame.Transform;
 using FlexLayoutSharp;
 using Microsoft.Xna.Framework;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Atomic.Net.MonoGame.Tests.Scenes.Integrations;
 
@@ -20,10 +21,12 @@ namespace Atomic.Net.MonoGame.Tests.Scenes.Integrations;
 [Trait("Category", "Integration")]
 public sealed class RulesDriverBehaviorMutationTests : IDisposable
 {
+    private readonly ErrorEventLogger _errorLogger;
     private readonly FakeEventListener<ErrorEvent> _errorListener;
 
-    public RulesDriverBehaviorMutationTests()
+    public RulesDriverBehaviorMutationTests(ITestOutputHelper output)
     {
+        _errorLogger = new ErrorEventLogger(output);
         // Arrange: Initialize systems before each test
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
@@ -35,6 +38,8 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Clean up between tests
         _errorListener.Dispose();
+        _errorLogger.Dispose();
+
         EventBus<ShutdownEvent>.Push(new());
     }
 
@@ -70,6 +75,8 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
+        var error = _errorListener.ReceivedEvents.First();
+        Assert.False(string.IsNullOrEmpty(error.Message));
         
         // Assert: Id unchanged
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity1", out _));
@@ -107,6 +114,8 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
+        var error = _errorListener.ReceivedEvents.First();
+        Assert.False(string.IsNullOrEmpty(error.Message));
         
         // Assert: Tags unchanged
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin", out var entity));
@@ -146,7 +155,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         RulesDriver.Instance.RunFrame(0.016f);
         
         // Assert: Error fired
-        Assert.NotEmpty(_errorListener.ReceivedEvents);    }
+        Assert.NotEmpty(_errorListener.ReceivedEvents);
+        var error = _errorListener.ReceivedEvents.First();
+        Assert.False(string.IsNullOrEmpty(error.Message));
+    }
 
     [Fact]
     public void RunFrame_WithTransformRotationMutation_AppliesCorrectly()
@@ -177,7 +189,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         RulesDriver.Instance.RunFrame(0.016f);
         
         // Assert: Error fired
-        Assert.NotEmpty(_errorListener.ReceivedEvents);    }
+        Assert.NotEmpty(_errorListener.ReceivedEvents);
+        var error = _errorListener.ReceivedEvents.First();
+        Assert.False(string.IsNullOrEmpty(error.Message));
+    }
 
     [Fact]
     public void RunFrame_WithTransformScaleMutation_AppliesCorrectly()
@@ -208,7 +223,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         RulesDriver.Instance.RunFrame(0.016f);
         
         // Assert: Error fired
-        Assert.NotEmpty(_errorListener.ReceivedEvents);    }
+        Assert.NotEmpty(_errorListener.ReceivedEvents);
+        var error = _errorListener.ReceivedEvents.First();
+        Assert.False(string.IsNullOrEmpty(error.Message));
+    }
 
     [Fact]
     public void RunFrame_WithTransformAnchorMutation_AppliesCorrectly()
@@ -239,7 +257,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         RulesDriver.Instance.RunFrame(0.016f);
         
         // Assert: Error fired
-        Assert.NotEmpty(_errorListener.ReceivedEvents);    }
+        Assert.NotEmpty(_errorListener.ReceivedEvents);
+        var error = _errorListener.ReceivedEvents.First();
+        Assert.False(string.IsNullOrEmpty(error.Message));
+    }
 
     // ========== ParentBehavior Tests ==========
 
@@ -269,7 +290,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         RulesDriver.Instance.RunFrame(0.016f);
         
         // Assert: Error fired
-        Assert.NotEmpty(_errorListener.ReceivedEvents);    }
+        Assert.NotEmpty(_errorListener.ReceivedEvents);
+        var error = _errorListener.ReceivedEvents.First();
+        Assert.False(string.IsNullOrEmpty(error.Message));
+    }
 
     // ========== Flex Enum Behavior Tests ==========
 
@@ -301,7 +325,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         RulesDriver.Instance.RunFrame(0.016f);
         
         // Assert: Error fired
-        Assert.NotEmpty(_errorListener.ReceivedEvents);    }
+        Assert.NotEmpty(_errorListener.ReceivedEvents);
+        var error = _errorListener.ReceivedEvents.First();
+        Assert.False(string.IsNullOrEmpty(error.Message));
+    }
 
     [Fact]
     public void RunFrame_WithFlexAlignSelfMutation_AppliesCorrectly()
@@ -332,6 +359,8 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
+        var error = _errorListener.ReceivedEvents.First();
+        Assert.False(string.IsNullOrEmpty(error.Message));
     }
 
     [Fact]
@@ -362,7 +391,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         RulesDriver.Instance.RunFrame(0.016f);
         
         // Assert: Error fired
-        Assert.NotEmpty(_errorListener.ReceivedEvents);    }
+        Assert.NotEmpty(_errorListener.ReceivedEvents);
+        var error = _errorListener.ReceivedEvents.First();
+        Assert.False(string.IsNullOrEmpty(error.Message));
+    }
 
     [Fact]
     public void RunFrame_WithFlexWrapMutation_AppliesCorrectly()
@@ -393,6 +425,8 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
+        var error = _errorListener.ReceivedEvents.First();
+        Assert.False(string.IsNullOrEmpty(error.Message));
     }
 
     [Fact]
@@ -423,7 +457,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         RulesDriver.Instance.RunFrame(0.016f);
         
         // Assert: Error fired
-        Assert.NotEmpty(_errorListener.ReceivedEvents);    }
+        Assert.NotEmpty(_errorListener.ReceivedEvents);
+        var error = _errorListener.ReceivedEvents.First();
+        Assert.False(string.IsNullOrEmpty(error.Message));
+    }
 
     [Fact]
     public void RunFrame_WithFlexPositionTypeMutation_AppliesCorrectly()
@@ -453,7 +490,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         RulesDriver.Instance.RunFrame(0.016f);
         
         // Assert: Error fired
-        Assert.NotEmpty(_errorListener.ReceivedEvents);    }
+        Assert.NotEmpty(_errorListener.ReceivedEvents);
+        var error = _errorListener.ReceivedEvents.First();
+        Assert.False(string.IsNullOrEmpty(error.Message));
+    }
 
     // ========== Flex Float Behavior Tests ==========
 
@@ -485,7 +525,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         RulesDriver.Instance.RunFrame(0.016f);
         
         // Assert: Error fired
-        Assert.NotEmpty(_errorListener.ReceivedEvents);    }
+        Assert.NotEmpty(_errorListener.ReceivedEvents);
+        var error = _errorListener.ReceivedEvents.First();
+        Assert.False(string.IsNullOrEmpty(error.Message));
+    }
 
     [Fact]
     public void RunFrame_WithFlexGrowMutation_AppliesCorrectly()
@@ -516,6 +559,8 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
+        var error = _errorListener.ReceivedEvents.First();
+        Assert.False(string.IsNullOrEmpty(error.Message));
     }
 
     [Fact]
@@ -547,6 +592,8 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
+        var error = _errorListener.ReceivedEvents.First();
+        Assert.False(string.IsNullOrEmpty(error.Message));
     }
 
     [Fact]
@@ -578,6 +625,8 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
+        var error = _errorListener.ReceivedEvents.First();
+        Assert.False(string.IsNullOrEmpty(error.Message));
     }
 
     // ========== Flex Two-Field Behavior Tests ==========
@@ -611,7 +660,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         RulesDriver.Instance.RunFrame(0.016f);
         
         // Assert: Error fired
-        Assert.NotEmpty(_errorListener.ReceivedEvents);    }
+        Assert.NotEmpty(_errorListener.ReceivedEvents);
+        var error = _errorListener.ReceivedEvents.First();
+        Assert.False(string.IsNullOrEmpty(error.Message));
+    }
 
     [Fact]
     public void RunFrame_WithFlexWidthMutation_AppliesCorrectly()
@@ -643,6 +695,8 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
+        var error = _errorListener.ReceivedEvents.First();
+        Assert.False(string.IsNullOrEmpty(error.Message));
     }
 
     [Fact]
@@ -675,6 +729,8 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
+        var error = _errorListener.ReceivedEvents.First();
+        Assert.False(string.IsNullOrEmpty(error.Message));
     }
 
     // ========== Flex Int Behavior Tests ==========
@@ -707,5 +763,8 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         RulesDriver.Instance.RunFrame(0.016f);
         
         // Assert: Error fired
-        Assert.NotEmpty(_errorListener.ReceivedEvents);    }
+        Assert.NotEmpty(_errorListener.ReceivedEvents);
+        var error = _errorListener.ReceivedEvents.First();
+        Assert.False(string.IsNullOrEmpty(error.Message));
+    }
 }

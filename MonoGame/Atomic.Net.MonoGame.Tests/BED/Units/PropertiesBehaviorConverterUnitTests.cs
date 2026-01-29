@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Xunit;
+using Xunit.Abstractions;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Properties;
 
@@ -13,14 +14,18 @@ namespace Atomic.Net.MonoGame.Tests.BED.Units;
 [Trait("Category", "Unit")]
 public sealed class PropertiesBehaviorConverterUnitTests : IDisposable
 {
-    public PropertiesBehaviorConverterUnitTests()
+    private readonly ErrorEventLogger _errorLogger;
+    public PropertiesBehaviorConverterUnitTests(ITestOutputHelper output)
     {
+        _errorLogger = new ErrorEventLogger(output);
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
 
     public void Dispose()
     {
+        _errorLogger.Dispose();
+
         EventBus<ShutdownEvent>.Push(new());
     }
 

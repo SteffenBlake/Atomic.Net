@@ -2,20 +2,25 @@ using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Ids;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Atomic.Net.MonoGame.Tests.BED.Units;
 
 [Collection("NonParallel")]
 public sealed class EntityIdRegistryUnitTests : IDisposable
 {
-    public EntityIdRegistryUnitTests()
+    private readonly ErrorEventLogger _errorLogger;
+    public EntityIdRegistryUnitTests(ITestOutputHelper output)
     {
+        _errorLogger = new ErrorEventLogger(output);
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
 
     public void Dispose()
     {
+        _errorLogger.Dispose();
+
         EventBus<ShutdownEvent>.Push(new());
     }
 

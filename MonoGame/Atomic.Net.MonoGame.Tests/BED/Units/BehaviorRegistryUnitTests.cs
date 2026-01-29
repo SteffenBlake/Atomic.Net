@@ -1,4 +1,5 @@
 using Xunit;
+using Xunit.Abstractions;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
 
@@ -19,8 +20,10 @@ public struct TestBehavior : IBehavior<TestBehavior>
 [Trait("Category", "Unit")]
 public sealed class BehaviorRegistryUnitTests : IDisposable
 {
-    public BehaviorRegistryUnitTests()
+    private readonly ErrorEventLogger _errorLogger;
+    public BehaviorRegistryUnitTests(ITestOutputHelper output)
     {
+        _errorLogger = new ErrorEventLogger(output);
         AtomicSystem.Initialize();
         
         // CRITICAL: Must initialize BehaviorRegistry for each behavior type used in tests
@@ -33,6 +36,8 @@ public sealed class BehaviorRegistryUnitTests : IDisposable
 
     public void Dispose()
     {
+        _errorLogger.Dispose();
+
         EventBus<ShutdownEvent>.Push(new());
     }
 

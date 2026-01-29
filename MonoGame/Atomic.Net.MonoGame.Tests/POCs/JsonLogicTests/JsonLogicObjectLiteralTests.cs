@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Json.Logic;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Atomic.Net.MonoGame.Tests.POCs.JsonLogicTests;
 
