@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Nodes;
 using Atomic.Net.MonoGame.BED;
@@ -495,7 +496,6 @@ public sealed class RulesDriver :
 
     /// <summary>
     /// Applies the computed value to the target path.
-    /// Currently supports only properties mutations.
     /// </summary>
     private static bool ApplyToTarget(ushort entityIndex, JsonNode target, JsonNode value)
     {
@@ -507,13 +507,22 @@ public sealed class RulesDriver :
             return false;
         }
 
+        // senior-dev: Check each supported target type using else-if for short-circuit optimization
         if (targetObj.TryGetPropertyValue("properties", out var propertyKeyNode) && propertyKeyNode != null)
         {
             return ApplyPropertyMutation(entityIndex, propertyKeyNode, value);
         }
+        else if (targetObj.TryGetPropertyValue("id", out _))
+        {
+            return ApplyIdMutation(entityIndex, value);
+        }
+        else if (targetObj.TryGetPropertyValue("tags", out _))
+        {
+            return ApplyTagsMutation(entityIndex, value);
+        }
 
         EventBus<ErrorEvent>.Push(new ErrorEvent(
-            $"Unsupported target path format for entity {entityIndex}. Expected one of: [properties]"
+            $"Unsupported target path format for entity {entityIndex}. Expected one of: [properties, id, tags]"
         ));
         return false;
     }
@@ -621,5 +630,122 @@ public sealed class RulesDriver :
             propertyValue = null;
             return false;
         }
+    }
+
+    /// <summary>
+    /// Applies an Id mutation to an entity.
+    /// </summary>
+    private static bool ApplyIdMutation(ushort entityIndex, JsonNode value)
+    {
+        string newId;
+        try
+        {
+            newId = value.GetValue<string>();
+        }
+        catch (Exception ex)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Failed to parse id value for entity {entityIndex}: {ex.Message}. Id must be a string."
+            ));
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(newId))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Id value cannot be null, empty, or whitespace for entity {entityIndex}"
+            ));
+            return false;
+        }
+
+        var entity = EntityRegistry.Instance[entityIndex];
+        
+        if (!entity.Active)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Cannot mutate inactive entity {entityIndex}"
+            ));
+            return false;
+        }
+
+        // senior-dev: Use anti-closure overload to avoid allocations
+        entity.SetBehavior<IdBehavior, string>(
+            in newId,
+            (ref readonly _newId, ref b) => b = b with { Id = _newId }
+        );
+        // senior-dev: EntityIdRegistry automatically updates via event listener
+
+        return true;
+    }
+
+    /// <summary>
+    /// Applies a Tags mutation to an entity.
+    /// Tags are set holistically from a JsonArray of strings.
+    /// </summary>
+    private static bool ApplyTagsMutation(ushort entityIndex, JsonNode value)
+    {
+        if (value is not JsonArray tagsArray)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Tags value must be a JsonArray for entity {entityIndex}"
+            ));
+            return false;
+        }
+
+        var newTags = new List<string>();
+        for (var i = 0; i < tagsArray.Count; i++)
+        {
+            var tagNode = tagsArray[i];
+            if (tagNode == null)
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Tag at index {i} is null for entity {entityIndex}"
+                ));
+                return false;
+            }
+
+            string tag;
+            try
+            {
+                tag = tagNode.GetValue<string>();
+            }
+            catch (Exception ex)
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Failed to parse tag at index {i} for entity {entityIndex}: {ex.Message}. Tags must be strings."
+                ));
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(tag))
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Tag at index {i} cannot be null, empty, or whitespace for entity {entityIndex}"
+                ));
+                return false;
+            }
+
+            newTags.Add(tag);
+        }
+
+        var entity = EntityRegistry.Instance[entityIndex];
+        
+        if (!entity.Active)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Cannot mutate inactive entity {entityIndex}"
+            ));
+            return false;
+        }
+
+        // senior-dev: Use anti-closure overload to avoid allocations
+        var tagsToSet = newTags.ToImmutableHashSet();
+        entity.SetBehavior<TagsBehavior, ImmutableHashSet<string>>(
+            in tagsToSet,
+            (ref readonly _tags, ref b) => b = b with { Tags = _tags }
+        );
+        // senior-dev: TagRegistry automatically updates via event listener
+
+        return true;
     }
 }
