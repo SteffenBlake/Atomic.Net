@@ -97,18 +97,6 @@ public class SequenceRegistry : IEventHandler<ResetEvent>, IEventHandler<Shutdow
     }
 
     /// <summary>
-    /// Resolve a sequence by its index.
-    /// </summary>
-    public bool TryResolveByIndex(
-        ushort index,
-        [NotNullWhen(true)]
-        out JsonSequence? sequence
-    )
-    {
-        return _sequences.TryGetValue(index, out sequence);
-    }
-
-    /// <summary>
     /// Resolve a sequence index by its string ID.
     /// </summary>
     public bool TryResolveById(string id, out ushort index)

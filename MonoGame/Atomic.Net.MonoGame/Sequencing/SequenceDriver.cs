@@ -11,8 +11,7 @@ namespace Atomic.Net.MonoGame.Sequencing;
 /// </summary>
 public sealed class SequenceDriver : 
     ISingleton<SequenceDriver>,
-    IEventHandler<PreEntityDeactivatedEvent>,
-    IEventHandler<UpdateFrameEvent>
+    IEventHandler<PreEntityDeactivatedEvent>
 {
     private readonly SparseReferenceArray<SparseArray<SequenceState>> _activeSequences = 
         new(Constants.MaxEntities);
@@ -31,21 +30,13 @@ public sealed class SequenceDriver :
 
         Instance = new();
         EventBus<PreEntityDeactivatedEvent>.Register(Instance);
-        EventBus<UpdateFrameEvent>.Register(Instance);
     }
 
     public static SequenceDriver Instance { get; private set; } = null!;
 
     /// <summary>
-    /// Handles update frame event by running all sequences.
-    /// </summary>
-    public void OnEvent(UpdateFrameEvent e)
-    {
-        RunFrame((float)e.Elapsed.TotalSeconds);
-    }
-
-    /// <summary>
     /// Executes all active sequences for a single frame.
+    /// Called externally by the game loop (not via UpdateFrameEvent).
     /// </summary>
     public void RunFrame(float deltaTime)
     {
@@ -62,7 +53,7 @@ public sealed class SequenceDriver :
             // Process all sequences for this entity
             foreach (var (sequenceIndex, state) in sequenceStates)
             {
-                if (!SequenceRegistry.Instance.TryResolveByIndex(sequenceIndex, out var sequence) || sequence == null)
+                if (!SequenceRegistry.Instance.Sequences.TryGetValue(sequenceIndex, out var sequence))
                 {
                     // Sequence was removed from registry, clean up
                     sequenceStates.Remove(sequenceIndex);
@@ -73,7 +64,8 @@ public sealed class SequenceDriver :
             }
 
             // After processing all sequences for this entity, write changes back
-            JsonEntityConverter.Write(entityJson, entityIndex);
+            var entity = EntityRegistry.Instance[entityIndex];
+            JsonEntityConverter.Write(entityJson, entity);
         }
     }
 
@@ -87,7 +79,7 @@ public sealed class SequenceDriver :
     )
     {
         var remainingTime = deltaTime;
-        var currentStepIndex = state.StepIndex;
+        byte currentStepIndex = state.StepIndex;
         var currentStepElapsed = state.StepElapsedTime;
 
         while (remainingTime > 0 && currentStepIndex < sequence.Steps.Length)
@@ -104,17 +96,15 @@ public sealed class SequenceDriver :
             currentStepElapsed += timeConsumed;
             remainingTime -= timeConsumed;
 
-            if (completed)
-            {
-                // Move to next step, carry forward remaining time
-                currentStepIndex++;
-                currentStepElapsed = 0;
-            }
-            else
+            if (!completed)
             {
                 // Step not complete, stop processing
                 break;
             }
+
+            // Move to next step, carry forward remaining time
+            currentStepIndex++;
+            currentStepElapsed = 0;
         }
 
         // Update or remove sequence state
@@ -132,15 +122,14 @@ public sealed class SequenceDriver :
             {
                 _activeSequences.Remove(entityIndex);
             }
+            return;
         }
-        else
-        {
-            // Update state
-            sequenceStates.Set(sequenceIndex, new SequenceState(
-                (byte)currentStepIndex,
-                currentStepElapsed
-            ));
-        }
+
+        // Update state
+        sequenceStates.Set(sequenceIndex, new SequenceState(
+            currentStepIndex,
+            currentStepElapsed
+        ));
     }
 
     private (bool completed, float timeConsumed) ProcessStep(
@@ -174,7 +163,7 @@ public sealed class SequenceDriver :
         }
 
         // Should never happen - all step types handled above
-        return (true, 0f);
+        throw new InvalidOperationException($"Unknown sequence step type encountered for entity {entityIndex}");
     }
 
     private (bool completed, float timeConsumed) ProcessDelayStep(
@@ -184,16 +173,14 @@ public sealed class SequenceDriver :
     )
     {
         var remainingDelay = delay.Duration - stepElapsed;
-        if (deltaTime >= remainingDelay)
-        {
-            // Delay complete
-            return (true, remainingDelay);
-        }
-        else
+        if (deltaTime < remainingDelay)
         {
             // Delay not complete
             return (false, deltaTime);
         }
+
+        // Delay complete
+        return (true, remainingDelay);
     }
 
     private (bool completed, float timeConsumed) ProcessDoStep(
@@ -208,11 +195,8 @@ public sealed class SequenceDriver :
         _stepContext["world"] = _worldContext;
         _stepContext["self"] = entityJson;  // entityJson is already isolated per entity, no clone needed
 
-        // Execute command
-        if (doStep.Do.TryMatch(out MutCommand mutCommand))
-        {
-            MutCmdDriver.Execute(mutCommand, _stepContext, entityJson);
-        }
+        // Execute command using shared SceneCommandDriver
+        SceneCommandDriver.Execute(doStep.Do, _stepContext, entityJson, entityIndex);
 
         // Do step completes immediately (advances on next frame)
         return (true, 0f);
@@ -238,11 +222,8 @@ public sealed class SequenceDriver :
         _stepContext["tween"] = tweenValue;
         _stepContext["self"] = entityJson;  // entityJson is already isolated, no clone needed
 
-        // Execute command
-        if (tween.Do.TryMatch(out MutCommand mutCommand))
-        {
-            MutCmdDriver.Execute(mutCommand, _stepContext, entityJson);
-        }
+        // Execute command using shared SceneCommandDriver
+        SceneCommandDriver.Execute(tween.Do, _stepContext, entityJson, entityIndex);
 
         var completed = newElapsed >= tween.Duration;
         return (completed, actualDelta);
@@ -271,11 +252,8 @@ public sealed class SequenceDriver :
             _stepContext["elapsed"] = triggerElapsed;
             _stepContext["self"] = entityJson;  // entityJson is already isolated, no clone needed
 
-            // Execute command
-            if (repeat.Do.TryMatch(out MutCommand mutCommand))
-            {
-                MutCmdDriver.Execute(mutCommand, _stepContext, entityJson);
-            }
+            // Execute command using shared SceneCommandDriver
+            SceneCommandDriver.Execute(repeat.Do, _stepContext, entityJson, entityIndex);
         }
 
         // Check if repeat condition is met (until clause)
@@ -285,24 +263,16 @@ public sealed class SequenceDriver :
         var completed = false;
         try
         {
-            // senior-dev: FINDING: We deserialize the Rule every frame here, which is suboptimal.
-            // Ideally, we'd parse it once at sequence load time and cache it. However, that would
-            // require changing the JsonSequence structure to store parsed Rules, which is a larger
-            // refactor. For now, this is acceptable given repeat steps are typically short-lived.
-            var untilRule = System.Text.Json.JsonSerializer.Deserialize<Rule>(repeat.Until.ToJsonString());
-            if (untilRule != null)
+            var result = JsonLogic.Apply(repeat.Until, _repeatContext);
+            if (result is JsonValue jsonValue && jsonValue.TryGetValue<bool>(out var boolResult))
             {
-                var result = untilRule.Apply(_repeatContext);
-                if (result != null && result is JsonValue jsonValue && jsonValue.TryGetValue<bool>(out var boolResult))
-                {
-                    completed = boolResult;
-                }
+                completed = boolResult;
             }
         }
         catch (Exception ex)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to evaluate repeat 'until' condition for entity {entityIndex}: {ex.Message}"
+                $"Failed to evaluate repeat 'until' condition: {ex.Message}"
             ));
             completed = true; // Stop on error
         }
@@ -312,6 +282,7 @@ public sealed class SequenceDriver :
 
     /// <summary>
     /// Starts a sequence on an entity.
+    /// If the sequence is not already running, starts it from the beginning.
     /// </summary>
     public void StartSequence(ushort entityIndex, ushort sequenceIndex)
     {
@@ -319,7 +290,7 @@ public sealed class SequenceDriver :
         if (!entity.Active)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Cannot start sequence on inactive entity {entityIndex}"
+                "Cannot start sequence on inactive entity"
             ));
             return;
         }
@@ -355,21 +326,22 @@ public sealed class SequenceDriver :
     }
 
     /// <summary>
-    /// Resets a sequence on an entity, restarting it from the beginning.
+    /// Resets a sequence on an entity.
+    /// If the sequence is not running, starts it.
+    /// If it is running, restarts it from the beginning.
     /// </summary>
     public void ResetSequence(ushort entityIndex, ushort sequenceIndex)
     {
         var sequenceStates = _activeSequences[entityIndex];
         if (sequenceStates == null)
         {
-            return; // No-op if entity has no sequences
+            // Not running, so start it
+            StartSequence(entityIndex, sequenceIndex);
+            return;
         }
 
-        if (sequenceStates.HasValue(sequenceIndex))
-        {
-            // Reset to beginning
-            sequenceStates.Set(sequenceIndex, new SequenceState(0, 0f));
-        }
+        // Reset to beginning (whether running or not)
+        sequenceStates.Set(sequenceIndex, new SequenceState(0, 0f));
     }
 
     /// <summary>
