@@ -512,7 +512,6 @@ public sealed class RulesDriver :
             return false;
         }
 
-        // senior-dev: Check each supported target type using else-if for short-circuit optimization
         if (targetObj.TryGetPropertyValue("properties", out var propertyKeyNode) && propertyKeyNode != null)
         {
             return ApplyPropertyMutation(entityIndex, propertyKeyNode, value);

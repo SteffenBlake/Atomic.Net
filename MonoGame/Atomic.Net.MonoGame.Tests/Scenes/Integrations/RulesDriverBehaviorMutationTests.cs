@@ -262,13 +262,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
         
-        // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
         
-        // Assert: Parent behavior was set
         Assert.True(EntityIdRegistry.Instance.TryResolve("child-node", out var entity));
         Assert.True(BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(entity.Value, out var parent));
-        // senior-dev: ParentSelector.ToString() returns the selector string
         Assert.Equal("@parent-node", parent.Value.ParentSelector.ToString());
     }
 
