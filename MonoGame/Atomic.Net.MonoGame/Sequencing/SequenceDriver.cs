@@ -135,6 +135,7 @@ public sealed class SequenceDriver :
 
     /// <summary>
     /// Processes a single sequence on an entity.
+    /// Loops through steps until one doesn't complete immediately, carrying over leftover time.
     /// </summary>
     private void ProcessSequence(
         ushort entityIndex,
@@ -151,50 +152,83 @@ public sealed class SequenceDriver :
             return;
         }
 
-        if (state.StepIndex >= sequence.Steps.Length)
+        var currentState = state;
+        var remainingTime = deltaTime;
+        
+        // Loop through steps, processing until one doesn't complete immediately
+        while (currentState.StepIndex < sequence.Steps.Length)
+        {
+            var currentStep = sequence.Steps[currentState.StepIndex];
+            var newElapsedTime = currentState.StepElapsedTime + remainingTime;
+            
+            // Track if step completed this iteration
+            bool stepCompleted = false;
+            byte nextStepIndex = currentState.StepIndex;
+            float leftoverTime = 0f;
+            
+            // Process step based on type
+            currentStep.Visit(
+                delay => stepCompleted = ProcessDelayStep(entityIndex, sequenceIndex, currentState, delay, newElapsedTime, out nextStepIndex, out leftoverTime),
+                doStep => stepCompleted = ProcessDoStep(entityIndex, sequenceIndex, currentState, doStep, entityJson, remainingTime, out nextStepIndex, out leftoverTime),
+                tween => stepCompleted = ProcessTweenStep(entityIndex, sequenceIndex, currentState, tween, entityJson, newElapsedTime, out nextStepIndex, out leftoverTime),
+                repeat => stepCompleted = ProcessRepeatStep(entityIndex, sequenceIndex, currentState, repeat, entityJson, newElapsedTime, out nextStepIndex, out leftoverTime),
+                () => {
+                    EventBus<ErrorEvent>.Push(new ErrorEvent(
+                        $"Unknown sequence step type for sequence {sequenceIndex} on entity {entityIndex}"
+                    ));
+                    StopSequence(entityIndex, sequenceIndex);
+                }
+            );
+            
+            if (stepCompleted)
+            {
+                // Step completed - advance to next step with leftover time
+                currentState = new SequenceState(nextStepIndex, 0f);
+                remainingTime = leftoverTime;
+            }
+            else
+            {
+                // Step didn't complete - already saved state in Process* method
+                break;
+            }
+        }
+        
+        // Check if sequence completed
+        if (currentState.StepIndex >= sequence.Steps.Length)
         {
             // Sequence completed - auto-remove
             StopSequence(entityIndex, sequenceIndex);
-            return;
         }
-
-        var currentStep = sequence.Steps[state.StepIndex];
-        var newElapsedTime = state.StepElapsedTime + deltaTime;
-
-        // Process step based on type
-        currentStep.Visit(
-            delay => ProcessDelayStep(entityIndex, sequenceIndex, state, delay, newElapsedTime),
-            doStep => ProcessDoStep(entityIndex, sequenceIndex, state, doStep, entityJson, deltaTime),
-            tween => ProcessTweenStep(entityIndex, sequenceIndex, state, tween, entityJson, newElapsedTime),
-            repeat => ProcessRepeatStep(entityIndex, sequenceIndex, state, repeat, entityJson, newElapsedTime),
-            () => {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Unknown sequence step type for sequence {sequenceIndex} on entity {entityIndex}"
-                ));
-                StopSequence(entityIndex, sequenceIndex);
+        else if (currentState != state)
+        {
+            // Step completed but sequence not done - save new state
+            if (_activeSequences.TryGetValue(entityIndex, out var entitySequences))
+            {
+                entitySequences.Set(sequenceIndex, currentState);
             }
-        );
+        }
     }
 
     /// <summary>
     /// Processes a delay step.
+    /// Returns true if step completed, with leftover time.
     /// </summary>
-    private void ProcessDelayStep(
+    private bool ProcessDelayStep(
         ushort entityIndex,
         ushort sequenceIndex,
         SequenceState state,
         DelayStep delay,
-        float newElapsedTime
+        float newElapsedTime,
+        out byte nextStepIndex,
+        out float leftoverTime
     )
     {
         if (newElapsedTime >= delay.Duration)
         {
-            // Delay complete - advance to next step
-            var nextState = new SequenceState((byte)(state.StepIndex + 1), 0f);
-            if (_activeSequences.TryGetValue(entityIndex, out var entitySequences))
-            {
-                entitySequences.Set(sequenceIndex, nextState);
-            }
+            // Delay complete - advance to next step with leftover time
+            nextStepIndex = (byte)(state.StepIndex + 1);
+            leftoverTime = newElapsedTime - delay.Duration;
+            return true;
         }
         else
         {
@@ -204,22 +238,28 @@ public sealed class SequenceDriver :
             {
                 entitySequences.Set(sequenceIndex, updatedState);
             }
+            nextStepIndex = state.StepIndex;
+            leftoverTime = 0f;
+            return false;
         }
     }
 
     /// <summary>
     /// Processes a do step.
+    /// Returns true (always completes immediately), carries forward all deltaTime.
     /// </summary>
-    private void ProcessDoStep(
+    private bool ProcessDoStep(
         ushort entityIndex,
         ushort sequenceIndex,
         SequenceState state,
         DoStep doStep,
         JsonObject entityJson,
-        float deltaTime
+        float deltaTime,
+        out byte nextStepIndex,
+        out float leftoverTime
     )
     {
-        // Build context: { "world": { "deltaTime": 0.016667 }, "self": { ... } }
+        // Build context: { "world": { "deltaTime": ... }, "self": { ... } }
         var context = new JsonObject
         {
             ["world"] = new JsonObject { ["deltaTime"] = deltaTime },
@@ -229,29 +269,30 @@ public sealed class SequenceDriver :
         // Execute command
         ExecuteSequenceCommand(doStep.Do, context, entityIndex);
 
-        // Advance to next step immediately
-        var nextState = new SequenceState((byte)(state.StepIndex + 1), 0f);
-        if (_activeSequences.TryGetValue(entityIndex, out var entitySequences))
-        {
-            entitySequences.Set(sequenceIndex, nextState);
-        }
+        // Advance to next step immediately, carry forward all deltaTime
+        nextStepIndex = (byte)(state.StepIndex + 1);
+        leftoverTime = deltaTime;
+        return true;
     }
 
     /// <summary>
     /// Processes a tween step.
+    /// Returns true if tween completed, with leftover time.
     /// </summary>
-    private void ProcessTweenStep(
+    private bool ProcessTweenStep(
         ushort entityIndex,
         ushort sequenceIndex,
         SequenceState state,
         TweenStep tween,
         JsonObject entityJson,
-        float newElapsedTime
+        float newElapsedTime,
+        out byte nextStepIndex,
+        out float leftoverTime
     )
     {
         if (newElapsedTime >= tween.Duration)
         {
-            // Tween complete - execute at target value and advance
+            // Tween complete - execute at target value and advance with leftover time
             var context = new JsonObject
             {
                 ["tween"] = tween.To,
@@ -260,11 +301,9 @@ public sealed class SequenceDriver :
 
             ExecuteSequenceCommand(tween.Do, context, entityIndex);
 
-            var nextState = new SequenceState((byte)(state.StepIndex + 1), 0f);
-            if (_activeSequences.TryGetValue(entityIndex, out var entitySequences))
-            {
-                entitySequences.Set(sequenceIndex, nextState);
-            }
+            nextStepIndex = (byte)(state.StepIndex + 1);
+            leftoverTime = newElapsedTime - tween.Duration;
+            return true;
         }
         else
         {
@@ -286,19 +325,25 @@ public sealed class SequenceDriver :
             {
                 entitySequences.Set(sequenceIndex, updatedState);
             }
+            nextStepIndex = state.StepIndex;
+            leftoverTime = 0f;
+            return false;
         }
     }
 
     /// <summary>
     /// Processes a repeat step.
+    /// Returns true if condition met (consumes all time).
     /// </summary>
-    private void ProcessRepeatStep(
+    private bool ProcessRepeatStep(
         ushort entityIndex,
         ushort sequenceIndex,
         SequenceState state,
         RepeatStep repeat,
         JsonObject entityJson,
-        float newElapsedTime
+        float newElapsedTime,
+        out byte nextStepIndex,
+        out float leftoverTime
     )
     {
         // Build context for condition evaluation
@@ -320,7 +365,9 @@ public sealed class SequenceDriver :
                 $"Failed to evaluate repeat condition for sequence {sequenceIndex} on entity {entityIndex}: {ex.Message}"
             ));
             StopSequence(entityIndex, sequenceIndex);
-            return;
+            nextStepIndex = state.StepIndex;
+            leftoverTime = 0f;
+            return false;
         }
 
         bool conditionMet = false;
@@ -331,12 +378,10 @@ public sealed class SequenceDriver :
 
         if (conditionMet)
         {
-            // Condition met - advance to next step
-            var nextState = new SequenceState((byte)(state.StepIndex + 1), 0f);
-            if (_activeSequences.TryGetValue(entityIndex, out var entitySequences))
-            {
-                entitySequences.Set(sequenceIndex, nextState);
-            }
+            // Condition met - advance to next step (consumes all remaining time)
+            nextStepIndex = (byte)(state.StepIndex + 1);
+            leftoverTime = 0f;
+            return true;
         }
         else
         {
@@ -354,6 +399,9 @@ public sealed class SequenceDriver :
             {
                 entitySequences.Set(sequenceIndex, updatedState);
             }
+            nextStepIndex = state.StepIndex;
+            leftoverTime = 0f;
+            return false;
         }
     }
 
