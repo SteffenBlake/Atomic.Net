@@ -136,13 +136,11 @@ public sealed class RulesDriver :
                 ["_index"] = entity.Index
             };
 
-            // senior-dev: Serialize IdBehavior
             if (BehaviorRegistry<IdBehavior>.Instance.TryGetBehavior(entity, out var idBehavior))
             {
                 entityObj["id"] = idBehavior.Value.Id;
             }
 
-            // senior-dev: Serialize TagsBehavior
             if (BehaviorRegistry<TagsBehavior>.Instance.TryGetBehavior(entity, out var tagBehavior))
             {
                 var tagsJson = new JsonArray();
@@ -156,19 +154,16 @@ public sealed class RulesDriver :
                 entityObj["tags"] = tagsJson;
             }
 
-            // senior-dev: Serialize PropertiesBehavior
             if (BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out var propertiesBehavior))
             {
                 var propertiesJson = new JsonObject();
-                // senior-dev: No null check needed - ImmutableDictionary never returns null from getter
                 foreach (var (key, value) in propertiesBehavior.Value.Properties)
                 {
-                    // PropertyValue is a variant type, extract actual value
                     var jsonValue = value.Visit(
-                        s => (JsonNode?)JsonValue.Create(s),
-                        f => JsonValue.Create(f),
-                        b => JsonValue.Create(b),
-                        () => null
+                        static s => (JsonNode?)JsonValue.Create(s),
+                        static f => JsonValue.Create(f),
+                        static b => JsonValue.Create(b),
+                        static () => null
                     );
                     
                     if (jsonValue != null)
@@ -179,7 +174,6 @@ public sealed class RulesDriver :
                 entityObj["properties"] = propertiesJson;
             }
 
-            // senior-dev: Serialize TransformBehavior as nested object
             if (BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var transformBehavior))
             {
                 var transformJson = new JsonObject
@@ -192,14 +186,11 @@ public sealed class RulesDriver :
                 entityObj["transform"] = transformJson;
             }
 
-            // senior-dev: Serialize ParentBehavior as selector string
             if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(entity, out var parentBehavior))
             {
-                // senior-dev: ParentSelector.ToString() returns the selector string
                 entityObj["parent"] = parentBehavior.Value.ParentSelector.ToString();
             }
 
-            // senior-dev: Serialize individual flex behaviors
             SerializeFlexBehaviors(entity, entityObj);
 
             entities.Add(entityObj);
@@ -701,13 +692,10 @@ public sealed class RulesDriver :
             return false;
         }
 
-        // Wrap in a tuple to pass into the anti-closure overload
         var setter = (propertyKey, propertyValue.Value);
-        // senior-dev: Use With to add/update property in FluentDictionary
-        // senior-dev: CRITICAL - Must use _setter.Value not setter.Value to avoid closure
         entity.SetBehavior<PropertiesBehavior, (string Key, PropertyValue Value)>(
             ref setter,
-            (ref readonly _setter, ref b) => b = b with { 
+            static (ref readonly _setter, ref b) => b = b with { 
                 Properties = b.Properties.With(_setter.Key, _setter.Value) 
             }
         );
@@ -724,51 +712,44 @@ public sealed class RulesDriver :
         out PropertyValue? propertyValue
     )
     {
-        try
-        {
-            // Try types in order: bool (most specific) → numeric → string (least specific)
-            if (value is JsonValue jsonValue)
-            {
-                if (jsonValue.TryGetValue<bool>(out var boolVal))
-                {
-                    propertyValue = boolVal;
-                    return true;
-                }
-
-                // JsonLogic returns decimal for arithmetic operations
-                if (jsonValue.TryGetValue<decimal>(out var decimalVal))
-                {
-                    propertyValue = (float)decimalVal;
-                    return true;
-                }
-                
-                if (jsonValue.TryGetValue<float>(out var floatVal))
-                {
-                    propertyValue = floatVal;
-                    return true;
-                }
-                
-                if (jsonValue.TryGetValue<int>(out var intVal))
-                {
-                    propertyValue = intVal;
-                    return true;
-                }
-
-                if (jsonValue.TryGetValue<string>(out var stringVal))
-                {
-                    propertyValue = stringVal;
-                    return true;
-                }
-            }
-
-            propertyValue = null;
-            return false;
-        }
-        catch
+        if (value is not JsonValue jsonValue)
         {
             propertyValue = null;
             return false;
         }
+
+        if (jsonValue.TryGetValue<bool>(out var boolVal))
+        {
+            propertyValue = boolVal;
+            return true;
+        }
+
+        if (jsonValue.TryGetValue<decimal>(out var decimalVal))
+        {
+            propertyValue = (float)decimalVal;
+            return true;
+        }
+        
+        if (jsonValue.TryGetValue<float>(out var floatVal))
+        {
+            propertyValue = floatVal;
+            return true;
+        }
+        
+        if (jsonValue.TryGetValue<int>(out var intVal))
+        {
+            propertyValue = intVal;
+            return true;
+        }
+
+        if (jsonValue.TryGetValue<string>(out var stringVal))
+        {
+            propertyValue = stringVal;
+            return true;
+        }
+
+        propertyValue = null;
+        return false;
     }
 
     /// <summary>
@@ -807,12 +788,10 @@ public sealed class RulesDriver :
             return false;
         }
 
-        // senior-dev: Use anti-closure overload to avoid allocations
         entity.SetBehavior<IdBehavior, string>(
             in newId,
-            (ref readonly _newId, ref b) => b = b with { Id = _newId }
+            static (ref readonly _newId, ref b) => b = b with { Id = _newId }
         );
-        // senior-dev: EntityIdRegistry automatically updates via event listener
 
         return true;
     }
@@ -831,7 +810,6 @@ public sealed class RulesDriver :
             return false;
         }
 
-        // senior-dev: Use pre-allocated list to avoid allocations during gameplay
         _tempTagsList.Clear();
         for (var i = 0; i < tagsArray.Count; i++)
         {
@@ -869,7 +847,6 @@ public sealed class RulesDriver :
         }
 
         var entity = EntityRegistry.Instance[entityIndex];
-        
         if (!entity.Active)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
@@ -878,13 +855,11 @@ public sealed class RulesDriver :
             return false;
         }
 
-        // senior-dev: Use anti-closure overload to avoid allocations
         var tagsToSet = _tempTagsList.ToImmutableHashSet();
         entity.SetBehavior<TagsBehavior, ImmutableHashSet<string>>(
             in tagsToSet,
-            (ref readonly _tags, ref b) => b = b with { Tags = _tags }
+            static (ref readonly _tags, ref b) => b = b with { Tags = _tags }
         );
-        // senior-dev: TagRegistry automatically updates via event listener
 
         return true;
     }
@@ -913,7 +888,6 @@ public sealed class RulesDriver :
             return false;
         }
 
-        // Determine which transform field to mutate
         if (fieldObj.TryGetPropertyValue("position", out _))
         {
             if (!TryParseVector3(value, entityIndex, "position", out var vector))
@@ -922,7 +896,7 @@ public sealed class RulesDriver :
             }
             entity.SetBehavior<TransformBehavior, Vector3>(
                 in vector,
-                (ref readonly _vec, ref b) => b.Position = _vec
+                static (ref readonly _vec, ref b) => b.Position = _vec
             );
             return true;
         }
@@ -934,7 +908,7 @@ public sealed class RulesDriver :
             }
             entity.SetBehavior<TransformBehavior, Quaternion>(
                 in quat,
-                (ref readonly _quat, ref b) => b.Rotation = _quat
+                static (ref readonly _quat, ref b) => b.Rotation = _quat
             );
             return true;
         }
@@ -946,7 +920,7 @@ public sealed class RulesDriver :
             }
             entity.SetBehavior<TransformBehavior, Vector3>(
                 in vector,
-                (ref readonly _vec, ref b) => b.Scale = _vec
+                static (ref readonly _vec, ref b) => b.Scale = _vec
             );
             return true;
         }
@@ -958,7 +932,7 @@ public sealed class RulesDriver :
             }
             entity.SetBehavior<TransformBehavior, Vector3>(
                 in vector,
-                (ref readonly _vec, ref b) => b.Anchor = _vec
+                static (ref readonly _vec, ref b) => b.Anchor = _vec
             );
             return true;
         }
@@ -1070,7 +1044,6 @@ public sealed class RulesDriver :
             return false;
         }
 
-        // Parse selector using SelectorRegistry
         if (!SelectorRegistry.Instance.TryParse(selectorString.AsSpan(), out var selector))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
@@ -1083,7 +1056,7 @@ public sealed class RulesDriver :
         
         entity.SetBehavior<ParentBehavior, ParentBehavior>(
             in parentBehavior,
-            (ref readonly _parent, ref b) => b = _parent
+            static (ref readonly _parent, ref b) => b = _parent
         );
 
         return true;
@@ -1111,7 +1084,7 @@ public sealed class RulesDriver :
         var behavior = new FlexAlignItemsBehavior(enumValue);
         entity.SetBehavior<FlexAlignItemsBehavior, FlexAlignItemsBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1136,7 +1109,7 @@ public sealed class RulesDriver :
         var behavior = new FlexAlignSelfBehavior(enumValue);
         entity.SetBehavior<FlexAlignSelfBehavior, FlexAlignSelfBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1161,7 +1134,7 @@ public sealed class RulesDriver :
         var behavior = new FlexDirectionBehavior(enumValue);
         entity.SetBehavior<FlexDirectionBehavior, FlexDirectionBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1186,7 +1159,7 @@ public sealed class RulesDriver :
         var behavior = new FlexWrapBehavior(enumValue);
         entity.SetBehavior<FlexWrapBehavior, FlexWrapBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1211,7 +1184,7 @@ public sealed class RulesDriver :
         var behavior = new FlexJustifyContentBehavior(enumValue);
         entity.SetBehavior<FlexJustifyContentBehavior, FlexJustifyContentBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1236,7 +1209,7 @@ public sealed class RulesDriver :
         var behavior = new FlexPositionTypeBehavior(enumValue);
         entity.SetBehavior<FlexPositionTypeBehavior, FlexPositionTypeBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1263,7 +1236,7 @@ public sealed class RulesDriver :
         var behavior = new FlexBorderBottomBehavior(floatValue);
         entity.SetBehavior<FlexBorderBottomBehavior, FlexBorderBottomBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1288,7 +1261,7 @@ public sealed class RulesDriver :
         var behavior = new FlexBorderLeftBehavior(floatValue);
         entity.SetBehavior<FlexBorderLeftBehavior, FlexBorderLeftBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1313,7 +1286,7 @@ public sealed class RulesDriver :
         var behavior = new FlexBorderRightBehavior(floatValue);
         entity.SetBehavior<FlexBorderRightBehavior, FlexBorderRightBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1338,7 +1311,7 @@ public sealed class RulesDriver :
         var behavior = new FlexBorderTopBehavior(floatValue);
         entity.SetBehavior<FlexBorderTopBehavior, FlexBorderTopBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1363,7 +1336,7 @@ public sealed class RulesDriver :
         var behavior = new FlexGrowBehavior(floatValue);
         entity.SetBehavior<FlexGrowBehavior, FlexGrowBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1388,7 +1361,7 @@ public sealed class RulesDriver :
         var behavior = new FlexMarginBottomBehavior(floatValue);
         entity.SetBehavior<FlexMarginBottomBehavior, FlexMarginBottomBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1413,7 +1386,7 @@ public sealed class RulesDriver :
         var behavior = new FlexMarginLeftBehavior(floatValue);
         entity.SetBehavior<FlexMarginLeftBehavior, FlexMarginLeftBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1438,7 +1411,7 @@ public sealed class RulesDriver :
         var behavior = new FlexMarginRightBehavior(floatValue);
         entity.SetBehavior<FlexMarginRightBehavior, FlexMarginRightBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1463,7 +1436,7 @@ public sealed class RulesDriver :
         var behavior = new FlexMarginTopBehavior(floatValue);
         entity.SetBehavior<FlexMarginTopBehavior, FlexMarginTopBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1488,7 +1461,7 @@ public sealed class RulesDriver :
         var behavior = new FlexPaddingBottomBehavior(floatValue);
         entity.SetBehavior<FlexPaddingBottomBehavior, FlexPaddingBottomBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1513,7 +1486,7 @@ public sealed class RulesDriver :
         var behavior = new FlexPaddingLeftBehavior(floatValue);
         entity.SetBehavior<FlexPaddingLeftBehavior, FlexPaddingLeftBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1538,7 +1511,7 @@ public sealed class RulesDriver :
         var behavior = new FlexPaddingRightBehavior(floatValue);
         entity.SetBehavior<FlexPaddingRightBehavior, FlexPaddingRightBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1563,7 +1536,7 @@ public sealed class RulesDriver :
         var behavior = new FlexPaddingTopBehavior(floatValue);
         entity.SetBehavior<FlexPaddingTopBehavior, FlexPaddingTopBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1590,7 +1563,7 @@ public sealed class RulesDriver :
         var behavior = new FlexHeightBehavior(floatValue, percentValue);
         entity.SetBehavior<FlexHeightBehavior, FlexHeightBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1615,7 +1588,7 @@ public sealed class RulesDriver :
         var behavior = new FlexWidthBehavior(floatValue, percentValue);
         entity.SetBehavior<FlexWidthBehavior, FlexWidthBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1640,7 +1613,7 @@ public sealed class RulesDriver :
         var behavior = new FlexPositionBottomBehavior(floatValue, percentValue);
         entity.SetBehavior<FlexPositionBottomBehavior, FlexPositionBottomBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1665,7 +1638,7 @@ public sealed class RulesDriver :
         var behavior = new FlexPositionLeftBehavior(floatValue, percentValue);
         entity.SetBehavior<FlexPositionLeftBehavior, FlexPositionLeftBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1690,7 +1663,7 @@ public sealed class RulesDriver :
         var behavior = new FlexPositionRightBehavior(floatValue, percentValue);
         entity.SetBehavior<FlexPositionRightBehavior, FlexPositionRightBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1715,7 +1688,7 @@ public sealed class RulesDriver :
         var behavior = new FlexPositionTopBehavior(floatValue, percentValue);
         entity.SetBehavior<FlexPositionTopBehavior, FlexPositionTopBehavior>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
@@ -1742,7 +1715,7 @@ public sealed class RulesDriver :
         var behavior = new FlexZOverride(intValue);
         entity.SetBehavior<FlexZOverride, FlexZOverride>(
             in behavior,
-            (ref readonly _b, ref b) => b = _b
+            static (ref readonly _b, ref b) => b = _b
         );
         return true;
     }
