@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
+using Atomic.Net.MonoGame.Properties;
 using Atomic.Net.MonoGame.Scenes;
 using Json.Logic;
 
@@ -31,8 +32,8 @@ public sealed class SequenceDriver :
     // Outer index: entity, Inner index: sequence
     private readonly SparseReferenceArray<SparseArray<SequenceState>> _activeSequences = new(Constants.MaxEntities);
 
-    // senior-dev: Pre-allocated context objects to eliminate allocation in hot path
-    // These are reused every frame by updating their values rather than creating new instances
+    // Pre-allocated context objects to eliminate allocation in hot path
+    // These are reused every frame by removing/reassigning values
     private readonly JsonObject _doStepContext = new();
     private readonly JsonObject _doStepWorldContext = new();
     private readonly JsonObject _tweenContext = new();
@@ -40,15 +41,8 @@ public sealed class SequenceDriver :
 
     private SequenceDriver()
     {
-        // Initialize reusable context objects
+        // Initialize world context as child of doStep context
         _doStepContext["world"] = _doStepWorldContext;
-        _doStepContext["self"] = null!; // Will be set per-entity
-
-        _tweenContext["tween"] = 0f; // Will be updated per-frame
-        _tweenContext["self"] = null!; // Will be set per-entity
-
-        _repeatContext["elapsed"] = 0f; // Will be updated per-frame
-        _repeatContext["self"] = null!; // Will be set per-entity
     }
 
     /// <summary>
@@ -80,13 +74,17 @@ public sealed class SequenceDriver :
 
             var entity = EntityRegistry.Instance[entityIndex];
 
+            // Build entityJson from current entity state
             var entityJson = EntityJsonHelper.BuildEntityJsonNode(entity);
 
-            // Process all sequences for this entity
+            // Process all sequences for this entity, mutating entityJson in-place
             foreach (var (sequenceIndex, state) in entitySequences)
             {
                 ProcessSequence(entityIndex, sequenceIndex, state, entityJson, deltaTime);
             }
+
+            // After all sequences complete, apply accumulated mutations from entityJson to actual entity
+            ApplyJsonToEntity(entityIndex, entityJson);
         }
     }
 
@@ -301,10 +299,11 @@ public sealed class SequenceDriver :
         out float leftoverTime
     )
     {
-        // TODO: senior-dev: CRITICAL ALLOCATION - JsonObject indexer assignment allocates
-        // Even though containers are pre-allocated, setting JsonNode values creates heap allocations
-        // REQUIRED FIX: Use object pooling for JsonNode values OR redesign to avoid JsonNode mutation
+        // Update world context deltaTime
         _doStepWorldContext["deltaTime"] = deltaTime;
+        
+        // Remove and reassign self to avoid parent conflict
+        _doStepContext.Remove("self");
         _doStepContext["self"] = entityJson;
 
         // Execute command
@@ -334,8 +333,8 @@ public sealed class SequenceDriver :
         if (newElapsedTime >= tween.Duration)
         {
             // Tween complete - execute at target value and advance with leftover time
-            // senior-dev: Reuse pre-allocated context object
             _tweenContext["tween"] = tween.To;
+            _tweenContext.Remove("self");
             _tweenContext["self"] = entityJson;
 
             ExecuteSequenceCommand(tween.Do, _tweenContext, entityIndex);
@@ -350,8 +349,8 @@ public sealed class SequenceDriver :
             var t = newElapsedTime / tween.Duration;
             var tweenValue = tween.From + (tween.To - tween.From) * t;
 
-            // senior-dev: Reuse pre-allocated context object
             _tweenContext["tween"] = tweenValue;
+            _tweenContext.Remove("self");
             _tweenContext["self"] = entityJson;
 
             ExecuteSequenceCommand(tween.Do, _tweenContext, entityIndex);
@@ -383,8 +382,9 @@ public sealed class SequenceDriver :
         out float leftoverTime
     )
     {
-        // senior-dev: Reuse pre-allocated context object
+        // Update context
         _repeatContext["elapsed"] = newElapsedTime;
+        _repeatContext.Remove("self");
         _repeatContext["self"] = entityJson;
 
         // Check if condition is met
@@ -425,7 +425,8 @@ public sealed class SequenceDriver :
             var currentIntervals = (int)(newElapsedTime / repeat.Every);
             var intervalsCrossed = currentIntervals - previousIntervals;
             
-            // Execute once for each interval crossed
+            // senior-dev: Execute once for each interval crossed
+            // Mutations are applied to entityJson in-place, so each execution sees updated values
             for (int i = 0; i < intervalsCrossed; i++)
             {
                 ExecuteSequenceCommand(repeat.Do, _repeatContext, entityIndex);
@@ -445,13 +446,14 @@ public sealed class SequenceDriver :
 
     /// <summary>
     /// Executes a command within a sequence step.
+    /// Mutates the context JsonNode in-place instead of applying to entity immediately.
     /// </summary>
     private static void ExecuteSequenceCommand(SceneCommand command, JsonObject context, ushort entityIndex)
     {
-        // Handle MutCommand
+        // Handle MutCommand - mutate JsonNode context, not entity
         if (command.TryMatch(out MutCommand mutCommand))
         {
-            MutCmdDriver.Execute(mutCommand, context, entityIndex);
+            ApplyMutationToJsonNode(mutCommand, context, entityIndex);
             return;
         }
 
@@ -479,5 +481,168 @@ public sealed class SequenceDriver :
         EventBus<ErrorEvent>.Push(new ErrorEvent(
             $"Unrecognized command type in sequence for entity {entityIndex}"
         ));
+    }
+
+    /// <summary>
+    /// Applies a mutation command to the JsonNode context instead of the entity.
+    /// This allows sequential mutations in the same frame to compound.
+    /// </summary>
+    private static void ApplyMutationToJsonNode(MutCommand command, JsonObject context, ushort entityIndex)
+    {
+        foreach (var operation in command.Operations)
+        {
+            JsonNode? computedValue;
+            try
+            {
+                computedValue = JsonLogic.Apply(operation.Value, context);
+            }
+            catch (Exception ex)
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Failed to evaluate mutation value for entity {entityIndex}: {ex.Message}"
+                ));
+                continue;
+            }
+
+            if (computedValue == null)
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Mutation value evaluation returned null for entity {entityIndex}"
+                ));
+                continue;
+            }
+
+            // Apply mutation to JsonNode context
+            if (operation.Target is not JsonObject targetObj)
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Target is not a JsonObject for entity {entityIndex}"
+                ));
+                continue;
+            }
+
+            // Get the self object from context
+            if (!context.TryGetPropertyValue("self", out var selfNode) || selfNode is not JsonObject selfObj)
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Context does not contain 'self' object for entity {entityIndex}"
+                ));
+                continue;
+            }
+
+            // Handle property mutations
+            if (targetObj.TryGetPropertyValue("properties", out var propertyKeyNode) && propertyKeyNode != null)
+            {
+                var propertyKey = propertyKeyNode.GetValue<string>();
+                
+                // Get or create properties object in self
+                if (!selfObj.TryGetPropertyValue("properties", out var propsNode) || propsNode is not JsonObject propertiesObj)
+                {
+                    propertiesObj = new JsonObject();
+                    selfObj["properties"] = propertiesObj;
+                }
+                else
+                {
+                    propertiesObj = (JsonObject)propsNode;
+                }
+                
+                // Apply the mutation to the properties object
+                // Clone the computed value to avoid parent conflicts
+                JsonNode? valueToAssign;
+                if (computedValue is JsonValue jsonVal)
+                {
+                    // For JsonValue, we can safely recreate it
+                    if (jsonVal.TryGetValue<string>(out var strVal))
+                    {
+                        valueToAssign = JsonValue.Create(strVal);
+                    }
+                    else if (jsonVal.TryGetValue<float>(out var floatVal))
+                    {
+                        valueToAssign = JsonValue.Create(floatVal);
+                    }
+                    else if (jsonVal.TryGetValue<bool>(out var boolVal))
+                    {
+                        valueToAssign = JsonValue.Create(boolVal);
+                    }
+                    else
+                    {
+                        // Fallback: deep clone
+                        valueToAssign = JsonNode.Parse(computedValue.ToJsonString());
+                    }
+                }
+                else
+                {
+                    // For complex types, deep clone
+                    valueToAssign = JsonNode.Parse(computedValue.ToJsonString());
+                }
+                
+                propertiesObj[propertyKey] = valueToAssign;
+            }
+            // Add support for other mutation types as needed (transform, tags, etc.)
+        }
+    }
+
+    /// <summary>
+    /// Applies the accumulated mutations from entityJson to the actual entity.
+    /// Called once after all sequences for an entity have been processed.
+    /// </summary>
+    private static void ApplyJsonToEntity(ushort entityIndex, JsonObject entityJson)
+    {
+        var entity = EntityRegistry.Instance[entityIndex];
+        
+        // Apply property mutations
+        if (entityJson.TryGetPropertyValue("properties", out var propsNode) && propsNode is JsonObject propertiesObj)
+        {
+            if (BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out var currentProps))
+            {
+                // Build updated properties
+                var updatedProps = currentProps.Value.Properties;
+                
+                foreach (var (key, valueNode) in propertiesObj)
+                {
+                    if (valueNode == null)
+                    {
+                        continue;
+                    }
+                    
+                    // Convert JsonNode to PropertyValue
+                    PropertyValue propertyValue;
+                    if (valueNode is JsonValue jsonValue)
+                    {
+                        if (jsonValue.TryGetValue<string>(out var strValue))
+                        {
+                            propertyValue = new PropertyValue(strValue);
+                        }
+                        else if (jsonValue.TryGetValue<float>(out var floatValue))
+                        {
+                            propertyValue = new PropertyValue(floatValue);
+                        }
+                        else if (jsonValue.TryGetValue<bool>(out var boolValue))
+                        {
+                            propertyValue = new PropertyValue(boolValue);
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                    
+                    updatedProps = updatedProps.With(key, propertyValue);
+                }
+                
+                // Apply updated properties to entity
+                var finalProps = updatedProps;
+                entity.SetBehavior<PropertiesBehavior>((ref PropertiesBehavior b) =>
+                {
+                    b = b with { Properties = finalProps };
+                });
+            }
+        }
+        
+        // TODO: Add support for other behavior mutations (transform, tags, etc.) as needed
     }
 }
