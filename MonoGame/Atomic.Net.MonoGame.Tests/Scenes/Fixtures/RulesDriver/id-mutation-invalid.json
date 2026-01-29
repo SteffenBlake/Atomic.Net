@@ -11,7 +11,7 @@
     "do": {
       "mut": [
         {
-          "target": "id",
+          "target": {"id": true},
           "value": 12345
         }
       ]

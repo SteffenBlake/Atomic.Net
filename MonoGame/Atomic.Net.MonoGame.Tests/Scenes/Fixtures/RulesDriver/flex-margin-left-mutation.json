@@ -4,7 +4,7 @@
     "from": "#margined",
     "where": { "var": "entities" },
     "do": {
-      "mut": [{"target": "flexMarginLeft", "value": 10.0}]
+      "mut": [{"target": {"flexMarginLeft": true}, "value": 10.0}]
     }
   }]
 }
