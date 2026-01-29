@@ -4,31 +4,31 @@ using Atomic.Net.MonoGame.Core;
 namespace Atomic.Net.MonoGame.Flex;
 
 public partial class FlexRegistry : 
-    IEventHandler<BehaviorAddedEvent<JustifyContentBehavior>>,
-    IEventHandler<PostBehaviorUpdatedEvent<JustifyContentBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<JustifyContentBehavior>>
+    IEventHandler<BehaviorAddedEvent<FlexJustifyContentBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<FlexJustifyContentBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<FlexJustifyContentBehavior>>
 {
-    public void OnEvent(BehaviorAddedEvent<JustifyContentBehavior> e)
+    public void OnEvent(BehaviorAddedEvent<FlexJustifyContentBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<JustifyContentBehavior>(out var justify))
+        if (e.Entity.TryGetBehavior<FlexJustifyContentBehavior>(out var justify))
         {
             _nodes[e.Entity.Index]!.StyleSetJustifyContent(justify.Value.Value);
         }
     }
 
-    public void OnEvent(PostBehaviorUpdatedEvent<JustifyContentBehavior> e)
+    public void OnEvent(PostBehaviorUpdatedEvent<FlexJustifyContentBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<JustifyContentBehavior>(out var justify))
+        if (e.Entity.TryGetBehavior<FlexJustifyContentBehavior>(out var justify))
         {
             _nodes[e.Entity.Index]!.StyleSetJustifyContent(justify.Value.Value);
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<JustifyContentBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<FlexJustifyContentBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();

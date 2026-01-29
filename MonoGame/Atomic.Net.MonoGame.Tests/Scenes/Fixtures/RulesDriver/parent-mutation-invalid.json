@@ -1,0 +1,20 @@
+{
+  "entities": [
+    {
+      "id": "child-node",
+      "tags": ["child"]
+    }
+  ],
+  "rules": [{
+    "from": "#child",
+    "where": { "var": "entities" },
+    "do": {
+      "mut": [
+        {
+          "target": { "parent": true },
+          "value": 12345
+        }
+      ]
+    }
+  }]
+}

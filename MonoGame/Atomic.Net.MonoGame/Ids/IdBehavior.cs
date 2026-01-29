@@ -4,8 +4,6 @@ using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Ids;
 
-// SteffenBlake: @senior-dev, move this to .Atomic.Net.Monogame.Bed/Id/ sub-dir and namespace
-
 /// <summary>
 /// Behavior that tracks an entity's string ID for referencing in JSON.
 /// Enables parent references like "parent": "@player-entity".

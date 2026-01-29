@@ -1,0 +1,10 @@
+{
+  "entities": [{"id": "container", "tags": ["flex"]}],
+  "rules": [{
+    "from": "#flex",
+    "where": { "var": "entities" },
+    "do": {
+      "mut": [{"target": { "flexDirection": true }, "value": "Row"}]
+    }
+  }]
+}

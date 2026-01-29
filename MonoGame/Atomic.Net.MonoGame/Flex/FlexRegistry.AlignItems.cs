@@ -4,31 +4,31 @@ using Atomic.Net.MonoGame.Core;
 namespace Atomic.Net.MonoGame.Flex;
 
 public partial class FlexRegistry : 
-    IEventHandler<BehaviorAddedEvent<AlignItemsBehavior>>,
-    IEventHandler<PostBehaviorUpdatedEvent<AlignItemsBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<AlignItemsBehavior>>
+    IEventHandler<BehaviorAddedEvent<FlexAlignItemsBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<FlexAlignItemsBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<FlexAlignItemsBehavior>>
 {
-    public void OnEvent(BehaviorAddedEvent<AlignItemsBehavior> e)
+    public void OnEvent(BehaviorAddedEvent<FlexAlignItemsBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<AlignItemsBehavior>(out var align))
+        if (e.Entity.TryGetBehavior<FlexAlignItemsBehavior>(out var align))
         {
             _nodes[e.Entity.Index]!.StyleSetAlignItems(align.Value.Value);
         }
     }
 
-    public void OnEvent(PostBehaviorUpdatedEvent<AlignItemsBehavior> e)
+    public void OnEvent(PostBehaviorUpdatedEvent<FlexAlignItemsBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<AlignItemsBehavior>(out var align))
+        if (e.Entity.TryGetBehavior<FlexAlignItemsBehavior>(out var align))
         {
             _nodes[e.Entity.Index]!.StyleSetAlignItems(align.Value.Value);
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<AlignItemsBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<FlexAlignItemsBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();

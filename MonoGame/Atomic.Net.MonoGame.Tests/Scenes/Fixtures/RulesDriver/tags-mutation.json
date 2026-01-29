@@ -1,0 +1,20 @@
+{
+  "entities": [
+    {
+      "id": "goblin",
+      "tags": ["enemy"]
+    }
+  ],
+  "rules": [{
+    "from": "#enemy",
+    "where": { "var": "entities" },
+    "do": {
+      "mut": [
+        {
+          "target": { "tags": true },
+          "value": { "merge": [{ "var": { "cat": ["entities.", { "var": "index" }, ".tags"] } }, ["boss"]] }
+        }
+      ]
+    }
+  }]
+}

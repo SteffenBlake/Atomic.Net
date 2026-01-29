@@ -1,0 +1,20 @@
+{
+  "entities": [
+    {
+      "id": "entity1",
+      "tags": ["test"]
+    }
+  ],
+  "rules": [{
+    "from": "#test",
+    "where": { "var": "entities" },
+    "do": {
+      "mut": [
+        {
+          "target": { "id": true },
+          "value": "renamedEntity"
+        }
+      ]
+    }
+  }]
+}
