@@ -40,7 +40,7 @@
   - `JsonSequenceStep[] Steps` - array of steps to execute
 
 **File: `MonoGame/Atomic.Net.MonoGame/Sequencing/JsonSequenceStep.cs`**
-- `JsonSequenceStep` variant type (using dotVariant) with cases:
+- `JsonSequenceStep` struct variant type (using dotVariant) with cases:
   - `DelayStep` - contains `float Duration`
   - `DoStep` - contains `SceneCommand Do`
   - `TweenStep` - contains `float From`, `float To`, `float Duration`, `SceneCommand Do`
@@ -70,7 +70,7 @@
 - Pattern identical to `RuleRegistry` and `EntityRegistry`
 - Fields:
   - `SparseArray<JsonSequence> _sequences` - capacity `Constants.MaxSequences`
-  - `Dictionary<string, ushort> _idToIndex` - fast ID → index lookup
+  - `Dictionary<string, ushort> _idToIndex` - fast ID → index lookup (pre-allocated with capacity)
   - `ushort _nextSceneSequenceIndex` - starts at `Constants.MaxGlobalSequences`
   - `ushort _nextGlobalSequenceIndex` - starts at 0
 - Methods:
@@ -86,9 +86,8 @@
 **File: `MonoGame/Atomic.Net.MonoGame/Sequencing/SequenceState.cs`**
 - `readonly record struct SequenceState` tracking execution state of a sequence instance
 - Fields:
-  - `ushort CurrentStepIndex` - which step is currently executing
+  - `byte StepIndex` - which step is currently executing
   - `float StepElapsedTime` - time elapsed in current step (for delay, tween, repeat)
-  - `float RepeatNextTrigger` - for repeat steps, when to next execute
 
 **File: `MonoGame/Atomic.Net.MonoGame/Sequencing/SequenceDriver.cs`**
 - Singleton that processes all active sequences per-frame
@@ -263,6 +262,8 @@ When executing commands within sequence steps, build context as follows.
 
 Context is built dynamically per-frame by `SequenceDriver` using entity index and current step state.
 
+**Note on Repeat Steps**: Calculate next trigger time using `StepElapsedTime % interval` - no need for separate `RepeatNextTrigger` field.
+
 #### Event Handling
 - `PreEntityDeactivatedEvent` → `SequenceDriver` removes all sequences for that entity
 - `ResetEvent` → `SequenceRegistry` clears scene sequences
@@ -303,7 +304,7 @@ Context is built dynamically per-frame by `SequenceDriver` using entity index an
 - [ ] Create JsonSequence, JsonSequenceStep variant and related step structs (DelayStep, DoStep, TweenStep, RepeatStep) in `Sequencing/` folder
 - [ ] Create JsonSequenceStepConverter for deserialization
 - [ ] Create SequenceRegistry with ID↔index lookup and global/scene partitioning
-- [ ] Create SequenceState struct for tracking runtime state
+- [ ] Create SequenceState struct for tracking runtime state (byte StepIndex, float StepElapsedTime)
 - [ ] Update Constants.cs with MaxSequences (512), MaxGlobalSequences (256), MaxActiveSequencesPerEntity (8)
 - [ ] Update JsonScene to include Sequences list
 
@@ -320,7 +321,7 @@ Context is built dynamically per-frame by `SequenceDriver` using entity index an
 - [ ] Create SequenceDriver with `SparseReferenceArray<SparseArray<SequenceState>> _activeSequences` field
 - [ ] Implement StartSequence, StopSequence, ResetSequence methods
 - [ ] Implement RunFrame() with entity-first iteration (process all sequences per entity, then apply mutations once)
-- [ ] Implement step processing logic (delay, do, tween, repeat)
+- [ ] Implement step processing logic (delay, do, tween, repeat) - use modulo for repeat timing
 - [ ] Implement PreEntityDeactivatedEvent handler to cleanup sequences
 - [ ] Wire SequenceDriver.RunFrame into main game loop (after RulesDriver)
 
@@ -339,6 +340,7 @@ Context is built dynamically per-frame by `SequenceDriver` using entity index an
 - [ ] Write negative tests for invalid sequence IDs and malformed steps
 - [ ] Write tests for concurrent sequences on same entity
 - [ ] Write tests for sequence restart after completion
+- [ ] Write tests for sequence chaining (sequence-start command within a sequence step)
 
 ---
 
@@ -357,6 +359,7 @@ Context is built dynamically per-frame by `SequenceDriver` using entity index an
 - **Sequence restart after completion**: Reset state, re-add to active registry
 - **Tag/selector change after start**: Sequence continues (locked to entity index)
 - **Sequence completion**: Entry is deleted from `_activeSequences` (no IsComplete flag needed)
+- **Sequence chaining**: A `do` step can contain `sequence-start` command to trigger another sequence
 
 ### Alignment with Existing Patterns
 - Use `ISingleton<T>` for registries and drivers
@@ -372,7 +375,11 @@ Context is built dynamically per-frame by `SequenceDriver` using entity index an
 - This minimizes repeated writes to entity behaviors
 - Example: 8 parallel sequences on 1 entity = 1 `ApplyToTarget` call, not 8
 
+### Repeat Step Timing
+- Use `StepElapsedTime % interval` to determine when to execute next iteration
+- No need for separate `RepeatNextTrigger` field in SequenceState
+- Simpler state management and calculation
+
 ### Future Extensibility
 - Additional step types (e.g., `parallel`, `random`) can be added to `JsonSequenceStep` variant
 - Easing functions for tweens (linear only for now)
-- Sequence chaining (one sequence triggers another on completion)
