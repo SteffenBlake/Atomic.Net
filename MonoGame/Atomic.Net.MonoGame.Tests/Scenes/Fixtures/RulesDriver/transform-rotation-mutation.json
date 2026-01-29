@@ -2,7 +2,10 @@
   "entities": [
     {
       "id": "cube",
-      "tags": ["rotatable"]
+      "tags": ["rotatable"],
+      "transform": {
+        "rotation": [0, 0, 0, 1]
+      }
     }
   ],
   "rules": [{

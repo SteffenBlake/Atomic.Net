@@ -2,7 +2,10 @@
   "entities": [
     {
       "id": "ui-element",
-      "tags": ["test"]
+      "tags": ["test"],
+      "transform": {
+        "anchor": [0, 0, 0]
+      }
     }
   ],
   "rules": [{
