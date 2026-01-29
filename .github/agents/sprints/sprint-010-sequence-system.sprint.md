@@ -166,28 +166,33 @@
 **Refactor: `MonoGame/Atomic.Net.MonoGame/Scenes/MutCmdDriver.cs`**
 - Extract mutation logic from `RulesDriver` into separate driver class
 - Methods:
-  - `void Execute(MutCommand command, JsonNode context, ushort entityIndex)`
+  - `void Execute(MutCommand command, JsonNode context, JsonNode entity)`
 - Remove tight coupling to RuleContext - accept any JsonNode
 - Called by both `RulesDriver` and `SequenceDriver`
+- CRITICAL: MutCmdDriver should ONLY HANDLE THE TASK OF MUTATING THE entity JsonNode "in place", IT DOES NOT WRITE BACK THESE CHANGES TO THE ORIGINAL CANONICAL ENTITY
+- ALL IT DOES IS TAKE IN THE COMMAND+CONTEXT AND MUTATE THE ENTITY
 
-**Refactor: Extract `RulesDriver.ApplyToTarget` to Shared Helper**
+**Refactor: Extract `RulesDriver.ApplyToTarget` to JsonEntityConverter.Write**
 - Extract `RulesDriver.ApplyToTarget` (and all its child logic) into a shared helper function
 - This helper converts mutations from JsonNode into actual entity behavior updates
+- Should be `void Write(JsonNode json, Entity entity)`
 - Reused by both `RulesDriver` and `SequenceDriver`
 - SequenceDriver should run all sequences for an entity on the JsonNode, then call this helper once to apply all mutations
+- RulesDriver should invoke this after it each invocation of MutCmdDriver
+- CRITICAL: YES COPY ALL OF IT OVER, YES I KNOW ITS A LOT, YES, ITS IN SCOPE, DO IT
+- CRITICAL: I DONT WANNA SEE AND "TODO" ON THIS THING, IT SHOULD ALREADY WORK ON ALL BEHAVIORS OUT OF THE GATE
 
 **Update: `MonoGame/Atomic.Net.MonoGame/Scenes/RulesDriver.cs`**
 - Rename context variable from generic `context` to `ruleContext` for clarity
 - Delegate `MutCommand` execution to `MutCmdDriver`
+- Delegate write back execution to `JsonEntityWriter`
 - Handle new sequence commands via appropriate command drivers
-- Use extracted `ApplyToTarget` helper
 
 #### Constants & Configuration
 
 **Update: `MonoGame/Atomic.Net.MonoGame/Core/Constants.cs`**
 - Add `MaxSequences` - total capacity (default 512)
 - Add `MaxGlobalSequences` - partition boundary (default 256)
-- Add `MaxActiveSequencesPerEntity` - concurrent sequences per entity (default 8)
 
 #### Scene Loading
 
@@ -211,6 +216,12 @@
 When executing commands within sequence steps, build context as follows.
 
 **IMPORTANT**: The `self` object must include ALL entity behaviors (not just properties). This logic already exists in `RulesDriver` for building entity JsonNodes and should be extracted to a helper function for reuse.
+
+On that note:
+**Refactor: Extract `RulesDriver.BuildEntitiesArray` inner logic to JsonEntityConverter.Read** (
+- JsonEntityConverter.Read should take in an Index and return JsonNode
+- RulesDriver.BuildEntitiesArray still has to exist and loop over `foreach (var (entityIndex, _) in selectorMatches)` but then it can just call `JsonEntityConverter.Read` 
+
 
 **For `do` steps (SequenceDoContext):**
 ```json
@@ -262,7 +273,11 @@ When executing commands within sequence steps, build context as follows.
 
 Context is built dynamically per-frame by `SequenceDriver` using entity index and current step state.
 
-**Note on Repeat Steps**: Calculate next trigger time using `StepElapsedTime % interval` - no need for separate `RepeatNextTrigger` field.
+**Note on Repeat Steps**: Calculate next trigger time using `StepElapsedTime % interval` - no need for separate `RepeatNextTrigger` field. CRITICAL: KEEP IN MIND IF THE TIME CAUSES IT TO PROGRESS PAST MULTIPLE REPEATS, YOU HAVE TO EXECUTE THEM ALL AND YOU NEED TO CARRY FORWARD THE MUTATED JSON ENTITY EACH CALL, SO EACH ONE GETS THE POST MUTATED ON FROM THE PRIOR
+
+**NOTE FOR ALL STEPS**: Steps should trigger the next step in sequence in the SAME FRAME if they complete, AND THEY SHOULD CARRY FORWARD ANY LEFTOVER TIME TO IT AS WELL
+
+IE if you have "Delay 0.5s" + "Tween 2.0s", and you pass in 0.6s, you should now be in the Tween step that same frame AND 0.1s should transpire on it (0.1s leftover from the prior step)
 
 #### Event Handling
 - `PreEntityDeactivatedEvent` → `SequenceDriver` removes all sequences for that entity
