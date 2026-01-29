@@ -163,7 +163,10 @@ public sealed class SequenceDriverIntegrationTests : IDisposable
         Assert.True(props1.Value.Properties.TryGetValue("counter", out var counter1));
         counter1.Visit(
             s => Assert.Fail("Expected float"),
-            f => Assert.Equal(1f, f),
+            f => {
+                _output.WriteLine($"After 0.6s: counter={f}");
+                Assert.Equal(1f, f);
+            },
             b => Assert.Fail("Expected float"),
             () => Assert.Fail("Expected value")
         );
@@ -176,7 +179,10 @@ public sealed class SequenceDriverIntegrationTests : IDisposable
         Assert.True(props2.Value.Properties.TryGetValue("counter", out var counter2));
         counter2.Visit(
             s => Assert.Fail("Expected float"),
-            f => Assert.Equal(3f, f),
+            f => {
+                _output.WriteLine($"After 1.5s total: counter={f}");
+                Assert.Equal(3f, f);
+            },
             b => Assert.Fail("Expected float"),
             () => Assert.Fail("Expected value")
         );
@@ -396,14 +402,11 @@ public sealed class SequenceDriverIntegrationTests : IDisposable
         RulesDriver.Instance.RunFrame(0.016f);
         SequenceDriver.Instance.RunFrame(0.016f);
         
-        // Reset property - just remove stepExecuted so rule can fire again
-        var key = "stepExecuted";
-        player.Value.SetBehavior<PropertiesBehavior, string>(
-            ref key,
-            static (ref readonly k, ref b) => b = b with {
-                Properties = b.Properties.Without(k)
-            }
-        );
+        // Reset property so rule can trigger again
+        player.Value.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
+        {
+            behavior = behavior with { Properties = behavior.Properties.Without("stepExecuted") };
+        });
         
         // Act - Start sequence again
         RulesDriver.Instance.RunFrame(0.016f);

@@ -56,6 +56,11 @@ public sealed class SequenceDriver :
     /// </summary>
     public void RunFrame(float deltaTime)
     {
+        // TODO: senior-dev: CRITICAL ALLOCATION - EntityJsonHelper.BuildEntityJsonNode() allocates every frame
+        // This creates new JsonObject, JsonArray for tags, properties, transform per entity per frame
+        // Estimated: ~1-2KB per entity = 100-200KB/frame at 100 entities = 6-12 MB/s GC pressure
+        // REQUIRED FIX: Cache entity JSON and invalidate on mutation, OR redesign to avoid JSON in hot path
+        
         // Iterate entity-first for efficient cleanup and batched mutations
         // Use SparseReferenceArray enumerator to only process entities with active sequences
         foreach (var (entityIndex, entitySequences) in _activeSequences)
@@ -75,8 +80,6 @@ public sealed class SequenceDriver :
 
             var entity = EntityRegistry.Instance[entityIndex];
 
-            // senior-dev: ALLOCATION WARNING - EntityJsonHelper.BuildEntityJsonNode allocates
-            // TODO: Future optimization - cache entity JSON and invalidate on mutation
             var entityJson = EntityJsonHelper.BuildEntityJsonNode(entity);
 
             // Process all sequences for this entity
@@ -184,16 +187,6 @@ public sealed class SequenceDriver :
         // Loop through steps, processing until one doesn't complete immediately
         while (currentState.StepIndex < sequence.Steps.Length)
         {
-            // senior-dev: Add bounds checking before array access
-            if (currentState.StepIndex >= sequence.Steps.Length)
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Sequence {sequenceIndex} step index {currentState.StepIndex} out of range (length: {sequence.Steps.Length})"
-                ));
-                StopSequence(entityIndex, sequenceIndex);
-                return;
-            }
-
             var currentStep = sequence.Steps[currentState.StepIndex];
             var newElapsedTime = currentState.StepElapsedTime + remainingTime;
             
@@ -308,7 +301,9 @@ public sealed class SequenceDriver :
         out float leftoverTime
     )
     {
-        // senior-dev: Reuse pre-allocated context objects instead of creating new ones
+        // TODO: senior-dev: CRITICAL ALLOCATION - JsonObject indexer assignment allocates
+        // Even though containers are pre-allocated, setting JsonNode values creates heap allocations
+        // REQUIRED FIX: Use object pooling for JsonNode values OR redesign to avoid JsonNode mutation
         _doStepWorldContext["deltaTime"] = deltaTime;
         _doStepContext["self"] = entityJson;
 
@@ -424,10 +419,14 @@ public sealed class SequenceDriver :
         }
         else
         {
-            // Check if it's time to execute (using modulo for repeat timing)
-            var shouldExecute = (int)(newElapsedTime / repeat.Every) > (int)(state.StepElapsedTime / repeat.Every);
-
-            if (shouldExecute)
+            // Execute for each interval that has passed
+            // Calculate how many intervals have been crossed since last execution
+            var previousIntervals = (int)(state.StepElapsedTime / repeat.Every);
+            var currentIntervals = (int)(newElapsedTime / repeat.Every);
+            var intervalsCrossed = currentIntervals - previousIntervals;
+            
+            // Execute once for each interval crossed
+            for (int i = 0; i < intervalsCrossed; i++)
             {
                 ExecuteSequenceCommand(repeat.Do, _repeatContext, entityIndex);
             }
