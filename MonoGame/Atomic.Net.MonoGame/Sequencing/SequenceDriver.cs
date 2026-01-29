@@ -307,7 +307,7 @@ public sealed class SequenceDriver :
         _doStepContext["self"] = entityJson;
 
         // Execute command, mutating entityJson in-place
-        ExecuteSequenceCommand(doStep.Do, _doStepContext, entityIndex);
+        ExecuteSequenceCommand(doStep.Do, _doStepContext, entityJson, entityIndex);
 
         // Advance to next step immediately, carry forward all deltaTime
         nextStepIndex = (ushort)(state.StepIndex + 1);
@@ -337,7 +337,7 @@ public sealed class SequenceDriver :
             _tweenContext.Remove("self");
             _tweenContext["self"] = entityJson;
 
-            ExecuteSequenceCommand(tween.Do, _tweenContext, entityIndex);
+            ExecuteSequenceCommand(tween.Do, _tweenContext, entityJson, entityIndex);
 
             nextStepIndex = (ushort)(state.StepIndex + 1);
             leftoverTime = newElapsedTime - tween.Duration;
@@ -353,7 +353,7 @@ public sealed class SequenceDriver :
             _tweenContext.Remove("self");
             _tweenContext["self"] = entityJson;
 
-            ExecuteSequenceCommand(tween.Do, _tweenContext, entityIndex);
+            ExecuteSequenceCommand(tween.Do, _tweenContext, entityJson, entityIndex);
 
             // Update elapsed time
             var updatedState = new SequenceState(state.StepIndex, newElapsedTime);
@@ -430,7 +430,7 @@ public sealed class SequenceDriver :
             // Mutations are applied to entityJson in-place, so each execution sees updated values
             for (int i = 0; i < intervalsCrossed; i++)
             {
-                ExecuteSequenceCommand(repeat.Do, _repeatContext, entityIndex);
+                ExecuteSequenceCommand(repeat.Do, _repeatContext, entityJson, entityIndex);
             }
 
             // Update elapsed time (remove self before exiting)
@@ -448,19 +448,10 @@ public sealed class SequenceDriver :
 
     /// <summary>
     /// Executes a command within a sequence step.
-    /// Mutates the context JsonNode in-place instead of applying to entity immediately.
+    /// Mutates entityJson in-place instead of applying to entity immediately.
     /// </summary>
-    private static void ExecuteSequenceCommand(SceneCommand command, JsonObject context, ushort entityIndex)
+    private static void ExecuteSequenceCommand(SceneCommand command, JsonObject context, JsonObject entityJson, ushort entityIndex)
     {
-        // Extract entityJson from context
-        if (!context.TryGetPropertyValue("self", out var selfNode) || selfNode is not JsonObject entityJson)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Context does not contain 'self' object for entity {entityIndex}"
-            ));
-            return;
-        }
-        
         // Handle MutCommand - mutate entityJson via MutCmdDriver
         if (command.TryMatch(out MutCommand mutCommand))
         {
