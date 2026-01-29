@@ -4,7 +4,7 @@
     "from": "#flex",
     "where": { "var": "entities" },
     "do": {
-      "mut": [{"target": { "flexDirection": true }, "value": "Row"}]
+      "mut": [{"target": { "flexDirection": "value" }, "value": "Row"}]
     }
   }]
 }

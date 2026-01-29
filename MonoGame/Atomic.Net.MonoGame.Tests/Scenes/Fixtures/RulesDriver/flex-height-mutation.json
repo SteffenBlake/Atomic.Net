@@ -4,7 +4,10 @@
     "from": "#sized",
     "where": { "var": "entities" },
     "do": {
-      "mut": [{"target": { "flexHeight": true }, "value": {"value": 100.0, "percent": false}}]
+      "mut": [
+        {"target": { "flexHeight": "value" }, "value": 100.0},
+        {"target": { "flexHeight": "percent" }, "value": false}
+      ]
     }
   }]
 }

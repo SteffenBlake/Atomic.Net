@@ -4,7 +4,10 @@
     "from": "#positioned",
     "where": { "var": "entities" },
     "do": {
-      "mut": [{"target": { "flexPositionLeft": true }, "value": {"value": 50.0, "percent": false}}]
+      "mut": [
+        {"target": { "flexPositionLeft": "value" }, "value": 50.0},
+        {"target": { "flexPositionLeft": "percent" }, "value": false}
+      ]
     }
   }]
 }

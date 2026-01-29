@@ -20,7 +20,8 @@ public static class MutCmdDriver
         "flexHeight", "flexJustifyContent",
         "flexMarginBottom", "flexMarginLeft", "flexMarginRight", "flexMarginTop",
         "flexPaddingBottom", "flexPaddingLeft", "flexPaddingRight", "flexPaddingTop",
-        "flexPositionBottom", "flexPositionLeft", "flexPositionRight", "flexPositionTop", "flexPositionType",
+        "flexPositionBottom", "flexPositionLeft", "flexPositionRight", "flexPositionTop",
+        "flexPositionType",
         "flexWidth"
     ];
 
@@ -181,9 +182,31 @@ public static class MutCmdDriver
         {
             entityJson["flexZOverride"] = value;
         }
-        else if (target.TryGetPropertyValue("flexHeight", out _))
+        else if (target.TryGetPropertyValue("flexHeight", out var flexHeightTarget))
         {
-            entityJson["flexHeight"] = value;
+            if (TryGetStringValue(flexHeightTarget, out var propName))
+            {
+                // Nested target like { "flexHeight": "value" } or { "flexHeight": "percent" }
+                if (propName != "value" && propName != "percent")
+                {
+                    EventBus<ErrorEvent>.Push(new ErrorEvent("flexHeight target property must be 'value' or 'percent'"));
+                    return;
+                }
+
+                if (propName == "value")
+                {
+                    entityJson["flexHeight"] = value;
+                }
+                else // percent
+                {
+                    entityJson["flexHeightPercent"] = value;
+                }
+            }
+            else
+            {
+                // Simple target like { "flexHeight": true } - set value only
+                entityJson["flexHeight"] = value;
+            }
         }
         else if (target.TryGetPropertyValue("flexJustifyContent", out _))
         {
@@ -221,29 +244,131 @@ public static class MutCmdDriver
         {
             entityJson["flexPaddingTop"] = value;
         }
-        else if (target.TryGetPropertyValue("flexPositionBottom", out _))
+        else if (target.TryGetPropertyValue("flexPositionBottom", out var flexPosBottomTarget))
         {
-            entityJson["flexPositionBottom"] = value;
+            if (TryGetStringValue(flexPosBottomTarget, out var propName))
+            {
+                if (propName != "value" && propName != "percent")
+                {
+                    EventBus<ErrorEvent>.Push(new ErrorEvent("flexPositionBottom target property must be 'value' or 'percent'"));
+                    return;
+                }
+
+                if (propName == "value")
+                {
+                    entityJson["flexPositionBottom"] = value;
+                }
+                else
+                {
+                    entityJson["flexPositionBottomPercent"] = value;
+                }
+            }
+            else
+            {
+                entityJson["flexPositionBottom"] = value;
+            }
         }
-        else if (target.TryGetPropertyValue("flexPositionLeft", out _))
+        else if (target.TryGetPropertyValue("flexPositionLeft", out var flexPosLeftTarget))
         {
-            entityJson["flexPositionLeft"] = value;
+            if (TryGetStringValue(flexPosLeftTarget, out var propName))
+            {
+                if (propName != "value" && propName != "percent")
+                {
+                    EventBus<ErrorEvent>.Push(new ErrorEvent("flexPositionLeft target property must be 'value' or 'percent'"));
+                    return;
+                }
+
+                if (propName == "value")
+                {
+                    entityJson["flexPositionLeft"] = value;
+                }
+                else
+                {
+                    entityJson["flexPositionLeftPercent"] = value;
+                }
+            }
+            else
+            {
+                entityJson["flexPositionLeft"] = value;
+            }
         }
-        else if (target.TryGetPropertyValue("flexPositionRight", out _))
+        else if (target.TryGetPropertyValue("flexPositionRight", out var flexPosRightTarget))
         {
-            entityJson["flexPositionRight"] = value;
+            if (TryGetStringValue(flexPosRightTarget, out var propName))
+            {
+                if (propName != "value" && propName != "percent")
+                {
+                    EventBus<ErrorEvent>.Push(new ErrorEvent("flexPositionRight target property must be 'value' or 'percent'"));
+                    return;
+                }
+
+                if (propName == "value")
+                {
+                    entityJson["flexPositionRight"] = value;
+                }
+                else
+                {
+                    entityJson["flexPositionRightPercent"] = value;
+                }
+            }
+            else
+            {
+                entityJson["flexPositionRight"] = value;
+            }
         }
-        else if (target.TryGetPropertyValue("flexPositionTop", out _))
+        else if (target.TryGetPropertyValue("flexPositionTop", out var flexPosTopTarget))
         {
-            entityJson["flexPositionTop"] = value;
+            if (TryGetStringValue(flexPosTopTarget, out var propName))
+            {
+                if (propName != "value" && propName != "percent")
+                {
+                    EventBus<ErrorEvent>.Push(new ErrorEvent("flexPositionTop target property must be 'value' or 'percent'"));
+                    return;
+                }
+
+                if (propName == "value")
+                {
+                    entityJson["flexPositionTop"] = value;
+                }
+                else
+                {
+                    entityJson["flexPositionTopPercent"] = value;
+                }
+            }
+            else
+            {
+                entityJson["flexPositionTop"] = value;
+            }
         }
         else if (target.TryGetPropertyValue("flexPositionType", out _))
         {
             entityJson["flexPositionType"] = value;
         }
-        else if (target.TryGetPropertyValue("flexWidth", out _))
+        else if (target.TryGetPropertyValue("flexWidth", out var flexWidthTarget))
         {
-            entityJson["flexWidth"] = value;
+            if (TryGetStringValue(flexWidthTarget, out var propName))
+            {
+                // Nested target like { "flexWidth": "value" } or { "flexWidth": "percent" }
+                if (propName != "value" && propName != "percent")
+                {
+                    EventBus<ErrorEvent>.Push(new ErrorEvent("flexWidth target property must be 'value' or 'percent'"));
+                    return;
+                }
+
+                if (propName == "value")
+                {
+                    entityJson["flexWidth"] = value;
+                }
+                else // percent
+                {
+                    entityJson["flexWidthPercent"] = value;
+                }
+            }
+            else
+            {
+                // Simple target like { "flexWidth": true } - set value only
+                entityJson["flexWidth"] = value;
+            }
         }
         else
         {

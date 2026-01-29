@@ -4,7 +4,7 @@
     "from": "#bordered",
     "where": { "var": "entities" },
     "do": {
-      "mut": [{"target": { "flexBorderLeft": true }, "value": 5.0}]
+      "mut": [{"target": { "flexBorderLeft": "value" }, "value": 5.0}]
     }
   }]
 }

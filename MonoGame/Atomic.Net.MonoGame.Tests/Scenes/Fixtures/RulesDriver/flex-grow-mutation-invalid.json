@@ -4,7 +4,7 @@
     "from": "#growable",
     "where": { "var": "entities" },
     "do": {
-      "mut": [{"target": { "flexGrow": true }, "value": true}]
+      "mut": [{"target": { "flexGrow": "value" }, "value": true}]
     }
   }]
 }
