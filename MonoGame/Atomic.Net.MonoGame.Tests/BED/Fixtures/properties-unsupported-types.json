@@ -3,12 +3,22 @@
     {
       "id": "entity-with-unsupported",
       "transform": {
-        "position": [0, 0, 0]
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
       },
       "properties": {
         "valid-string": "value",
-        "array-prop": [1, 2, 3],
-        "object-prop": {"nested": "value"},
+        "array-prop": [
+          1,
+          2,
+          3
+        ],
+        "object-prop": {
+          "nested": "value"
+        },
         "valid-number": 42
       }
     }

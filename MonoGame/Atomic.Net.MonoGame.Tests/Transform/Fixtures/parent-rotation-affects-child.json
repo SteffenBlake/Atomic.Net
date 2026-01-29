@@ -3,15 +3,28 @@
     {
       "id": "parent",
       "transform": {
-        "position": [100, 0, 0],
-        "rotation": [0, 0, 0.7071068, 0.7071068]
+        "position": {
+          "x": 100,
+          "y": 0,
+          "z": 0
+        },
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0.7071068,
+          "w": 0.7071068
+        }
       }
     },
     {
       "id": "child",
       "parent": "@parent",
       "transform": {
-        "position": [50, 0, 0]
+        "position": {
+          "x": 50,
+          "y": 0,
+          "z": 0
+        }
       }
     }
   ]

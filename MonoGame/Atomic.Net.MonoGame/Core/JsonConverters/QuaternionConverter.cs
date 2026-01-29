@@ -8,23 +8,54 @@ public class QuaternionConverter : JsonConverter<Quaternion>
 {
     public override Quaternion Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        var values = JsonSerializer.Deserialize<float[]>(ref reader, options);
-        if (values == null || values.Length != 4)
+        if (reader.TokenType != JsonTokenType.StartObject)
         {
             return Quaternion.Identity;
         }
 
-        return new Quaternion(values[0], values[1], values[2], values[3]);
+        float x = 0, y = 0, z = 0, w = 1;
+        while (reader.Read())
+        {
+            if (reader.TokenType == JsonTokenType.EndObject)
+            {
+                break;
+            }
+
+            if (reader.TokenType != JsonTokenType.PropertyName)
+            {
+                continue;
+            }
+
+            var propertyName = reader.GetString();
+            reader.Read();
+
+            switch (propertyName)
+            {
+                case "x":
+                    x = reader.GetSingle();
+                    break;
+                case "y":
+                    y = reader.GetSingle();
+                    break;
+                case "z":
+                    z = reader.GetSingle();
+                    break;
+                case "w":
+                    w = reader.GetSingle();
+                    break;
+            }
+        }
+
+        return new Quaternion(x, y, z, w);
     }
 
     public override void Write(Utf8JsonWriter writer, Quaternion value, JsonSerializerOptions options)
     {
-        // Manually perform the writes in order to avoid allocating an array
-        writer.WriteStartArray();
-        writer.WriteNumberValue(value.X);
-        writer.WriteNumberValue(value.Y);
-        writer.WriteNumberValue(value.Z);
-        writer.WriteNumberValue(value.W);
-        writer.WriteEndArray();
+        writer.WriteStartObject();
+        writer.WriteNumber("x", value.X);
+        writer.WriteNumber("y", value.Y);
+        writer.WriteNumber("z", value.Z);
+        writer.WriteNumber("w", value.W);
+        writer.WriteEndObject();
     }
 }

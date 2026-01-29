@@ -8,22 +8,50 @@ public class Vector3Converter : JsonConverter<Vector3>
 {
     public override Vector3 Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        var values = JsonSerializer.Deserialize<float[]>(ref reader, options);
-        if (values == null || values.Length != 3) 
+        if (reader.TokenType != JsonTokenType.StartObject)
         {
             return Vector3.Zero;
         }
 
-        return new Vector3(values[0], values[1], values[2]);
+        float x = 0, y = 0, z = 0;
+        while (reader.Read())
+        {
+            if (reader.TokenType == JsonTokenType.EndObject)
+            {
+                break;
+            }
+
+            if (reader.TokenType != JsonTokenType.PropertyName)
+            {
+                continue;
+            }
+
+            var propertyName = reader.GetString();
+            reader.Read();
+
+            switch (propertyName)
+            {
+                case "x":
+                    x = reader.GetSingle();
+                    break;
+                case "y":
+                    y = reader.GetSingle();
+                    break;
+                case "z":
+                    z = reader.GetSingle();
+                    break;
+            }
+        }
+
+        return new Vector3(x, y, z);
     }
 
     public override void Write(Utf8JsonWriter writer, Vector3 value, JsonSerializerOptions options)
     {
-        // Manually perform the writes in order to avoid allocating an array
-        writer.WriteStartArray();
-        writer.WriteNumberValue(value.X);
-        writer.WriteNumberValue(value.Y);
-        writer.WriteNumberValue(value.Z);
-        writer.WriteEndArray();
+        writer.WriteStartObject();
+        writer.WriteNumber("x", value.X);
+        writer.WriteNumber("y", value.Y);
+        writer.WriteNumber("z", value.Z);
+        writer.WriteEndObject();
     }
 }

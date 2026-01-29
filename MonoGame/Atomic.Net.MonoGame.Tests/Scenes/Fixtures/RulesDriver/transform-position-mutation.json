@@ -2,22 +2,40 @@
   "entities": [
     {
       "id": "cube",
-      "tags": ["movable"],
+      "tags": [
+        "movable"
+      ],
       "transform": {
-        "position": [0, 0, 0]
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
       }
     }
   ],
-  "rules": [{
-    "from": "#movable",
-    "where": { "var": "entities" },
-    "do": {
-      "mut": [
-        {
-          "target": { "transform": { "position": true } },
-          "value": { "x": 100, "y": 200, "z": 50 }
-        }
-      ]
+  "rules": [
+    {
+      "from": "#movable",
+      "where": {
+        "var": "entities"
+      },
+      "do": {
+        "mut": [
+          {
+            "target": {
+              "transform": {
+                "position": true
+              }
+            },
+            "value": {
+              "x": 100,
+              "y": 200,
+              "z": 50
+            }
+          }
+        ]
+      }
     }
-  }]
+  ]
 }

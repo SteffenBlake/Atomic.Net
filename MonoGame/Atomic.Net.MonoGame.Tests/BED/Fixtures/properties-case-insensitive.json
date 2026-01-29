@@ -3,7 +3,11 @@
     {
       "id": "case-test-1",
       "transform": {
-        "position": [0, 0, 0]
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
       },
       "properties": {
         "Faction": "alliance"
@@ -12,7 +16,11 @@
     {
       "id": "case-test-2",
       "transform": {
-        "position": [10, 0, 0]
+        "position": {
+          "x": 10,
+          "y": 0,
+          "z": 0
+        }
       },
       "properties": {
         "faction": "horde"
@@ -21,7 +29,11 @@
     {
       "id": "case-test-3",
       "transform": {
-        "position": [20, 0, 0]
+        "position": {
+          "x": 20,
+          "y": 0,
+          "z": 0
+        }
       },
       "properties": {
         "FACTION": "neutral"

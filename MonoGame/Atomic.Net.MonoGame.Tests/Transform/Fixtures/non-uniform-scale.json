@@ -3,7 +3,11 @@
     {
       "id": "entity",
       "transform": {
-        "scale": [1, 2, 3]
+        "scale": {
+          "x": 1,
+          "y": 2,
+          "z": 3
+        }
       }
     }
   ]

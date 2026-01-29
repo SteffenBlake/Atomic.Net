@@ -3,21 +3,33 @@
     {
       "id": "root",
       "transform": {
-        "position": [10, 0, 0]
+        "position": {
+          "x": 10,
+          "y": 0,
+          "z": 0
+        }
       }
     },
     {
       "id": "left-child",
       "parent": "@root",
       "transform": {
-        "position": [20, 10, 0]
+        "position": {
+          "x": 20,
+          "y": 10,
+          "z": 0
+        }
       }
     },
     {
       "id": "right-child",
       "parent": "@root",
       "transform": {
-        "position": [20, -10, 0]
+        "position": {
+          "x": 20,
+          "y": -10,
+          "z": 0
+        }
       }
     }
   ]

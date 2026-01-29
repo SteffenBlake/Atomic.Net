@@ -3,7 +3,11 @@
     {
       "id": "goblin-1",
       "transform": {
-        "position": [10, 20, 0]
+        "position": {
+          "x": 10,
+          "y": 20,
+          "z": 0
+        }
       },
       "properties": {
         "enemy-type": "goblin",
@@ -16,7 +20,11 @@
     {
       "id": "goblin-boss",
       "transform": {
-        "position": [50, 50, 0]
+        "position": {
+          "x": 50,
+          "y": 50,
+          "z": 0
+        }
       },
       "properties": {
         "enemy-type": "goblin",
@@ -30,7 +38,11 @@
     {
       "id": "treasure-chest",
       "transform": {
-        "position": [100, 100, 0]
+        "position": {
+          "x": 100,
+          "y": 100,
+          "z": 0
+        }
       },
       "properties": {
         "loot-tier": 3,
@@ -40,7 +52,11 @@
     {
       "id": "no-properties",
       "transform": {
-        "position": [200, 200, 0]
+        "position": {
+          "x": 200,
+          "y": 200,
+          "z": 0
+        }
       }
     }
   ]

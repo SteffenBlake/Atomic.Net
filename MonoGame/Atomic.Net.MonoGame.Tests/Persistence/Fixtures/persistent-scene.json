@@ -3,9 +3,22 @@
     {
       "id": "persistent-player",
       "transform": {
-        "position": [100, 200, 0],
-        "rotation": [0, 0, 0, 1],
-        "scale": [1, 1, 1]
+        "position": {
+          "x": 100,
+          "y": 200,
+          "z": 0
+        },
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "w": 1
+        },
+        "scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
       },
       "properties": {
         "health": 100,
@@ -31,7 +44,11 @@
     {
       "id": "non-persistent-entity",
       "transform": {
-        "position": [50, 75, 0]
+        "position": {
+          "x": 50,
+          "y": 75,
+          "z": 0
+        }
       },
       "properties": {
         "temporary": "this-entity-does-not-persist"

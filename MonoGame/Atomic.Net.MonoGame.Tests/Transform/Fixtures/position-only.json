@@ -3,7 +3,11 @@
     {
       "id": "entity",
       "transform": {
-        "position": [10, 20, 30]
+        "position": {
+          "x": 10,
+          "y": 20,
+          "z": 30
+        }
       }
     }
   ]

@@ -1,6 +1,25 @@
 {
   "entities": [
-    { "id": "player", "transform": { "position": [0, 0, 0] } },
-    { "id": "weapon", "parent": "@player", "transform": { "position": [1, 0, 0] } }
+    {
+      "id": "player",
+      "transform": {
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "id": "weapon",
+      "parent": "@player",
+      "transform": {
+        "position": {
+          "x": 1,
+          "y": 0,
+          "z": 0
+        }
+      }
+    }
   ]
 }
