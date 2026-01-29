@@ -15,7 +15,7 @@
     "do": {
       "mut": [
         {
-          "target": { "properties": "weakestEnemyHealth" },
+          "target": "properties.weakestEnemyHealth",
           "value": {
             "reduce": [
               { "var": "entities" },
@@ -31,7 +31,7 @@
           }
         },
         {
-          "target": { "properties": "strongestEnemyHealth" },
+          "target": "properties.strongestEnemyHealth",
           "value": {
             "reduce": [
               { "var": "entities" },

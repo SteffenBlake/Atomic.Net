@@ -4,7 +4,7 @@
     "from": "#flex-item",
     "where": { "var": "entities" },
     "do": {
-      "mut": [{"target": { "flexAlignSelf": "value" }, "value": "FlexStart"}]
+      "mut": [{"target": "flexAlignSelf", "value": "FlexStart"}]
     }
   }]
 }

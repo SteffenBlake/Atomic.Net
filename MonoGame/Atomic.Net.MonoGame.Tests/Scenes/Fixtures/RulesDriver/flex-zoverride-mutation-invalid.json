@@ -4,7 +4,7 @@
     "from": "#layered",
     "where": { "var": "entities" },
     "do": {
-      "mut": [{"target": { "flexZOverride": true }, "value": 3.14}]
+      "mut": [{"target": "flexZOverride", "value": 3.14}]
     }
   }]
 }

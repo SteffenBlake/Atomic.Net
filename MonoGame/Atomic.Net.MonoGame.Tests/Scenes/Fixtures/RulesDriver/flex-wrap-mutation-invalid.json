@@ -4,7 +4,7 @@
     "from": "#flex",
     "where": { "var": "entities" },
     "do": {
-      "mut": [{"target": { "flexWrap": true }, "value": ["array"]}]
+      "mut": [{"target": "flexWrap", "value": ["array"]}]
     }
   }]
 }

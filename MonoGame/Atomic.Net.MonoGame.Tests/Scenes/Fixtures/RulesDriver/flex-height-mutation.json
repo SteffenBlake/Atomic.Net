@@ -5,8 +5,8 @@
     "where": { "var": "entities" },
     "do": {
       "mut": [
-        {"target": { "flexHeight": "value" }, "value": 100.0},
-        {"target": { "flexHeight": "percent" }, "value": false}
+        {"target": "flexHeight", "value": 100.0},
+        {"target": "flexHeightPercent", "value": false}
       ]
     }
   }]

@@ -16,7 +16,7 @@
     "do": {
       "mut": [
         {
-          "target": { "properties": "avgPartyHealth" },
+          "target": "properties.avgPartyHealth",
           "value": {
             "/": [
               {

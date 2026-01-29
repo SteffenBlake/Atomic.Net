@@ -4,7 +4,7 @@
     "from": "#flex",
     "where": { "var": "entities" },
     "do": {
-      "mut": [{"target": { "flexPositionType": true }, "value": "BadPosition"}]
+      "mut": [{"target": "flexPositionType", "value": "BadPosition"}]
     }
   }]
 }

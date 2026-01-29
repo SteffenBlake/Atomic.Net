@@ -14,7 +14,7 @@
     "do": {
       "mut": [
         {
-          "target": { "transform": { "position": "x" } },
+          "target": "transform.position.x",
           "value": 100
         }
       ]

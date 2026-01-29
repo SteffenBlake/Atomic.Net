@@ -14,7 +14,7 @@
     "do": {
       "mut": [
         {
-          "target": { "transform": { "rotation": "x" } },
+          "target": "transform.rotation.x",
           "value": 0.707
         }
       ]

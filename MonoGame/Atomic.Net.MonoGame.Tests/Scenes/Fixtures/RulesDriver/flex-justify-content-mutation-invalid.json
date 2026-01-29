@@ -4,7 +4,7 @@
     "from": "#flex",
     "where": { "var": "entities" },
     "do": {
-      "mut": [{"target": { "flexJustifyContent": true }, "value": "BadJustify"}]
+      "mut": [{"target": "flexJustifyContent", "value": "BadJustify"}]
     }
   }]
 }
