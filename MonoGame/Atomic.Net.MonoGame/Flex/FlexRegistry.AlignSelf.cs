@@ -4,31 +4,31 @@ using Atomic.Net.MonoGame.Core;
 namespace Atomic.Net.MonoGame.Flex;
 
 public partial class FlexRegistry : 
-    IEventHandler<BehaviorAddedEvent<AlignSelfBehavior>>,
-    IEventHandler<PostBehaviorUpdatedEvent<AlignSelfBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<AlignSelfBehavior>>
+    IEventHandler<BehaviorAddedEvent<FlexAlignSelfBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<FlexAlignSelfBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<FlexAlignSelfBehavior>>
 {
-    public void OnEvent(BehaviorAddedEvent<AlignSelfBehavior> e)
+    public void OnEvent(BehaviorAddedEvent<FlexAlignSelfBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<AlignSelfBehavior>(out var alignSelf))
+        if (e.Entity.TryGetBehavior<FlexAlignSelfBehavior>(out var alignSelf))
         {
             _nodes[e.Entity.Index]!.StyleSetAlignSelf(alignSelf.Value.Value);
         }
     }
 
-    public void OnEvent(PostBehaviorUpdatedEvent<AlignSelfBehavior> e)
+    public void OnEvent(PostBehaviorUpdatedEvent<FlexAlignSelfBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<AlignSelfBehavior>(out var alignSelf))
+        if (e.Entity.TryGetBehavior<FlexAlignSelfBehavior>(out var alignSelf))
         {
             _nodes[e.Entity.Index]!.StyleSetAlignSelf(alignSelf.Value.Value);
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<AlignSelfBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<FlexAlignSelfBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();

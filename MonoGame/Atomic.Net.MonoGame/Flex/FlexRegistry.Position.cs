@@ -5,57 +5,57 @@ using FlexLayoutSharp;
 namespace Atomic.Net.MonoGame.Flex;
 
 public partial class FlexRegistry : 
-    IEventHandler<BehaviorAddedEvent<PositionTypeBehavior>>,
-    IEventHandler<PostBehaviorUpdatedEvent<PositionTypeBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<PositionTypeBehavior>>,
+    IEventHandler<BehaviorAddedEvent<FlexPositionTypeBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<FlexPositionTypeBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<FlexPositionTypeBehavior>>,
 
-    IEventHandler<BehaviorAddedEvent<PositionLeftBehavior>>,
-    IEventHandler<PostBehaviorUpdatedEvent<PositionLeftBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<PositionLeftBehavior>>,
+    IEventHandler<BehaviorAddedEvent<FlexPositionLeftBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<FlexPositionLeftBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<FlexPositionLeftBehavior>>,
 
-    IEventHandler<BehaviorAddedEvent<PositionRightBehavior>>,
-    IEventHandler<PostBehaviorUpdatedEvent<PositionRightBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<PositionRightBehavior>>,
+    IEventHandler<BehaviorAddedEvent<FlexPositionRightBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<FlexPositionRightBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<FlexPositionRightBehavior>>,
 
-    IEventHandler<BehaviorAddedEvent<PositionTopBehavior>>,
-    IEventHandler<PostBehaviorUpdatedEvent<PositionTopBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<PositionTopBehavior>>,
+    IEventHandler<BehaviorAddedEvent<FlexPositionTopBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<FlexPositionTopBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<FlexPositionTopBehavior>>,
 
-    IEventHandler<BehaviorAddedEvent<PositionBottomBehavior>>,
-    IEventHandler<PostBehaviorUpdatedEvent<PositionBottomBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<PositionBottomBehavior>>
+    IEventHandler<BehaviorAddedEvent<FlexPositionBottomBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<FlexPositionBottomBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<FlexPositionBottomBehavior>>
 {
-    public void OnEvent(BehaviorAddedEvent<PositionTypeBehavior> e)
+    public void OnEvent(BehaviorAddedEvent<FlexPositionTypeBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<PositionTypeBehavior>(out var posType))
+        if (e.Entity.TryGetBehavior<FlexPositionTypeBehavior>(out var posType))
         {
             _nodes[e.Entity.Index]!.StyleSetPositionType(posType.Value.Value);
         }
     }
 
-    public void OnEvent(PostBehaviorUpdatedEvent<PositionTypeBehavior> e)
+    public void OnEvent(PostBehaviorUpdatedEvent<FlexPositionTypeBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<PositionTypeBehavior>(out var posType))
+        if (e.Entity.TryGetBehavior<FlexPositionTypeBehavior>(out var posType))
         {
             _nodes[e.Entity.Index]!.StyleSetPositionType(posType.Value.Value);
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<PositionTypeBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<FlexPositionTypeBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
         _nodes[e.Entity.Index]!.StyleSetPositionType(default);
     }
-    public void OnEvent(BehaviorAddedEvent<PositionLeftBehavior> e)
+    public void OnEvent(BehaviorAddedEvent<FlexPositionLeftBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<PositionLeftBehavior>(out var pos))
+        if (e.Entity.TryGetBehavior<FlexPositionLeftBehavior>(out var pos))
         {
             if (pos.Value.Percent)
             {
@@ -68,11 +68,11 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PostBehaviorUpdatedEvent<PositionLeftBehavior> e)
+    public void OnEvent(PostBehaviorUpdatedEvent<FlexPositionLeftBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<PositionLeftBehavior>(out var pos))
+        if (e.Entity.TryGetBehavior<FlexPositionLeftBehavior>(out var pos))
         {
             if (pos.Value.Percent)
             {
@@ -85,18 +85,18 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<PositionLeftBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<FlexPositionLeftBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
         _nodes[e.Entity.Index]!.StyleSetPosition(Edge.Left, float.NaN);
     }
 
-    public void OnEvent(BehaviorAddedEvent<PositionRightBehavior> e)
+    public void OnEvent(BehaviorAddedEvent<FlexPositionRightBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<PositionRightBehavior>(out var pos))
+        if (e.Entity.TryGetBehavior<FlexPositionRightBehavior>(out var pos))
         {
             if (pos.Value.Percent)
             {
@@ -109,11 +109,11 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PostBehaviorUpdatedEvent<PositionRightBehavior> e)
+    public void OnEvent(PostBehaviorUpdatedEvent<FlexPositionRightBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<PositionRightBehavior>(out var pos))
+        if (e.Entity.TryGetBehavior<FlexPositionRightBehavior>(out var pos))
         {
             if (pos.Value.Percent)
             {
@@ -126,18 +126,18 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<PositionRightBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<FlexPositionRightBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
         _nodes[e.Entity.Index]!.StyleSetPosition(Edge.Right, float.NaN);
     }
 
-    public void OnEvent(BehaviorAddedEvent<PositionTopBehavior> e)
+    public void OnEvent(BehaviorAddedEvent<FlexPositionTopBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<PositionTopBehavior>(out var pos))
+        if (e.Entity.TryGetBehavior<FlexPositionTopBehavior>(out var pos))
         {
             if (pos.Value.Percent)
             {
@@ -150,11 +150,11 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PostBehaviorUpdatedEvent<PositionTopBehavior> e)
+    public void OnEvent(PostBehaviorUpdatedEvent<FlexPositionTopBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<PositionTopBehavior>(out var pos))
+        if (e.Entity.TryGetBehavior<FlexPositionTopBehavior>(out var pos))
         {
             if (pos.Value.Percent)
             {
@@ -167,18 +167,18 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<PositionTopBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<FlexPositionTopBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
         _nodes[e.Entity.Index]!.StyleSetPosition(Edge.Top, float.NaN);
     }
 
-    public void OnEvent(BehaviorAddedEvent<PositionBottomBehavior> e)
+    public void OnEvent(BehaviorAddedEvent<FlexPositionBottomBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<PositionBottomBehavior>(out var pos))
+        if (e.Entity.TryGetBehavior<FlexPositionBottomBehavior>(out var pos))
         {
             if (pos.Value.Percent)
             {
@@ -191,11 +191,11 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PostBehaviorUpdatedEvent<PositionBottomBehavior> e)
+    public void OnEvent(PostBehaviorUpdatedEvent<FlexPositionBottomBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<PositionBottomBehavior>(out var pos))
+        if (e.Entity.TryGetBehavior<FlexPositionBottomBehavior>(out var pos))
         {
             if (pos.Value.Percent)
             {
@@ -208,7 +208,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<PositionBottomBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<FlexPositionBottomBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();

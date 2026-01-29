@@ -6,44 +6,44 @@ namespace Atomic.Net.MonoGame.Flex;
 
 public partial class FlexRegistry : 
     // Margins
-    IEventHandler<BehaviorAddedEvent<MarginLeftBehavior>>,
-    IEventHandler<PostBehaviorUpdatedEvent<MarginLeftBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<MarginLeftBehavior>>,
+    IEventHandler<BehaviorAddedEvent<FlexMarginLeftBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<FlexMarginLeftBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<FlexMarginLeftBehavior>>,
 
-    IEventHandler<BehaviorAddedEvent<MarginRightBehavior>>,
-    IEventHandler<PostBehaviorUpdatedEvent<MarginRightBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<MarginRightBehavior>>,
+    IEventHandler<BehaviorAddedEvent<FlexMarginRightBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<FlexMarginRightBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<FlexMarginRightBehavior>>,
 
-    IEventHandler<BehaviorAddedEvent<MarginTopBehavior>>,
-    IEventHandler<PostBehaviorUpdatedEvent<MarginTopBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<MarginTopBehavior>>,
+    IEventHandler<BehaviorAddedEvent<FlexMarginTopBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<FlexMarginTopBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<FlexMarginTopBehavior>>,
 
-    IEventHandler<BehaviorAddedEvent<MarginBottomBehavior>>,
-    IEventHandler<PostBehaviorUpdatedEvent<MarginBottomBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<MarginBottomBehavior>>
+    IEventHandler<BehaviorAddedEvent<FlexMarginBottomBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<FlexMarginBottomBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<FlexMarginBottomBehavior>>
 {
     // MarginLeft
-    public void OnEvent(BehaviorAddedEvent<MarginLeftBehavior> e)
+    public void OnEvent(BehaviorAddedEvent<FlexMarginLeftBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<MarginLeftBehavior>(out var val))
+        if (e.Entity.TryGetBehavior<FlexMarginLeftBehavior>(out var val))
         {
             _nodes[e.Entity.Index]!.StyleSetMargin(Edge.Left, val.Value.Value);
         }
     }
 
-    public void OnEvent(PostBehaviorUpdatedEvent<MarginLeftBehavior> e)
+    public void OnEvent(PostBehaviorUpdatedEvent<FlexMarginLeftBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<MarginLeftBehavior>(out var val))
+        if (e.Entity.TryGetBehavior<FlexMarginLeftBehavior>(out var val))
         {
             _nodes[e.Entity.Index]!.StyleSetMargin(Edge.Left, val.Value.Value);
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<MarginLeftBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<FlexMarginLeftBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
@@ -51,27 +51,27 @@ public partial class FlexRegistry :
     }
 
     // MarginRight
-    public void OnEvent(BehaviorAddedEvent<MarginRightBehavior> e)
+    public void OnEvent(BehaviorAddedEvent<FlexMarginRightBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<MarginRightBehavior>(out var val))
+        if (e.Entity.TryGetBehavior<FlexMarginRightBehavior>(out var val))
         {
             _nodes[e.Entity.Index]!.StyleSetMargin(Edge.Right, val.Value.Value);
         }
     }
 
-    public void OnEvent(PostBehaviorUpdatedEvent<MarginRightBehavior> e)
+    public void OnEvent(PostBehaviorUpdatedEvent<FlexMarginRightBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<MarginRightBehavior>(out var val))
+        if (e.Entity.TryGetBehavior<FlexMarginRightBehavior>(out var val))
         {
             _nodes[e.Entity.Index]!.StyleSetMargin(Edge.Right, val.Value.Value);
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<MarginRightBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<FlexMarginRightBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
@@ -79,27 +79,27 @@ public partial class FlexRegistry :
     }
 
     // MarginTop
-    public void OnEvent(BehaviorAddedEvent<MarginTopBehavior> e)
+    public void OnEvent(BehaviorAddedEvent<FlexMarginTopBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<MarginTopBehavior>(out var val))
+        if (e.Entity.TryGetBehavior<FlexMarginTopBehavior>(out var val))
         {
             _nodes[e.Entity.Index]!.StyleSetMargin(Edge.Top, val.Value.Value);
         }
     }
 
-    public void OnEvent(PostBehaviorUpdatedEvent<MarginTopBehavior> e)
+    public void OnEvent(PostBehaviorUpdatedEvent<FlexMarginTopBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<MarginTopBehavior>(out var val))
+        if (e.Entity.TryGetBehavior<FlexMarginTopBehavior>(out var val))
         {
             _nodes[e.Entity.Index]!.StyleSetMargin(Edge.Top, val.Value.Value);
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<MarginTopBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<FlexMarginTopBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
@@ -107,27 +107,27 @@ public partial class FlexRegistry :
     }
 
     // MarginBottom
-    public void OnEvent(BehaviorAddedEvent<MarginBottomBehavior> e)
+    public void OnEvent(BehaviorAddedEvent<FlexMarginBottomBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<MarginBottomBehavior>(out var val))
+        if (e.Entity.TryGetBehavior<FlexMarginBottomBehavior>(out var val))
         {
             _nodes[e.Entity.Index]!.StyleSetMargin(Edge.Bottom, val.Value.Value);
         }
     }
 
-    public void OnEvent(PostBehaviorUpdatedEvent<MarginBottomBehavior> e)
+    public void OnEvent(PostBehaviorUpdatedEvent<FlexMarginBottomBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<MarginBottomBehavior>(out var val))
+        if (e.Entity.TryGetBehavior<FlexMarginBottomBehavior>(out var val))
         {
             _nodes[e.Entity.Index]!.StyleSetMargin(Edge.Bottom, val.Value.Value);
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<MarginBottomBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<FlexMarginBottomBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();

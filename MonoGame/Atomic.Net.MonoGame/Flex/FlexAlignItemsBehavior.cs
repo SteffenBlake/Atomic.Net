@@ -5,5 +5,5 @@ namespace Atomic.Net.MonoGame.Flex;
 /// <summary>
 /// Sets how the entity aligns its children along the cross axis.
 /// </summary>
-public readonly record struct AlignItemsBehavior(Align Value);
+public readonly record struct FlexAlignItemsBehavior(Align Value);
 

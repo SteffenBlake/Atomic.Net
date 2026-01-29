@@ -5,20 +5,20 @@ namespace Atomic.Net.MonoGame.Flex;
 
 public partial class FlexRegistry : 
     // Width / Height
-    IEventHandler<BehaviorAddedEvent<WidthBehavior>>,
-    IEventHandler<PostBehaviorUpdatedEvent<WidthBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<WidthBehavior>>,
+    IEventHandler<BehaviorAddedEvent<FlexWidthBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<FlexWidthBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<FlexWidthBehavior>>,
 
-    IEventHandler<BehaviorAddedEvent<HeightBehavior>>,
-    IEventHandler<PostBehaviorUpdatedEvent<HeightBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<HeightBehavior>>
+    IEventHandler<BehaviorAddedEvent<FlexHeightBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<FlexHeightBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<FlexHeightBehavior>>
 {
     // Width
-    public void OnEvent(BehaviorAddedEvent<WidthBehavior> e)
+    public void OnEvent(BehaviorAddedEvent<FlexWidthBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<WidthBehavior>(out var val))
+        if (e.Entity.TryGetBehavior<FlexWidthBehavior>(out var val))
         {
             if (val.Value.Percent)
             {
@@ -31,11 +31,11 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PostBehaviorUpdatedEvent<WidthBehavior> e)
+    public void OnEvent(PostBehaviorUpdatedEvent<FlexWidthBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<WidthBehavior>(out var val))
+        if (e.Entity.TryGetBehavior<FlexWidthBehavior>(out var val))
         {
             if (val.Value.Percent)
             {
@@ -48,7 +48,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<WidthBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<FlexWidthBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
@@ -56,11 +56,11 @@ public partial class FlexRegistry :
     }
 
     // Height
-    public void OnEvent(BehaviorAddedEvent<HeightBehavior> e)
+    public void OnEvent(BehaviorAddedEvent<FlexHeightBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<HeightBehavior>(out var val))
+        if (e.Entity.TryGetBehavior<FlexHeightBehavior>(out var val))
         {
             if (val.Value.Percent)
             {
@@ -73,11 +73,11 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PostBehaviorUpdatedEvent<HeightBehavior> e)
+    public void OnEvent(PostBehaviorUpdatedEvent<FlexHeightBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        if (e.Entity.TryGetBehavior<HeightBehavior>(out var val))
+        if (e.Entity.TryGetBehavior<FlexHeightBehavior>(out var val))
         {
             if (val.Value.Percent)
             {
@@ -90,7 +90,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<HeightBehavior> e)
+    public void OnEvent(PreBehaviorRemovedEvent<FlexHeightBehavior> e)
     {
         _dirty[e.Entity.Index] = true;
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
