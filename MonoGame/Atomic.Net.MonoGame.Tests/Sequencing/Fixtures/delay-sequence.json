@@ -1,0 +1,43 @@
+{
+  "entities": [
+    {
+      "id": "player",
+      "tags": ["player"],
+      "properties": {
+        "health": 100
+      }
+    }
+  ],
+  "rules": [
+    {
+      "from": "@player",
+      "where": {
+        "filter": [
+          { "var": "entities" },
+          { "==": [{ "var": "properties.health" }, 100] }
+        ]
+      },
+      "do": {
+        "sequence-start": "delay-test"
+      }
+    }
+  ],
+  "sequences": [
+    {
+      "id": "delay-test",
+      "steps": [
+        {
+          "delay": 0.5
+        },
+        {
+          "do": {
+            "mut": [{
+              "target": { "properties": "delayComplete" },
+              "value": "true"
+            }]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -31,11 +31,7 @@ public sealed class SequenceDriver :
 
     private SequenceDriver()
     {
-        // Pre-allocate inner arrays for all entities
-        for (ushort i = 0; i < Constants.MaxEntities; i++)
-        {
-            _activeSequences[i] = new SparseArray<SequenceState>(Constants.MaxActiveSequencesPerEntity);
-        }
+        // Don't pre-allocate - create inner arrays lazily when sequences start
     }
 
     /// <summary>
@@ -44,9 +40,9 @@ public sealed class SequenceDriver :
     public void RunFrame(float deltaTime)
     {
         // Iterate entity-first for efficient cleanup and batched mutations
-        for (ushort entityIndex = 0; entityIndex < Constants.MaxEntities; entityIndex++)
+        // Use SparseReferenceArray enumerator to only process entities with active sequences
+        foreach (var (entityIndex, entitySequences) in _activeSequences)
         {
-            var entitySequences = _activeSequences[entityIndex];
             if (entitySequences == null)
             {
                 continue;
@@ -74,10 +70,19 @@ public sealed class SequenceDriver :
     /// </summary>
     public void StartSequence(ushort entityIndex, ushort sequenceIndex)
     {
+        // Validate entity exists
+        var entity = EntityRegistry.Instance[entityIndex];
+        if (!entity.Active)
+        {
+            return;
+        }
+
         var entitySequences = _activeSequences[entityIndex];
         if (entitySequences == null)
         {
-            return;
+            // Lazy initialization - create SparseArray when first sequence starts
+            entitySequences = new SparseArray<SequenceState>(Constants.MaxActiveSequencesPerEntity);
+            _activeSequences[entityIndex] = entitySequences;
         }
 
         // Initialize sequence state at step 0 with 0 elapsed time
