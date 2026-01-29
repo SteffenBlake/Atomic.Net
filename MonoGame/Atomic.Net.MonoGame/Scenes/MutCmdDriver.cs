@@ -6,7 +6,6 @@ namespace Atomic.Net.MonoGame.Scenes;
 
 /// <summary>
 /// Driver for executing mutation commands on entities.
-/// Delegates to RulesDriver's mutation logic.
 /// </summary>
 public static class MutCmdDriver
 {
@@ -18,6 +17,30 @@ public static class MutCmdDriver
     /// <param name="entityIndex">The index of the entity to mutate.</param>
     public static void Execute(MutCommand command, JsonNode context, ushort entityIndex)
     {
-        RulesDriver.ExecuteMutations(command, context, entityIndex);
+        foreach (var operation in command.Operations)
+        {
+            JsonNode? computedValue;
+            try
+            {
+                computedValue = JsonLogic.Apply(operation.Value, context);
+            }
+            catch (Exception ex)
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Failed to evaluate mutation value for entity {entityIndex}: {ex.Message}"
+                ));
+                continue;
+            }
+
+            if (computedValue == null)
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Mutation value evaluation returned null for entity {entityIndex}"
+                ));
+                continue;
+            }
+
+            MutationHelper.ApplyToTarget(entityIndex, operation.Target, computedValue);
+        }
     }
 }
