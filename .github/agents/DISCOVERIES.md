@@ -269,3 +269,29 @@ You do NOT need to deep clone them to re-parent them however, you just have to r
 parent.Remove("child");
 ```
 this re-enables the ability for you to assign your instance of `child` to a new parent, without having to copy it
+
+---
+
+## JsonLogic.Apply() Returns Original Nodes with Parents
+
+**Problem:** When `JsonLogic.Apply()` evaluates a literal value (e.g., `"renamedEntity"`), it returns the SAME JsonNode reference that was in the original logic tree, not a copy. This node has a parent (the JsonObject it was deserialized from), causing "The node already has a parent" exceptions when trying to assign it elsewhere.
+
+**Solution:** Use `.DeepClone()` on the result from `JsonLogic.Apply()` before assigning to entity JsonNodes. This is one of the rare cases where DeepClone is necessary.
+
+**Example:**
+```csharp
+// operation.Value is from MutOperationConverter: jsonObject["value"]
+var computedValue = JsonLogic.Apply(operation.Value, context);
+// computedValue is the SAME reference as operation.Value for literal values!
+// It still has operation.Value.Parent set to the deserialized jsonObject
+
+// Must clone before assigning
+entityJson["id"] = computedValue.DeepClone();
+```
+
+**Why this happens:** JsonLogic.Apply() for literal values just returns the input node unchanged, preserving its parent reference. Removing from parent would corrupt the logic tree for reuse.
+
+**Test:** `MonoGame/Atomic.Net.MonoGame.Tests/Debug/JsonNodeParentTest.cs` - `TestJsonLogicReturnsOriginalNode` and `TestActualRuleScenario`
+
+---
+

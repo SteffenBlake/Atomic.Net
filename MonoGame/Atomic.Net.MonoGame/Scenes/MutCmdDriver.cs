@@ -46,34 +46,11 @@ public static class MutCmdDriver
             return;
         }
 
-        // De-parent the computed value if it has a parent
-        // The result from JsonLogic.Apply might be a node from the logic tree or context
-        if (computedValue.Parent != null)
-        {
-            if (computedValue.Parent is JsonObject parentObj)
-            {
-                // Find and remove
-                foreach (var (key, val) in parentObj.ToList())
-                {
-                    if (ReferenceEquals(val, computedValue))
-                    {
-                        parentObj.Remove(key);
-                        break;
-                    }
-                }
-            }
-            else if (computedValue.Parent is JsonArray parentArray)
-            {
-                for (var i = 0; i < parentArray.Count; i++)
-                {
-                    if (ReferenceEquals(parentArray[i], computedValue))
-                    {
-                        parentArray.RemoveAt(i);
-                        break;
-                    }
-                }
-            }
-        }
+        // Clone the computed value before assignment
+        // Per DISCOVERIES.md: JsonLogic.Apply() returns the original node reference for literals,
+        // which still has a parent (the deserialized logic tree). We can't remove from parent
+        // because the logic tree needs to be reused. DeepClone() is necessary here.
+        var clonedValue = computedValue.DeepClone();
 
         if (operation.Target is not JsonObject targetObj)
         {
@@ -81,7 +58,7 @@ public static class MutCmdDriver
             return;
         }
 
-        ApplyToEntityJson(targetObj, computedValue, entityObj);
+        ApplyToEntityJson(targetObj, clonedValue, entityObj);
     }
 
     private static void ApplyToEntityJson(JsonObject target, JsonNode value, JsonObject entityJson)
