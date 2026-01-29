@@ -127,239 +127,9 @@ public sealed class RulesDriver :
         foreach (var (entityIndex, _) in selectorMatches)
         {
             var entity = EntityRegistry.Instance[entityIndex];
-            var entityObj = new JsonObject
-            {
-                ["_index"] = entity.Index
-            };
-
-            if (BehaviorRegistry<IdBehavior>.Instance.TryGetBehavior(entity, out var idBehavior))
-            {
-                entityObj["id"] = idBehavior.Value.Id;
-            }
-
-            if (BehaviorRegistry<TagsBehavior>.Instance.TryGetBehavior(entity, out var tagBehavior))
-            {
-                var tagsJson = new JsonArray();
-                if (tagBehavior.Value.Tags != null)
-                {
-                    foreach (var tag in tagBehavior.Value.Tags)
-                    {
-                        tagsJson.Add(tag);
-                    }
-                }
-                entityObj["tags"] = tagsJson;
-            }
-
-            if (BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out var propertiesBehavior))
-            {
-                var propertiesJson = new JsonObject();
-                foreach (var (key, value) in propertiesBehavior.Value.Properties)
-                {
-                    var jsonValue = value.Visit(
-                        static s => (JsonNode?)JsonValue.Create(s),
-                        static f => JsonValue.Create(f),
-                        static b => JsonValue.Create(b),
-                        static () => null
-                    );
-                    
-                    if (jsonValue != null)
-                    {
-                        propertiesJson[key] = jsonValue;
-                    }
-                }
-                entityObj["properties"] = propertiesJson;
-            }
-
-            if (BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var transformBehavior))
-            {
-                var transformJson = new JsonObject
-                {
-                    ["position"] = SerializeVector3(transformBehavior.Value.Position),
-                    ["rotation"] = SerializeQuaternion(transformBehavior.Value.Rotation),
-                    ["scale"] = SerializeVector3(transformBehavior.Value.Scale),
-                    ["anchor"] = SerializeVector3(transformBehavior.Value.Anchor)
-                };
-                entityObj["transform"] = transformJson;
-            }
-
-            if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(entity, out var parentBehavior))
-            {
-                entityObj["parent"] = parentBehavior.Value.ParentSelector.ToString();
-            }
-
-            SerializeFlexBehaviors(entity, entityObj);
-
+            var entityObj = EntityJsonHelper.BuildEntityJsonNode(entity);
             entities.Add(entityObj);
         }
-    }
-
-    /// <summary>
-    /// Serializes all individual flex behaviors for an entity.
-    /// </summary>
-    private static void SerializeFlexBehaviors(Entity entity, JsonObject entityObj)
-    {
-        if (BehaviorRegistry<FlexAlignItemsBehavior>.Instance.TryGetBehavior(entity, out var alignItems))
-        {
-            entityObj["flexAlignItems"] = alignItems.Value.Value.ToString();
-        }
-
-        if (BehaviorRegistry<FlexAlignSelfBehavior>.Instance.TryGetBehavior(entity, out var alignSelf))
-        {
-            entityObj["flexAlignSelf"] = alignSelf.Value.Value.ToString();
-        }
-
-        if (BehaviorRegistry<FlexBorderBottomBehavior>.Instance.TryGetBehavior(entity, out var borderBottom))
-        {
-            entityObj["flexBorderBottom"] = borderBottom.Value.Value;
-        }
-
-        if (BehaviorRegistry<FlexBorderLeftBehavior>.Instance.TryGetBehavior(entity, out var borderLeft))
-        {
-            entityObj["flexBorderLeft"] = borderLeft.Value.Value;
-        }
-
-        if (BehaviorRegistry<FlexBorderRightBehavior>.Instance.TryGetBehavior(entity, out var borderRight))
-        {
-            entityObj["flexBorderRight"] = borderRight.Value.Value;
-        }
-
-        if (BehaviorRegistry<FlexBorderTopBehavior>.Instance.TryGetBehavior(entity, out var borderTop))
-        {
-            entityObj["flexBorderTop"] = borderTop.Value.Value;
-        }
-
-        if (BehaviorRegistry<FlexDirectionBehavior>.Instance.TryGetBehavior(entity, out var direction))
-        {
-            entityObj["flexDirection"] = direction.Value.Value.ToString();
-        }
-
-        if (BehaviorRegistry<FlexGrowBehavior>.Instance.TryGetBehavior(entity, out var grow))
-        {
-            entityObj["flexGrow"] = grow.Value.Value;
-        }
-
-        if (BehaviorRegistry<FlexWrapBehavior>.Instance.TryGetBehavior(entity, out var wrap))
-        {
-            entityObj["flexWrap"] = wrap.Value.Value.ToString();
-        }
-
-        if (BehaviorRegistry<FlexZOverride>.Instance.TryGetBehavior(entity, out var zOverride))
-        {
-            entityObj["flexZOverride"] = zOverride.Value.ZIndex;
-        }
-
-        if (BehaviorRegistry<FlexHeightBehavior>.Instance.TryGetBehavior(entity, out var height))
-        {
-            entityObj["flexHeight"] = height.Value.Value;
-            entityObj["flexHeightPercent"] = height.Value.Percent;
-        }
-
-        if (BehaviorRegistry<FlexJustifyContentBehavior>.Instance.TryGetBehavior(entity, out var justifyContent))
-        {
-            entityObj["flexJustifyContent"] = justifyContent.Value.Value.ToString();
-        }
-
-        if (BehaviorRegistry<FlexMarginBottomBehavior>.Instance.TryGetBehavior(entity, out var marginBottom))
-        {
-            entityObj["flexMarginBottom"] = marginBottom.Value.Value;
-        }
-
-        if (BehaviorRegistry<FlexMarginLeftBehavior>.Instance.TryGetBehavior(entity, out var marginLeft))
-        {
-            entityObj["flexMarginLeft"] = marginLeft.Value.Value;
-        }
-
-        if (BehaviorRegistry<FlexMarginRightBehavior>.Instance.TryGetBehavior(entity, out var marginRight))
-        {
-            entityObj["flexMarginRight"] = marginRight.Value.Value;
-        }
-
-        if (BehaviorRegistry<FlexMarginTopBehavior>.Instance.TryGetBehavior(entity, out var marginTop))
-        {
-            entityObj["flexMarginTop"] = marginTop.Value.Value;
-        }
-
-        if (BehaviorRegistry<FlexPaddingBottomBehavior>.Instance.TryGetBehavior(entity, out var paddingBottom))
-        {
-            entityObj["flexPaddingBottom"] = paddingBottom.Value.Value;
-        }
-
-        if (BehaviorRegistry<FlexPaddingLeftBehavior>.Instance.TryGetBehavior(entity, out var paddingLeft))
-        {
-            entityObj["flexPaddingLeft"] = paddingLeft.Value.Value;
-        }
-
-        if (BehaviorRegistry<FlexPaddingRightBehavior>.Instance.TryGetBehavior(entity, out var paddingRight))
-        {
-            entityObj["flexPaddingRight"] = paddingRight.Value.Value;
-        }
-
-        if (BehaviorRegistry<FlexPaddingTopBehavior>.Instance.TryGetBehavior(entity, out var paddingTop))
-        {
-            entityObj["flexPaddingTop"] = paddingTop.Value.Value;
-        }
-
-        if (BehaviorRegistry<FlexPositionBottomBehavior>.Instance.TryGetBehavior(entity, out var positionBottom))
-        {
-            entityObj["flexPositionBottom"] = positionBottom.Value.Value;
-            entityObj["flexPositionBottomPercent"] = positionBottom.Value.Percent;
-        }
-
-        if (BehaviorRegistry<FlexPositionLeftBehavior>.Instance.TryGetBehavior(entity, out var positionLeft))
-        {
-            entityObj["flexPositionLeft"] = positionLeft.Value.Value;
-            entityObj["flexPositionLeftPercent"] = positionLeft.Value.Percent;
-        }
-
-        if (BehaviorRegistry<FlexPositionRightBehavior>.Instance.TryGetBehavior(entity, out var positionRight))
-        {
-            entityObj["flexPositionRight"] = positionRight.Value.Value;
-            entityObj["flexPositionRightPercent"] = positionRight.Value.Percent;
-        }
-
-        if (BehaviorRegistry<FlexPositionTopBehavior>.Instance.TryGetBehavior(entity, out var positionTop))
-        {
-            entityObj["flexPositionTop"] = positionTop.Value.Value;
-            entityObj["flexPositionTopPercent"] = positionTop.Value.Percent;
-        }
-
-        if (BehaviorRegistry<FlexPositionTypeBehavior>.Instance.TryGetBehavior(entity, out var positionType))
-        {
-            entityObj["flexPositionType"] = positionType.Value.Value.ToString();
-        }
-
-        if (BehaviorRegistry<FlexWidthBehavior>.Instance.TryGetBehavior(entity, out var width))
-        {
-            entityObj["flexWidth"] = width.Value.Value;
-            entityObj["flexWidthPercent"] = width.Value.Percent;
-        }
-    }
-
-    /// <summary>
-    /// Serializes a Vector3 to JsonObject with x, y, z fields.
-    /// </summary>
-    private static JsonObject SerializeVector3(Vector3 vector)
-    {
-        return new JsonObject
-        {
-            ["x"] = vector.X,
-            ["y"] = vector.Y,
-            ["z"] = vector.Z
-        };
-    }
-
-    /// <summary>
-    /// Serializes a Quaternion to JsonObject with x, y, z, w fields.
-    /// </summary>
-    private static JsonObject SerializeQuaternion(Quaternion quaternion)
-    {
-        return new JsonObject
-        {
-            ["x"] = quaternion.X,
-            ["y"] = quaternion.Y,
-            ["z"] = quaternion.Z,
-            ["w"] = quaternion.W
-        };
     }
 
     /// <summary>
@@ -384,32 +154,26 @@ public sealed class RulesDriver :
     }
 
     /// <summary>
-    /// Processes all mutation operations for a single entity.
+    /// Processes all mutation operations for a single entity using the provided context.
+    /// Public static to allow reuse by SequenceDriver.
     /// </summary>
-    private void ProcessEntityMutations(
-        JsonNode entity,
-        MutOperation[] mutations,
-        JsonObject doContext
+    public static void ExecuteMutations(
+        MutCommand command,
+        JsonNode context,
+        ushort entityIndex
     )
     {
-        foreach (var operation in mutations)
+        foreach (var operation in command.Operations)
         {
-            ApplyMutation(entity, operation, doContext);
+            ApplyMutation(entityIndex, operation, context);
         }
     }
 
     /// <summary>
-    /// Applies a mutation operation to an entity.
+    /// Applies a single mutation operation to an entity.
     /// </summary>
-    private bool ApplyMutation(
-        JsonNode entityJson, MutOperation operation, JsonObject context
-    )
+    private static bool ApplyMutation(ushort entityIndex, MutOperation operation, JsonNode context)
     {
-        if (!TryGetEntityIndex(entityJson, out var entityIndex))
-        {
-            return false;
-        }
-
         JsonNode? computedValue;
         try
         {
@@ -431,7 +195,25 @@ public sealed class RulesDriver :
             return false;
         }
 
-        return ApplyToTarget(entityIndex.Value, operation.Target, computedValue);
+        return ApplyToTarget(entityIndex, operation.Target, computedValue);
+    }
+
+    /// <summary>
+    /// Processes all mutation operations for a single entity from a rule.
+    /// </summary>
+    private void ProcessEntityMutations(
+        JsonNode entity,
+        MutOperation[] mutations,
+        JsonObject ruleContext
+    )
+    {
+        if (!TryGetEntityIndex(entity, out var entityIndex))
+        {
+            return;
+        }
+
+        var mutCommand = new MutCommand(mutations);
+        ExecuteMutations(mutCommand, ruleContext, entityIndex.Value);
     }
 
     /// <summary>
@@ -497,8 +279,9 @@ public sealed class RulesDriver :
 
     /// <summary>
     /// Applies the computed value to the target path.
+    /// Public to allow reuse by MutCmdDriver.
     /// </summary>
-    private bool ApplyToTarget(ushort entityIndex, JsonNode target, JsonNode value)
+    public static bool ApplyToTarget(ushort entityIndex, JsonNode target, JsonNode value)
     {
         if (target is not JsonObject targetObj)
         {
@@ -795,7 +578,7 @@ public sealed class RulesDriver :
     /// Applies a Tags mutation to an entity.
     /// Tags are set holistically from a JsonArray of strings.
     /// </summary>
-    private bool ApplyTagsMutation(ushort entityIndex, JsonNode value)
+    private static bool ApplyTagsMutation(ushort entityIndex, JsonNode value)
     {
         if (value is not JsonArray tagsArray)
         {
