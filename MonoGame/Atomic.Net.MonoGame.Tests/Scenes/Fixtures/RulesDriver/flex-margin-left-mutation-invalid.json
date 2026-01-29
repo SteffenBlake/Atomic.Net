@@ -1,0 +1,10 @@
+{
+  "entities": [{"id": "box", "tags": ["margined"]}],
+  "rules": [{
+    "from": "#margined",
+    "where": { "var": "entities" },
+    "do": {
+      "mut": [{"target": { "flexMarginLeft": true }, "value": null}]
+    }
+  }]
+}

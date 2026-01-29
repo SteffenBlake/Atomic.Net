@@ -1,0 +1,10 @@
+{
+  "entities": [{"id": "item", "tags": ["positioned"]}],
+  "rules": [{
+    "from": "#positioned",
+    "where": { "var": "entities" },
+    "do": {
+      "mut": [{"target": { "flexPositionLeft": true }, "value": {"value": 50.0}}]
+    }
+  }]
+}

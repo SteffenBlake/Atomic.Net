@@ -1,0 +1,10 @@
+{
+  "entities": [{"id": "item", "tags": ["flex"]}],
+  "rules": [{
+    "from": "#flex",
+    "where": { "var": "entities" },
+    "do": {
+      "mut": [{"target": { "flexPositionType": true }, "value": "Absolute"}]
+    }
+  }]
+}
