@@ -110,17 +110,20 @@ public partial class FlexRegistry :
             truezIndex = zOverride.Value.ZIndex;
         }
 
-        e.SetBehavior((ref FlexBehavior v) =>
-            v = new FlexBehavior(
-                MarginRect: new(marginLeft, marginTop, marginWidth, marginHeight),
-                PaddingRect: new(paddingLeft, paddingTop, paddingWidth, paddingHeight),
-                ContentRect: new(contentLeft, contentTop, contentWidth, contentHeight),
-                BorderLeft: borderLeft,
-                BorderTop: borderTop,
-                BorderRight: borderRight,
-                BorderBottom: borderBottom,
-                ZIndex: truezIndex
-            )
+        var helper = new FlexBehavior(
+            MarginRect: new(marginLeft, marginTop, marginWidth, marginHeight),
+            PaddingRect: new(paddingLeft, paddingTop, paddingWidth, paddingHeight),
+            ContentRect: new(contentLeft, contentTop, contentWidth, contentHeight),
+            BorderLeft: borderLeft,
+            BorderTop: borderTop,
+            BorderRight: borderRight,
+            BorderBottom: borderBottom,
+            ZIndex: truezIndex
+        );
+        
+        e.SetBehavior<FlexBehavior, FlexBehavior>(
+            in helper,
+            static (ref readonly h, ref v) => v = h
         ); 
 
         foreach(var child in e.GetChildren())
