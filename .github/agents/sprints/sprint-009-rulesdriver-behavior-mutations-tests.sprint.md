@@ -152,7 +152,7 @@
 **New Requirements:**
 - Extend ApplyToTarget() to support additional target paths:
   - `{ "id": "newId" }` → Mutate IdBehavior
-  - `{ "tags": { "add": "tag" } }` or `{ "tags": { "remove": "tag" } }` → Mutate TagsBehavior
+  - `{ "tags": true }` → Mutate TagsBehavior (value should be JsonArray of tag strings)
   - `{ "transform": { "position": { "x": ..., "y": ..., "z": ... } } }` → Mutate TransformBehavior.Position
   - `{ "transform": { "rotation": {...} } }` → Mutate TransformBehavior.Rotation
   - `{ "transform": { "scale": {...} } }` → Mutate TransformBehavior.Scale
@@ -165,7 +165,7 @@
 
 **Mutation Methods (NEW):**
 - `ApplyIdMutation(ushort entityIndex, JsonNode value)` → Parse string, set IdBehavior
-- `ApplyTagsMutation(ushort entityIndex, JsonNode operation, JsonNode value)` → Parse add/remove operation, update TagsBehavior
+- `ApplyTagsMutation(ushort entityIndex, JsonNode value)` → Parse array of strings, set TagsBehavior tags holistically
 - `ApplyTransformMutation(ushort entityIndex, JsonNode field, JsonNode value)` → Parse vector/quaternion, update TransformBehavior field
 - `ApplyParentMutation(ushort entityIndex, JsonNode value)` → Parse selector string, set ParentBehavior
 - Individual flex behavior mutation methods (e.g., `ApplyAlignItemsMutation()`, `ApplyBorderLeftMutation()`, etc.)
@@ -262,17 +262,18 @@ private static bool ApplyToTarget(ushort entityIndex, JsonNode target, JsonNode 
 ```csharp
 // Setting IdBehavior automatically updates EntityIdRegistry
 var entity = EntityRegistry.Instance[entityIndex];
-entity.SetBehavior(new IdBehavior("newId"));
+var currentBehavior = entity.GetBehavior<IdBehavior>();
+entity.SetBehavior(currentBehavior with { Id = "newId" });
 // EntityIdRegistry event listener picks up the change automatically
 
 // Setting TagsBehavior automatically updates TagRegistry
-entity.SetBehavior(new TagsBehavior { Tags = newTagSet });
+var currentTags = entity.GetBehavior<TagsBehavior>();
+entity.SetBehavior(currentTags with { Tags = newTagSet });
 // TagRegistry event listener updates tag-to-entity mappings automatically
 ```
 
 **Exception:**
-- `IdBehavior` changes may require explicit `EntityIdRegistry.Unregister()` / `Register()` calls if the ID changes (not just set for first time)
-- Consult existing `IdBehavior` mutation code for correct pattern
+
 
 #### 4. Extend RulesDriver to Handle Read-Only Behaviors
 
@@ -292,7 +293,7 @@ entity.SetBehavior(new TagsBehavior { Tags = newTagSet });
 ### Integration Points
 
 #### With Existing Registries
-- **IdBehavior:** May require explicit `EntityIdRegistry.Instance.Unregister(oldId)` and `.Register(newId, entity)` if ID is being changed (not just set initially)
+- **IdBehavior:** Updates tracked automatically via `EntityIdRegistry` event listeners when `SetBehavior` is called
 - **TagsBehavior:** Updates tracked automatically via `TagRegistry` event listeners when `SetBehavior` is called
 - **TransformBehavior:** Use `BehaviorRegistry<TransformBehavior>` for mutations; updates tracked automatically
 - **ParentBehavior:** Use `BehaviorRegistry<ParentBehavior>` for mutations; consider hierarchy invalidation side effects
@@ -300,7 +301,7 @@ entity.SetBehavior(new TagsBehavior { Tags = newTagSet });
 
 #### Event System
 - Fire `ErrorEvent` for all mutation failures (invalid format, read-only access, unrecognized targets, etc.)
-- Existing `FakeEventListener<ErrorEvent>` in tests will capture these for assertions
+- Existing `ErrorEventLogger` in tests will capture these for assertions
 
 ### Test Structure
 
@@ -324,18 +325,18 @@ entity.SetBehavior(new TagsBehavior { Tags = newTagSet });
 [Trait("Category", "Integration")]
 public sealed class RulesDriverBehaviorMutationTests : IDisposable
 {
-    private readonly FakeEventListener<ErrorEvent> _errorListener;
+    private readonly ErrorEventLogger _errorLogger;
 
     public RulesDriverBehaviorMutationTests()
     {
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
-        _errorListener = new FakeEventListener<ErrorEvent>();
+        _errorLogger = new ErrorEventLogger();
     }
 
     public void Dispose()
     {
-        _errorListener.Dispose();
+        _errorLogger.Dispose();
         EventBus<ShutdownEvent>.Push(new());
     }
 
@@ -351,7 +352,7 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         RulesDriver.Instance.RunFrame(0.016f);
         
         // Assert: No errors
-        Assert.Empty(_errorListener.ReceivedEvents);
+        Assert.Empty(_errorLogger.ReceivedEvents);
         
         // Assert: Entity now has new id
         Assert.False(EntityIdRegistry.Instance.TryResolve("entity1", out _));
@@ -370,8 +371,8 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         RulesDriver.Instance.RunFrame(0.016f);
         
         // Assert: Error fired
-        Assert.NotEmpty(_errorListener.ReceivedEvents);
-        var error = _errorListener.ReceivedEvents.First();
+        Assert.NotEmpty(_errorLogger.ReceivedEvents);
+        var error = _errorLogger.ReceivedEvents.First();
         Assert.Contains("id", error.Message, StringComparison.OrdinalIgnoreCase);
         
         // Assert: Id unchanged
@@ -390,7 +391,7 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         RulesDriver.Instance.RunFrame(0.016f);
         
         // Assert: No errors
-        Assert.Empty(_errorListener.ReceivedEvents);
+        Assert.Empty(_errorLogger.ReceivedEvents);
         
         // Assert: Entity has both "enemy" and "boss"
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin", out var entity));
@@ -409,7 +410,7 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         RulesDriver.Instance.RunFrame(0.016f);
         
         // Assert: Error fired
-        Assert.NotEmpty(_errorListener.ReceivedEvents);
+        Assert.NotEmpty(_errorLogger.ReceivedEvents);
         
         // Assert: Tags unchanged
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin", out var entity));
@@ -499,7 +500,7 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
 - **Per-entity JsonObject creation:** Pre-allocate and reuse entity JsonObjects
 - **String allocations for enum conversions:** Use `Enum.Parse` with caching if needed
 - **Vector/Quaternion serialization:** Reuse Vector3/Quaternion JsonObject structures
-- **Tag add/remove:** Use ImmutableHashSet.Add/Remove (returns new set, but allocation is load-time via mutation path)
+- **Tag mutations:** TagsBehavior uses ImmutableHashSet (allocation happens at mutation time, which is acceptable)
 
 #### Cache-Friendly Patterns
 - Leverage existing SparseArray iteration for entity serialization
@@ -531,9 +532,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
   - Maintain zero-allocation pattern (reuse pre-allocated JsonObjects)
 
 - [ ] **Task 2:** Implement mutation methods for Id and Tags
-  - Implement `ApplyIdMutation()` with string validation and EntityIdRegistry integration
-  - Implement `ApplyTagsMutation()` with add/remove operations
-  - Add error handling for invalid id/tag formats
+  - Implement `ApplyIdMutation()` with string validation
+  - Implement `ApplyTagsMutation()` to parse JsonArray of strings and set tags holistically
+  - Add error handling for invalid id/tag formats (id must be string, tags must be array of strings)
+  - Use `with` syntax when calling SetBehavior to update behaviors
   - Create JSON fixtures: `id-mutation.json`, `id-mutation-invalid.json`, `tags-mutation.json`, `tags-mutation-invalid.json`
   - Write integration tests: 4 tests total (2 for Id, 2 for Tags)
 
@@ -640,18 +642,19 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
 - Validate all required fields present before constructing vector
 - Use `TryGetValue<float>()` for each field with error handling
 
-### Tags Add/Remove Operations
-- Support two formats:
-  - `{ "tags": { "add": "tag" } }` → Add single tag
-  - `{ "tags": { "remove": "tag" } }` → Remove single tag
-- Do NOT support adding/removing multiple tags in one operation (future enhancement)
+### Tags Mutation Strategy
+- Tags are set holistically as an array of strings
+- The mutation value should return a JsonArray that becomes the complete new tag set
+- Use JsonLogic's `merge` operation to add tags to existing set
+- Example: `{ "target": { "tags": true }, "value": { "merge": [{ "var": "self.tags" }, ["newTag"]] } }`
+- This replaces the entire tags array, so merging with existing tags is the implementer's responsibility
 - TagRegistry updates automatically when `entity.SetBehavior<TagsBehavior>()` is called
 
 ### Registry Auto-Update via SetBehavior
 - All registries subscribe to `EntityBehaviorChangedEvent<TBehavior>`
 - When `entity.SetBehavior<TBehavior>()` is called, the event is fired automatically
 - Registries update their internal tracking structures in response
-- Exception: IdBehavior may require explicit Unregister/Register if ID is changing (not just being set initially)
+- All behaviors, including IdBehavior and TagsBehavior, handle registry updates automatically via event listeners
 
 ### Integration with Existing Tests
 - Existing RulesDriverIntegrationTests should continue to pass unchanged
