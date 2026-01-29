@@ -28,8 +28,7 @@ public class JsonSequenceStepConverter : JsonConverter<JsonSequenceStep>
 
         if (jsonObject.TryGetPropertyValue("do", out var doNode) && doNode != null)
         {
-            var command = doNode.Deserialize<SceneCommand>(options) 
-                ?? throw new JsonException("Failed to deserialize 'do' command");
+            var command = doNode.Deserialize<SceneCommand>(options);
             return new DoStep(command);
         }
 
@@ -41,10 +40,13 @@ public class JsonSequenceStepConverter : JsonConverter<JsonSequenceStep>
                 ?? throw new JsonException("Tween step missing 'to' field");
             var duration = tweenObj["duration"]?.Deserialize<float>(options) 
                 ?? throw new JsonException("Tween step missing 'duration' field");
-            var doCmd = tweenObj["do"]?.Deserialize<SceneCommand>(options) 
-                ?? throw new JsonException("Tween step missing 'do' field");
+            var doCmd = tweenObj["do"]?.Deserialize<SceneCommand>(options);
+            if (doCmd == null)
+            {
+                throw new JsonException("Tween step missing 'do' field");
+            }
             
-            return new TweenStep(from, to, duration, doCmd);
+            return new TweenStep(from, to, duration, doCmd.Value);
         }
 
         if (jsonObject.TryGetPropertyValue("repeat", out var repeatNode) && repeatNode is JsonObject repeatObj)
@@ -53,10 +55,13 @@ public class JsonSequenceStepConverter : JsonConverter<JsonSequenceStep>
                 ?? throw new JsonException("Repeat step missing 'every' field");
             var until = repeatObj["until"]?.AsObject() 
                 ?? throw new JsonException("Repeat step missing 'until' field");
-            var doCmd = repeatObj["do"]?.Deserialize<SceneCommand>(options) 
-                ?? throw new JsonException("Repeat step missing 'do' field");
+            var doCmd = repeatObj["do"]?.Deserialize<SceneCommand>(options);
+            if (doCmd == null)
+            {
+                throw new JsonException("Repeat step missing 'do' field");
+            }
             
-            return new RepeatStep(every, until, doCmd);
+            return new RepeatStep(every, until, doCmd.Value);
         }
 
         throw new JsonException("Unrecognized sequence step type. Expected 'delay', 'do', 'tween', or 'repeat'");

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Sequencing;
@@ -98,7 +99,11 @@ public class SequenceRegistry : IEventHandler<ResetEvent>, IEventHandler<Shutdow
     /// <summary>
     /// Resolve a sequence by its index.
     /// </summary>
-    public bool TryResolveByIndex(ushort index, out JsonSequence sequence)
+    public bool TryResolveByIndex(
+        ushort index,
+        [NotNullWhen(true)]
+        out JsonSequence? sequence
+    )
     {
         return _sequences.TryGetValue(index, out sequence);
     }
@@ -118,10 +123,10 @@ public class SequenceRegistry : IEventHandler<ResetEvent>, IEventHandler<Shutdow
     {
         for (ushort i = Constants.MaxGlobalSequences; i < Constants.MaxSequences; i++)
         {
-            if (_sequences.HasValue(i) && _sequences.TryGetValue(i, out var sequence))
+            if (_sequences.HasValue(i) && _sequences.TryGetValue(i, out var sequence) && sequence != null)
             {
                 _sequences.Remove(i);
-                _idToIndex.Remove(sequence.Id);
+                _idToIndex.Remove(sequence.Value.Id);
             }
         }
 
