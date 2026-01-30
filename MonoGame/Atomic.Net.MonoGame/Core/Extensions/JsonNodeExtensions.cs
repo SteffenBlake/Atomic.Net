@@ -53,7 +53,7 @@ public static class JsonNodeExtensions
     /// Supports conversion from double, int, and decimal.
     /// Caller must ensure node is not null.
     /// </summary>
-    public static bool TryGetFloatValue(this JsonNode node, out float result)
+    public static bool TryGetFloatValue(this JsonNode node, [NotNullWhen(true)] out float? result)
     {
         if (node is not JsonValue jsonValue)
         {
@@ -61,8 +61,9 @@ public static class JsonNodeExtensions
             return false;
         }
 
-        if (jsonValue.TryGetValue<float>(out result))
+        if (jsonValue.TryGetValue<float>(out var floatVal))
         {
+            result = floatVal;
             return true;
         }
 
@@ -92,7 +93,7 @@ public static class JsonNodeExtensions
     /// Tries to get a bool value from a JsonNode.
     /// Caller must ensure node is not null.
     /// </summary>
-    public static bool TryGetBoolValue(this JsonNode node, out bool result)
+    public static bool TryGetBoolValue(this JsonNode node, [NotNullWhen(true)] out bool? result)
     {
         if (node is not JsonValue jsonValue)
         {
@@ -100,8 +101,9 @@ public static class JsonNodeExtensions
             return false;
         }
 
-        if (jsonValue.TryGetValue<bool>(out result))
+        if (jsonValue.TryGetValue<bool>(out var boolVal))
         {
+            result = boolVal;
             return true;
         }
 
@@ -113,7 +115,7 @@ public static class JsonNodeExtensions
     /// Tries to get an int value from a JsonNode.
     /// Caller must ensure node is not null.
     /// </summary>
-    public static bool TryGetIntValue(this JsonNode node, out int result)
+    public static bool TryGetIntValue(this JsonNode node, [NotNullWhen(true)] out int? result)
     {
         if (node is not JsonValue jsonValue)
         {
@@ -121,8 +123,9 @@ public static class JsonNodeExtensions
             return false;
         }
 
-        if (jsonValue.TryGetValue<int>(out result))
+        if (jsonValue.TryGetValue<int>(out var intVal))
         {
+            result = intVal;
             return true;
         }
 
@@ -137,7 +140,8 @@ public static class JsonNodeExtensions
     public static bool TryGetVector3Value(
         this JsonObject obj,
         Vector3 defaultValue,
-        out Vector3 result
+        [NotNullWhen(true)]
+        out Vector3? result
     )
     {
         var x = defaultValue.X;
@@ -145,25 +149,37 @@ public static class JsonNodeExtensions
         var z = defaultValue.Z;
         var success = true;
 
-        if (obj.TryGetPropertyValue("x", out var xNode) && xNode != null)
+        if (obj.TryGetChild("x", out var xNode))
         {
-            if (!xNode.TryGetFloatValue(out x))
+            if (xNode.TryGetFloatValue(out var xValue))
+            {
+                x = xValue.Value;
+            }
+            else
             {
                 success = false;
             }
         }
 
-        if (obj.TryGetPropertyValue("y", out var yNode) && yNode != null)
+        if (obj.TryGetChild("y", out var yNode))
         {
-            if (!yNode.TryGetFloatValue(out y))
+            if (yNode.TryGetFloatValue(out var yValue))
+            {
+                y = yValue.Value;
+            }
+            else
             {
                 success = false;
             }
         }
 
-        if (obj.TryGetPropertyValue("z", out var zNode) && zNode != null)
+        if (obj.TryGetChild("z", out var zNode))
         {
-            if (!zNode.TryGetFloatValue(out z))
+            if (zNode.TryGetFloatValue(out var zValue))
+            {
+                z = zValue.Value;
+            }
+            else
             {
                 success = false;
             }
@@ -180,7 +196,8 @@ public static class JsonNodeExtensions
     public static bool TryGetQuaternionValue(
         this JsonObject obj,
         Quaternion defaultValue,
-        out Quaternion result
+        [NotNullWhen(true)]
+        out Quaternion? result
     )
     {
         var x = defaultValue.X;
@@ -189,33 +206,49 @@ public static class JsonNodeExtensions
         var w = defaultValue.W;
         var success = true;
 
-        if (obj.TryGetPropertyValue("x", out var xNode) && xNode != null)
+        if (obj.TryGetChild("x", out var xNode))
         {
-            if (!xNode.TryGetFloatValue(out x))
+            if (xNode.TryGetFloatValue(out var xValue))
+            {
+                x = xValue.Value;
+            }
+            else
             {
                 success = false;
             }
         }
 
-        if (obj.TryGetPropertyValue("y", out var yNode) && yNode != null)
+        if (obj.TryGetChild("y", out var yNode))
         {
-            if (!yNode.TryGetFloatValue(out y))
+            if (yNode.TryGetFloatValue(out var yValue))
+            {
+                y = yValue.Value;
+            }
+            else
             {
                 success = false;
             }
         }
 
-        if (obj.TryGetPropertyValue("z", out var zNode) && zNode != null)
+        if (obj.TryGetChild("z", out var zNode))
         {
-            if (!zNode.TryGetFloatValue(out z))
+            if (zNode.TryGetFloatValue(out var zValue))
+            {
+                z = zValue.Value;
+            }
+            else
             {
                 success = false;
             }
         }
 
-        if (obj.TryGetPropertyValue("w", out var wNode) && wNode != null)
+        if (obj.TryGetChild("w", out var wNode))
         {
-            if (!wNode.TryGetFloatValue(out w))
+            if (wNode.TryGetFloatValue(out var wValue))
+            {
+                w = wValue.Value;
+            }
+            else
             {
                 success = false;
             }

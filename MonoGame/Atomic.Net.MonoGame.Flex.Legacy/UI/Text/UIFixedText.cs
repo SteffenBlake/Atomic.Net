@@ -52,7 +52,7 @@ public class UIFixedTextContent(SpriteFont font) : UINode, IHasText
             {
                 throw;
             }
-            Text = sanitized;
+            Text = sanitized.Value;
         }
     }
 }

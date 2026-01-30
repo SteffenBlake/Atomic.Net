@@ -338,7 +338,7 @@ public static class JsonEntityConverter
                 }
                 else if (jsonValue.TryGetFloatValue(out var floatValue))
                 {
-                    propValue = new PropertyValue(floatValue);
+                    propValue = new PropertyValue(floatValue.Value);
                 }
                 else if (jsonValue.TryGetValue<bool>(out var boolValue))
                 {

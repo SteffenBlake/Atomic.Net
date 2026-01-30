@@ -58,7 +58,7 @@ public static class JsonObjectExtensions
         result = default;
 
         // Use TryGetFloatValue instead of try/catch
-        if (!value.TryGetFloatValue(out result))
+        if (!value.TryGetFloatValue(out var floatValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Failed to parse {fieldName} for entity {entityIndex}: Expected a numeric value"
@@ -66,6 +66,7 @@ public static class JsonObjectExtensions
             return false;
         }
 
+        result = floatValue.Value;
         return true;
     }
 
@@ -84,7 +85,7 @@ public static class JsonObjectExtensions
         result = default;
 
         // Use TryGetIntValue instead of try/catch
-        if (!value.TryGetIntValue(out result))
+        if (!value.TryGetIntValue(out var intValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Failed to parse {fieldName} for entity {entityIndex}: Expected an integer value"
@@ -92,6 +93,7 @@ public static class JsonObjectExtensions
             return false;
         }
 
+        result = intValue.Value;
         return true;
     }
 
@@ -121,7 +123,7 @@ public static class JsonObjectExtensions
         }
 
         if (!obj.TryGetChild("value", out var valueNode) || 
-            !valueNode.TryGetFloatValue(out floatValue))
+            !valueNode.TryGetFloatValue(out var floatVal))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Failed to parse {fieldName}.value for entity {entityIndex}: Expected numeric 'value' field"
@@ -129,14 +131,18 @@ public static class JsonObjectExtensions
             return false;
         }
 
+        floatValue = floatVal.Value;
+
         if (!obj.TryGetChild("percent", out var percentNode) || 
-            !percentNode.TryGetBoolValue(out percentValue))
+            !percentNode.TryGetBoolValue(out var boolVal))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Failed to parse {fieldName}.percent for entity {entityIndex}: Expected boolean 'percent' field"
             ));
             return false;
         }
+
+        percentValue = boolVal.Value;
 
         return true;
     }

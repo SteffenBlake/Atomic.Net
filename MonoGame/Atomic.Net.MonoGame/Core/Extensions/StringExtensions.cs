@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Atomic.Net.MonoGame.Core.Extensions;
 
 public static class StringExtensions
 {
-    public static bool TrySanitizeText(this string text, IReadOnlyCollection<char> validChars, out string sanitized)
+    public static bool TrySanitizeText(this string text, IReadOnlyCollection<char> validChars, [NotNullWhen(true)] out string? sanitized)
     {
         if (string.IsNullOrEmpty(text))
         {
