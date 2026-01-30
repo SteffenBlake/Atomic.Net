@@ -51,10 +51,10 @@ public static class JsonObjectExtensions
     }
 
     /// <summary>
-    /// Tries to parse a float value from a JsonNode.
+    /// Tries to get a float value from a JsonNode with error reporting.
     /// Fires ErrorEvent on failure with descriptive message.
     /// </summary>
-    public static bool TryParseFloat(
+    public static bool TryGetFloatWithError(
         this JsonNode? value, 
         ushort entityIndex, 
         string fieldName, 
