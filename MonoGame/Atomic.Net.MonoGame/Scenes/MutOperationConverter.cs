@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Atomic.Net.MonoGame.Scenes.JsonTargets;
 
 namespace Atomic.Net.MonoGame.Scenes;
 
@@ -19,8 +20,8 @@ public class MutOperationConverter : JsonConverter<MutOperation>
             throw new JsonException("Expected mutation operation to be an object");
         }
 
-        var target = jsonObject["target"];
-        if (target is null)
+        var targetNode = jsonObject["target"];
+        if (targetNode is null)
         {
             throw new JsonException("Missing 'target' property in mutation operation");
         }
@@ -30,6 +31,9 @@ public class MutOperationConverter : JsonConverter<MutOperation>
         {
             throw new JsonException("Missing 'value' property in mutation operation");
         }
+
+        // Deserialize target using JsonTargetConverter
+        var target = targetNode.Deserialize<JsonTarget>(options);
 
         return new MutOperation(target, value);
     }
