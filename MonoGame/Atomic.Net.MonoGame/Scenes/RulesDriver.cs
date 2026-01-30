@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Nodes;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
+using Atomic.Net.MonoGame.Core.Extensions;
 using Atomic.Net.MonoGame.Flex;
 using Atomic.Net.MonoGame.Hierarchy;
 using Atomic.Net.MonoGame.Ids;
@@ -508,23 +509,23 @@ public sealed class RulesDriver :
             return false;
         }
 
-        if (targetObj.TryGetPropertyValue("properties", out var propertyKeyNode) && propertyKeyNode != null)
+        if (targetObj.TryGetChild("properties", out var propertyKeyNode))
         {
             return ApplyPropertyMutation(entityIndex, propertyKeyNode, value);
         }
-        else if (targetObj.TryGetPropertyValue("position", out var positionComponent) && positionComponent != null)
+        else if (targetObj.TryGetChild("position", out var positionComponent))
         {
             return ApplyTransformVector3ComponentMutation(entityIndex, "position", positionComponent, value);
         }
-        else if (targetObj.TryGetPropertyValue("rotation", out var rotationComponent) && rotationComponent != null)
+        else if (targetObj.TryGetChild("rotation", out var rotationComponent))
         {
             return ApplyTransformQuaternionComponentMutation(entityIndex, rotationComponent, value);
         }
-        else if (targetObj.TryGetPropertyValue("scale", out var scaleComponent) && scaleComponent != null)
+        else if (targetObj.TryGetChild("scale", out var scaleComponent))
         {
             return ApplyTransformVector3ComponentMutation(entityIndex, "scale", scaleComponent, value);
         }
-        else if (targetObj.TryGetPropertyValue("anchor", out var anchorComponent) && anchorComponent != null)
+        else if (targetObj.TryGetChild("anchor", out var anchorComponent))
         {
             return ApplyTransformVector3ComponentMutation(entityIndex, "anchor", anchorComponent, value);
         }
@@ -629,7 +630,7 @@ public sealed class RulesDriver :
     /// </summary>
     private static bool ApplyPropertyMutation(ushort entityIndex, JsonNode propertyKeyNode, JsonNode value)
     {
-        if (!TryGetStringValue(propertyKeyNode, out var propertyKey))
+        if (!propertyKeyNode.TryGetStringValue(out var propertyKey))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Failed to parse property key for entity {entityIndex}"
@@ -720,7 +721,7 @@ public sealed class RulesDriver :
     /// </summary>
     private static bool ApplyIdMutation(ushort entityIndex, JsonNode value)
     {
-        if (!TryGetStringValue(value, out var newId))
+        if (!value.TryGetStringValue(out var newId))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Failed to parse id value for entity {entityIndex}. Id must be a string."
@@ -793,7 +794,7 @@ public sealed class RulesDriver :
                 return false;
             }
 
-            if (!TryGetStringValue(tagNode, out var tag))
+            if (!tagNode.TryGetStringValue(out var tag))
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent(
                     $"Failed to parse tag at index {i} for entity {entityIndex}. Tags must be strings."
@@ -830,7 +831,7 @@ public sealed class RulesDriver :
         JsonNode value
     )
     {
-        if (!TryGetStringValue(componentNode, out var component))
+        if (!componentNode.TryGetStringValue(out var component))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Transform {fieldName} component must be a string (x, y, or z) for entity {entityIndex}"
@@ -846,7 +847,7 @@ public sealed class RulesDriver :
             return false;
         }
 
-        if (!TryGetFloatValue(value, out var floatValue))
+        if (!value.TryGetFloatValue(out var floatValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Transform {fieldName}.{component} value must be a number for entity {entityIndex}"
@@ -926,7 +927,7 @@ public sealed class RulesDriver :
         JsonNode value
     )
     {
-        if (!TryGetStringValue(componentNode, out var component))
+        if (!componentNode.TryGetStringValue(out var component))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Transform rotation component must be a string (x, y, z, or w) for entity {entityIndex}"
@@ -942,7 +943,7 @@ public sealed class RulesDriver :
             return false;
         }
 
-        if (!TryGetFloatValue(value, out var floatValue))
+        if (!value.TryGetFloatValue(out var floatValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Transform rotation.{component} value must be a number for entity {entityIndex}"
@@ -1044,479 +1045,213 @@ public sealed class RulesDriver :
     /// <summary>
     /// Applies FlexAlignItems mutation.
     /// </summary>
-    private static bool ApplyFlexAlignItemsMutation(ushort entityIndex, JsonNode value)
-    {
-        if (!TryParseEnum<Align>(value, entityIndex, "flexAlignItems", out var enumValue))
-        {
-            return false;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
-            return false;
-        }
-
-        var behavior = new FlexAlignItemsBehavior(enumValue);
-        entity.SetBehavior<FlexAlignItemsBehavior, FlexAlignItemsBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
+    private static bool ApplyFlexAlignItemsMutation(ushort entityIndex, JsonNode value) =>
+        ApplyEnumBehavior<FlexAlignItemsBehavior, Align>(
+            entityIndex, 
+            value, 
+            "flexAlignItems",
+            static v => new FlexAlignItemsBehavior(v)
         );
-        return true;
-    }
 
     /// <summary>
     /// Applies FlexAlignSelf mutation.
     /// </summary>
-    private static bool ApplyFlexAlignSelfMutation(ushort entityIndex, JsonNode value)
-    {
-        if (!TryParseEnum<Align>(value, entityIndex, "flexAlignSelf", out var enumValue))
-        {
-            return false;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
-            return false;
-        }
-
-        var behavior = new FlexAlignSelfBehavior(enumValue);
-        entity.SetBehavior<FlexAlignSelfBehavior, FlexAlignSelfBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
+    private static bool ApplyFlexAlignSelfMutation(ushort entityIndex, JsonNode value) =>
+        ApplyEnumBehavior<FlexAlignSelfBehavior, Align>(
+            entityIndex, 
+            value, 
+            "flexAlignSelf",
+            static v => new FlexAlignSelfBehavior(v)
         );
-        return true;
-    }
 
     /// <summary>
     /// Applies FlexDirection mutation.
     /// </summary>
-    private static bool ApplyFlexDirectionMutation(ushort entityIndex, JsonNode value)
-    {
-        if (!TryParseEnum<FlexDirection>(value, entityIndex, "flexDirection", out var enumValue))
-        {
-            return false;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
-            return false;
-        }
-
-        var behavior = new FlexDirectionBehavior(enumValue);
-        entity.SetBehavior<FlexDirectionBehavior, FlexDirectionBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
+    private static bool ApplyFlexDirectionMutation(ushort entityIndex, JsonNode value) =>
+        ApplyEnumBehavior<FlexDirectionBehavior, FlexDirection>(
+            entityIndex, 
+            value, 
+            "flexDirection",
+            static v => new FlexDirectionBehavior(v)
         );
-        return true;
-    }
 
     /// <summary>
     /// Applies FlexWrap mutation.
     /// </summary>
-    private static bool ApplyFlexWrapMutation(ushort entityIndex, JsonNode value)
-    {
-        if (!TryParseEnum<Wrap>(value, entityIndex, "flexWrap", out var enumValue))
-        {
-            return false;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
-            return false;
-        }
-
-        var behavior = new FlexWrapBehavior(enumValue);
-        entity.SetBehavior<FlexWrapBehavior, FlexWrapBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
+    private static bool ApplyFlexWrapMutation(ushort entityIndex, JsonNode value) =>
+        ApplyEnumBehavior<FlexWrapBehavior, Wrap>(
+            entityIndex, 
+            value, 
+            "flexWrap",
+            static v => new FlexWrapBehavior(v)
         );
-        return true;
-    }
 
     /// <summary>
     /// Applies FlexJustifyContent mutation.
     /// </summary>
-    private static bool ApplyFlexJustifyContentMutation(ushort entityIndex, JsonNode value)
-    {
-        if (!TryParseEnum<Justify>(value, entityIndex, "flexJustifyContent", out var enumValue))
-        {
-            return false;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
-            return false;
-        }
-
-        var behavior = new FlexJustifyContentBehavior(enumValue);
-        entity.SetBehavior<FlexJustifyContentBehavior, FlexJustifyContentBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
+    private static bool ApplyFlexJustifyContentMutation(ushort entityIndex, JsonNode value) =>
+        ApplyEnumBehavior<FlexJustifyContentBehavior, Justify>(
+            entityIndex, 
+            value, 
+            "flexJustifyContent",
+            static v => new FlexJustifyContentBehavior(v)
         );
-        return true;
-    }
 
     /// <summary>
     /// Applies FlexPositionType mutation.
     /// </summary>
-    private static bool ApplyFlexPositionTypeMutation(ushort entityIndex, JsonNode value)
-    {
-        if (!TryParseEnum<PositionType>(value, entityIndex, "flexPositionType", out var enumValue))
-        {
-            return false;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
-            return false;
-        }
-
-        var behavior = new FlexPositionTypeBehavior(enumValue);
-        entity.SetBehavior<FlexPositionTypeBehavior, FlexPositionTypeBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
+    private static bool ApplyFlexPositionTypeMutation(ushort entityIndex, JsonNode value) =>
+        ApplyEnumBehavior<FlexPositionTypeBehavior, PositionType>(
+            entityIndex, 
+            value, 
+            "flexPositionType",
+            static v => new FlexPositionTypeBehavior(v)
         );
-        return true;
-    }
 
     // ========== Simple Float Behaviors ==========
 
     /// <summary>
     /// Applies FlexBorderBottom mutation.
     /// </summary>
-    private static bool ApplyFlexBorderBottomMutation(ushort entityIndex, JsonNode value)
-    {
-        if (!TryParseFloat(value, entityIndex, "flexBorderBottom", out var floatValue))
-        {
-            return false;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
-            return false;
-        }
-
-        var behavior = new FlexBorderBottomBehavior(floatValue);
-        entity.SetBehavior<FlexBorderBottomBehavior, FlexBorderBottomBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
+    private static bool ApplyFlexBorderBottomMutation(ushort entityIndex, JsonNode value) =>
+        ApplyFloatBehavior<FlexBorderBottomBehavior>(
+            entityIndex, 
+            value, 
+            "flexBorderBottom",
+            static v => new FlexBorderBottomBehavior(v)
         );
-        return true;
-    }
 
     /// <summary>
     /// Applies FlexBorderLeft mutation.
     /// </summary>
-    private static bool ApplyFlexBorderLeftMutation(ushort entityIndex, JsonNode value)
-    {
-        if (!TryParseFloat(value, entityIndex, "flexBorderLeft", out var floatValue))
-        {
-            return false;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
-            return false;
-        }
-
-        var behavior = new FlexBorderLeftBehavior(floatValue);
-        entity.SetBehavior<FlexBorderLeftBehavior, FlexBorderLeftBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
+    private static bool ApplyFlexBorderLeftMutation(ushort entityIndex, JsonNode value) =>
+        ApplyFloatBehavior<FlexBorderLeftBehavior>(
+            entityIndex, 
+            value, 
+            "flexBorderLeft",
+            static v => new FlexBorderLeftBehavior(v)
         );
-        return true;
-    }
 
     /// <summary>
     /// Applies FlexBorderRight mutation.
     /// </summary>
-    private static bool ApplyFlexBorderRightMutation(ushort entityIndex, JsonNode value)
-    {
-        if (!TryParseFloat(value, entityIndex, "flexBorderRight", out var floatValue))
-        {
-            return false;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
-            return false;
-        }
-
-        var behavior = new FlexBorderRightBehavior(floatValue);
-        entity.SetBehavior<FlexBorderRightBehavior, FlexBorderRightBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
+    private static bool ApplyFlexBorderRightMutation(ushort entityIndex, JsonNode value) =>
+        ApplyFloatBehavior<FlexBorderRightBehavior>(
+            entityIndex, 
+            value, 
+            "flexBorderRight",
+            static v => new FlexBorderRightBehavior(v)
         );
-        return true;
-    }
 
     /// <summary>
     /// Applies FlexBorderTop mutation.
     /// </summary>
-    private static bool ApplyFlexBorderTopMutation(ushort entityIndex, JsonNode value)
-    {
-        if (!TryParseFloat(value, entityIndex, "flexBorderTop", out var floatValue))
-        {
-            return false;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
-            return false;
-        }
-
-        var behavior = new FlexBorderTopBehavior(floatValue);
-        entity.SetBehavior<FlexBorderTopBehavior, FlexBorderTopBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
+    private static bool ApplyFlexBorderTopMutation(ushort entityIndex, JsonNode value) =>
+        ApplyFloatBehavior<FlexBorderTopBehavior>(
+            entityIndex, 
+            value, 
+            "flexBorderTop",
+            static v => new FlexBorderTopBehavior(v)
         );
-        return true;
-    }
 
     /// <summary>
     /// Applies FlexGrow mutation.
     /// </summary>
-    private static bool ApplyFlexGrowMutation(ushort entityIndex, JsonNode value)
-    {
-        if (!TryParseFloat(value, entityIndex, "flexGrow", out var floatValue))
-        {
-            return false;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
-            return false;
-        }
-
-        var behavior = new FlexGrowBehavior(floatValue);
-        entity.SetBehavior<FlexGrowBehavior, FlexGrowBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
+    private static bool ApplyFlexGrowMutation(ushort entityIndex, JsonNode value) =>
+        ApplyFloatBehavior<FlexGrowBehavior>(
+            entityIndex, 
+            value, 
+            "flexGrow",
+            static v => new FlexGrowBehavior(v)
         );
-        return true;
-    }
 
     /// <summary>
     /// Applies FlexMarginBottom mutation.
     /// </summary>
-    private static bool ApplyFlexMarginBottomMutation(ushort entityIndex, JsonNode value)
-    {
-        if (!TryParseFloat(value, entityIndex, "flexMarginBottom", out var floatValue))
-        {
-            return false;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
-            return false;
-        }
-
-        var behavior = new FlexMarginBottomBehavior(floatValue);
-        entity.SetBehavior<FlexMarginBottomBehavior, FlexMarginBottomBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
+    private static bool ApplyFlexMarginBottomMutation(ushort entityIndex, JsonNode value) =>
+        ApplyFloatBehavior<FlexMarginBottomBehavior>(
+            entityIndex, 
+            value, 
+            "flexMarginBottom",
+            static v => new FlexMarginBottomBehavior(v)
         );
-        return true;
-    }
 
     /// <summary>
     /// Applies FlexMarginLeft mutation.
     /// </summary>
-    private static bool ApplyFlexMarginLeftMutation(ushort entityIndex, JsonNode value)
-    {
-        if (!TryParseFloat(value, entityIndex, "flexMarginLeft", out var floatValue))
-        {
-            return false;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
-            return false;
-        }
-
-        var behavior = new FlexMarginLeftBehavior(floatValue);
-        entity.SetBehavior<FlexMarginLeftBehavior, FlexMarginLeftBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
+    private static bool ApplyFlexMarginLeftMutation(ushort entityIndex, JsonNode value) =>
+        ApplyFloatBehavior<FlexMarginLeftBehavior>(
+            entityIndex, 
+            value, 
+            "flexMarginLeft",
+            static v => new FlexMarginLeftBehavior(v)
         );
-        return true;
-    }
 
     /// <summary>
     /// Applies FlexMarginRight mutation.
     /// </summary>
-    private static bool ApplyFlexMarginRightMutation(ushort entityIndex, JsonNode value)
-    {
-        if (!TryParseFloat(value, entityIndex, "flexMarginRight", out var floatValue))
-        {
-            return false;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
-            return false;
-        }
-
-        var behavior = new FlexMarginRightBehavior(floatValue);
-        entity.SetBehavior<FlexMarginRightBehavior, FlexMarginRightBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
+    private static bool ApplyFlexMarginRightMutation(ushort entityIndex, JsonNode value) =>
+        ApplyFloatBehavior<FlexMarginRightBehavior>(
+            entityIndex, 
+            value, 
+            "flexMarginRight",
+            static v => new FlexMarginRightBehavior(v)
         );
-        return true;
-    }
 
     /// <summary>
     /// Applies FlexMarginTop mutation.
     /// </summary>
-    private static bool ApplyFlexMarginTopMutation(ushort entityIndex, JsonNode value)
-    {
-        if (!TryParseFloat(value, entityIndex, "flexMarginTop", out var floatValue))
-        {
-            return false;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
-            return false;
-        }
-
-        var behavior = new FlexMarginTopBehavior(floatValue);
-        entity.SetBehavior<FlexMarginTopBehavior, FlexMarginTopBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
+    private static bool ApplyFlexMarginTopMutation(ushort entityIndex, JsonNode value) =>
+        ApplyFloatBehavior<FlexMarginTopBehavior>(
+            entityIndex, 
+            value, 
+            "flexMarginTop",
+            static v => new FlexMarginTopBehavior(v)
         );
-        return true;
-    }
 
     /// <summary>
     /// Applies FlexPaddingBottom mutation.
     /// </summary>
-    private static bool ApplyFlexPaddingBottomMutation(ushort entityIndex, JsonNode value)
-    {
-        if (!TryParseFloat(value, entityIndex, "flexPaddingBottom", out var floatValue))
-        {
-            return false;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
-            return false;
-        }
-
-        var behavior = new FlexPaddingBottomBehavior(floatValue);
-        entity.SetBehavior<FlexPaddingBottomBehavior, FlexPaddingBottomBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
+    private static bool ApplyFlexPaddingBottomMutation(ushort entityIndex, JsonNode value) =>
+        ApplyFloatBehavior<FlexPaddingBottomBehavior>(
+            entityIndex, 
+            value, 
+            "flexPaddingBottom",
+            static v => new FlexPaddingBottomBehavior(v)
         );
-        return true;
-    }
 
     /// <summary>
     /// Applies FlexPaddingLeft mutation.
     /// </summary>
-    private static bool ApplyFlexPaddingLeftMutation(ushort entityIndex, JsonNode value)
-    {
-        if (!TryParseFloat(value, entityIndex, "flexPaddingLeft", out var floatValue))
-        {
-            return false;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
-            return false;
-        }
-
-        var behavior = new FlexPaddingLeftBehavior(floatValue);
-        entity.SetBehavior<FlexPaddingLeftBehavior, FlexPaddingLeftBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
+    private static bool ApplyFlexPaddingLeftMutation(ushort entityIndex, JsonNode value) =>
+        ApplyFloatBehavior<FlexPaddingLeftBehavior>(
+            entityIndex, 
+            value, 
+            "flexPaddingLeft",
+            static v => new FlexPaddingLeftBehavior(v)
         );
-        return true;
-    }
 
     /// <summary>
     /// Applies FlexPaddingRight mutation.
     /// </summary>
-    private static bool ApplyFlexPaddingRightMutation(ushort entityIndex, JsonNode value)
-    {
-        if (!TryParseFloat(value, entityIndex, "flexPaddingRight", out var floatValue))
-        {
-            return false;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
-            return false;
-        }
-
-        var behavior = new FlexPaddingRightBehavior(floatValue);
-        entity.SetBehavior<FlexPaddingRightBehavior, FlexPaddingRightBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
+    private static bool ApplyFlexPaddingRightMutation(ushort entityIndex, JsonNode value) =>
+        ApplyFloatBehavior<FlexPaddingRightBehavior>(
+            entityIndex, 
+            value, 
+            "flexPaddingRight",
+            static v => new FlexPaddingRightBehavior(v)
         );
-        return true;
-    }
 
     /// <summary>
     /// Applies FlexPaddingTop mutation.
     /// </summary>
-    private static bool ApplyFlexPaddingTopMutation(ushort entityIndex, JsonNode value)
-    {
-        if (!TryParseFloat(value, entityIndex, "flexPaddingTop", out var floatValue))
-        {
-            return false;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
-            return false;
-        }
-
-        var behavior = new FlexPaddingTopBehavior(floatValue);
-        entity.SetBehavior<FlexPaddingTopBehavior, FlexPaddingTopBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
+    private static bool ApplyFlexPaddingTopMutation(ushort entityIndex, JsonNode value) =>
+        ApplyFloatBehavior<FlexPaddingTopBehavior>(
+            entityIndex, 
+            value, 
+            "flexPaddingTop",
+            static v => new FlexPaddingTopBehavior(v)
         );
-        return true;
-    }
 
     // ========== Two-Field Behaviors (Value + Percent) ==========
 
@@ -1525,7 +1260,7 @@ public sealed class RulesDriver :
     /// </summary>
     private static bool ApplyFlexHeightValueMutation(ushort entityIndex, JsonNode value)
     {
-        if (!TryGetFloatValue(value, out var floatValue))
+        if (!value.TryGetFloatValue(out var floatValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"flexHeight value must be a number for entity {entityIndex}"
@@ -1566,7 +1301,7 @@ public sealed class RulesDriver :
     /// </summary>
     private static bool ApplyFlexHeightPercentMutation(ushort entityIndex, JsonNode value)
     {
-        if (!TryGetBoolValue(value, out var boolValue))
+        if (!value.TryGetBoolValue(out var boolValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"flexHeightPercent value must be a boolean for entity {entityIndex}"
@@ -1607,7 +1342,7 @@ public sealed class RulesDriver :
     /// </summary>
     private static bool ApplyFlexWidthValueMutation(ushort entityIndex, JsonNode value)
     {
-        if (!TryGetFloatValue(value, out var floatValue))
+        if (!value.TryGetFloatValue(out var floatValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"flexWidth value must be a number for entity {entityIndex}"
@@ -1646,7 +1381,7 @@ public sealed class RulesDriver :
     /// </summary>
     private static bool ApplyFlexWidthPercentMutation(ushort entityIndex, JsonNode value)
     {
-        if (!TryGetBoolValue(value, out var boolValue))
+        if (!value.TryGetBoolValue(out var boolValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"flexWidthPercent value must be a boolean for entity {entityIndex}"
@@ -1685,7 +1420,7 @@ public sealed class RulesDriver :
     /// </summary>
     private static bool ApplyFlexPositionBottomValueMutation(ushort entityIndex, JsonNode value)
     {
-        if (!TryGetFloatValue(value, out var floatValue))
+        if (!value.TryGetFloatValue(out var floatValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"flexPositionBottom value must be a number for entity {entityIndex}"
@@ -1724,7 +1459,7 @@ public sealed class RulesDriver :
     /// </summary>
     private static bool ApplyFlexPositionBottomPercentMutation(ushort entityIndex, JsonNode value)
     {
-        if (!TryGetBoolValue(value, out var boolValue))
+        if (!value.TryGetBoolValue(out var boolValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"flexPositionBottomPercent value must be a boolean for entity {entityIndex}"
@@ -1763,7 +1498,7 @@ public sealed class RulesDriver :
     /// </summary>
     private static bool ApplyFlexPositionLeftValueMutation(ushort entityIndex, JsonNode value)
     {
-        if (!TryGetFloatValue(value, out var floatValue))
+        if (!value.TryGetFloatValue(out var floatValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"flexPositionLeft value must be a number for entity {entityIndex}"
@@ -1802,7 +1537,7 @@ public sealed class RulesDriver :
     /// </summary>
     private static bool ApplyFlexPositionLeftPercentMutation(ushort entityIndex, JsonNode value)
     {
-        if (!TryGetBoolValue(value, out var boolValue))
+        if (!value.TryGetBoolValue(out var boolValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"flexPositionLeftPercent value must be a boolean for entity {entityIndex}"
@@ -1841,7 +1576,7 @@ public sealed class RulesDriver :
     /// </summary>
     private static bool ApplyFlexPositionRightValueMutation(ushort entityIndex, JsonNode value)
     {
-        if (!TryGetFloatValue(value, out var floatValue))
+        if (!value.TryGetFloatValue(out var floatValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"flexPositionRight value must be a number for entity {entityIndex}"
@@ -1880,7 +1615,7 @@ public sealed class RulesDriver :
     /// </summary>
     private static bool ApplyFlexPositionRightPercentMutation(ushort entityIndex, JsonNode value)
     {
-        if (!TryGetBoolValue(value, out var boolValue))
+        if (!value.TryGetBoolValue(out var boolValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"flexPositionRightPercent value must be a boolean for entity {entityIndex}"
@@ -1919,7 +1654,7 @@ public sealed class RulesDriver :
     /// </summary>
     private static bool ApplyFlexPositionTopValueMutation(ushort entityIndex, JsonNode value)
     {
-        if (!TryGetFloatValue(value, out var floatValue))
+        if (!value.TryGetFloatValue(out var floatValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"flexPositionTop value must be a number for entity {entityIndex}"
@@ -1958,7 +1693,7 @@ public sealed class RulesDriver :
     /// </summary>
     private static bool ApplyFlexPositionTopPercentMutation(ushort entityIndex, JsonNode value)
     {
-        if (!TryGetBoolValue(value, out var boolValue))
+        if (!value.TryGetBoolValue(out var boolValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"flexPositionTopPercent value must be a boolean for entity {entityIndex}"
@@ -1999,7 +1734,7 @@ public sealed class RulesDriver :
     /// </summary>
     private static bool ApplyFlexZOverrideMutation(ushort entityIndex, JsonNode value)
     {
-        if (!TryParseInt(value, entityIndex, "flexZOverride", out var intValue))
+        if (!value.TryGetIntWithError(entityIndex, "flexZOverride", out var intValue))
         {
             return false;
         }
@@ -2022,104 +1757,68 @@ public sealed class RulesDriver :
     // ========== Helper Methods ==========
 
     /// <summary>
-    /// Tries to parse an enum value from a JsonNode.
+    /// Generic helper for applying single-value float behaviors.
+    /// Eliminates duplication across Border, Margin, Padding, and Grow mutations.
     /// </summary>
-    private static bool TryParseEnum<TEnum>(JsonNode value, ushort entityIndex, string fieldName, out TEnum result)
+    private static bool ApplyFloatBehavior<TBehavior>(
+        ushort entityIndex, 
+        JsonNode value, 
+        string fieldName,
+        Func<float, TBehavior> behaviorConstructor
+    )
+        where TBehavior : struct
+    {
+        if (!value.TryGetFloatWithError(entityIndex, fieldName, out var floatValue))
+        {
+            return false;
+        }
+
+        var entity = EntityRegistry.Instance[entityIndex];
+        if (!entity.Active)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
+            return false;
+        }
+
+        var behavior = behaviorConstructor(floatValue);
+        entity.SetBehavior<TBehavior, TBehavior>(
+            in behavior,
+            static (ref readonly _b, ref b) => b = _b
+        );
+        return true;
+    }
+
+    /// <summary>
+    /// Generic helper for applying enum-based behaviors.
+    /// Eliminates duplication across AlignItems, Direction, Wrap, etc.
+    /// </summary>
+    private static bool ApplyEnumBehavior<TBehavior, TEnum>(
+        ushort entityIndex, 
+        JsonNode value, 
+        string fieldName,
+        Func<TEnum, TBehavior> behaviorConstructor
+    )
+        where TBehavior : struct
         where TEnum : struct, Enum
     {
-        try
+        if (!value.TryGetEnumWithError<TEnum>(entityIndex, fieldName, out var enumValue))
         {
-            var stringValue = value.GetValue<string>();
-            if (Enum.TryParse<TEnum>(stringValue, ignoreCase: true, out result))
-            {
-                return true;
-            }
-
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Invalid {fieldName} value '{stringValue}' for entity {entityIndex}. Valid values: {string.Join(", ", Enum.GetNames<TEnum>())}"
-            ));
-            return false;
-        }
-        catch (Exception ex)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} for entity {entityIndex}: {ex.Message}"
-            ));
-            result = default;
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Tries to parse a float value from a JsonNode.
-    /// </summary>
-    private static bool TryParseFloat(JsonNode value, ushort entityIndex, string fieldName, out float result)
-    {
-        try
-        {
-            result = value.GetValue<float>();
-            return true;
-        }
-        catch (Exception ex)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} for entity {entityIndex}: {ex.Message}. Expected a numeric value."
-            ));
-            result = default;
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Tries to parse an int value from a JsonNode.
-    /// </summary>
-    private static bool TryParseInt(JsonNode value, ushort entityIndex, string fieldName, out int result)
-    {
-        try
-        {
-            result = value.GetValue<int>();
-            return true;
-        }
-        catch (Exception ex)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} for entity {entityIndex}: {ex.Message}. Expected an integer value."
-            ));
-            result = default;
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Tries to parse a two-field behavior (value + percent) from a JsonNode.
-    /// </summary>
-    private static bool TryParseTwoFieldBehavior(JsonNode value, ushort entityIndex, string fieldName, out float floatValue, out bool percentValue)
-    {
-        if (value is not JsonObject obj)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"{fieldName} must be a JsonObject with 'value' and 'percent' fields for entity {entityIndex}"
-            ));
-            floatValue = default;
-            percentValue = default;
             return false;
         }
 
-        try
+        var entity = EntityRegistry.Instance[entityIndex];
+        if (!entity.Active)
         {
-            floatValue = obj["value"]!.GetValue<float>();
-            percentValue = obj["percent"]!.GetValue<bool>();
-            return true;
-        }
-        catch (Exception ex)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} for entity {entityIndex}: {ex.Message}"
-            ));
-            floatValue = default;
-            percentValue = default;
+            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
             return false;
         }
+
+        var behavior = behaviorConstructor(enumValue);
+        entity.SetBehavior<TBehavior, TBehavior>(
+            in behavior,
+            static (ref readonly _b, ref b) => b = _b
+        );
+        return true;
     }
 
     /// <summary>
@@ -2148,78 +1847,5 @@ public sealed class RulesDriver :
             result = null;
             return false;
         }
-    }
-
-    /// <summary>
-    /// Tries to get a string value from a JsonNode.
-    /// </summary>
-    private static bool TryGetStringValue(
-        JsonNode node,
-        [NotNullWhen(true)]
-        out string? result
-    )
-    {
-        try
-        {
-            result = node.GetValue<string>();
-            return true;
-        }
-        catch
-        {
-            result = null;
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Tries to get a float value from a JsonNode.
-    /// </summary>
-    private static bool TryGetFloatValue(JsonNode node, out float result)
-    {
-        if (node is not JsonValue jsonValue)
-        {
-            result = default;
-            return false;
-        }
-
-        if (jsonValue.TryGetValue<float>(out result))
-        {
-            return true;
-        }
-
-        if (jsonValue.TryGetValue<double>(out var doubleVal))
-        {
-            result = (float)doubleVal;
-            return true;
-        }
-
-        if (jsonValue.TryGetValue<int>(out var intVal))
-        {
-            result = intVal;
-            return true;
-        }
-
-        if (jsonValue.TryGetValue<decimal>(out var decimalVal))
-        {
-            result = (float)decimalVal;
-            return true;
-        }
-
-        result = default;
-        return false;
-    }
-
-    /// <summary>
-    /// Tries to get a bool value from a JsonNode.
-    /// </summary>
-    private static bool TryGetBoolValue(JsonNode node, out bool result)
-    {
-        if (node is not JsonValue jsonValue)
-        {
-            result = default;
-            return false;
-        }
-
-        return jsonValue.TryGetValue<bool>(out result);
     }
 }
