@@ -224,4 +224,57 @@ public static class JsonNodeExtensions
         result = new Quaternion(x, y, z, w);
         return success;
     }
+
+    /// <summary>
+    /// Tries to extract the _index property from entity JSON.
+    /// Entity index is ushort, but JsonLogic may serialize as int.
+    /// </summary>
+    public static bool TryGetEntityIndex(
+        this JsonNode entityJson,
+        [NotNullWhen(true)] out ushort? entityIndex
+    )
+    {
+        if (entityJson is not JsonObject entityObj)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Entity JSON is not a JsonObject"));
+            entityIndex = null;
+            return false;
+        }
+
+        if (!entityObj.TryGetPropertyValue("_index", out var indexNode) || indexNode == null)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Entity missing _index property"));
+            entityIndex = null;
+            return false;
+        }
+
+        try
+        {
+            // Entity index is ushort, but JsonLogic may serialize as int
+            if (indexNode is JsonValue jsonValue && jsonValue.TryGetValue<ushort>(out var ushortValue))
+            {
+                entityIndex = ushortValue;
+                return true;
+            }
+
+            var indexValue = indexNode.GetValue<int>();
+            if (indexValue < 0 || indexValue >= Constants.MaxEntities)
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Entity _index {indexValue} out of bounds (max: {Constants.MaxEntities})"
+                ));
+                entityIndex = null;
+                return false;
+            }
+
+            entityIndex = (ushort)indexValue;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent($"Failed to parse _index: {ex.Message}"));
+            entityIndex = null;
+            return false;
+        }
+    }
 }
