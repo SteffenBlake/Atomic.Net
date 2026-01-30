@@ -382,533 +382,401 @@ public static class JsonEntityConverter
         );
 
         // Transform - Position.Z
-        if (mutEntity.Value.Transform?.Position?.Z.HasValue ?? false)
-        {
-            var z = mutEntity.Value.Transform!.Value.Position!.Value.Z!.Value;
-            entity.SetBehavior<TransformBehavior, float>(
-                in z,
-                static (ref readonly _z, ref b) => b = b with
-                {
-                    Position = b.Position with { Z = _z }
-                }
-            );
-        }
+        TrySetStruct<float, TransformBehavior>(
+            entity,
+            mutEntity.Value.Transform?.Position?.Z,
+            static (ref readonly _z, ref b) => b = b with
+            {
+                Position = b.Position with { Z = _z }
+            }
+        );
 
         // Transform - Rotation.X
-        if (mutEntity.Value.Transform?.Rotation?.X.HasValue ?? false)
-        {
-            var x = mutEntity.Value.Transform!.Value.Rotation!.Value.X!.Value;
-            entity.SetBehavior<TransformBehavior, float>(
-                in x,
-                static (ref readonly _x, ref b) => b = b with
-                {
-                    Rotation = b.Rotation with { X = _x }
-                }
-            );
-        }
+        TrySetStruct<float, TransformBehavior>(
+            entity,
+            mutEntity.Value.Transform?.Rotation?.X,
+            static (ref readonly _x, ref b) => b = b with
+            {
+                Rotation = b.Rotation with { X = _x }
+            }
+        );
 
         // Transform - Rotation.Y
-        if (mutEntity.Value.Transform?.Rotation?.Y.HasValue ?? false)
-        {
-            var y = mutEntity.Value.Transform!.Value.Rotation!.Value.Y!.Value;
-            entity.SetBehavior<TransformBehavior, float>(
-                in y,
-                static (ref readonly _y, ref b) => b = b with
-                {
-                    Rotation = b.Rotation with { Y = _y }
-                }
-            );
-        }
+        TrySetStruct<float, TransformBehavior>(
+            entity,
+            mutEntity.Value.Transform?.Rotation?.Y,
+            static (ref readonly _y, ref b) => b = b with
+            {
+                Rotation = b.Rotation with { Y = _y }
+            }
+        );
 
         // Transform - Rotation.Z
-        if (mutEntity.Value.Transform?.Rotation?.Z.HasValue ?? false)
-        {
-            var z = mutEntity.Value.Transform!.Value.Rotation!.Value.Z!.Value;
-            entity.SetBehavior<TransformBehavior, float>(
-                in z,
-                static (ref readonly _z, ref b) => b = b with
-                {
-                    Rotation = b.Rotation with { Z = _z }
-                }
-            );
-        }
+        TrySetStruct<float, TransformBehavior>(
+            entity,
+            mutEntity.Value.Transform?.Rotation?.Z,
+            static (ref readonly _z, ref b) => b = b with
+            {
+                Rotation = b.Rotation with { Z = _z }
+            }
+        );
 
         // Transform - Rotation.W
-        if (mutEntity.Value.Transform?.Rotation?.W.HasValue ?? false)
-        {
-            var w = mutEntity.Value.Transform!.Value.Rotation!.Value.W!.Value;
-            entity.SetBehavior<TransformBehavior, float>(
-                in w,
-                static (ref readonly _w, ref b) => b = b with
-                {
-                    Rotation = b.Rotation with { W = _w }
-                }
-            );
-        }
+        TrySetStruct<float, TransformBehavior>(
+            entity,
+            mutEntity.Value.Transform?.Rotation?.W,
+            static (ref readonly _w, ref b) => b = b with
+            {
+                Rotation = b.Rotation with { W = _w }
+            }
+        );
 
         // Transform - Scale.X
-        if (mutEntity.Value.Transform?.Scale?.X.HasValue ?? false)
-        {
-            var x = mutEntity.Value.Transform!.Value.Scale!.Value.X!.Value;
-            entity.SetBehavior<TransformBehavior, float>(
-                in x,
-                static (ref readonly _x, ref b) => b = b with
-                {
-                    Scale = b.Scale with { X = _x }
-                }
-            );
-        }
+        TrySetStruct<float, TransformBehavior>(
+            entity,
+            mutEntity.Value.Transform?.Scale?.X,
+            static (ref readonly _x, ref b) => b = b with
+            {
+                Scale = b.Scale with { X = _x }
+            }
+        );
 
         // Transform - Scale.Y
-        if (mutEntity.Value.Transform?.Scale?.Y.HasValue ?? false)
-        {
-            var y = mutEntity.Value.Transform!.Value.Scale!.Value.Y!.Value;
-            entity.SetBehavior<TransformBehavior, float>(
-                in y,
-                static (ref readonly _y, ref b) => b = b with
-                {
-                    Scale = b.Scale with { Y = _y }
-                }
-            );
-        }
+        TrySetStruct<float, TransformBehavior>(
+            entity,
+            mutEntity.Value.Transform?.Scale?.Y,
+            static (ref readonly _y, ref b) => b = b with
+            {
+                Scale = b.Scale with { Y = _y }
+            }
+        );
 
         // Transform - Scale.Z
-        if (mutEntity.Value.Transform?.Scale?.Z.HasValue ?? false)
-        {
-            var z = mutEntity.Value.Transform!.Value.Scale!.Value.Z!.Value;
-            entity.SetBehavior<TransformBehavior, float>(
-                in z,
-                static (ref readonly _z, ref b) => b = b with
-                {
-                    Scale = b.Scale with { Z = _z }
-                }
-            );
-        }
+        TrySetStruct<float, TransformBehavior>(
+            entity,
+            mutEntity.Value.Transform?.Scale?.Z,
+            static (ref readonly _z, ref b) => b = b with
+            {
+                Scale = b.Scale with { Z = _z }
+            }
+        );
 
         // Transform - Anchor.X
-        if (mutEntity.Value.Transform?.Anchor?.X.HasValue ?? false)
-        {
-            var x = mutEntity.Value.Transform!.Value.Anchor!.Value.X!.Value;
-            entity.SetBehavior<TransformBehavior, float>(
-                in x,
-                static (ref readonly _x, ref b) => b = b with
-                {
-                    Anchor = b.Anchor with { X = _x }
-                }
-            );
-        }
+        TrySetStruct<float, TransformBehavior>(
+            entity,
+            mutEntity.Value.Transform?.Anchor?.X,
+            static (ref readonly _x, ref b) => b = b with
+            {
+                Anchor = b.Anchor with { X = _x }
+            }
+        );
 
         // Transform - Anchor.Y
-        if (mutEntity.Value.Transform?.Anchor?.Y.HasValue ?? false)
-        {
-            var y = mutEntity.Value.Transform!.Value.Anchor!.Value.Y!.Value;
-            entity.SetBehavior<TransformBehavior, float>(
-                in y,
-                static (ref readonly _y, ref b) => b = b with
-                {
-                    Anchor = b.Anchor with { Y = _y }
-                }
-            );
-        }
+        TrySetStruct<float, TransformBehavior>(
+            entity,
+            mutEntity.Value.Transform?.Anchor?.Y,
+            static (ref readonly _y, ref b) => b = b with
+            {
+                Anchor = b.Anchor with { Y = _y }
+            }
+        );
 
         // Transform - Anchor.Z
-        if (mutEntity.Value.Transform?.Anchor?.Z.HasValue ?? false)
-        {
-            var z = mutEntity.Value.Transform!.Value.Anchor!.Value.Z!.Value;
-            entity.SetBehavior<TransformBehavior, float>(
-                in z,
-                static (ref readonly _z, ref b) => b = b with
-                {
-                    Anchor = b.Anchor with { Z = _z }
-                }
-            );
-        }
+        TrySetStruct<float, TransformBehavior>(
+            entity,
+            mutEntity.Value.Transform?.Anchor?.Z,
+            static (ref readonly _z, ref b) => b = b with
+            {
+                Anchor = b.Anchor with { Z = _z }
+            }
+        );
 
         // Parent
-        if (mutEntity.Value.Parent != null)
-        {
-            var parentSelector = mutEntity.Value.Parent;
-            entity.SetBehavior<ParentBehavior, EntitySelector>(
-                in parentSelector,
-                static (ref readonly _selector, ref b) => b = new ParentBehavior(_selector)
-            );
-        }
+        TrySetRef<EntitySelector, ParentBehavior>(
+            entity,
+            mutEntity.Value.Parent,
+            static (ref readonly _selector, ref b) => b = new ParentBehavior(_selector)
+        );
 
         // FlexAlignItems
-        if (mutEntity.Value.FlexAlignItems != null)
-        {
-            var alignItems = mutEntity.Value.FlexAlignItems.Value;
-            entity.SetBehavior<FlexAlignItemsBehavior, Align>(
-                in alignItems,
-                static (ref readonly _alignItems, ref b) =>
-                    b = new FlexAlignItemsBehavior(_alignItems)
-            );
-        }
+        TrySetStruct<Align, FlexAlignItemsBehavior>(
+            entity,
+            mutEntity.Value.FlexAlignItems,
+            static (ref readonly _alignItems, ref b) =>
+                b = new FlexAlignItemsBehavior(_alignItems)
+        );
 
         // FlexAlignSelf
-        if (mutEntity.Value.FlexAlignSelf != null)
-        {
-            var alignSelf = mutEntity.Value.FlexAlignSelf.Value;
-            entity.SetBehavior<FlexAlignSelfBehavior, Align>(
-                in alignSelf,
-                static (ref readonly _alignSelf, ref b) =>
-                    b = new FlexAlignSelfBehavior(_alignSelf)
-            );
-        }
+        TrySetStruct<Align, FlexAlignSelfBehavior>(
+            entity,
+            mutEntity.Value.FlexAlignSelf,
+            static (ref readonly _alignSelf, ref b) =>
+                b = new FlexAlignSelfBehavior(_alignSelf)
+        );
 
         // FlexBorderBottom
-        if (mutEntity.Value.FlexBorderBottom.HasValue)
-        {
-            var borderBottom = mutEntity.Value.FlexBorderBottom.Value;
-            entity.SetBehavior<FlexBorderBottomBehavior, float>(
-                in borderBottom,
-                static (ref readonly _borderBottom, ref b) =>
-                        b = new FlexBorderBottomBehavior(_borderBottom)
-            );
-        }
+        TrySetStruct<float, FlexBorderBottomBehavior>(
+            entity,
+            mutEntity.Value.FlexBorderBottom,
+            static (ref readonly _borderBottom, ref b) =>
+                    b = new FlexBorderBottomBehavior(_borderBottom)
+        );
 
         // FlexBorderLeft
-        if (mutEntity.Value.FlexBorderLeft.HasValue)
-        {
-            var borderLeft = mutEntity.Value.FlexBorderLeft.Value;
-            entity.SetBehavior<FlexBorderLeftBehavior, float>(
-                in borderLeft,
-                static (ref readonly _borderLeft, ref b) =>
-                        b = new FlexBorderLeftBehavior(_borderLeft)
-            );
-        }
+        TrySetStruct<float, FlexBorderLeftBehavior>(
+            entity,
+            mutEntity.Value.FlexBorderLeft,
+            static (ref readonly _borderLeft, ref b) =>
+                    b = new FlexBorderLeftBehavior(_borderLeft)
+        );
 
         // FlexBorderRight
-        if (mutEntity.Value.FlexBorderRight.HasValue)
-        {
-            var borderRight = mutEntity.Value.FlexBorderRight.Value;
-            entity.SetBehavior<FlexBorderRightBehavior, float>(
-                in borderRight,
-                static (ref readonly _borderRight, ref b) =>
-                        b = new FlexBorderRightBehavior(_borderRight)
-            );
-        }
+        TrySetStruct<float, FlexBorderRightBehavior>(
+            entity,
+            mutEntity.Value.FlexBorderRight,
+            static (ref readonly _borderRight, ref b) =>
+                    b = new FlexBorderRightBehavior(_borderRight)
+        );
 
         // FlexBorderTop
-        if (mutEntity.Value.FlexBorderTop.HasValue)
-        {
-            var borderTop = mutEntity.Value.FlexBorderTop.Value;
-            entity.SetBehavior<FlexBorderTopBehavior, float>(
-                in borderTop,
-                static (ref readonly _borderTop, ref b) =>
-                        b = new FlexBorderTopBehavior(_borderTop)
-            );
-        }
+        TrySetStruct<float, FlexBorderTopBehavior>(
+            entity,
+            mutEntity.Value.FlexBorderTop,
+            static (ref readonly _borderTop, ref b) =>
+                    b = new FlexBorderTopBehavior(_borderTop)
+        );
 
         // FlexDirection
-        if (mutEntity.Value.FlexDirection != null)
-        {
-            var direction = mutEntity.Value.FlexDirection.Value;
-            entity.SetBehavior<FlexDirectionBehavior, FlexDirection>(
-                in direction,
-                static (ref readonly _direction, ref b) =>
-                    b = new FlexDirectionBehavior(_direction)
-            );
-        }
+        TrySetStruct<FlexDirection, FlexDirectionBehavior>(
+            entity,
+            mutEntity.Value.FlexDirection,
+            static (ref readonly _direction, ref b) =>
+                b = new FlexDirectionBehavior(_direction)
+        );
 
         // FlexGrow
-        if (mutEntity.Value.FlexGrow.HasValue)
-        {
-            var grow = mutEntity.Value.FlexGrow.Value;
-            entity.SetBehavior<FlexGrowBehavior, float>(
-                in grow,
-                static (ref readonly _grow, ref b) =>
-                        b = new FlexGrowBehavior(_grow)
-            );
-        }
+        TrySetStruct<float, FlexGrowBehavior>(
+            entity,
+            mutEntity.Value.FlexGrow,
+            static (ref readonly _grow, ref b) =>
+                    b = new FlexGrowBehavior(_grow)
+        );
 
         // FlexWrap
-        if (mutEntity.Value.FlexWrap != null)
-        {
-            var wrap = mutEntity.Value.FlexWrap.Value;
-            entity.SetBehavior<FlexWrapBehavior, Wrap>(
-                in wrap,
-                static (ref readonly _wrap, ref b) =>
-                    b = new FlexWrapBehavior(_wrap)
-            );
-        }
+        TrySetStruct<Wrap, FlexWrapBehavior>(
+            entity,
+            mutEntity.Value.FlexWrap,
+            static (ref readonly _wrap, ref b) =>
+                b = new FlexWrapBehavior(_wrap)
+        );
 
         // FlexZOverride
-        if (mutEntity.Value.FlexZOverride.HasValue)
-        {
-            var zOverride = mutEntity.Value.FlexZOverride.Value;
-            entity.SetBehavior<FlexZOverride, int>(
-                in zOverride,
-                static (ref readonly _zOverride, ref b) =>
-                        b = new FlexZOverride(_zOverride)
-            );
-        }
+        TrySetStruct<int, FlexZOverride>(
+            entity,
+            mutEntity.Value.FlexZOverride,
+            static (ref readonly _zOverride, ref b) =>
+                    b = new FlexZOverride(_zOverride)
+        );
 
         // FlexHeight - Value
-        if (mutEntity.Value.FlexHeight?.Value.HasValue ?? false)
-        {
-            var value = mutEntity.Value.FlexHeight.Value.Value.Value;
-            entity.SetBehavior<FlexHeightBehavior, float>(
-                in value,
-                static (ref readonly _value, ref b) => b = b with
-                {
-                    Value = _value
-                }
-            );
-        }
+        TrySetStruct<float, FlexHeightBehavior>(
+            entity,
+            mutEntity.Value.FlexHeight?.Value,
+            static (ref readonly _value, ref b) => b = b with
+            {
+                Value = _value
+            }
+        );
 
         // FlexHeight - Percent
-        if (mutEntity.Value.FlexHeight?.Percent.HasValue ?? false)
-        {
-            var percent = mutEntity.Value.FlexHeight.Value.Percent.Value;
-            entity.SetBehavior<FlexHeightBehavior, bool>(
-                in percent,
-                static (ref readonly _percent, ref b) => b = b with
-                {
-                    Percent = _percent
-                }
-            );
-        }
+        TrySetStruct<bool, FlexHeightBehavior>(
+            entity,
+            mutEntity.Value.FlexHeight?.Percent,
+            static (ref readonly _percent, ref b) => b = b with
+            {
+                Percent = _percent
+            }
+        );
 
         // FlexJustifyContent
-        if (mutEntity.Value.FlexJustifyContent != null)
-        {
-            var justify = mutEntity.Value.FlexJustifyContent.Value;
-            entity.SetBehavior<FlexJustifyContentBehavior, Justify>(
-                in justify,
-                static (ref readonly _justify, ref b) =>
-                    b = new FlexJustifyContentBehavior(_justify)
-            );
-        }
+        TrySetStruct<Justify, FlexJustifyContentBehavior>(
+            entity,
+            mutEntity.Value.FlexJustifyContent,
+            static (ref readonly _justify, ref b) =>
+                b = new FlexJustifyContentBehavior(_justify)
+        );
 
         // FlexMarginBottom
-        if (mutEntity.Value.FlexMarginBottom.HasValue)
-        {
-            var marginBottom = mutEntity.Value.FlexMarginBottom.Value;
-            entity.SetBehavior<FlexMarginBottomBehavior, float>(
-                in marginBottom,
-                static (ref readonly _marginBottom, ref b) => 
-                    b = new FlexMarginBottomBehavior(_marginBottom)
-            );
-        }
+        TrySetStruct<float, FlexMarginBottomBehavior>(
+            entity,
+            mutEntity.Value.FlexMarginBottom,
+            static (ref readonly _marginBottom, ref b) => 
+                b = new FlexMarginBottomBehavior(_marginBottom)
+        );
 
         // FlexMarginLeft
-        if (mutEntity.Value.FlexMarginLeft.HasValue)
-        {
-            var marginLeft = mutEntity.Value.FlexMarginLeft.Value;
-            entity.SetBehavior<FlexMarginLeftBehavior, float>(
-                in marginLeft,
-                static (ref readonly _marginLeft, ref b) => 
-                    b = new FlexMarginLeftBehavior(_marginLeft)
-            );
-        }
+        TrySetStruct<float, FlexMarginLeftBehavior>(
+            entity,
+            mutEntity.Value.FlexMarginLeft,
+            static (ref readonly _marginLeft, ref b) => 
+                b = new FlexMarginLeftBehavior(_marginLeft)
+        );
 
         // FlexMarginRight
-        if (mutEntity.Value.FlexMarginRight.HasValue)
-        {
-            var marginRight = mutEntity.Value.FlexMarginRight.Value;
-            entity.SetBehavior<FlexMarginRightBehavior, float>(
-                in marginRight,
-                static (ref readonly _marginRight, ref b) => 
-                    b = new FlexMarginRightBehavior(_marginRight)
-            );
-        }
+        TrySetStruct<float, FlexMarginRightBehavior>(
+            entity,
+            mutEntity.Value.FlexMarginRight,
+            static (ref readonly _marginRight, ref b) => 
+                b = new FlexMarginRightBehavior(_marginRight)
+        );
 
         // FlexMarginTop
-        if (mutEntity.Value.FlexMarginTop.HasValue)
-        {
-            var marginTop = mutEntity.Value.FlexMarginTop.Value;
-            entity.SetBehavior<FlexMarginTopBehavior, float>(
-                in marginTop,
-                static (ref readonly _marginTop, ref b) => 
-                    b = new FlexMarginTopBehavior(_marginTop)
-            );
-        }
+        TrySetStruct<float, FlexMarginTopBehavior>(
+            entity,
+            mutEntity.Value.FlexMarginTop,
+            static (ref readonly _marginTop, ref b) => 
+                b = new FlexMarginTopBehavior(_marginTop)
+        );
 
         // FlexPaddingBottom
-        if (mutEntity.Value.FlexPaddingBottom.HasValue)
-        {
-            var paddingBottom = mutEntity.Value.FlexPaddingBottom.Value;
-            entity.SetBehavior<FlexPaddingBottomBehavior, float>(
-                in paddingBottom,
-                static (ref readonly _paddingBottom, ref b) => 
-                    b = new FlexPaddingBottomBehavior(_paddingBottom)
-            );
-        }
+        TrySetStruct<float, FlexPaddingBottomBehavior>(
+            entity,
+            mutEntity.Value.FlexPaddingBottom,
+            static (ref readonly _paddingBottom, ref b) => 
+                b = new FlexPaddingBottomBehavior(_paddingBottom)
+        );
 
         // FlexPaddingLeft
-        if (mutEntity.Value.FlexPaddingLeft.HasValue)
-        {
-            var paddingLeft = mutEntity.Value.FlexPaddingLeft.Value;
-            entity.SetBehavior<FlexPaddingLeftBehavior, float>(
-                in paddingLeft,
-                static (ref readonly _paddingLeft, ref b) => 
-                    b = new FlexPaddingLeftBehavior(_paddingLeft)
-            );
-        }
+        TrySetStruct<float, FlexPaddingLeftBehavior>(
+            entity,
+            mutEntity.Value.FlexPaddingLeft,
+            static (ref readonly _paddingLeft, ref b) => 
+                b = new FlexPaddingLeftBehavior(_paddingLeft)
+        );
 
         // FlexPaddingRight
-        if (mutEntity.Value.FlexPaddingRight.HasValue)
-        {
-            var paddingRight = mutEntity.Value.FlexPaddingRight.Value;
-            entity.SetBehavior<FlexPaddingRightBehavior, float>(
-                in paddingRight,
-                static (ref readonly _paddingRight, ref b) => 
-                    b = new FlexPaddingRightBehavior(_paddingRight)
-            );
-        }
+        TrySetStruct<float, FlexPaddingRightBehavior>(
+            entity,
+            mutEntity.Value.FlexPaddingRight,
+            static (ref readonly _paddingRight, ref b) => 
+                b = new FlexPaddingRightBehavior(_paddingRight)
+        );
 
         // FlexPaddingTop
-        if (mutEntity.Value.FlexPaddingTop.HasValue)
-        {
-            var paddingTop = mutEntity.Value.FlexPaddingTop.Value;
-            entity.SetBehavior<FlexPaddingTopBehavior, float>(
-                in paddingTop,
-                static (ref readonly _paddingTop, ref b) => 
-                    b = new FlexPaddingTopBehavior(_paddingTop)
-            );
-        }
+        TrySetStruct<float, FlexPaddingTopBehavior>(
+            entity,
+            mutEntity.Value.FlexPaddingTop,
+            static (ref readonly _paddingTop, ref b) => 
+                b = new FlexPaddingTopBehavior(_paddingTop)
+        );
 
         // FlexPositionBottom - Value
-        if (mutEntity.Value.FlexPositionBottom?.Value.HasValue ?? false)
-        {
-            var value = mutEntity.Value.FlexPositionBottom.Value.Value.Value;
-            entity.SetBehavior<FlexPositionBottomBehavior, float>(
-                in value,
-                static (ref readonly _value, ref b) => b = b with
-                {
-                    Value = _value
-                }
-            );
-        }
+        TrySetStruct<float, FlexPositionBottomBehavior>(
+            entity,
+            mutEntity.Value.FlexPositionBottom?.Value,
+            static (ref readonly _value, ref b) => b = b with
+            {
+                Value = _value
+            }
+        );
 
         // FlexPositionBottom - Percent
-        if (mutEntity.Value.FlexPositionBottom?.Percent.HasValue ?? false)
-        {
-            var percent = mutEntity.Value.FlexPositionBottom.Value.Percent.Value;
-            entity.SetBehavior<FlexPositionBottomBehavior, bool>(
-                in percent,
-                static (ref readonly _percent, ref b) => b = b with
-                {
-                    Percent = _percent
-                }
-            );
-        }
+        TrySetStruct<bool, FlexPositionBottomBehavior>(
+            entity,
+            mutEntity.Value.FlexPositionBottom?.Percent,
+            static (ref readonly _percent, ref b) => b = b with
+            {
+                Percent = _percent
+            }
+        );
 
         // FlexPositionLeft - Value
-        if (mutEntity.Value.FlexPositionLeft?.Value.HasValue ?? false)
-        {
-            var value = mutEntity.Value.FlexPositionLeft.Value.Value.Value;
-            entity.SetBehavior<FlexPositionLeftBehavior, float>(
-                in value,
-                static (ref readonly _value, ref b) => b = b with
-                {
-                    Value = _value
-                }
-            );
-        }
+        TrySetStruct<float, FlexPositionLeftBehavior>(
+            entity,
+            mutEntity.Value.FlexPositionLeft?.Value,
+            static (ref readonly _value, ref b) => b = b with
+            {
+                Value = _value
+            }
+        );
 
         // FlexPositionLeft - Percent
-        if (mutEntity.Value.FlexPositionLeft?.Percent.HasValue ?? false)
-        {
-            var percent = mutEntity.Value.FlexPositionLeft.Value.Percent.Value;
-            entity.SetBehavior<FlexPositionLeftBehavior, bool>(
-                in percent,
-                static (ref readonly _percent, ref b) => b = b with
-                {
-                    Percent = _percent
-                }
-            );
-        }
+        TrySetStruct<bool, FlexPositionLeftBehavior>(
+            entity,
+            mutEntity.Value.FlexPositionLeft?.Percent,
+            static (ref readonly _percent, ref b) => b = b with
+            {
+                Percent = _percent
+            }
+        );
 
         // FlexPositionRight - Value
-        if (mutEntity.Value.FlexPositionRight?.Value.HasValue ?? false)
-        {
-            var value = mutEntity.Value.FlexPositionRight.Value.Value.Value;
-            entity.SetBehavior<FlexPositionRightBehavior, float>(
-                in value,
-                static (ref readonly _value, ref b) => b = b with
-                {
-                    Value = _value
-                }
-            );
-        }
+        TrySetStruct<float, FlexPositionRightBehavior>(
+            entity,
+            mutEntity.Value.FlexPositionRight?.Value,
+            static (ref readonly _value, ref b) => b = b with
+            {
+                Value = _value
+            }
+        );
 
         // FlexPositionRight - Percent
-        if (mutEntity.Value.FlexPositionRight?.Percent.HasValue ?? false)
-        {
-            var percent = mutEntity.Value.FlexPositionRight.Value.Percent.Value;
-            entity.SetBehavior<FlexPositionRightBehavior, bool>(
-                in percent,
-                static (ref readonly _percent, ref b) => b = b with
-                {
-                    Percent = _percent
-                }
-            );
-        }
+        TrySetStruct<bool, FlexPositionRightBehavior>(
+            entity,
+            mutEntity.Value.FlexPositionRight?.Percent,
+            static (ref readonly _percent, ref b) => b = b with
+            {
+                Percent = _percent
+            }
+        );
 
         // FlexPositionTop - Value
-        if (mutEntity.Value.FlexPositionTop?.Value.HasValue ?? false)
-        {
-            var value = mutEntity.Value.FlexPositionTop.Value.Value.Value;
-            entity.SetBehavior<FlexPositionTopBehavior, float>(
-                in value,
-                static (ref readonly _value, ref b) => b = b with
-                {
-                    Value = _value
-                }
-            );
-        }
+        TrySetStruct<float, FlexPositionTopBehavior>(
+            entity,
+            mutEntity.Value.FlexPositionTop?.Value,
+            static (ref readonly _value, ref b) => b = b with
+            {
+                Value = _value
+            }
+        );
 
         // FlexPositionTop - Percent
-        if (mutEntity.Value.FlexPositionTop?.Percent.HasValue ?? false)
-        {
-            var percent = mutEntity.Value.FlexPositionTop.Value.Percent.Value;
-            entity.SetBehavior<FlexPositionTopBehavior, bool>(
-                in percent,
-                static (ref readonly _percent, ref b) => b = b with
-                {
-                    Percent = _percent
-                }
-            );
-        }
+        TrySetStruct<bool, FlexPositionTopBehavior>(
+            entity,
+            mutEntity.Value.FlexPositionTop?.Percent,
+            static (ref readonly _percent, ref b) => b = b with
+            {
+                Percent = _percent
+            }
+        );
 
         // FlexPositionType
-        if (mutEntity.Value.FlexPositionType != null)
-        {
-            var flexPositionType = mutEntity.Value.FlexPositionType.Value;
-            entity.SetBehavior<FlexPositionTypeBehavior, PositionType>(
-                in flexPositionType,
-                static (ref readonly _flexPositionType, ref b) =>
-                    b = new FlexPositionTypeBehavior(_flexPositionType)
-            );
-        }
+        TrySetStruct<PositionType, FlexPositionTypeBehavior>(
+            entity,
+            mutEntity.Value.FlexPositionType,
+            static (ref readonly _flexPositionType, ref b) =>
+                b = new FlexPositionTypeBehavior(_flexPositionType)
+        );
 
         // FlexWidth - Value
-        if (mutEntity.Value.FlexWidth?.Value.HasValue ?? false)
-        {
-            var value = mutEntity.Value.FlexWidth.Value.Value.Value;
-            entity.SetBehavior<FlexWidthBehavior, float>(
-                in value,
-                static (ref readonly _value, ref b) => b = b with
-                {
-                    Value = _value
-                }
-            );
-        }
+        TrySetStruct<float, FlexWidthBehavior>(
+            entity,
+            mutEntity.Value.FlexWidth?.Value,
+            static (ref readonly _value, ref b) => b = b with
+            {
+                Value = _value
+            }
+        );
 
         // FlexWidth - Percent
-        if (mutEntity.Value.FlexWidth?.Percent.HasValue ?? false)
-        {
-            var percent = mutEntity.Value.FlexWidth.Value.Percent.Value;
-            entity.SetBehavior<FlexWidthBehavior, bool>(
-                in percent,
-                static (ref readonly _percent, ref b) => b = b with
-                {
-                    Percent = _percent
-                }
-            );
-        }
+        TrySetStruct<bool, FlexWidthBehavior>(
+            entity,
+            mutEntity.Value.FlexWidth?.Percent,
+            static (ref readonly _percent, ref b) => b = b with
+            {
+                Percent = _percent
+            }
+        );
     }
 
 
