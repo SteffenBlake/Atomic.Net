@@ -23,16 +23,14 @@ public static class JsonNodeExtensions
             return false;
         }
 
-        try
+        // Use JsonValue.TryGetValue instead of try/catch
+        if (node is JsonValue jsonValue && jsonValue.TryGetValue<string>(out result))
         {
-            result = node.GetValue<string>();
             return true;
         }
-        catch
-        {
-            result = null;
-            return false;
-        }
+
+        result = null;
+        return false;
     }
 
     /// <summary>

@@ -30,26 +30,24 @@ public static class JsonObjectExtensions
             return false;
         }
 
-        try
+        // Use TryGetStringValue instead of try/catch
+        if (!value.TryGetStringValue(out var stringValue))
         {
-            var stringValue = value.GetValue<string>();
-            if (Enum.TryParse<TEnum>(stringValue, ignoreCase: true, out result))
-            {
-                return true;
-            }
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Failed to parse {fieldName} for entity {entityIndex}: Expected string value"
+            ));
+            return false;
+        }
 
+        if (!Enum.TryParse<TEnum>(stringValue, ignoreCase: true, out result))
+        {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Invalid {fieldName} value '{stringValue}' for entity {entityIndex}. Valid values: {string.Join(", ", Enum.GetNames<TEnum>())}"
             ));
             return false;
         }
-        catch (Exception ex)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} for entity {entityIndex}: {ex.Message}"
-            ));
-            return false;
-        }
+
+        return true;
     }
 
     /// <summary>
@@ -73,18 +71,16 @@ public static class JsonObjectExtensions
             return false;
         }
 
-        try
-        {
-            result = value.GetValue<float>();
-            return true;
-        }
-        catch (Exception ex)
+        // Use TryGetFloatValue instead of try/catch
+        if (!value.TryGetFloatValue(out result))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} for entity {entityIndex}: {ex.Message}. Expected a numeric value."
+                $"Failed to parse {fieldName} for entity {entityIndex}: Expected a numeric value"
             ));
             return false;
         }
+
+        return true;
     }
 
     /// <summary>
@@ -108,18 +104,16 @@ public static class JsonObjectExtensions
             return false;
         }
 
-        try
-        {
-            result = value.GetValue<int>();
-            return true;
-        }
-        catch (Exception ex)
+        // Use TryGetIntValue instead of try/catch
+        if (!value.TryGetIntValue(out result))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} for entity {entityIndex}: {ex.Message}. Expected an integer value."
+                $"Failed to parse {fieldName} for entity {entityIndex}: Expected an integer value"
             ));
             return false;
         }
+
+        return true;
     }
 
     /// <summary>
