@@ -63,7 +63,7 @@ public static class JsonEntityConverter
                     static b => JsonValue.Create(b),
                     static () => null
                 );
-                
+
                 if (jsonValue != null)
                 {
                     propertiesJson[key] = jsonValue;
@@ -272,33 +272,42 @@ public static class JsonEntityConverter
             var newId = mutEntity.Value.Id;
             entity.SetBehavior<IdBehavior, string>(
                 in newId,
-                static (ref readonly string _newId, ref IdBehavior b) => b = new IdBehavior(_newId)
+                static (ref readonly _newId, ref b) => b = new IdBehavior(_newId)
             );
         }
 
         // Tags
         if (mutEntity.Value.Tags != null)
         {
-            entity.SetBehavior<TagsBehavior>(static (ref b) => b = b with { Tags = b.Tags.Clear() });
-            
+            entity.SetBehavior<TagsBehavior>(static (ref b) => b = b with
+            {
+                Tags = b.Tags.Clear()
+            });
+
             foreach (var tagNode in mutEntity.Value.Tags)
             {
                 if (tagNode == null)
                 {
-                    EventBus<ErrorEvent>.Push(new ErrorEvent("Tags mutation failed: tag cannot be null"));
+                    EventBus<ErrorEvent>.Push(
+                        new ErrorEvent("Tags mutation failed: tag cannot be null")
+                    );
                     continue;
                 }
 
-                if (tagNode.GetValueKind() != System.Text.Json.JsonValueKind.String)
+                if (!tagNode.TryGetStringValue(out var tag))
                 {
-                    EventBus<ErrorEvent>.Push(new ErrorEvent($"Tags mutation failed: expected string, got {tagNode.GetValueKind()}"));
+                    EventBus<ErrorEvent>.Push(
+                        new ErrorEvent($"Tags mutation failed: expected string, got {tagNode.GetValueKind()}")
+                    );
                     continue;
                 }
 
-                var tag = tagNode.GetValue<string>();
                 entity.SetBehavior<TagsBehavior, string>(
                     in tag,
-                    static (ref readonly _tag, ref b) => b = b with { Tags = b.Tags.With(_tag) }
+                    static (ref readonly _tag, ref b) => b = b with
+                    {
+                        Tags = b.Tags.With(_tag)
+                    }
                 );
             }
         }
@@ -310,173 +319,215 @@ public static class JsonEntityConverter
             {
                 var key = kvp.Key;
                 var valueNode = kvp.Value;
-                
+
                 if (valueNode == null)
+                {
+                    continue;
+                }
+
+                if (valueNode is not JsonValue jsonValue)
                 {
                     continue;
                 }
 
                 PropertyValue? propValue = null;
 
-                if (valueNode is JsonValue jsonValue)
+                if (jsonValue.TryGetValue<string>(out var strValue))
                 {
-                    if (jsonValue.TryGetValue<string>(out var strValue))
-                    {
-                        propValue = new PropertyValue(strValue);
-                    }
-                    else if (jsonValue.TryGetFloatValue(out var floatValue))
-                    {
-                        propValue = new PropertyValue(floatValue);
-                    }
-                    else if (jsonValue.TryGetValue<bool>(out var boolValue))
-                    {
-                        propValue = new PropertyValue(boolValue);
-                    }
+                    propValue = new PropertyValue(strValue);
+                }
+                else if (jsonValue.TryGetFloatValue(out var floatValue))
+                {
+                    propValue = new PropertyValue(floatValue);
+                }
+                else if (jsonValue.TryGetValue<bool>(out var boolValue))
+                {
+                    propValue = new PropertyValue(boolValue);
                 }
 
-                if (propValue.HasValue)
+                if (!propValue.HasValue)
                 {
-                    var data = (key, propValue.Value);
-                    entity.SetBehavior<PropertiesBehavior, (string Key, PropertyValue Value)>(
-                        in data,
-                        static (ref readonly (string Key, PropertyValue Value) _data, ref PropertiesBehavior b) =>
-                            b = b with { Properties = b.Properties.With(_data.Key, _data.Value) }
-                    );
+                    continue;
                 }
+
+                var data = (key, propValue.Value);
+                entity.SetBehavior<PropertiesBehavior, (string Key, PropertyValue Value)>(
+                    in data,
+                    static (ref readonly _data, ref b) =>
+                        b = b with
+                        {
+                            Properties = b.Properties.With(_data.Key, _data.Value)
+                        }
+                );
             }
         }
 
         // Transform - Position.X
         if (mutEntity.Value.Transform?.Position?.X.HasValue ?? false)
         {
-            var x = mutEntity.Value.Transform.Value.Position.Value.X.Value;
+            var x = mutEntity.Value.Transform!.Value!.Position!.Value!.X!.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in x,
-                static (ref readonly float _x, ref TransformBehavior b) =>
+                static (ref readonly _x, ref b) => b = b with
                 {
-                    var newPosition = b.Position with { X = _x };
-                    b = b with { Position = newPosition };
+                    Position = b.Position with { X = _x }
                 }
             );
         }
-        
+
         // Transform - Position.Y
         if (mutEntity.Value.Transform?.Position?.Y.HasValue ?? false)
         {
-            var y = mutEntity.Value.Transform.Value.Position.Value.Y.Value;
+            var y = mutEntity.Value.Transform!.Value!.Position!.Value!.Y!.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in y,
-                static (ref readonly float _y, ref TransformBehavior b) => b = b with { Position = b.Position with { Y = _y } }
+                static (ref readonly _y, ref b) => b = b with
+                {
+                    Position = b.Position with { Y = _y }
+                }
             );
         }
-        
+
         // Transform - Position.Z
         if (mutEntity.Value.Transform?.Position?.Z.HasValue ?? false)
         {
-            var z = mutEntity.Value.Transform.Value.Position.Value.Z.Value;
+            var z = mutEntity.Value.Transform!.Value.Position!.Value.Z!.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in z,
-                static (ref readonly float _z, ref TransformBehavior b) => b = b with { Position = b.Position with { Z = _z } }
+                static (ref readonly _z, ref b) => b = b with
+                {
+                    Position = b.Position with { Z = _z }
+                }
             );
         }
 
         // Transform - Rotation.X
         if (mutEntity.Value.Transform?.Rotation?.X.HasValue ?? false)
         {
-            var x = mutEntity.Value.Transform.Value.Rotation.Value.X.Value;
+            var x = mutEntity.Value.Transform!.Value.Rotation!.Value.X!.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in x,
-                static (ref readonly float _x, ref TransformBehavior b) => b = b with { Rotation = b.Rotation with { X = _x } }
+                static (ref readonly _x, ref b) => b = b with
+                {
+                    Rotation = b.Rotation with { X = _x }
+                }
             );
         }
-        
+
         // Transform - Rotation.Y
         if (mutEntity.Value.Transform?.Rotation?.Y.HasValue ?? false)
         {
-            var y = mutEntity.Value.Transform.Value.Rotation.Value.Y.Value;
+            var y = mutEntity.Value.Transform!.Value.Rotation!.Value.Y!.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in y,
-                static (ref readonly float _y, ref TransformBehavior b) => b = b with { Rotation = b.Rotation with { Y = _y } }
+                static (ref readonly _y, ref b) => b = b with
+                {
+                    Rotation = b.Rotation with { Y = _y }
+                }
             );
         }
-        
+
         // Transform - Rotation.Z
         if (mutEntity.Value.Transform?.Rotation?.Z.HasValue ?? false)
         {
-            var z = mutEntity.Value.Transform.Value.Rotation.Value.Z.Value;
+            var z = mutEntity.Value.Transform!.Value.Rotation!.Value.Z!.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in z,
-                static (ref readonly float _z, ref TransformBehavior b) => b = b with { Rotation = b.Rotation with { Z = _z } }
+                static (ref readonly _z, ref b) => b = b with
+                {
+                    Rotation = b.Rotation with { Z = _z }
+                }
             );
         }
-        
+
         // Transform - Rotation.W
         if (mutEntity.Value.Transform?.Rotation?.W.HasValue ?? false)
         {
-            var w = mutEntity.Value.Transform.Value.Rotation.Value.W.Value;
+            var w = mutEntity.Value.Transform!.Value.Rotation!.Value.W!.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in w,
-                static (ref readonly float _w, ref TransformBehavior b) => b = b with { Rotation = b.Rotation with { W = _w } }
+                static (ref readonly _w, ref b) => b = b with
+                {
+                    Rotation = b.Rotation with { W = _w }
+                }
             );
         }
 
         // Transform - Scale.X
         if (mutEntity.Value.Transform?.Scale?.X.HasValue ?? false)
         {
-            var x = mutEntity.Value.Transform.Value.Scale.Value.X.Value;
+            var x = mutEntity.Value.Transform!.Value.Scale!.Value.X!.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in x,
-                static (ref readonly float _x, ref TransformBehavior b) => b = b with { Scale = b.Scale with { X = _x } }
+                static (ref readonly _x, ref b) => b = b with
+                {
+                    Scale = b.Scale with { X = _x }
+                }
             );
         }
-        
+
         // Transform - Scale.Y
         if (mutEntity.Value.Transform?.Scale?.Y.HasValue ?? false)
         {
-            var y = mutEntity.Value.Transform.Value.Scale.Value.Y.Value;
+            var y = mutEntity.Value.Transform!.Value.Scale!.Value.Y!.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in y,
-                static (ref readonly float _y, ref TransformBehavior b) => b = b with { Scale = b.Scale with { Y = _y } }
+                static (ref readonly _y, ref b) => b = b with
+                {
+                    Scale = b.Scale with { Y = _y }
+                }
             );
         }
-        
+
         // Transform - Scale.Z
         if (mutEntity.Value.Transform?.Scale?.Z.HasValue ?? false)
         {
-            var z = mutEntity.Value.Transform.Value.Scale.Value.Z.Value;
+            var z = mutEntity.Value.Transform!.Value.Scale!.Value.Z!.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in z,
-                static (ref readonly float _z, ref TransformBehavior b) => b = b with { Scale = b.Scale with { Z = _z } }
+                static (ref readonly _z, ref b) => b = b with
+                {
+                    Scale = b.Scale with { Z = _z }
+                }
             );
         }
 
         // Transform - Anchor.X
         if (mutEntity.Value.Transform?.Anchor?.X.HasValue ?? false)
         {
-            var x = mutEntity.Value.Transform.Value.Anchor.Value.X.Value;
+            var x = mutEntity.Value.Transform!.Value.Anchor!.Value.X!.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in x,
-                static (ref readonly float _x, ref TransformBehavior b) => b = b with { Anchor = b.Anchor with { X = _x } }
+                static (ref readonly _x, ref b) => b = b with
+                {
+                    Anchor = b.Anchor with { X = _x }
+                }
             );
         }
-        
+
         // Transform - Anchor.Y
         if (mutEntity.Value.Transform?.Anchor?.Y.HasValue ?? false)
         {
-            var y = mutEntity.Value.Transform.Value.Anchor.Value.Y.Value;
+            var y = mutEntity.Value.Transform!.Value.Anchor!.Value.Y!.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in y,
-                static (ref readonly float _y, ref TransformBehavior b) => b = b with { Anchor = b.Anchor with { Y = _y } }
+                static (ref readonly _y, ref b) => b = b with
+                {
+                    Anchor = b.Anchor with { Y = _y }
+                }
             );
         }
-        
+
         // Transform - Anchor.Z
         if (mutEntity.Value.Transform?.Anchor?.Z.HasValue ?? false)
         {
-            var z = mutEntity.Value.Transform.Value.Anchor.Value.Z.Value;
+            var z = mutEntity.Value.Transform!.Value.Anchor!.Value.Z!.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in z,
-                static (ref readonly float _z, ref TransformBehavior b) => b = b with { Anchor = b.Anchor with { Z = _z } }
+                static (ref readonly _z, ref b) => b = b with
+                {
+                    Anchor = b.Anchor with { Z = _z }
+                }
             );
         }
 
@@ -485,13 +536,15 @@ public static class JsonEntityConverter
         {
             if (!SelectorRegistry.Instance.TryParse(mutEntity.Value.Parent, out var parentSelector))
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent($"Parent mutation failed: invalid selector '{mutEntity.Value.Parent}'"));
+                EventBus<ErrorEvent>.Push(
+                    new ErrorEvent($"Parent mutation failed: invalid selector '{mutEntity.Value.Parent}'")
+                );
             }
             else
             {
                 entity.SetBehavior<ParentBehavior, EntitySelector>(
                     in parentSelector,
-                    static (ref readonly EntitySelector _selector, ref ParentBehavior b) => b = new ParentBehavior(_selector)
+                    static (ref readonly _selector, ref b) => b = new ParentBehavior(_selector)
                 );
             }
         }
@@ -501,13 +554,16 @@ public static class JsonEntityConverter
         {
             if (!Enum.TryParse<Align>(mutEntity.Value.FlexAlignItems, true, out var alignItems))
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent($"FlexAlignItems mutation failed: expected valid Align enum value"));
+                EventBus<ErrorEvent>.Push(
+                    new ErrorEvent($"FlexAlignItems mutation failed: expected valid Align enum value")
+                );
             }
             else
             {
                 entity.SetBehavior<FlexAlignItemsBehavior, Align>(
                     in alignItems,
-                    static (ref readonly Align val, ref FlexAlignItemsBehavior b) => b = new FlexAlignItemsBehavior(val)
+                    static (ref readonly _alignItems, ref b) =>
+                        b = new FlexAlignItemsBehavior(_alignItems)
                 );
             }
         }
@@ -517,13 +573,16 @@ public static class JsonEntityConverter
         {
             if (!Enum.TryParse<Align>(mutEntity.Value.FlexAlignSelf, true, out var alignSelf))
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent($"FlexAlignSelf mutation failed: expected valid Align enum value"));
+                EventBus<ErrorEvent>.Push(
+                    new ErrorEvent($"FlexAlignSelf mutation failed: expected valid Align enum value")
+                );
             }
             else
             {
                 entity.SetBehavior<FlexAlignSelfBehavior, Align>(
                     in alignSelf,
-                    static (ref readonly Align val, ref FlexAlignSelfBehavior b) => b = new FlexAlignSelfBehavior(val)
+                    static (ref readonly _alignSelf, ref b) =>
+                        b = new FlexAlignSelfBehavior(_alignSelf)
                 );
             }
         }
@@ -534,7 +593,8 @@ public static class JsonEntityConverter
             var borderBottom = mutEntity.Value.FlexBorderBottom.Value;
             entity.SetBehavior<FlexBorderBottomBehavior, float>(
                 in borderBottom,
-                static (ref readonly float val, ref FlexBorderBottomBehavior b) => b = new FlexBorderBottomBehavior(val)
+                static (ref readonly _borderBottom, ref b) =>
+                        b = new FlexBorderBottomBehavior(_borderBottom)
             );
         }
 
@@ -544,7 +604,8 @@ public static class JsonEntityConverter
             var borderLeft = mutEntity.Value.FlexBorderLeft.Value;
             entity.SetBehavior<FlexBorderLeftBehavior, float>(
                 in borderLeft,
-                static (ref readonly float val, ref FlexBorderLeftBehavior b) => b = new FlexBorderLeftBehavior(val)
+                static (ref readonly _borderLeft, ref b) =>
+                        b = new FlexBorderLeftBehavior(_borderLeft)
             );
         }
 
@@ -554,7 +615,8 @@ public static class JsonEntityConverter
             var borderRight = mutEntity.Value.FlexBorderRight.Value;
             entity.SetBehavior<FlexBorderRightBehavior, float>(
                 in borderRight,
-                static (ref readonly float val, ref FlexBorderRightBehavior b) => b = new FlexBorderRightBehavior(val)
+                static (ref readonly _borderRight, ref b) =>
+                        b = new FlexBorderRightBehavior(_borderRight)
             );
         }
 
@@ -564,7 +626,8 @@ public static class JsonEntityConverter
             var borderTop = mutEntity.Value.FlexBorderTop.Value;
             entity.SetBehavior<FlexBorderTopBehavior, float>(
                 in borderTop,
-                static (ref readonly float val, ref FlexBorderTopBehavior b) => b = new FlexBorderTopBehavior(val)
+                static (ref readonly _borderTop, ref b) =>
+                        b = new FlexBorderTopBehavior(_borderTop)
             );
         }
 
@@ -573,13 +636,16 @@ public static class JsonEntityConverter
         {
             if (!Enum.TryParse<FlexDirection>(mutEntity.Value.FlexDirection, true, out var direction))
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent($"FlexDirection mutation failed: expected valid FlexDirection enum value"));
+                EventBus<ErrorEvent>.Push(
+                    new ErrorEvent($"FlexDirection mutation failed: expected valid FlexDirection enum value")
+                );
             }
             else
             {
                 entity.SetBehavior<FlexDirectionBehavior, FlexDirection>(
                     in direction,
-                    static (ref readonly FlexDirection val, ref FlexDirectionBehavior b) => b = new FlexDirectionBehavior(val)
+                    static (ref readonly _direction, ref b) =>
+                        b = new FlexDirectionBehavior(_direction)
                 );
             }
         }
@@ -590,7 +656,8 @@ public static class JsonEntityConverter
             var grow = mutEntity.Value.FlexGrow.Value;
             entity.SetBehavior<FlexGrowBehavior, float>(
                 in grow,
-                static (ref readonly float val, ref FlexGrowBehavior b) => b = new FlexGrowBehavior(val)
+                static (ref readonly _grow, ref b) =>
+                        b = new FlexGrowBehavior(_grow)
             );
         }
 
@@ -599,13 +666,16 @@ public static class JsonEntityConverter
         {
             if (!Enum.TryParse<Wrap>(mutEntity.Value.FlexWrap, true, out var wrap))
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent($"FlexWrap mutation failed: expected valid Wrap enum value"));
+                EventBus<ErrorEvent>.Push(
+                    new ErrorEvent($"FlexWrap mutation failed: expected valid Wrap enum value")
+                );
             }
             else
             {
                 entity.SetBehavior<FlexWrapBehavior, Wrap>(
                     in wrap,
-                    static (ref readonly Wrap val, ref FlexWrapBehavior b) => b = new FlexWrapBehavior(val)
+                    static (ref readonly _wrap, ref b) =>
+                        b = new FlexWrapBehavior(_wrap)
                 );
             }
         }
@@ -616,7 +686,8 @@ public static class JsonEntityConverter
             var zOverride = mutEntity.Value.FlexZOverride.Value;
             entity.SetBehavior<FlexZOverride, int>(
                 in zOverride,
-                static (ref readonly int val, ref FlexZOverride b) => b = new FlexZOverride(val)
+                static (ref readonly _zOverride, ref b) =>
+                        b = new FlexZOverride(_zOverride)
             );
         }
 
@@ -626,7 +697,10 @@ public static class JsonEntityConverter
             var value = mutEntity.Value.FlexHeight.Value.Value.Value;
             entity.SetBehavior<FlexHeightBehavior, float>(
                 in value,
-                static (ref readonly float _value, ref FlexHeightBehavior b) => b = b with { Value = _value }
+                static (ref readonly _value, ref b) => b = b with
+                {
+                    Value = _value
+                }
             );
         }
 
@@ -636,7 +710,10 @@ public static class JsonEntityConverter
             var percent = mutEntity.Value.FlexHeight.Value.Percent.Value;
             entity.SetBehavior<FlexHeightBehavior, bool>(
                 in percent,
-                static (ref readonly bool _percent, ref FlexHeightBehavior b) => b = b with { Percent = _percent }
+                static (ref readonly _percent, ref b) => b = b with
+                {
+                    Percent = _percent
+                }
             );
         }
 
@@ -645,13 +722,16 @@ public static class JsonEntityConverter
         {
             if (!Enum.TryParse<Justify>(mutEntity.Value.FlexJustifyContent, true, out var justify))
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent($"FlexJustifyContent mutation failed: expected valid Justify enum value"));
+                EventBus<ErrorEvent>.Push(
+                    new ErrorEvent($"FlexJustifyContent mutation failed: expected valid Justify enum value")
+                );
             }
             else
             {
                 entity.SetBehavior<FlexJustifyContentBehavior, Justify>(
                     in justify,
-                    static (ref readonly Justify val, ref FlexJustifyContentBehavior b) => b = new FlexJustifyContentBehavior(val)
+                    static (ref readonly _justify, ref b) =>
+                        b = new FlexJustifyContentBehavior(_justify)
                 );
             }
         }
@@ -662,7 +742,8 @@ public static class JsonEntityConverter
             var marginBottom = mutEntity.Value.FlexMarginBottom.Value;
             entity.SetBehavior<FlexMarginBottomBehavior, float>(
                 in marginBottom,
-                static (ref readonly float val, ref FlexMarginBottomBehavior b) => b = new FlexMarginBottomBehavior(val)
+                static (ref readonly _marginBottom, ref b) => 
+                    b = new FlexMarginBottomBehavior(_marginBottom)
             );
         }
 
@@ -672,7 +753,8 @@ public static class JsonEntityConverter
             var marginLeft = mutEntity.Value.FlexMarginLeft.Value;
             entity.SetBehavior<FlexMarginLeftBehavior, float>(
                 in marginLeft,
-                static (ref readonly float val, ref FlexMarginLeftBehavior b) => b = new FlexMarginLeftBehavior(val)
+                static (ref readonly _marginLeft, ref b) => 
+                    b = new FlexMarginLeftBehavior(_marginLeft)
             );
         }
 
@@ -682,7 +764,8 @@ public static class JsonEntityConverter
             var marginRight = mutEntity.Value.FlexMarginRight.Value;
             entity.SetBehavior<FlexMarginRightBehavior, float>(
                 in marginRight,
-                static (ref readonly float val, ref FlexMarginRightBehavior b) => b = new FlexMarginRightBehavior(val)
+                static (ref readonly _marginRight, ref b) => 
+                    b = new FlexMarginRightBehavior(_marginRight)
             );
         }
 
@@ -692,7 +775,8 @@ public static class JsonEntityConverter
             var marginTop = mutEntity.Value.FlexMarginTop.Value;
             entity.SetBehavior<FlexMarginTopBehavior, float>(
                 in marginTop,
-                static (ref readonly float val, ref FlexMarginTopBehavior b) => b = new FlexMarginTopBehavior(val)
+                static (ref readonly _marginTop, ref b) => 
+                    b = new FlexMarginTopBehavior(_marginTop)
             );
         }
 
@@ -702,7 +786,8 @@ public static class JsonEntityConverter
             var paddingBottom = mutEntity.Value.FlexPaddingBottom.Value;
             entity.SetBehavior<FlexPaddingBottomBehavior, float>(
                 in paddingBottom,
-                static (ref readonly float val, ref FlexPaddingBottomBehavior b) => b = new FlexPaddingBottomBehavior(val)
+                static (ref readonly _paddingBottom, ref b) => 
+                    b = new FlexPaddingBottomBehavior(_paddingBottom)
             );
         }
 
@@ -712,7 +797,8 @@ public static class JsonEntityConverter
             var paddingLeft = mutEntity.Value.FlexPaddingLeft.Value;
             entity.SetBehavior<FlexPaddingLeftBehavior, float>(
                 in paddingLeft,
-                static (ref readonly float val, ref FlexPaddingLeftBehavior b) => b = new FlexPaddingLeftBehavior(val)
+                static (ref readonly _paddingLeft, ref b) => 
+                    b = new FlexPaddingLeftBehavior(_paddingLeft)
             );
         }
 
@@ -722,7 +808,8 @@ public static class JsonEntityConverter
             var paddingRight = mutEntity.Value.FlexPaddingRight.Value;
             entity.SetBehavior<FlexPaddingRightBehavior, float>(
                 in paddingRight,
-                static (ref readonly float val, ref FlexPaddingRightBehavior b) => b = new FlexPaddingRightBehavior(val)
+                static (ref readonly _paddingRight, ref b) => 
+                    b = new FlexPaddingRightBehavior(_paddingRight)
             );
         }
 
@@ -732,7 +819,8 @@ public static class JsonEntityConverter
             var paddingTop = mutEntity.Value.FlexPaddingTop.Value;
             entity.SetBehavior<FlexPaddingTopBehavior, float>(
                 in paddingTop,
-                static (ref readonly float val, ref FlexPaddingTopBehavior b) => b = new FlexPaddingTopBehavior(val)
+                static (ref readonly _paddingTop, ref b) => 
+                    b = new FlexPaddingTopBehavior(_paddingTop)
             );
         }
 
@@ -742,7 +830,10 @@ public static class JsonEntityConverter
             var value = mutEntity.Value.FlexPositionBottom.Value.Value.Value;
             entity.SetBehavior<FlexPositionBottomBehavior, float>(
                 in value,
-                static (ref readonly float _value, ref FlexPositionBottomBehavior b) => b = b with { Value = _value }
+                static (ref readonly _value, ref b) => b = b with
+                {
+                    Value = _value
+                }
             );
         }
 
@@ -752,7 +843,10 @@ public static class JsonEntityConverter
             var percent = mutEntity.Value.FlexPositionBottom.Value.Percent.Value;
             entity.SetBehavior<FlexPositionBottomBehavior, bool>(
                 in percent,
-                static (ref readonly bool _percent, ref FlexPositionBottomBehavior b) => b = b with { Percent = _percent }
+                static (ref readonly _percent, ref b) => b = b with
+                {
+                    Percent = _percent
+                }
             );
         }
 
@@ -762,7 +856,10 @@ public static class JsonEntityConverter
             var value = mutEntity.Value.FlexPositionLeft.Value.Value.Value;
             entity.SetBehavior<FlexPositionLeftBehavior, float>(
                 in value,
-                static (ref readonly float _value, ref FlexPositionLeftBehavior b) => b = b with { Value = _value }
+                static (ref readonly _value, ref b) => b = b with
+                {
+                    Value = _value
+                }
             );
         }
 
@@ -772,7 +869,10 @@ public static class JsonEntityConverter
             var percent = mutEntity.Value.FlexPositionLeft.Value.Percent.Value;
             entity.SetBehavior<FlexPositionLeftBehavior, bool>(
                 in percent,
-                static (ref readonly bool _percent, ref FlexPositionLeftBehavior b) => b = b with { Percent = _percent }
+                static (ref readonly _percent, ref b) => b = b with
+                {
+                    Percent = _percent
+                }
             );
         }
 
@@ -782,7 +882,10 @@ public static class JsonEntityConverter
             var value = mutEntity.Value.FlexPositionRight.Value.Value.Value;
             entity.SetBehavior<FlexPositionRightBehavior, float>(
                 in value,
-                static (ref readonly float _value, ref FlexPositionRightBehavior b) => b = b with { Value = _value }
+                static (ref readonly _value, ref b) => b = b with
+                {
+                    Value = _value
+                }
             );
         }
 
@@ -792,7 +895,10 @@ public static class JsonEntityConverter
             var percent = mutEntity.Value.FlexPositionRight.Value.Percent.Value;
             entity.SetBehavior<FlexPositionRightBehavior, bool>(
                 in percent,
-                static (ref readonly bool _percent, ref FlexPositionRightBehavior b) => b = b with { Percent = _percent }
+                static (ref readonly _percent, ref b) => b = b with
+                {
+                    Percent = _percent
+                }
             );
         }
 
@@ -802,7 +908,10 @@ public static class JsonEntityConverter
             var value = mutEntity.Value.FlexPositionTop.Value.Value.Value;
             entity.SetBehavior<FlexPositionTopBehavior, float>(
                 in value,
-                static (ref readonly float _value, ref FlexPositionTopBehavior b) => b = b with { Value = _value }
+                static (ref readonly _value, ref b) => b = b with
+                {
+                    Value = _value
+                }
             );
         }
 
@@ -812,7 +921,10 @@ public static class JsonEntityConverter
             var percent = mutEntity.Value.FlexPositionTop.Value.Percent.Value;
             entity.SetBehavior<FlexPositionTopBehavior, bool>(
                 in percent,
-                static (ref readonly bool _percent, ref FlexPositionTopBehavior b) => b = b with { Percent = _percent }
+                static (ref readonly _percent, ref b) => b = b with
+                {
+                    Percent = _percent
+                }
             );
         }
 
@@ -821,13 +933,16 @@ public static class JsonEntityConverter
         {
             if (!Enum.TryParse<PositionType>(mutEntity.Value.FlexPositionType, true, out var positionType))
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent($"FlexPositionType mutation failed: expected valid PositionType enum value"));
+                EventBus<ErrorEvent>.Push(
+                    new ErrorEvent($"FlexPositionType mutation failed: expected valid PositionType enum value")
+                );
             }
             else
             {
                 entity.SetBehavior<FlexPositionTypeBehavior, PositionType>(
                     in positionType,
-                    static (ref readonly PositionType val, ref FlexPositionTypeBehavior b) => b = new FlexPositionTypeBehavior(val)
+                    static (ref readonly _positionType, ref b) =>
+                        b = new FlexPositionTypeBehavior(_positionType)
                 );
             }
         }
@@ -838,7 +953,10 @@ public static class JsonEntityConverter
             var value = mutEntity.Value.FlexWidth.Value.Value.Value;
             entity.SetBehavior<FlexWidthBehavior, float>(
                 in value,
-                static (ref readonly float _value, ref FlexWidthBehavior b) => b = b with { Value = _value }
+                static (ref readonly _value, ref b) => b = b with
+                {
+                    Value = _value
+                }
             );
         }
 
@@ -848,7 +966,10 @@ public static class JsonEntityConverter
             var percent = mutEntity.Value.FlexWidth.Value.Percent.Value;
             entity.SetBehavior<FlexWidthBehavior, bool>(
                 in percent,
-                static (ref readonly bool _percent, ref FlexWidthBehavior b) => b = b with { Percent = _percent }
+                static (ref readonly _percent, ref b) => b = b with
+                {
+                    Percent = _percent
+                }
             );
         }
     }
@@ -877,7 +998,8 @@ public static class JsonEntityConverter
 
     private static bool TryDeserializeMutEntity(
         JsonObject entityObj,
-        [NotNullWhen(true)] out MutEntity? mutEntity
+        [NotNullWhen(true)] 
+        out MutEntity? mutEntity
     )
     {
         try
@@ -887,7 +1009,9 @@ public static class JsonEntityConverter
         }
         catch (JsonException ex)
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Entity mutation deserialization failed: {ex.Message}"));
+            EventBus<ErrorEvent>.Push(
+                new ErrorEvent($"Entity mutation deserialization failed: {ex.Message}")
+            );
             mutEntity = null;
             return false;
         }
