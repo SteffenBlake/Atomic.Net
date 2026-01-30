@@ -1,5 +1,4 @@
 using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
 using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Scenes.JsonTargets;
@@ -7,8 +6,7 @@ namespace Atomic.Net.MonoGame.Scenes.JsonTargets;
 /// <summary>
 /// Represents a target for mutating FlexHeight.Value or FlexHeight.Percent.
 /// </summary>
-[JsonConverter(typeof(JsonFlexHeightTargetConverter))]
-public readonly record struct JsonFlexHeightTarget(string Field)
+public readonly record struct JsonFlexHeightTarget(string FlexHeight)
 {
     private static readonly ErrorEvent UnrecognizedFieldError = new(
         "Unrecognized flexHeight field. Expected one of: value, percent"
@@ -21,7 +19,7 @@ public readonly record struct JsonFlexHeightTarget(string Field)
 
     public void Apply(JsonObject jsonEntity, JsonNode value)
     {
-        if (!_validFields.Contains(Field))
+        if (!_validFields.Contains(FlexHeight))
         {
             EventBus<ErrorEvent>.Push(UnrecognizedFieldError);
             return;
@@ -34,6 +32,6 @@ public readonly record struct JsonFlexHeightTarget(string Field)
             jsonEntity["flexHeight"] = flexHeight;
         }
 
-        flexHeight[Field] = value;
+        flexHeight[FlexHeight] = value;
     }
 }

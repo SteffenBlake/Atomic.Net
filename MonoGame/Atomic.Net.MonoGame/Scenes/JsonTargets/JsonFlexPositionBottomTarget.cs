@@ -1,5 +1,4 @@
 using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
 using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Scenes.JsonTargets;
@@ -7,8 +6,7 @@ namespace Atomic.Net.MonoGame.Scenes.JsonTargets;
 /// <summary>
 /// Represents a target for mutating FlexPositionBottom.Value or FlexPositionBottom.Percent.
 /// </summary>
-[JsonConverter(typeof(JsonFlexPositionBottomTargetConverter))]
-public readonly record struct JsonFlexPositionBottomTarget(string Field)
+public readonly record struct JsonFlexPositionBottomTarget(string FlexPositionBottom)
 {
     private static readonly ErrorEvent UnrecognizedFieldError = new(
         "Unrecognized flexPositionBottom field. Expected one of: value, percent"
@@ -21,7 +19,7 @@ public readonly record struct JsonFlexPositionBottomTarget(string Field)
 
     public void Apply(JsonObject jsonEntity, JsonNode value)
     {
-        if (!_validFields.Contains(Field))
+        if (!_validFields.Contains(FlexPositionBottom))
         {
             EventBus<ErrorEvent>.Push(UnrecognizedFieldError);
             return;
@@ -34,6 +32,6 @@ public readonly record struct JsonFlexPositionBottomTarget(string Field)
             jsonEntity["flexPositionBottom"] = flexPositionBottom;
         }
 
-        flexPositionBottom[Field] = value;
+        flexPositionBottom[FlexPositionBottom] = value;
     }
 }

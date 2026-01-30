@@ -113,9 +113,9 @@ public static class JsonEntityConverter
         }
 
         // Id
-        if (mutEntity.Id != null)
+        if (mutEntity.Value.Id != null)
         {
-            var newId = mutEntity.Id;
+            var newId = mutEntity.Value.Id;
             entity.SetBehavior<IdBehavior, string>(
                 in newId,
                 static (ref readonly string _newId, ref IdBehavior b) => b = new IdBehavior(_newId)
@@ -123,7 +123,7 @@ public static class JsonEntityConverter
         }
 
         // Tags
-        if (mutEntity.Tags != null)
+        if (mutEntity.Value.Tags != null)
         {
             entity.SetBehavior<TagsBehavior>(static (ref b) => b = b with { Tags = b.Tags.Clear() });
             
@@ -150,7 +150,7 @@ public static class JsonEntityConverter
         }
 
         // Properties
-        if (mutEntity.Properties != null)
+        if (mutEntity.Value.Properties != null)
         {
             foreach (KeyValuePair<string, JsonNode> kvp in mutEntity.Properties)
             {
@@ -193,9 +193,9 @@ public static class JsonEntityConverter
         }
 
         // Transform - Position.X
-        if (mutEntity.Transform?.Position?.X.HasValue ?? false)
+        if (mutEntity.Value.Transform?.Position?.X.HasValue ?? false)
         {
-            var x = mutEntity.Transform.Value.Position.Value.X.Value;
+            var x = mutEntity.Value.Transform.Value.Position.Value.X.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in x,
                 static (ref readonly float _x, ref TransformBehavior b) => b = b with { Position = b.Position with { X = _x } }
@@ -203,9 +203,9 @@ public static class JsonEntityConverter
         }
         
         // Transform - Position.Y
-        if (mutEntity.Transform?.Position?.Y.HasValue ?? false)
+        if (mutEntity.Value.Transform?.Position?.Y.HasValue ?? false)
         {
-            var y = mutEntity.Transform.Value.Position.Value.Y.Value;
+            var y = mutEntity.Value.Transform.Value.Position.Value.Y.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in y,
                 static (ref readonly float _y, ref TransformBehavior b) => b = b with { Position = b.Position with { Y = _y } }
@@ -213,9 +213,9 @@ public static class JsonEntityConverter
         }
         
         // Transform - Position.Z
-        if (mutEntity.Transform?.Position?.Z.HasValue ?? false)
+        if (mutEntity.Value.Transform?.Position?.Z.HasValue ?? false)
         {
-            var z = mutEntity.Transform.Value.Position.Value.Z.Value;
+            var z = mutEntity.Value.Transform.Value.Position.Value.Z.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in z,
                 static (ref readonly float _z, ref TransformBehavior b) => b = b with { Position = b.Position with { Z = _z } }
@@ -223,9 +223,9 @@ public static class JsonEntityConverter
         }
 
         // Transform - Rotation.X
-        if (mutEntity.Transform?.Rotation?.X.HasValue ?? false)
+        if (mutEntity.Value.Transform?.Rotation?.X.HasValue ?? false)
         {
-            var x = mutEntity.Transform.Value.Rotation.Value.X.Value;
+            var x = mutEntity.Value.Transform.Value.Rotation.Value.X.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in x,
                 static (ref readonly float _x, ref TransformBehavior b) => b = b with { Rotation = b.Rotation with { X = _x } }
@@ -233,9 +233,9 @@ public static class JsonEntityConverter
         }
         
         // Transform - Rotation.Y
-        if (mutEntity.Transform?.Rotation?.Y.HasValue ?? false)
+        if (mutEntity.Value.Transform?.Rotation?.Y.HasValue ?? false)
         {
-            var y = mutEntity.Transform.Value.Rotation.Value.Y.Value;
+            var y = mutEntity.Value.Transform.Value.Rotation.Value.Y.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in y,
                 static (ref readonly float _y, ref TransformBehavior b) => b = b with { Rotation = b.Rotation with { Y = _y } }
@@ -243,9 +243,9 @@ public static class JsonEntityConverter
         }
         
         // Transform - Rotation.Z
-        if (mutEntity.Transform?.Rotation?.Z.HasValue ?? false)
+        if (mutEntity.Value.Transform?.Rotation?.Z.HasValue ?? false)
         {
-            var z = mutEntity.Transform.Value.Rotation.Value.Z.Value;
+            var z = mutEntity.Value.Transform.Value.Rotation.Value.Z.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in z,
                 static (ref readonly float _z, ref TransformBehavior b) => b = b with { Rotation = b.Rotation with { Z = _z } }
@@ -253,9 +253,9 @@ public static class JsonEntityConverter
         }
         
         // Transform - Rotation.W
-        if (mutEntity.Transform?.Rotation?.W.HasValue ?? false)
+        if (mutEntity.Value.Transform?.Rotation?.W.HasValue ?? false)
         {
-            var w = mutEntity.Transform.Value.Rotation.Value.W.Value;
+            var w = mutEntity.Value.Transform.Value.Rotation.Value.W.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in w,
                 static (ref readonly float _w, ref TransformBehavior b) => b = b with { Rotation = b.Rotation with { W = _w } }
@@ -263,9 +263,9 @@ public static class JsonEntityConverter
         }
 
         // Transform - Scale.X
-        if (mutEntity.Transform?.Scale?.X.HasValue ?? false)
+        if (mutEntity.Value.Transform?.Scale?.X.HasValue ?? false)
         {
-            var x = mutEntity.Transform.Value.Scale.Value.X.Value;
+            var x = mutEntity.Value.Transform.Value.Scale.Value.X.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in x,
                 static (ref readonly float _x, ref TransformBehavior b) => b = b with { Scale = b.Scale with { X = _x } }
@@ -273,9 +273,9 @@ public static class JsonEntityConverter
         }
         
         // Transform - Scale.Y
-        if (mutEntity.Transform?.Scale?.Y.HasValue ?? false)
+        if (mutEntity.Value.Transform?.Scale?.Y.HasValue ?? false)
         {
-            var y = mutEntity.Transform.Value.Scale.Value.Y.Value;
+            var y = mutEntity.Value.Transform.Value.Scale.Value.Y.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in y,
                 static (ref readonly float _y, ref TransformBehavior b) => b = b with { Scale = b.Scale with { Y = _y } }
@@ -283,9 +283,9 @@ public static class JsonEntityConverter
         }
         
         // Transform - Scale.Z
-        if (mutEntity.Transform?.Scale?.Z.HasValue ?? false)
+        if (mutEntity.Value.Transform?.Scale?.Z.HasValue ?? false)
         {
-            var z = mutEntity.Transform.Value.Scale.Value.Z.Value;
+            var z = mutEntity.Value.Transform.Value.Scale.Value.Z.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in z,
                 static (ref readonly float _z, ref TransformBehavior b) => b = b with { Scale = b.Scale with { Z = _z } }
@@ -293,9 +293,9 @@ public static class JsonEntityConverter
         }
 
         // Transform - Anchor.X
-        if (mutEntity.Transform?.Anchor?.X.HasValue ?? false)
+        if (mutEntity.Value.Transform?.Anchor?.X.HasValue ?? false)
         {
-            var x = mutEntity.Transform.Value.Anchor.Value.X.Value;
+            var x = mutEntity.Value.Transform.Value.Anchor.Value.X.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in x,
                 static (ref readonly float _x, ref TransformBehavior b) => b = b with { Anchor = b.Anchor with { X = _x } }
@@ -303,9 +303,9 @@ public static class JsonEntityConverter
         }
         
         // Transform - Anchor.Y
-        if (mutEntity.Transform?.Anchor?.Y.HasValue ?? false)
+        if (mutEntity.Value.Transform?.Anchor?.Y.HasValue ?? false)
         {
-            var y = mutEntity.Transform.Value.Anchor.Value.Y.Value;
+            var y = mutEntity.Value.Transform.Value.Anchor.Value.Y.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in y,
                 static (ref readonly float _y, ref TransformBehavior b) => b = b with { Anchor = b.Anchor with { Y = _y } }
@@ -313,9 +313,9 @@ public static class JsonEntityConverter
         }
         
         // Transform - Anchor.Z
-        if (mutEntity.Transform?.Anchor?.Z.HasValue ?? false)
+        if (mutEntity.Value.Transform?.Anchor?.Z.HasValue ?? false)
         {
-            var z = mutEntity.Transform.Value.Anchor.Value.Z.Value;
+            var z = mutEntity.Value.Transform.Value.Anchor.Value.Z.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in z,
                 static (ref readonly float _z, ref TransformBehavior b) => b = b with { Anchor = b.Anchor with { Z = _z } }
@@ -323,7 +323,7 @@ public static class JsonEntityConverter
         }
 
         // Parent
-        if (mutEntity.Parent != null)
+        if (mutEntity.Value.Parent != null)
         {
             if (!SelectorRegistry.Instance.TryParse(mutEntity.Parent, out var parentSelector))
             {
@@ -339,7 +339,7 @@ public static class JsonEntityConverter
         }
 
         // FlexAlignItems
-        if (mutEntity.FlexAlignItems != null)
+        if (mutEntity.Value.FlexAlignItems != null)
         {
             if (!Enum.TryParse<Align>(mutEntity.FlexAlignItems, true, out var alignItems))
             {
@@ -355,7 +355,7 @@ public static class JsonEntityConverter
         }
 
         // FlexAlignSelf
-        if (mutEntity.FlexAlignSelf != null)
+        if (mutEntity.Value.FlexAlignSelf != null)
         {
             if (!Enum.TryParse<Align>(mutEntity.FlexAlignSelf, true, out var alignSelf))
             {
@@ -371,9 +371,9 @@ public static class JsonEntityConverter
         }
 
         // FlexBorderBottom
-        if (mutEntity.FlexBorderBottom.HasValue)
+        if (mutEntity.Value.FlexBorderBottom.HasValue)
         {
-            var borderBottom = mutEntity.FlexBorderBottom.Value;
+            var borderBottom = mutEntity.Value.FlexBorderBottom.Value;
             entity.SetBehavior<FlexBorderBottomBehavior, float>(
                 in borderBottom,
                 static (ref readonly float val, ref FlexBorderBottomBehavior b) => b = new FlexBorderBottomBehavior(val)
@@ -381,9 +381,9 @@ public static class JsonEntityConverter
         }
 
         // FlexBorderLeft
-        if (mutEntity.FlexBorderLeft.HasValue)
+        if (mutEntity.Value.FlexBorderLeft.HasValue)
         {
-            var borderLeft = mutEntity.FlexBorderLeft.Value;
+            var borderLeft = mutEntity.Value.FlexBorderLeft.Value;
             entity.SetBehavior<FlexBorderLeftBehavior, float>(
                 in borderLeft,
                 static (ref readonly float val, ref FlexBorderLeftBehavior b) => b = new FlexBorderLeftBehavior(val)
@@ -391,9 +391,9 @@ public static class JsonEntityConverter
         }
 
         // FlexBorderRight
-        if (mutEntity.FlexBorderRight.HasValue)
+        if (mutEntity.Value.FlexBorderRight.HasValue)
         {
-            var borderRight = mutEntity.FlexBorderRight.Value;
+            var borderRight = mutEntity.Value.FlexBorderRight.Value;
             entity.SetBehavior<FlexBorderRightBehavior, float>(
                 in borderRight,
                 static (ref readonly float val, ref FlexBorderRightBehavior b) => b = new FlexBorderRightBehavior(val)
@@ -401,9 +401,9 @@ public static class JsonEntityConverter
         }
 
         // FlexBorderTop
-        if (mutEntity.FlexBorderTop.HasValue)
+        if (mutEntity.Value.FlexBorderTop.HasValue)
         {
-            var borderTop = mutEntity.FlexBorderTop.Value;
+            var borderTop = mutEntity.Value.FlexBorderTop.Value;
             entity.SetBehavior<FlexBorderTopBehavior, float>(
                 in borderTop,
                 static (ref readonly float val, ref FlexBorderTopBehavior b) => b = new FlexBorderTopBehavior(val)
@@ -411,7 +411,7 @@ public static class JsonEntityConverter
         }
 
         // FlexDirection
-        if (mutEntity.FlexDirection != null)
+        if (mutEntity.Value.FlexDirection != null)
         {
             if (!Enum.TryParse<FlexDirection>(mutEntity.FlexDirection, true, out var direction))
             {
@@ -427,9 +427,9 @@ public static class JsonEntityConverter
         }
 
         // FlexGrow
-        if (mutEntity.FlexGrow.HasValue)
+        if (mutEntity.Value.FlexGrow.HasValue)
         {
-            var grow = mutEntity.FlexGrow.Value;
+            var grow = mutEntity.Value.FlexGrow.Value;
             entity.SetBehavior<FlexGrowBehavior, float>(
                 in grow,
                 static (ref readonly float val, ref FlexGrowBehavior b) => b = new FlexGrowBehavior(val)
@@ -437,7 +437,7 @@ public static class JsonEntityConverter
         }
 
         // FlexWrap
-        if (mutEntity.FlexWrap != null)
+        if (mutEntity.Value.FlexWrap != null)
         {
             if (!Enum.TryParse<Wrap>(mutEntity.FlexWrap, true, out var wrap))
             {
@@ -453,9 +453,9 @@ public static class JsonEntityConverter
         }
 
         // FlexZOverride
-        if (mutEntity.FlexZOverride.HasValue)
+        if (mutEntity.Value.FlexZOverride.HasValue)
         {
-            var zOverride = mutEntity.FlexZOverride.Value;
+            var zOverride = mutEntity.Value.FlexZOverride.Value;
             entity.SetBehavior<FlexZOverride, int>(
                 in zOverride,
                 static (ref readonly int val, ref FlexZOverride b) => b = new FlexZOverride(val)
@@ -463,9 +463,9 @@ public static class JsonEntityConverter
         }
 
         // FlexHeight - Value
-        if (mutEntity.FlexHeight?.Value.HasValue ?? false)
+        if (mutEntity.Value.FlexHeight?.Value.HasValue ?? false)
         {
-            var value = mutEntity.FlexHeight.Value.Value.Value;
+            var value = mutEntity.Value.FlexHeight.Value.Value.Value;
             entity.SetBehavior<FlexHeightBehavior, float>(
                 in value,
                 static (ref readonly float _value, ref FlexHeightBehavior b) => b = b with { Value = _value }
@@ -473,9 +473,9 @@ public static class JsonEntityConverter
         }
 
         // FlexHeight - Percent
-        if (mutEntity.FlexHeight?.Percent.HasValue ?? false)
+        if (mutEntity.Value.FlexHeight?.Percent.HasValue ?? false)
         {
-            var percent = mutEntity.FlexHeight.Value.Percent.Value;
+            var percent = mutEntity.Value.FlexHeight.Value.Percent.Value;
             entity.SetBehavior<FlexHeightBehavior, bool>(
                 in percent,
                 static (ref readonly bool _percent, ref FlexHeightBehavior b) => b = b with { Percent = _percent }
@@ -483,7 +483,7 @@ public static class JsonEntityConverter
         }
 
         // FlexJustifyContent
-        if (mutEntity.FlexJustifyContent != null)
+        if (mutEntity.Value.FlexJustifyContent != null)
         {
             if (!Enum.TryParse<Justify>(mutEntity.FlexJustifyContent, true, out var justify))
             {
@@ -499,9 +499,9 @@ public static class JsonEntityConverter
         }
 
         // FlexMarginBottom
-        if (mutEntity.FlexMarginBottom.HasValue)
+        if (mutEntity.Value.FlexMarginBottom.HasValue)
         {
-            var marginBottom = mutEntity.FlexMarginBottom.Value;
+            var marginBottom = mutEntity.Value.FlexMarginBottom.Value;
             entity.SetBehavior<FlexMarginBottomBehavior, float>(
                 in marginBottom,
                 static (ref readonly float val, ref FlexMarginBottomBehavior b) => b = new FlexMarginBottomBehavior(val)
@@ -509,9 +509,9 @@ public static class JsonEntityConverter
         }
 
         // FlexMarginLeft
-        if (mutEntity.FlexMarginLeft.HasValue)
+        if (mutEntity.Value.FlexMarginLeft.HasValue)
         {
-            var marginLeft = mutEntity.FlexMarginLeft.Value;
+            var marginLeft = mutEntity.Value.FlexMarginLeft.Value;
             entity.SetBehavior<FlexMarginLeftBehavior, float>(
                 in marginLeft,
                 static (ref readonly float val, ref FlexMarginLeftBehavior b) => b = new FlexMarginLeftBehavior(val)
@@ -519,9 +519,9 @@ public static class JsonEntityConverter
         }
 
         // FlexMarginRight
-        if (mutEntity.FlexMarginRight.HasValue)
+        if (mutEntity.Value.FlexMarginRight.HasValue)
         {
-            var marginRight = mutEntity.FlexMarginRight.Value;
+            var marginRight = mutEntity.Value.FlexMarginRight.Value;
             entity.SetBehavior<FlexMarginRightBehavior, float>(
                 in marginRight,
                 static (ref readonly float val, ref FlexMarginRightBehavior b) => b = new FlexMarginRightBehavior(val)
@@ -529,9 +529,9 @@ public static class JsonEntityConverter
         }
 
         // FlexMarginTop
-        if (mutEntity.FlexMarginTop.HasValue)
+        if (mutEntity.Value.FlexMarginTop.HasValue)
         {
-            var marginTop = mutEntity.FlexMarginTop.Value;
+            var marginTop = mutEntity.Value.FlexMarginTop.Value;
             entity.SetBehavior<FlexMarginTopBehavior, float>(
                 in marginTop,
                 static (ref readonly float val, ref FlexMarginTopBehavior b) => b = new FlexMarginTopBehavior(val)
@@ -539,9 +539,9 @@ public static class JsonEntityConverter
         }
 
         // FlexPaddingBottom
-        if (mutEntity.FlexPaddingBottom.HasValue)
+        if (mutEntity.Value.FlexPaddingBottom.HasValue)
         {
-            var paddingBottom = mutEntity.FlexPaddingBottom.Value;
+            var paddingBottom = mutEntity.Value.FlexPaddingBottom.Value;
             entity.SetBehavior<FlexPaddingBottomBehavior, float>(
                 in paddingBottom,
                 static (ref readonly float val, ref FlexPaddingBottomBehavior b) => b = new FlexPaddingBottomBehavior(val)
@@ -549,9 +549,9 @@ public static class JsonEntityConverter
         }
 
         // FlexPaddingLeft
-        if (mutEntity.FlexPaddingLeft.HasValue)
+        if (mutEntity.Value.FlexPaddingLeft.HasValue)
         {
-            var paddingLeft = mutEntity.FlexPaddingLeft.Value;
+            var paddingLeft = mutEntity.Value.FlexPaddingLeft.Value;
             entity.SetBehavior<FlexPaddingLeftBehavior, float>(
                 in paddingLeft,
                 static (ref readonly float val, ref FlexPaddingLeftBehavior b) => b = new FlexPaddingLeftBehavior(val)
@@ -559,9 +559,9 @@ public static class JsonEntityConverter
         }
 
         // FlexPaddingRight
-        if (mutEntity.FlexPaddingRight.HasValue)
+        if (mutEntity.Value.FlexPaddingRight.HasValue)
         {
-            var paddingRight = mutEntity.FlexPaddingRight.Value;
+            var paddingRight = mutEntity.Value.FlexPaddingRight.Value;
             entity.SetBehavior<FlexPaddingRightBehavior, float>(
                 in paddingRight,
                 static (ref readonly float val, ref FlexPaddingRightBehavior b) => b = new FlexPaddingRightBehavior(val)
@@ -569,9 +569,9 @@ public static class JsonEntityConverter
         }
 
         // FlexPaddingTop
-        if (mutEntity.FlexPaddingTop.HasValue)
+        if (mutEntity.Value.FlexPaddingTop.HasValue)
         {
-            var paddingTop = mutEntity.FlexPaddingTop.Value;
+            var paddingTop = mutEntity.Value.FlexPaddingTop.Value;
             entity.SetBehavior<FlexPaddingTopBehavior, float>(
                 in paddingTop,
                 static (ref readonly float val, ref FlexPaddingTopBehavior b) => b = new FlexPaddingTopBehavior(val)
@@ -579,9 +579,9 @@ public static class JsonEntityConverter
         }
 
         // FlexPositionBottom - Value
-        if (mutEntity.FlexPositionBottom?.Value.HasValue ?? false)
+        if (mutEntity.Value.FlexPositionBottom?.Value.HasValue ?? false)
         {
-            var value = mutEntity.FlexPositionBottom.Value.Value.Value;
+            var value = mutEntity.Value.FlexPositionBottom.Value.Value.Value;
             entity.SetBehavior<FlexPositionBottomBehavior, float>(
                 in value,
                 static (ref readonly float _value, ref FlexPositionBottomBehavior b) => b = b with { Value = _value }
@@ -589,9 +589,9 @@ public static class JsonEntityConverter
         }
 
         // FlexPositionBottom - Percent
-        if (mutEntity.FlexPositionBottom?.Percent.HasValue ?? false)
+        if (mutEntity.Value.FlexPositionBottom?.Percent.HasValue ?? false)
         {
-            var percent = mutEntity.FlexPositionBottom.Value.Percent.Value;
+            var percent = mutEntity.Value.FlexPositionBottom.Value.Percent.Value;
             entity.SetBehavior<FlexPositionBottomBehavior, bool>(
                 in percent,
                 static (ref readonly bool _percent, ref FlexPositionBottomBehavior b) => b = b with { Percent = _percent }
@@ -599,9 +599,9 @@ public static class JsonEntityConverter
         }
 
         // FlexPositionLeft - Value
-        if (mutEntity.FlexPositionLeft?.Value.HasValue ?? false)
+        if (mutEntity.Value.FlexPositionLeft?.Value.HasValue ?? false)
         {
-            var value = mutEntity.FlexPositionLeft.Value.Value.Value;
+            var value = mutEntity.Value.FlexPositionLeft.Value.Value.Value;
             entity.SetBehavior<FlexPositionLeftBehavior, float>(
                 in value,
                 static (ref readonly float _value, ref FlexPositionLeftBehavior b) => b = b with { Value = _value }
@@ -609,9 +609,9 @@ public static class JsonEntityConverter
         }
 
         // FlexPositionLeft - Percent
-        if (mutEntity.FlexPositionLeft?.Percent.HasValue ?? false)
+        if (mutEntity.Value.FlexPositionLeft?.Percent.HasValue ?? false)
         {
-            var percent = mutEntity.FlexPositionLeft.Value.Percent.Value;
+            var percent = mutEntity.Value.FlexPositionLeft.Value.Percent.Value;
             entity.SetBehavior<FlexPositionLeftBehavior, bool>(
                 in percent,
                 static (ref readonly bool _percent, ref FlexPositionLeftBehavior b) => b = b with { Percent = _percent }
@@ -619,9 +619,9 @@ public static class JsonEntityConverter
         }
 
         // FlexPositionRight - Value
-        if (mutEntity.FlexPositionRight?.Value.HasValue ?? false)
+        if (mutEntity.Value.FlexPositionRight?.Value.HasValue ?? false)
         {
-            var value = mutEntity.FlexPositionRight.Value.Value.Value;
+            var value = mutEntity.Value.FlexPositionRight.Value.Value.Value;
             entity.SetBehavior<FlexPositionRightBehavior, float>(
                 in value,
                 static (ref readonly float _value, ref FlexPositionRightBehavior b) => b = b with { Value = _value }
@@ -629,9 +629,9 @@ public static class JsonEntityConverter
         }
 
         // FlexPositionRight - Percent
-        if (mutEntity.FlexPositionRight?.Percent.HasValue ?? false)
+        if (mutEntity.Value.FlexPositionRight?.Percent.HasValue ?? false)
         {
-            var percent = mutEntity.FlexPositionRight.Value.Percent.Value;
+            var percent = mutEntity.Value.FlexPositionRight.Value.Percent.Value;
             entity.SetBehavior<FlexPositionRightBehavior, bool>(
                 in percent,
                 static (ref readonly bool _percent, ref FlexPositionRightBehavior b) => b = b with { Percent = _percent }
@@ -639,9 +639,9 @@ public static class JsonEntityConverter
         }
 
         // FlexPositionTop - Value
-        if (mutEntity.FlexPositionTop?.Value.HasValue ?? false)
+        if (mutEntity.Value.FlexPositionTop?.Value.HasValue ?? false)
         {
-            var value = mutEntity.FlexPositionTop.Value.Value.Value;
+            var value = mutEntity.Value.FlexPositionTop.Value.Value.Value;
             entity.SetBehavior<FlexPositionTopBehavior, float>(
                 in value,
                 static (ref readonly float _value, ref FlexPositionTopBehavior b) => b = b with { Value = _value }
@@ -649,9 +649,9 @@ public static class JsonEntityConverter
         }
 
         // FlexPositionTop - Percent
-        if (mutEntity.FlexPositionTop?.Percent.HasValue ?? false)
+        if (mutEntity.Value.FlexPositionTop?.Percent.HasValue ?? false)
         {
-            var percent = mutEntity.FlexPositionTop.Value.Percent.Value;
+            var percent = mutEntity.Value.FlexPositionTop.Value.Percent.Value;
             entity.SetBehavior<FlexPositionTopBehavior, bool>(
                 in percent,
                 static (ref readonly bool _percent, ref FlexPositionTopBehavior b) => b = b with { Percent = _percent }
@@ -659,7 +659,7 @@ public static class JsonEntityConverter
         }
 
         // FlexPositionType
-        if (mutEntity.FlexPositionType != null)
+        if (mutEntity.Value.FlexPositionType != null)
         {
             if (!Enum.TryParse<PositionType>(mutEntity.FlexPositionType, true, out var positionType))
             {
@@ -675,9 +675,9 @@ public static class JsonEntityConverter
         }
 
         // FlexWidth - Value
-        if (mutEntity.FlexWidth?.Value.HasValue ?? false)
+        if (mutEntity.Value.FlexWidth?.Value.HasValue ?? false)
         {
-            var value = mutEntity.FlexWidth.Value.Value.Value;
+            var value = mutEntity.Value.FlexWidth.Value.Value.Value;
             entity.SetBehavior<FlexWidthBehavior, float>(
                 in value,
                 static (ref readonly float _value, ref FlexWidthBehavior b) => b = b with { Value = _value }
@@ -685,9 +685,9 @@ public static class JsonEntityConverter
         }
 
         // FlexWidth - Percent
-        if (mutEntity.FlexWidth?.Percent.HasValue ?? false)
+        if (mutEntity.Value.FlexWidth?.Percent.HasValue ?? false)
         {
-            var percent = mutEntity.FlexWidth.Value.Percent.Value;
+            var percent = mutEntity.Value.FlexWidth.Value.Percent.Value;
             entity.SetBehavior<FlexWidthBehavior, bool>(
                 in percent,
                 static (ref readonly bool _percent, ref FlexWidthBehavior b) => b = b with { Percent = _percent }
@@ -873,7 +873,10 @@ public static class JsonEntityConverter
         }
     }
 
-    private static bool TryDeserializeMutEntity(JsonObject entityObj, out MutEntity mutEntity)
+    private static bool TryDeserializeMutEntity(
+        JsonObject entityObj,
+        [NotNullWhen(true)] out MutEntity? mutEntity
+    )
     {
         try
         {
@@ -883,7 +886,7 @@ public static class JsonEntityConverter
         catch (JsonException ex)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent($"Entity mutation deserialization failed: {ex.Message}"));
-            mutEntity = default;
+            mutEntity = null;
             return false;
         }
     }
