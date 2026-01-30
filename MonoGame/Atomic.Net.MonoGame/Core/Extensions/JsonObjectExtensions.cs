@@ -12,7 +12,7 @@ public static class JsonObjectExtensions
     /// Tries to parse an enum value from a JsonNode string.
     /// Fires ErrorEvent on failure with descriptive message.
     /// </summary>
-    public static bool TryParseEnum<TEnum>(
+    public static bool TryGetEnumWithError<TEnum>(
         this JsonNode? value, 
         ushort entityIndex, 
         string fieldName, 
@@ -87,7 +87,7 @@ public static class JsonObjectExtensions
     /// Tries to parse an int value from a JsonNode.
     /// Fires ErrorEvent on failure with descriptive message.
     /// </summary>
-    public static bool TryParseInt(
+    public static bool TryGetIntWithError(
         this JsonNode? value, 
         ushort entityIndex, 
         string fieldName, 

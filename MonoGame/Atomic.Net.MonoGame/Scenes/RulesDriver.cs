@@ -1806,7 +1806,7 @@ public sealed class RulesDriver :
     )
         where TBehavior : struct
     {
-        if (!value.TryParseFloat(entityIndex, fieldName, out var floatValue))
+        if (!value.TryGetFloatWithError(entityIndex, fieldName, out var floatValue))
         {
             return false;
         }
@@ -1838,7 +1838,7 @@ public sealed class RulesDriver :
     )
         where TBehavior : struct
     {
-        if (!value.TryParseInt(entityIndex, fieldName, out var intValue))
+        if (!value.TryGetIntWithError(entityIndex, fieldName, out var intValue))
         {
             return false;
         }
@@ -1871,7 +1871,7 @@ public sealed class RulesDriver :
         where TBehavior : struct
         where TEnum : struct, Enum
     {
-        if (!value.TryParseEnum<TEnum>(entityIndex, fieldName, out var enumValue))
+        if (!value.TryGetEnumWithError<TEnum>(entityIndex, fieldName, out var enumValue))
         {
             return false;
         }
