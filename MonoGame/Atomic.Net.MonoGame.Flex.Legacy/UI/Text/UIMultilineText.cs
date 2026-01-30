@@ -132,7 +132,7 @@ public class UIMultiLineTextContent : UINode, IHasText
                 {
                     throw;
                 }
-                Text = sanitized.Value;
+                Text = sanitized;
             }
         }
     }

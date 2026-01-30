@@ -4,7 +4,12 @@ namespace Atomic.Net.MonoGame.Core.Extensions;
 
 public static class StringExtensions
 {
-    public static bool TrySanitizeText(this string text, IReadOnlyCollection<char> validChars, [NotNullWhen(true)] out string? sanitized)
+    /// <summary>
+    /// Attempts to sanitize text by replacing invalid characters with '!'.
+    /// Returns true if text was modified (had invalid characters), false if text was already clean or null/empty.
+    /// The sanitized parameter will contain the result: modified text if changed, original text if clean, or null/empty if input was null/empty.
+    /// </summary>
+    public static bool TrySanitizeText(this string text, IReadOnlyCollection<char> validChars, out string sanitized)
     {
         if (string.IsNullOrEmpty(text))
         {

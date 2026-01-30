@@ -136,12 +136,12 @@ public static class JsonNodeExtensions
     /// <summary>
     /// Tries to parse a Vector3 from a JsonObject with x/y/z properties.
     /// Missing properties use values from the default.
+    /// Returns false if any property fails to parse, but always outputs a result using defaults for missing/invalid fields.
     /// </summary>
     public static bool TryGetVector3Value(
         this JsonObject obj,
         Vector3 defaultValue,
-        [NotNullWhen(true)]
-        out Vector3? result
+        out Vector3 result
     )
     {
         var x = defaultValue.X;
@@ -192,12 +192,12 @@ public static class JsonNodeExtensions
     /// <summary>
     /// Tries to parse a Quaternion from a JsonObject with x/y/z/w properties.
     /// Missing properties use values from the default.
+    /// Returns false if any property fails to parse, but always outputs a result using defaults for missing/invalid fields.
     /// </summary>
     public static bool TryGetQuaternionValue(
         this JsonObject obj,
         Quaternion defaultValue,
-        [NotNullWhen(true)]
-        out Quaternion? result
+        out Quaternion result
     )
     {
         var x = defaultValue.X;
