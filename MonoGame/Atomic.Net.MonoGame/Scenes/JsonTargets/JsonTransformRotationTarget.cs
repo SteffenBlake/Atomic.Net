@@ -10,6 +10,11 @@ namespace Atomic.Net.MonoGame.Scenes.JsonTargets;
 /// </summary>
 public readonly record struct JsonTransformRotationTarget(string Rotation)
 {
+    private static readonly HashSet<string> _validFields = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "x", "y", "z", "w"
+    };
+
     private static readonly ErrorEvent UnrecognizedFieldError = new(
         "Unrecognized rotation field. Expected one of: x, y, z, w"
     );
@@ -24,7 +29,7 @@ public readonly record struct JsonTransformRotationTarget(string Rotation)
         }
 
         // Validate field name
-        if (Rotation != "x" && Rotation != "y" && Rotation != "z" && Rotation != "w")
+        if (!_validFields.Contains(Rotation))
         {
             EventBus<ErrorEvent>.Push(UnrecognizedFieldError);
             return;

@@ -34,7 +34,7 @@ public partial struct JsonTarget
 
     static partial void VariantOf(
         JsonPropertiesTarget properties,
-        JsonTransformFieldTarget transform,
+        JsonTransformTarget transform,
         string leaf
     );
 
@@ -50,7 +50,7 @@ public partial struct JsonTarget
         {
             properties.Apply(entityObj, value);
         }
-        else if (TryMatch(out JsonTransformFieldTarget transform))
+        else if (TryMatch(out JsonTransformTarget transform))
         {
             transform.Apply(entityObj, value);
         }

@@ -10,6 +10,11 @@ namespace Atomic.Net.MonoGame.Scenes.JsonTargets;
 /// </summary>
 public readonly record struct JsonTransformAnchorTarget(string Anchor)
 {
+    private static readonly HashSet<string> _validFields = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "x", "y", "z"
+    };
+
     private static readonly ErrorEvent UnrecognizedFieldError = new(
         "Unrecognized anchor field. Expected one of: x, y, z"
     );
@@ -24,7 +29,7 @@ public readonly record struct JsonTransformAnchorTarget(string Anchor)
         }
 
         // Validate field name
-        if (Anchor != "x" && Anchor != "y" && Anchor != "z")
+        if (!_validFields.Contains(Anchor))
         {
             EventBus<ErrorEvent>.Push(UnrecognizedFieldError);
             return;

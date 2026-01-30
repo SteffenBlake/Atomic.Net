@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 
 namespace Atomic.Net.MonoGame.Scenes.JsonTargets;
 
@@ -6,6 +7,7 @@ namespace Atomic.Net.MonoGame.Scenes.JsonTargets;
 /// Target for mutating an entity's properties behavior.
 /// Maps to JSON: { "properties": "propertyKey" }
 /// </summary>
+[JsonConverter(typeof(JsonPropertiesTargetConverter))]
 public readonly record struct JsonPropertiesTarget(string PropertyKey)
 {
     public void Apply(JsonObject jsonEntity, JsonNode value)

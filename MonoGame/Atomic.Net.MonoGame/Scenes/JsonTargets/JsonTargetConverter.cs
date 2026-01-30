@@ -31,24 +31,11 @@ public class JsonTargetConverter : JsonConverter<JsonTarget>
 
         return propertyKey switch
         {
-            "properties" => new JsonPropertiesTarget(
-                firstProperty.Value?.GetValue<string>() 
-                ?? throw new JsonException("'properties' target must have a string value")
-            ),
+            "properties" => firstProperty.Value.Deserialize<JsonPropertiesTarget>(options),
             "position" or "rotation" or "scale" or "anchor" => 
-                DeserializeTransformTarget(jsonObject, options),
+                jsonObject.Deserialize<JsonTransformTarget>(options),
             _ => throw new JsonException($"Unrecognized object target: '{propertyKey}'")
         };
-    }
-
-    private static JsonTransformFieldTarget DeserializeTransformTarget(JsonObject jsonObject, JsonSerializerOptions options)
-    {
-        var result = jsonObject.Deserialize<JsonTransformFieldTarget>(options);
-        if (result.Equals(default(JsonTransformFieldTarget)))
-        {
-            throw new JsonException("Failed to deserialize transform target");
-        }
-        return result;
     }
 
     public override void Write(Utf8JsonWriter writer, JsonTarget value, JsonSerializerOptions options)

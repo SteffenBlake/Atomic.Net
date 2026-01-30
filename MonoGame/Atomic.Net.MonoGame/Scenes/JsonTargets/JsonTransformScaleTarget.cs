@@ -10,6 +10,11 @@ namespace Atomic.Net.MonoGame.Scenes.JsonTargets;
 /// </summary>
 public readonly record struct JsonTransformScaleTarget(string Scale)
 {
+    private static readonly HashSet<string> _validFields = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "x", "y", "z"
+    };
+
     private static readonly ErrorEvent UnrecognizedFieldError = new(
         "Unrecognized scale field. Expected one of: x, y, z"
     );
@@ -24,7 +29,7 @@ public readonly record struct JsonTransformScaleTarget(string Scale)
         }
 
         // Validate field name
-        if (Scale != "x" && Scale != "y" && Scale != "z")
+        if (!_validFields.Contains(Scale))
         {
             EventBus<ErrorEvent>.Push(UnrecognizedFieldError);
             return;

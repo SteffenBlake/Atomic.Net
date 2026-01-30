@@ -6,11 +6,11 @@ using dotVariant;
 namespace Atomic.Net.MonoGame.Scenes.JsonTargets;
 
 /// <summary>
-/// Variant for different transform field targets (position, rotation, scale, anchor).
+/// Variant for different transform targets (position, rotation, scale, anchor).
 /// </summary>
 [Variant]
-[JsonConverter(typeof(JsonTransformFieldTargetConverter))]
-public partial struct JsonTransformFieldTarget
+[JsonConverter(typeof(JsonTransformTargetConverter))]
+public partial struct JsonTransformTarget
 {
     private static readonly ErrorEvent UnrecognizedFieldError = new(
         "Unrecognized transform field. Expected one of: position, rotation, scale, anchor"

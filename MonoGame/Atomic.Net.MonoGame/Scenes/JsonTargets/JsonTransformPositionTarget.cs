@@ -10,6 +10,11 @@ namespace Atomic.Net.MonoGame.Scenes.JsonTargets;
 /// </summary>
 public readonly record struct JsonTransformPositionTarget(string Position)
 {
+    private static readonly HashSet<string> _validFields = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "x", "y", "z"
+    };
+
     private static readonly ErrorEvent UnrecognizedFieldError = new(
         "Unrecognized position field. Expected one of: x, y, z"
     );
@@ -24,7 +29,7 @@ public readonly record struct JsonTransformPositionTarget(string Position)
         }
 
         // Validate field name
-        if (Position != "x" && Position != "y" && Position != "z")
+        if (!_validFields.Contains(Position))
         {
             EventBus<ErrorEvent>.Push(UnrecognizedFieldError);
             return;
