@@ -226,19 +226,27 @@ public static class JsonEntityConverter
 
         entity.SetBehavior<IdBehavior, string>(
             in newId,
-            static (ref readonly string _newId, ref IdBehavior b) => b = new IdBehavior(_newId)
+            static (ref readonly _newId, ref b) => b = new IdBehavior(_newId)
         );
     }
 
     private static void WriteTags(Entity entity, JsonArray tagsArray)
     {
-        var tags = new FluentHashSet<string>(tagsArray.Count, StringComparer.OrdinalIgnoreCase);
+        // First clear existing tags
+        entity.SetBehavior<TagsBehavior>(
+            static (ref b) => b = b with { Tags = b.Tags.Clear() }
+        );
+
+        // Then add each valid tag
         var hasInvalidTag = false;
         foreach (var tagNode in tagsArray)
         {
             if (tagNode is JsonValue tagValue && tagValue.TryGetValue<string>(out var tag))
             {
-                tags = tags.With(tag);
+                entity.SetBehavior<TagsBehavior, string>(
+                    in tag,
+                    static (ref readonly _tag, ref b) => b = b with { Tags = b.Tags.With(_tag) }
+                );
             }
             else
             {
@@ -252,12 +260,6 @@ public static class JsonEntityConverter
                 $"Tags mutation failed: all tags must be string values"
             ));
         }
-
-        // Apply valid tags even if there were invalid ones
-        entity.SetBehavior<TagsBehavior, FluentHashSet<string>>(
-            in tags,
-            static (ref readonly FluentHashSet<string> _tags, ref TagsBehavior b) => b = b with { Tags = _tags }
-        );
     }
 
     private static void WriteParent(Entity entity, JsonValue parentValue)
