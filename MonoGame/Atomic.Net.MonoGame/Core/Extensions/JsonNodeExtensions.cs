@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Nodes;
+using Microsoft.Xna.Framework;
 
 namespace Atomic.Net.MonoGame.Core.Extensions;
 
@@ -127,5 +128,100 @@ public static class JsonNodeExtensions
 
         result = default;
         return false;
+    }
+
+    /// <summary>
+    /// Tries to parse a Vector3 from a JsonObject with x/y/z properties.
+    /// Missing properties use values from the default.
+    /// </summary>
+    public static bool TryGetVector3Value(
+        this JsonObject obj,
+        Vector3 defaultValue,
+        out Vector3 result
+    )
+    {
+        var x = defaultValue.X;
+        var y = defaultValue.Y;
+        var z = defaultValue.Z;
+        var success = true;
+
+        if (obj.TryGetPropertyValue("x", out var xNode) && xNode != null)
+        {
+            if (!xNode.TryGetFloatValue(out x))
+            {
+                success = false;
+            }
+        }
+
+        if (obj.TryGetPropertyValue("y", out var yNode) && yNode != null)
+        {
+            if (!yNode.TryGetFloatValue(out y))
+            {
+                success = false;
+            }
+        }
+
+        if (obj.TryGetPropertyValue("z", out var zNode) && zNode != null)
+        {
+            if (!zNode.TryGetFloatValue(out z))
+            {
+                success = false;
+            }
+        }
+
+        result = new Vector3(x, y, z);
+        return success;
+    }
+
+    /// <summary>
+    /// Tries to parse a Quaternion from a JsonObject with x/y/z/w properties.
+    /// Missing properties use values from the default.
+    /// </summary>
+    public static bool TryGetQuaternionValue(
+        this JsonObject obj,
+        Quaternion defaultValue,
+        out Quaternion result
+    )
+    {
+        var x = defaultValue.X;
+        var y = defaultValue.Y;
+        var z = defaultValue.Z;
+        var w = defaultValue.W;
+        var success = true;
+
+        if (obj.TryGetPropertyValue("x", out var xNode) && xNode != null)
+        {
+            if (!xNode.TryGetFloatValue(out x))
+            {
+                success = false;
+            }
+        }
+
+        if (obj.TryGetPropertyValue("y", out var yNode) && yNode != null)
+        {
+            if (!yNode.TryGetFloatValue(out y))
+            {
+                success = false;
+            }
+        }
+
+        if (obj.TryGetPropertyValue("z", out var zNode) && zNode != null)
+        {
+            if (!zNode.TryGetFloatValue(out z))
+            {
+                success = false;
+            }
+        }
+
+        if (obj.TryGetPropertyValue("w", out var wNode) && wNode != null)
+        {
+            if (!wNode.TryGetFloatValue(out w))
+            {
+                success = false;
+            }
+        }
+
+        result = new Quaternion(x, y, z, w);
+        return success;
     }
 }
