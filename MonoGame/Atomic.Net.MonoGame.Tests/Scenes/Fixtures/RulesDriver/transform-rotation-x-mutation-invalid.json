@@ -1,0 +1,38 @@
+{
+  "entities": [
+    {
+      "id": "cube",
+      "tags": [
+        "rotatable"
+      ],
+      "transform": {
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "w": 1
+        }
+      }
+    }
+  ],
+  "rules": [
+    {
+      "from": "#rotatable",
+      "where": {
+        "var": "entities"
+      },
+      "do": {
+        "mut": [
+          {
+            "target": {
+              "transform": {
+                "rotation": "x"
+              }
+            },
+            "value": "not a number"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "entities": [
+    {
+      "id": "cube",
+      "tags": [
+        "movable"
+      ],
+      "transform": {
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      }
+    }
+  ],
+  "rules": [
+    {
+      "from": "#movable",
+      "where": {
+        "var": "entities"
+      },
+      "do": {
+        "mut": [
+          {
+            "target": {
+              "transform": {
+                "position": "z"
+              }
+            },
+            "value": "not a number"
+          }
+        ]
+      }
+    }
+  ]
+}

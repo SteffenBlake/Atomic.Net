@@ -1,0 +1,26 @@
+{
+  "entities": [
+    {
+      "id": "box",
+      "tags": [
+        "bordered"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "from": "#bordered",
+      "where": {
+        "var": "entities"
+      },
+      "do": {
+        "mut": [
+          {
+            "target": "flexBorderBottom",
+            "value": "not a number"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "entities": [
+    {
+      "id": "sprite",
+      "tags": [
+        "scalable"
+      ],
+      "transform": {
+        "scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      }
+    }
+  ],
+  "rules": [
+    {
+      "from": "#scalable",
+      "where": {
+        "var": "entities"
+      },
+      "do": {
+        "mut": [
+          {
+            "target": {
+              "transform": {
+                "scale": "z"
+              }
+            },
+            "value": 3.0
+          }
+        ]
+      }
+    }
+  ]
+}

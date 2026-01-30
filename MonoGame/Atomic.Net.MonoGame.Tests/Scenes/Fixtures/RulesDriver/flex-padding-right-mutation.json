@@ -1,0 +1,26 @@
+{
+  "entities": [
+    {
+      "id": "box",
+      "tags": [
+        "padded"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "from": "#padded",
+      "where": {
+        "var": "entities"
+      },
+      "do": {
+        "mut": [
+          {
+            "target": "flexPaddingRight",
+            "value": 9.0
+          }
+        ]
+      }
+    }
+  ]
+}

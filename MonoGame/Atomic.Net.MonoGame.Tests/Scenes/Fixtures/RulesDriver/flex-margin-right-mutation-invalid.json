@@ -1,0 +1,26 @@
+{
+  "entities": [
+    {
+      "id": "box",
+      "tags": [
+        "margined"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "from": "#margined",
+      "where": {
+        "var": "entities"
+      },
+      "do": {
+        "mut": [
+          {
+            "target": "flexMarginRight",
+            "value": "not a number"
+          }
+        ]
+      }
+    }
+  ]
+}
