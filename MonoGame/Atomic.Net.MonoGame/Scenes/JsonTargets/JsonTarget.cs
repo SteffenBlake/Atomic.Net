@@ -20,21 +20,23 @@ public partial struct JsonTarget
     private static readonly HashSet<string> _validLeaves = new(StringComparer.OrdinalIgnoreCase)
     {
         "id", "tags", "parent",
-        // All flex behaviors
+        // Simple flex behaviors (not the complex ones with Value/Percent)
         "flexAlignItems", "flexAlignSelf", "flexBorderBottom", "flexBorderLeft",
         "flexBorderRight", "flexBorderTop", "flexDirection", "flexGrow",
-        "flexHeight", "flexHeightPercent", "flexJustifyContent", "flexMarginBottom",
-        "flexMarginLeft", "flexMarginRight", "flexMarginTop", "flexPaddingBottom",
-        "flexPaddingLeft", "flexPaddingRight", "flexPaddingTop", "flexPositionBottom",
-        "flexPositionBottomPercent", "flexPositionLeft", "flexPositionLeftPercent",
-        "flexPositionRight", "flexPositionRightPercent", "flexPositionTop",
-        "flexPositionTopPercent", "flexPositionType", "flexWidth", "flexWidthPercent",
-        "flexWrap", "flexZOverride"
+        "flexJustifyContent", "flexMarginBottom", "flexMarginLeft", "flexMarginRight",
+        "flexMarginTop", "flexPaddingBottom", "flexPaddingLeft", "flexPaddingRight",
+        "flexPaddingTop", "flexPositionType", "flexWrap", "flexZOverride"
     };
 
     static partial void VariantOf(
         JsonPropertiesTarget properties,
         JsonTransformTarget transform,
+        JsonFlexHeightTarget flexHeight,
+        JsonFlexWidthTarget flexWidth,
+        JsonFlexPositionBottomTarget flexPositionBottom,
+        JsonFlexPositionLeftTarget flexPositionLeft,
+        JsonFlexPositionRightTarget flexPositionRight,
+        JsonFlexPositionTopTarget flexPositionTop,
         string leaf
     );
 
@@ -53,6 +55,30 @@ public partial struct JsonTarget
         else if (TryMatch(out JsonTransformTarget transform))
         {
             transform.Apply(entityObj, value);
+        }
+        else if (TryMatch(out JsonFlexHeightTarget flexHeight))
+        {
+            flexHeight.Apply(entityObj, value);
+        }
+        else if (TryMatch(out JsonFlexWidthTarget flexWidth))
+        {
+            flexWidth.Apply(entityObj, value);
+        }
+        else if (TryMatch(out JsonFlexPositionBottomTarget flexPositionBottom))
+        {
+            flexPositionBottom.Apply(entityObj, value);
+        }
+        else if (TryMatch(out JsonFlexPositionLeftTarget flexPositionLeft))
+        {
+            flexPositionLeft.Apply(entityObj, value);
+        }
+        else if (TryMatch(out JsonFlexPositionRightTarget flexPositionRight))
+        {
+            flexPositionRight.Apply(entityObj, value);
+        }
+        else if (TryMatch(out JsonFlexPositionTopTarget flexPositionTop))
+        {
+            flexPositionTop.Apply(entityObj, value);
         }
         else if (TryMatch(out string? leaf))
         {

@@ -16,7 +16,9 @@
       "do": {
         "mut": [
           {
-            "target": "flexWidth",
+            "target": {
+              "flexWidth": "value"
+            },
             "value": "not a number"
           }
         ]

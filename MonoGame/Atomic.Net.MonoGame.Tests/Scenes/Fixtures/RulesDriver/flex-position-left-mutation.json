@@ -16,11 +16,15 @@
       "do": {
         "mut": [
           {
-            "target": "flexPositionLeft",
+            "target": {
+              "flexPositionLeft": "value"
+            },
             "value": 50.0
           },
           {
-            "target": "flexPositionLeftPercent",
+            "target": {
+              "flexPositionLeft": "percent"
+            },
             "value": false
           }
         ]

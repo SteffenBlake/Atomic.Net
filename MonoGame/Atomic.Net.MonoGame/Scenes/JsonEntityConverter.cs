@@ -462,15 +462,23 @@ public static class JsonEntityConverter
             );
         }
 
-        // FlexHeight
-        if (mutEntity.FlexHeight.HasValue)
+        // FlexHeight - Value
+        if (mutEntity.FlexHeight?.Value.HasValue ?? false)
         {
-            var height = mutEntity.FlexHeight.Value;
-            var percent = mutEntity.FlexHeightPercent ?? false;
-            var data = (height, percent);
-            entity.SetBehavior<FlexHeightBehavior, (float Height, bool Percent)>(
-                in data,
-                static (ref readonly (float Height, bool Percent) val, ref FlexHeightBehavior b) => b = new FlexHeightBehavior(val.Height, val.Percent)
+            var value = mutEntity.FlexHeight.Value.Value.Value;
+            entity.SetBehavior<FlexHeightBehavior, float>(
+                in value,
+                static (ref readonly float _value, ref FlexHeightBehavior b) => b = b with { Value = _value }
+            );
+        }
+
+        // FlexHeight - Percent
+        if (mutEntity.FlexHeight?.Percent.HasValue ?? false)
+        {
+            var percent = mutEntity.FlexHeight.Value.Percent.Value;
+            entity.SetBehavior<FlexHeightBehavior, bool>(
+                in percent,
+                static (ref readonly bool _percent, ref FlexHeightBehavior b) => b = b with { Percent = _percent }
             );
         }
 
@@ -570,51 +578,83 @@ public static class JsonEntityConverter
             );
         }
 
-        // FlexPositionBottom
-        if (mutEntity.FlexPositionBottom.HasValue)
+        // FlexPositionBottom - Value
+        if (mutEntity.FlexPositionBottom?.Value.HasValue ?? false)
         {
-            var positionBottom = mutEntity.FlexPositionBottom.Value;
-            var percent = mutEntity.FlexPositionBottomPercent ?? false;
-            var data = (positionBottom, percent);
-            entity.SetBehavior<FlexPositionBottomBehavior, (float Value, bool Percent)>(
-                in data,
-                static (ref readonly (float Value, bool Percent) val, ref FlexPositionBottomBehavior b) => b = new FlexPositionBottomBehavior(val.Value, val.Percent)
+            var value = mutEntity.FlexPositionBottom.Value.Value.Value;
+            entity.SetBehavior<FlexPositionBottomBehavior, float>(
+                in value,
+                static (ref readonly float _value, ref FlexPositionBottomBehavior b) => b = b with { Value = _value }
             );
         }
 
-        // FlexPositionLeft
-        if (mutEntity.FlexPositionLeft.HasValue)
+        // FlexPositionBottom - Percent
+        if (mutEntity.FlexPositionBottom?.Percent.HasValue ?? false)
         {
-            var positionLeft = mutEntity.FlexPositionLeft.Value;
-            var percent = mutEntity.FlexPositionLeftPercent ?? false;
-            var data = (positionLeft, percent);
-            entity.SetBehavior<FlexPositionLeftBehavior, (float Value, bool Percent)>(
-                in data,
-                static (ref readonly (float Value, bool Percent) val, ref FlexPositionLeftBehavior b) => b = new FlexPositionLeftBehavior(val.Value, val.Percent)
+            var percent = mutEntity.FlexPositionBottom.Value.Percent.Value;
+            entity.SetBehavior<FlexPositionBottomBehavior, bool>(
+                in percent,
+                static (ref readonly bool _percent, ref FlexPositionBottomBehavior b) => b = b with { Percent = _percent }
             );
         }
 
-        // FlexPositionRight
-        if (mutEntity.FlexPositionRight.HasValue)
+        // FlexPositionLeft - Value
+        if (mutEntity.FlexPositionLeft?.Value.HasValue ?? false)
         {
-            var positionRight = mutEntity.FlexPositionRight.Value;
-            var percent = mutEntity.FlexPositionRightPercent ?? false;
-            var data = (positionRight, percent);
-            entity.SetBehavior<FlexPositionRightBehavior, (float Value, bool Percent)>(
-                in data,
-                static (ref readonly (float Value, bool Percent) val, ref FlexPositionRightBehavior b) => b = new FlexPositionRightBehavior(val.Value, val.Percent)
+            var value = mutEntity.FlexPositionLeft.Value.Value.Value;
+            entity.SetBehavior<FlexPositionLeftBehavior, float>(
+                in value,
+                static (ref readonly float _value, ref FlexPositionLeftBehavior b) => b = b with { Value = _value }
             );
         }
 
-        // FlexPositionTop
-        if (mutEntity.FlexPositionTop.HasValue)
+        // FlexPositionLeft - Percent
+        if (mutEntity.FlexPositionLeft?.Percent.HasValue ?? false)
         {
-            var positionTop = mutEntity.FlexPositionTop.Value;
-            var percent = mutEntity.FlexPositionTopPercent ?? false;
-            var data = (positionTop, percent);
-            entity.SetBehavior<FlexPositionTopBehavior, (float Value, bool Percent)>(
-                in data,
-                static (ref readonly (float Value, bool Percent) val, ref FlexPositionTopBehavior b) => b = new FlexPositionTopBehavior(val.Value, val.Percent)
+            var percent = mutEntity.FlexPositionLeft.Value.Percent.Value;
+            entity.SetBehavior<FlexPositionLeftBehavior, bool>(
+                in percent,
+                static (ref readonly bool _percent, ref FlexPositionLeftBehavior b) => b = b with { Percent = _percent }
+            );
+        }
+
+        // FlexPositionRight - Value
+        if (mutEntity.FlexPositionRight?.Value.HasValue ?? false)
+        {
+            var value = mutEntity.FlexPositionRight.Value.Value.Value;
+            entity.SetBehavior<FlexPositionRightBehavior, float>(
+                in value,
+                static (ref readonly float _value, ref FlexPositionRightBehavior b) => b = b with { Value = _value }
+            );
+        }
+
+        // FlexPositionRight - Percent
+        if (mutEntity.FlexPositionRight?.Percent.HasValue ?? false)
+        {
+            var percent = mutEntity.FlexPositionRight.Value.Percent.Value;
+            entity.SetBehavior<FlexPositionRightBehavior, bool>(
+                in percent,
+                static (ref readonly bool _percent, ref FlexPositionRightBehavior b) => b = b with { Percent = _percent }
+            );
+        }
+
+        // FlexPositionTop - Value
+        if (mutEntity.FlexPositionTop?.Value.HasValue ?? false)
+        {
+            var value = mutEntity.FlexPositionTop.Value.Value.Value;
+            entity.SetBehavior<FlexPositionTopBehavior, float>(
+                in value,
+                static (ref readonly float _value, ref FlexPositionTopBehavior b) => b = b with { Value = _value }
+            );
+        }
+
+        // FlexPositionTop - Percent
+        if (mutEntity.FlexPositionTop?.Percent.HasValue ?? false)
+        {
+            var percent = mutEntity.FlexPositionTop.Value.Percent.Value;
+            entity.SetBehavior<FlexPositionTopBehavior, bool>(
+                in percent,
+                static (ref readonly bool _percent, ref FlexPositionTopBehavior b) => b = b with { Percent = _percent }
             );
         }
 
@@ -634,15 +674,23 @@ public static class JsonEntityConverter
             }
         }
 
-        // FlexWidth
-        if (mutEntity.FlexWidth.HasValue)
+        // FlexWidth - Value
+        if (mutEntity.FlexWidth?.Value.HasValue ?? false)
         {
-            var width = mutEntity.FlexWidth.Value;
-            var percent = mutEntity.FlexWidthPercent ?? false;
-            var data = (width, percent);
-            entity.SetBehavior<FlexWidthBehavior, (float Width, bool Percent)>(
-                in data,
-                static (ref readonly (float Width, bool Percent) val, ref FlexWidthBehavior b) => b = new FlexWidthBehavior(val.Width, val.Percent)
+            var value = mutEntity.FlexWidth.Value.Value.Value;
+            entity.SetBehavior<FlexWidthBehavior, float>(
+                in value,
+                static (ref readonly float _value, ref FlexWidthBehavior b) => b = b with { Value = _value }
+            );
+        }
+
+        // FlexWidth - Percent
+        if (mutEntity.FlexWidth?.Percent.HasValue ?? false)
+        {
+            var percent = mutEntity.FlexWidth.Value.Percent.Value;
+            entity.SetBehavior<FlexWidthBehavior, bool>(
+                in percent,
+                static (ref readonly bool _percent, ref FlexWidthBehavior b) => b = b with { Percent = _percent }
             );
         }
     }
@@ -722,8 +770,11 @@ public static class JsonEntityConverter
 
         if (entity.TryGetBehavior<FlexHeightBehavior>(out var height))
         {
-            entityObj["flexHeight"] = height.Value.Value;
-            entityObj["flexHeightPercent"] = height.Value.Percent;
+            entityObj["flexHeight"] = new JsonObject
+            {
+                ["value"] = height.Value.Value,
+                ["percent"] = height.Value.Percent
+            };
         }
 
         if (entity.TryGetBehavior<FlexJustifyContentBehavior>(out var justifyContent))
@@ -773,26 +824,38 @@ public static class JsonEntityConverter
 
         if (entity.TryGetBehavior<FlexPositionBottomBehavior>(out var positionBottom))
         {
-            entityObj["flexPositionBottom"] = positionBottom.Value.Value;
-            entityObj["flexPositionBottomPercent"] = positionBottom.Value.Percent;
+            entityObj["flexPositionBottom"] = new JsonObject
+            {
+                ["value"] = positionBottom.Value.Value,
+                ["percent"] = positionBottom.Value.Percent
+            };
         }
 
         if (entity.TryGetBehavior<FlexPositionLeftBehavior>(out var positionLeft))
         {
-            entityObj["flexPositionLeft"] = positionLeft.Value.Value;
-            entityObj["flexPositionLeftPercent"] = positionLeft.Value.Percent;
+            entityObj["flexPositionLeft"] = new JsonObject
+            {
+                ["value"] = positionLeft.Value.Value,
+                ["percent"] = positionLeft.Value.Percent
+            };
         }
 
         if (entity.TryGetBehavior<FlexPositionRightBehavior>(out var positionRight))
         {
-            entityObj["flexPositionRight"] = positionRight.Value.Value;
-            entityObj["flexPositionRightPercent"] = positionRight.Value.Percent;
+            entityObj["flexPositionRight"] = new JsonObject
+            {
+                ["value"] = positionRight.Value.Value,
+                ["percent"] = positionRight.Value.Percent
+            };
         }
 
         if (entity.TryGetBehavior<FlexPositionTopBehavior>(out var positionTop))
         {
-            entityObj["flexPositionTop"] = positionTop.Value.Value;
-            entityObj["flexPositionTopPercent"] = positionTop.Value.Percent;
+            entityObj["flexPositionTop"] = new JsonObject
+            {
+                ["value"] = positionTop.Value.Value,
+                ["percent"] = positionTop.Value.Percent
+            };
         }
 
         if (entity.TryGetBehavior<FlexPositionTypeBehavior>(out var positionType))
@@ -802,8 +865,11 @@ public static class JsonEntityConverter
 
         if (entity.TryGetBehavior<FlexWidthBehavior>(out var width))
         {
-            entityObj["flexWidth"] = width.Value.Value;
-            entityObj["flexWidthPercent"] = width.Value.Percent;
+            entityObj["flexWidth"] = new JsonObject
+            {
+                ["value"] = width.Value.Value,
+                ["percent"] = width.Value.Percent
+            };
         }
     }
 

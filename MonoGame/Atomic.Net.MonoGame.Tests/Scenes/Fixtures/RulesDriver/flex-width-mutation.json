@@ -16,11 +16,15 @@
       "do": {
         "mut": [
           {
-            "target": "flexWidth",
+            "target": {
+              "flexWidth": "value"
+            },
             "value": 200.0
           },
           {
-            "target": "flexWidthPercent",
+            "target": {
+              "flexWidth": "percent"
+            },
             "value": true
           }
         ]

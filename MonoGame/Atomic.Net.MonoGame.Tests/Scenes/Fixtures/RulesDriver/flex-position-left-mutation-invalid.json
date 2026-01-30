@@ -16,7 +16,9 @@
       "do": {
         "mut": [
           {
-            "target": "flexPositionLeft",
+            "target": {
+              "flexPositionLeft": "value"
+            },
             "value": "not a number"
           }
         ]

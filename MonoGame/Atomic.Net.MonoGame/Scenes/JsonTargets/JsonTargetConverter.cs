@@ -14,13 +14,13 @@ public class JsonTargetConverter : JsonConverter<JsonTarget>
     {
         var jsonNode = JsonNode.Parse(ref reader);
 
-        // Handle string targets (id, tags, parent, flex behaviors)
+        // Handle string targets (id, tags, parent, simple flex behaviors)
         if (jsonNode is JsonValue jsonValue && jsonValue.TryGetValue<string>(out var targetString))
         {
             return targetString;
         }
 
-        // Handle object targets (properties, transform fields)
+        // Handle object targets (properties, transform, complex flex behaviors)
         if (jsonNode is not JsonObject jsonObject)
         {
             throw new JsonException("Target must be a string or object");
@@ -35,6 +35,12 @@ public class JsonTargetConverter : JsonConverter<JsonTarget>
                 ?? throw new JsonException("Failed to deserialize properties target"),
             "transform" => firstProperty.Value?.Deserialize<JsonTransformTarget>(options)
                 ?? throw new JsonException("Failed to deserialize transform target"),
+            "flexheight" => jsonNode.Deserialize<JsonFlexHeightTarget>(options),
+            "flexwidth" => jsonNode.Deserialize<JsonFlexWidthTarget>(options),
+            "flexpositionbottom" => jsonNode.Deserialize<JsonFlexPositionBottomTarget>(options),
+            "flexpositionleft" => jsonNode.Deserialize<JsonFlexPositionLeftTarget>(options),
+            "flexpositionright" => jsonNode.Deserialize<JsonFlexPositionRightTarget>(options),
+            "flexpositiontop" => jsonNode.Deserialize<JsonFlexPositionTopTarget>(options),
             _ => throw new JsonException($"Unrecognized object target: '{propertyKey}'")
         };
     }
