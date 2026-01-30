@@ -494,103 +494,51 @@ public sealed class RulesDriver :
     /// </summary>
     private bool ApplyToTarget(ushort entityIndex, JsonNode target, JsonNode value)
     {
-        // Build the target path recursively
-        var path = new List<string>();
-        if (!TryBuildTargetPath(target, path))
+        // Handle string targets (root-level scalar properties)
+        if (target is JsonValue targetValue && targetValue.TryGetValue<string>(out var targetString))
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse target path for entity {entityIndex}"
-            ));
-            return false;
+            return ApplyStringTarget(entityIndex, targetString, value);
         }
 
-        // Dispatch based on the path
-        return ApplyTargetPath(entityIndex, path, value);
-    }
-
-    /// <summary>
-    /// Recursively traverses the target JsonNode to build a list of property names.
-    /// Base case: string value → add to path and return
-    /// Recursive case: object → extract property name and recurse on value
-    /// </summary>
-    private static bool TryBuildTargetPath(JsonNode target, List<string> path)
-    {
-        // Base case: target is a string - this is a property name
-        if (target is JsonValue targetValue && targetValue.TryGetValue<string>(out var propertyName))
-        {
-            path.Add(propertyName);
-            return true;
-        }
-
-        // Recursive case: target is an object - navigate deeper
+        // Handle object targets (nested properties)
         if (target is not JsonObject targetObj)
         {
-            return false;
-        }
-
-        // Get the first (and should be only) property
-        var property = targetObj.FirstOrDefault();
-        if (property.Key == null || property.Value == null)
-        {
-            return false;
-        }
-
-        // Add this level's property name
-        path.Add(property.Key);
-
-        // Recurse on the value
-        return TryBuildTargetPath(property.Value, path);
-    }
-
-    /// <summary>
-    /// Applies a mutation based on the parsed target path.
-    /// Path examples:
-    ///   ["flexWidth"] → direct flex property
-    ///   ["properties", "health"] → entity property
-    ///   ["position", "x"] → transform component
-    /// </summary>
-    private bool ApplyTargetPath(ushort entityIndex, List<string> path, JsonNode value)
-    {
-        if (path.Count == 0)
-        {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Target path is empty for entity {entityIndex}"
+                $"Target must be a string or JsonObject for entity {entityIndex}"
             ));
             return false;
         }
 
-        // Single-level path: direct property mutation
-        if (path.Count == 1)
+        if (targetObj.TryGetPropertyValue("properties", out var propertyKeyNode) && propertyKeyNode != null)
         {
-            return ApplyStringTarget(entityIndex, path[0], value);
+            return ApplyPropertyMutation(entityIndex, propertyKeyNode, value);
+        }
+        else if (targetObj.TryGetPropertyValue("position", out var positionComponent) && positionComponent != null)
+        {
+            return ApplyTransformVector3ComponentMutation(entityIndex, "position", positionComponent, value);
+        }
+        else if (targetObj.TryGetPropertyValue("rotation", out var rotationComponent) && rotationComponent != null)
+        {
+            return ApplyTransformQuaternionComponentMutation(entityIndex, rotationComponent, value);
+        }
+        else if (targetObj.TryGetPropertyValue("scale", out var scaleComponent) && scaleComponent != null)
+        {
+            return ApplyTransformVector3ComponentMutation(entityIndex, "scale", scaleComponent, value);
+        }
+        else if (targetObj.TryGetPropertyValue("anchor", out var anchorComponent) && anchorComponent != null)
+        {
+            return ApplyTransformVector3ComponentMutation(entityIndex, "anchor", anchorComponent, value);
         }
 
-        // Multi-level path: dispatch based on root property
-        var rootProperty = path[0];
-        var leafProperty = path[path.Count - 1];
-
-        return rootProperty switch
+        // NOTE: This allocates an array for the error message, but this is acceptable
+        // because this is an error path that only occurs during scene load, not gameplay.
+        var validObjectTargets = string.Join(", ", new[]
         {
-            "properties" => ApplyPropertyMutation(entityIndex, JsonValue.Create(leafProperty), value),
-            "position" => ApplyTransformVector3ComponentMutation(entityIndex, "position", JsonValue.Create(leafProperty), value),
-            "rotation" => ApplyTransformQuaternionComponentMutation(entityIndex, JsonValue.Create(leafProperty), value),
-            "scale" => ApplyTransformVector3ComponentMutation(entityIndex, "scale", JsonValue.Create(leafProperty), value),
-            "anchor" => ApplyTransformVector3ComponentMutation(entityIndex, "anchor", JsonValue.Create(leafProperty), value),
-            _ => HandleUnrecognizedRootProperty(entityIndex, rootProperty)
-        };
-    }
-
-    /// <summary>
-    /// Handles unrecognized root properties in target paths.
-    /// </summary>
-    private static bool HandleUnrecognizedRootProperty(ushort entityIndex, string rootProperty)
-    {
-        var validRootProperties = string.Join(", ", new[]
-        {
-            "properties", "position", "rotation", "scale", "anchor"
+            "properties (with key)", "position (with component)", "rotation (with component)",
+            "scale (with component)", "anchor (with component)"
         });
         EventBus<ErrorEvent>.Push(new ErrorEvent(
-            $"Unrecognized root property '{rootProperty}' in target path for entity {entityIndex}. Expected one of: {validRootProperties}"
+            $"Unrecognized object target for entity {entityIndex}. Expected one of: {validObjectTargets}"
         ));
         return false;
     }
@@ -1784,13 +1732,27 @@ public sealed class RulesDriver :
     /// <summary>
     /// Applies FlexZOverride mutation.
     /// </summary>
-    private static bool ApplyFlexZOverrideMutation(ushort entityIndex, JsonNode value) =>
-        ApplyIntBehavior<FlexZOverride>(
-            entityIndex,
-            value,
-            "flexZOverride",
-            static v => new FlexZOverride(v)
+    private static bool ApplyFlexZOverrideMutation(ushort entityIndex, JsonNode value)
+    {
+        if (!value.TryGetIntWithError(entityIndex, "flexZOverride", out var intValue))
+        {
+            return false;
+        }
+
+        var entity = EntityRegistry.Instance[entityIndex];
+        if (!entity.Active)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
+            return false;
+        }
+
+        var behavior = new FlexZOverride(intValue);
+        entity.SetBehavior<FlexZOverride, FlexZOverride>(
+            in behavior,
+            static (ref readonly _b, ref b) => b = _b
         );
+        return true;
+    }
 
     // ========== Helper Methods ==========
 
@@ -1819,38 +1781,6 @@ public sealed class RulesDriver :
         }
 
         var behavior = behaviorConstructor(floatValue);
-        entity.SetBehavior<TBehavior, TBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
-        );
-        return true;
-    }
-
-    /// <summary>
-    /// Generic helper for applying single-value int behaviors.
-    /// Eliminates duplication for integer-based mutations.
-    /// </summary>
-    private static bool ApplyIntBehavior<TBehavior>(
-        ushort entityIndex, 
-        JsonNode value, 
-        string fieldName,
-        Func<int, TBehavior> behaviorConstructor
-    )
-        where TBehavior : struct
-    {
-        if (!value.TryGetIntWithError(entityIndex, fieldName, out var intValue))
-        {
-            return false;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
-            return false;
-        }
-
-        var behavior = behaviorConstructor(intValue);
         entity.SetBehavior<TBehavior, TBehavior>(
             in behavior,
             static (ref readonly _b, ref b) => b = _b
