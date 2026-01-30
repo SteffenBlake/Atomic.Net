@@ -352,7 +352,11 @@ public static class JsonEntityConverter
             var x = mutEntity.Value.Transform.Value.Position.Value.X.Value;
             entity.SetBehavior<TransformBehavior, float>(
                 in x,
-                static (ref readonly float _x, ref TransformBehavior b) => b = b with { Position = b.Position with { X = _x } }
+                static (ref readonly float _x, ref TransformBehavior b) =>
+                {
+                    var newPosition = b.Position with { X = _x };
+                    b = b with { Position = newPosition };
+                }
             );
         }
         
