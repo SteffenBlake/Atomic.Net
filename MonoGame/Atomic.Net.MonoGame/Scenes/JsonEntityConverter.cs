@@ -107,7 +107,10 @@ public static class JsonEntityConverter
         }
 
         // Deserialize entire entity structure at once
-        var mutEntity = entityObj.Deserialize<MutEntity>(JsonSerializerOptions.Web);
+        if (!TryDeserializeMutEntity(entityObj, out var mutEntity))
+        {
+            return;
+        }
 
         // Id
         if (mutEntity.Id != null)
@@ -189,179 +192,134 @@ public static class JsonEntityConverter
             }
         }
 
-        // Transform
-        if (mutEntity.Transform.HasValue)
+        // Transform - Position.X
+        if (mutEntity.Transform?.Position?.X.HasValue ?? false)
         {
-            var transform = mutEntity.Transform.Value;
-            
-            // Position.X
-            if (transform.Position.HasValue && transform.Position.Value.X.HasValue)
-            {
-                var x = transform.Position.Value.X.Value;
-                entity.SetBehavior<TransformBehavior, float>(
-                    in x,
-                    static (ref readonly float _x, ref TransformBehavior b) => b = b with
-                    {
-                        Position = b.Position with { X = _x }
-                    }
-                );
-            }
-            
-            // Position.Y
-            if (transform.Position.HasValue && transform.Position.Value.Y.HasValue)
-            {
-                var y = transform.Position.Value.Y.Value;
-                entity.SetBehavior<TransformBehavior, float>(
-                    in y,
-                    static (ref readonly float _y, ref TransformBehavior b) => b = b with
-                    {
-                        Position = b.Position with { Y = _y }
-                    }
-                );
-            }
-            
-            // Position.Z
-            if (transform.Position.HasValue && transform.Position.Value.Z.HasValue)
-            {
-                var z = transform.Position.Value.Z.Value;
-                entity.SetBehavior<TransformBehavior, float>(
-                    in z,
-                    static (ref readonly float _z, ref TransformBehavior b) => b = b with
-                    {
-                        Position = b.Position with { Z = _z }
-                    }
-                );
-            }
+            var x = mutEntity.Transform.Value.Position.Value.X.Value;
+            entity.SetBehavior<TransformBehavior, float>(
+                in x,
+                static (ref readonly float _x, ref TransformBehavior b) => b = b with { Position = b.Position with { X = _x } }
+            );
+        }
+        
+        // Transform - Position.Y
+        if (mutEntity.Transform?.Position?.Y.HasValue ?? false)
+        {
+            var y = mutEntity.Transform.Value.Position.Value.Y.Value;
+            entity.SetBehavior<TransformBehavior, float>(
+                in y,
+                static (ref readonly float _y, ref TransformBehavior b) => b = b with { Position = b.Position with { Y = _y } }
+            );
+        }
+        
+        // Transform - Position.Z
+        if (mutEntity.Transform?.Position?.Z.HasValue ?? false)
+        {
+            var z = mutEntity.Transform.Value.Position.Value.Z.Value;
+            entity.SetBehavior<TransformBehavior, float>(
+                in z,
+                static (ref readonly float _z, ref TransformBehavior b) => b = b with { Position = b.Position with { Z = _z } }
+            );
+        }
 
-            // Rotation.X
-            if (transform.Rotation.HasValue && transform.Rotation.Value.X.HasValue)
-            {
-                var x = transform.Rotation.Value.X.Value;
-                entity.SetBehavior<TransformBehavior, float>(
-                    in x,
-                    static (ref readonly float _x, ref TransformBehavior b) => b = b with
-                    {
-                        Rotation = b.Rotation with { X = _x }
-                    }
-                );
-            }
-            
-            // Rotation.Y
-            if (transform.Rotation.HasValue && transform.Rotation.Value.Y.HasValue)
-            {
-                var y = transform.Rotation.Value.Y.Value;
-                entity.SetBehavior<TransformBehavior, float>(
-                    in y,
-                    static (ref readonly float _y, ref TransformBehavior b) => b = b with
-                    {
-                        Rotation = b.Rotation with { Y = _y }
-                    }
-                );
-            }
-            
-            // Rotation.Z
-            if (transform.Rotation.HasValue && transform.Rotation.Value.Z.HasValue)
-            {
-                var z = transform.Rotation.Value.Z.Value;
-                entity.SetBehavior<TransformBehavior, float>(
-                    in z,
-                    static (ref readonly float _z, ref TransformBehavior b) => b = b with
-                    {
-                        Rotation = b.Rotation with { Z = _z }
-                    }
-                );
-            }
-            
-            // Rotation.W
-            if (transform.Rotation.HasValue && transform.Rotation.Value.W.HasValue)
-            {
-                var w = transform.Rotation.Value.W.Value;
-                entity.SetBehavior<TransformBehavior, float>(
-                    in w,
-                    static (ref readonly float _w, ref TransformBehavior b) => b = b with
-                    {
-                        Rotation = b.Rotation with { W = _w }
-                    }
-                );
-            }
+        // Transform - Rotation.X
+        if (mutEntity.Transform?.Rotation?.X.HasValue ?? false)
+        {
+            var x = mutEntity.Transform.Value.Rotation.Value.X.Value;
+            entity.SetBehavior<TransformBehavior, float>(
+                in x,
+                static (ref readonly float _x, ref TransformBehavior b) => b = b with { Rotation = b.Rotation with { X = _x } }
+            );
+        }
+        
+        // Transform - Rotation.Y
+        if (mutEntity.Transform?.Rotation?.Y.HasValue ?? false)
+        {
+            var y = mutEntity.Transform.Value.Rotation.Value.Y.Value;
+            entity.SetBehavior<TransformBehavior, float>(
+                in y,
+                static (ref readonly float _y, ref TransformBehavior b) => b = b with { Rotation = b.Rotation with { Y = _y } }
+            );
+        }
+        
+        // Transform - Rotation.Z
+        if (mutEntity.Transform?.Rotation?.Z.HasValue ?? false)
+        {
+            var z = mutEntity.Transform.Value.Rotation.Value.Z.Value;
+            entity.SetBehavior<TransformBehavior, float>(
+                in z,
+                static (ref readonly float _z, ref TransformBehavior b) => b = b with { Rotation = b.Rotation with { Z = _z } }
+            );
+        }
+        
+        // Transform - Rotation.W
+        if (mutEntity.Transform?.Rotation?.W.HasValue ?? false)
+        {
+            var w = mutEntity.Transform.Value.Rotation.Value.W.Value;
+            entity.SetBehavior<TransformBehavior, float>(
+                in w,
+                static (ref readonly float _w, ref TransformBehavior b) => b = b with { Rotation = b.Rotation with { W = _w } }
+            );
+        }
 
-            // Scale.X
-            if (transform.Scale.HasValue && transform.Scale.Value.X.HasValue)
-            {
-                var x = transform.Scale.Value.X.Value;
-                entity.SetBehavior<TransformBehavior, float>(
-                    in x,
-                    static (ref readonly float _x, ref TransformBehavior b) => b = b with
-                    {
-                        Scale = b.Scale with { X = _x }
-                    }
-                );
-            }
-            
-            // Scale.Y
-            if (transform.Scale.HasValue && transform.Scale.Value.Y.HasValue)
-            {
-                var y = transform.Scale.Value.Y.Value;
-                entity.SetBehavior<TransformBehavior, float>(
-                    in y,
-                    static (ref readonly float _y, ref TransformBehavior b) => b = b with
-                    {
-                        Scale = b.Scale with { Y = _y }
-                    }
-                );
-            }
-            
-            // Scale.Z
-            if (transform.Scale.HasValue && transform.Scale.Value.Z.HasValue)
-            {
-                var z = transform.Scale.Value.Z.Value;
-                entity.SetBehavior<TransformBehavior, float>(
-                    in z,
-                    static (ref readonly float _z, ref TransformBehavior b) => b = b with
-                    {
-                        Scale = b.Scale with { Z = _z }
-                    }
-                );
-            }
+        // Transform - Scale.X
+        if (mutEntity.Transform?.Scale?.X.HasValue ?? false)
+        {
+            var x = mutEntity.Transform.Value.Scale.Value.X.Value;
+            entity.SetBehavior<TransformBehavior, float>(
+                in x,
+                static (ref readonly float _x, ref TransformBehavior b) => b = b with { Scale = b.Scale with { X = _x } }
+            );
+        }
+        
+        // Transform - Scale.Y
+        if (mutEntity.Transform?.Scale?.Y.HasValue ?? false)
+        {
+            var y = mutEntity.Transform.Value.Scale.Value.Y.Value;
+            entity.SetBehavior<TransformBehavior, float>(
+                in y,
+                static (ref readonly float _y, ref TransformBehavior b) => b = b with { Scale = b.Scale with { Y = _y } }
+            );
+        }
+        
+        // Transform - Scale.Z
+        if (mutEntity.Transform?.Scale?.Z.HasValue ?? false)
+        {
+            var z = mutEntity.Transform.Value.Scale.Value.Z.Value;
+            entity.SetBehavior<TransformBehavior, float>(
+                in z,
+                static (ref readonly float _z, ref TransformBehavior b) => b = b with { Scale = b.Scale with { Z = _z } }
+            );
+        }
 
-            // Anchor.X
-            if (transform.Anchor.HasValue && transform.Anchor.Value.X.HasValue)
-            {
-                var x = transform.Anchor.Value.X.Value;
-                entity.SetBehavior<TransformBehavior, float>(
-                    in x,
-                    static (ref readonly float _x, ref TransformBehavior b) => b = b with
-                    {
-                        Anchor = b.Anchor with { X = _x }
-                    }
-                );
-            }
-            
-            // Anchor.Y
-            if (transform.Anchor.HasValue && transform.Anchor.Value.Y.HasValue)
-            {
-                var y = transform.Anchor.Value.Y.Value;
-                entity.SetBehavior<TransformBehavior, float>(
-                    in y,
-                    static (ref readonly float _y, ref TransformBehavior b) => b = b with
-                    {
-                        Anchor = b.Anchor with { Y = _y }
-                    }
-                );
-            }
-            
-            // Anchor.Z
-            if (transform.Anchor.HasValue && transform.Anchor.Value.Z.HasValue)
-            {
-                var z = transform.Anchor.Value.Z.Value;
-                entity.SetBehavior<TransformBehavior, float>(
-                    in z,
-                    static (ref readonly float _z, ref TransformBehavior b) => b = b with
-                    {
-                        Anchor = b.Anchor with { Z = _z }
-                    }
-                );
-            }
+        // Transform - Anchor.X
+        if (mutEntity.Transform?.Anchor?.X.HasValue ?? false)
+        {
+            var x = mutEntity.Transform.Value.Anchor.Value.X.Value;
+            entity.SetBehavior<TransformBehavior, float>(
+                in x,
+                static (ref readonly float _x, ref TransformBehavior b) => b = b with { Anchor = b.Anchor with { X = _x } }
+            );
+        }
+        
+        // Transform - Anchor.Y
+        if (mutEntity.Transform?.Anchor?.Y.HasValue ?? false)
+        {
+            var y = mutEntity.Transform.Value.Anchor.Value.Y.Value;
+            entity.SetBehavior<TransformBehavior, float>(
+                in y,
+                static (ref readonly float _y, ref TransformBehavior b) => b = b with { Anchor = b.Anchor with { Y = _y } }
+            );
+        }
+        
+        // Transform - Anchor.Z
+        if (mutEntity.Transform?.Anchor?.Z.HasValue ?? false)
+        {
+            var z = mutEntity.Transform.Value.Anchor.Value.Z.Value;
+            entity.SetBehavior<TransformBehavior, float>(
+                in z,
+                static (ref readonly float _z, ref TransformBehavior b) => b = b with { Anchor = b.Anchor with { Z = _z } }
+            );
         }
 
         // Parent
@@ -846,6 +804,21 @@ public static class JsonEntityConverter
         {
             entityObj["flexWidth"] = width.Value.Value;
             entityObj["flexWidthPercent"] = width.Value.Percent;
+        }
+    }
+
+    private static bool TryDeserializeMutEntity(JsonObject entityObj, out MutEntity mutEntity)
+    {
+        try
+        {
+            mutEntity = entityObj.Deserialize<MutEntity>(JsonSerializerOptions.Web);
+            return true;
+        }
+        catch (JsonException ex)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent($"Entity mutation deserialization failed: {ex.Message}"));
+            mutEntity = default;
+            return false;
         }
     }
 }
