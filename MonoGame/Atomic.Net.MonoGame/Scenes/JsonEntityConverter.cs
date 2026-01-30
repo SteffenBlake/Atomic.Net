@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Nodes;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
@@ -97,9 +98,140 @@ public static class JsonEntityConverter
             return;
         }
 
-        // TODO: Implement writing each behavior back to the entity
-        // This will be implemented in the next phase
-        throw new NotImplementedException("JsonEntityConverter.Write not yet implemented");
+        // Write properties
+        if (entityObj.TryGetPropertyValue("properties", out var propertiesNode) && propertiesNode is JsonObject propertiesObj)
+        {
+            WriteProperties(entity, propertiesObj);
+        }
+
+        // Write ID
+        if (entityObj.TryGetPropertyValue("id", out var idNode) && idNode is JsonValue idValue)
+        {
+            WriteId(entity, idValue);
+        }
+
+        // Write tags
+        if (entityObj.TryGetPropertyValue("tags", out var tagsNode) && tagsNode is JsonArray tagsArray)
+        {
+            WriteTags(entity, tagsArray);
+        }
+
+        // Write parent
+        if (entityObj.TryGetPropertyValue("parent", out var parentNode) && parentNode is JsonValue parentValue)
+        {
+            WriteParent(entity, parentValue);
+        }
+
+        // Write transform
+        if (entityObj.TryGetPropertyValue("transform", out var transformNode) && transformNode is JsonObject transformObj)
+        {
+            WriteTransform(entity, transformObj);
+        }
+
+        // Write flex behaviors
+        WriteFlexBehaviors(entity, entityObj);
+    }
+
+    private static void WriteProperties(Entity entity, JsonObject propertiesObj)
+    {
+        foreach (var (key, value) in propertiesObj)
+        {
+            if (value is null)
+            {
+                continue;
+            }
+
+            if (!TryConvertToPropertyValue(value, out var propertyValue))
+            {
+                continue;
+            }
+
+            var setter = (key, propertyValue.Value);
+            entity.SetBehavior<PropertiesBehavior, (string Key, PropertyValue Value)>(
+                ref setter,
+                static (ref readonly _setter, ref b) => b = b with { 
+                    Properties = b.Properties.With(_setter.Key, _setter.Value) 
+                }
+            );
+        }
+    }
+
+    private static bool TryConvertToPropertyValue(
+        JsonNode value,
+        [NotNullWhen(true)]
+        out PropertyValue? propertyValue
+    )
+    {
+        if (value is not JsonValue jsonValue)
+        {
+            propertyValue = null;
+            return false;
+        }
+
+        if (jsonValue.TryGetValue<bool>(out var boolVal))
+        {
+            propertyValue = boolVal;
+            return true;
+        }
+
+        if (jsonValue.TryGetValue<decimal>(out var decimalVal))
+        {
+            propertyValue = (float)decimalVal;
+            return true;
+        }
+        
+        if (jsonValue.TryGetValue<float>(out var floatVal))
+        {
+            propertyValue = floatVal;
+            return true;
+        }
+        
+        if (jsonValue.TryGetValue<double>(out var doubleVal))
+        {
+            propertyValue = (float)doubleVal;
+            return true;
+        }
+        
+        if (jsonValue.TryGetValue<int>(out var intVal))
+        {
+            propertyValue = (float)intVal;
+            return true;
+        }
+
+        if (jsonValue.TryGetValue<string>(out var stringVal))
+        {
+            propertyValue = stringVal;
+            return true;
+        }
+
+        propertyValue = null;
+        return false;
+    }
+
+    // Stub implementations for other behaviors - can be expanded later
+    private static void WriteId(Entity entity, JsonValue idValue)
+    {
+        // TODO: Implement ID writing
+    }
+
+    private static void WriteTags(Entity entity, JsonArray tagsArray)
+    {
+        // TODO: Implement tags writing
+    }
+
+    private static void WriteParent(Entity entity, JsonValue parentValue)
+    {
+        // TODO: Implement parent writing
+    }
+
+    private static void WriteTransform(Entity entity, JsonObject transformObj)
+    {
+        // TODO: Implement transform writing
+    }
+
+    private static void WriteFlexBehaviors(Entity entity, JsonObject entityObj)
+    {
+        // TODO: Implement flex behaviors writing
     }
 
     private static JsonObject SerializeVector3(Microsoft.Xna.Framework.Vector3 vector)
