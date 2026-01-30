@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
@@ -95,6 +96,8 @@ public static class JsonEntityConverter
 
     /// <summary>
     /// Writes mutations from a JsonNode back to the real Entity.
+    /// Deserializes the entire entity structure at once using Mut Entity structs,
+    /// then applies mutations using simple if-checks with null coalescing.
     /// </summary>
     public static void Write(JsonNode jsonEntity, Entity entity)
     {
@@ -103,279 +106,286 @@ public static class JsonEntityConverter
             return;
         }
 
-        // Write properties
-        if (entityObj.TryGetPropertyValue("properties", out var propertiesNode) && propertiesNode is JsonObject propertiesObj)
+        // Deserialize entire entity structure at once
+        var mutEntity = entityObj.Deserialize<MutEntity>(JsonSerializerOptions.Web);
+
+        // Id
+        if (mutEntity.Id != null)
         {
-            WriteProperties(entity, propertiesObj);
-        }
-
-        // Write ID
-        if (entityObj.TryGetPropertyValue("id", out var idNode) && idNode is JsonValue idValue)
-        {
-            WriteId(entity, idValue);
-        }
-
-        // Write tags
-        if (entityObj.TryGetPropertyValue("tags", out var tagsNode) && tagsNode is JsonArray tagsArray)
-        {
-            WriteTags(entity, tagsArray);
-        }
-
-        // Write parent
-        if (entityObj.TryGetPropertyValue("parent", out var parentNode) && parentNode is JsonValue parentValue)
-        {
-            WriteParent(entity, parentValue);
-        }
-
-        // Write transform
-        if (entityObj.TryGetPropertyValue("transform", out var transformNode) && transformNode is JsonObject transformObj)
-        {
-            WriteTransform(entity, transformObj);
-        }
-
-        // Write flex behaviors
-        WriteFlexBehaviors(entity, entityObj);
-    }
-
-    private static void WriteProperties(Entity entity, JsonObject propertiesObj)
-    {
-        foreach (var (key, value) in propertiesObj)
-        {
-            if (value is null)
-            {
-                continue;
-            }
-
-            if (!TryConvertToPropertyValue(value, out var propertyValue))
-            {
-                continue;
-            }
-
-            var setter = (key, propertyValue.Value);
-            entity.SetBehavior<PropertiesBehavior, (string Key, PropertyValue Value)>(
-                in setter,
-                static (ref readonly (string Key, PropertyValue Value) _setter, ref PropertiesBehavior b) => b = b with { 
-                    Properties = b.Properties.With(_setter.Key, _setter.Value) 
-                }
+            var newId = mutEntity.Id;
+            entity.SetBehavior<IdBehavior, string>(
+                in newId,
+                static (ref readonly string _newId, ref IdBehavior b) => b = new IdBehavior(_newId)
             );
         }
-    }
 
-    private static bool TryConvertToPropertyValue(
-        JsonNode value,
-        [NotNullWhen(true)]
-        out PropertyValue? propertyValue
-    )
-    {
-        if (value is not JsonValue jsonValue)
+        // Tags
+        if (mutEntity.Tags != null)
         {
-            propertyValue = null;
-            return false;
-        }
-
-        if (jsonValue.TryGetValue<bool>(out var boolVal))
-        {
-            propertyValue = boolVal;
-            return true;
-        }
-
-        if (jsonValue.TryGetValue<decimal>(out var decimalVal))
-        {
-            propertyValue = (float)decimalVal;
-            return true;
-        }
-        
-        if (jsonValue.TryGetValue<float>(out var floatVal))
-        {
-            propertyValue = floatVal;
-            return true;
-        }
-        
-        if (jsonValue.TryGetValue<double>(out var doubleVal))
-        {
-            propertyValue = (float)doubleVal;
-            return true;
-        }
-        
-        if (jsonValue.TryGetValue<int>(out var intVal))
-        {
-            propertyValue = (float)intVal;
-            return true;
-        }
-
-        if (jsonValue.TryGetValue<string>(out var stringVal))
-        {
-            propertyValue = stringVal;
-            return true;
-        }
-
-        propertyValue = null;
-        return false;
-    }
-
-    private static void WriteId(Entity entity, JsonValue idValue)
-    {
-        if (!idValue.TryGetValue<string>(out var newId))
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"ID mutation failed: expected string value, got {idValue.GetValueKind()}"
-            ));
-            return;
-        }
-
-        entity.SetBehavior<IdBehavior, string>(
-            in newId,
-            static (ref readonly _newId, ref b) => b = new IdBehavior(_newId)
-        );
-    }
-
-    private static void WriteTags(Entity entity, JsonArray tagsArray)
-    {
-        // First clear existing tags
-        entity.SetBehavior<TagsBehavior>(
-            static (ref b) => b = b with { Tags = b.Tags.Clear() }
-        );
-
-        // Then add each valid tag
-        var hasInvalidTag = false;
-        foreach (var tagNode in tagsArray)
-        {
-            if (tagNode is JsonValue tagValue && tagValue.TryGetValue<string>(out var tag))
+            entity.SetBehavior<TagsBehavior>(static (ref b) => b = b with { Tags = b.Tags.Clear() });
+            
+            foreach (var tagNode in mutEntity.Tags)
             {
+                if (tagNode == null)
+                {
+                    EventBus<ErrorEvent>.Push(new ErrorEvent("Tags mutation failed: tag cannot be null"));
+                    continue;
+                }
+
+                if (tagNode.GetValueKind() != System.Text.Json.JsonValueKind.String)
+                {
+                    EventBus<ErrorEvent>.Push(new ErrorEvent($"Tags mutation failed: expected string, got {tagNode.GetValueKind()}"));
+                    continue;
+                }
+
+                var tag = tagNode.GetValue<string>();
                 entity.SetBehavior<TagsBehavior, string>(
                     in tag,
                     static (ref readonly _tag, ref b) => b = b with { Tags = b.Tags.With(_tag) }
                 );
             }
+        }
+
+        // Properties
+        if (mutEntity.Properties != null)
+        {
+            foreach (KeyValuePair<string, JsonNode> kvp in mutEntity.Properties)
+            {
+                var key = kvp.Key;
+                var valueNode = kvp.Value;
+                
+                if (valueNode == null)
+                {
+                    continue;
+                }
+
+                PropertyValue? propValue = null;
+
+                if (valueNode is JsonValue jsonValue)
+                {
+                    if (jsonValue.TryGetValue<string>(out var strValue))
+                    {
+                        propValue = new PropertyValue(strValue);
+                    }
+                    else if (jsonValue.TryGetFloatValue(out var floatValue))
+                    {
+                        propValue = new PropertyValue(floatValue);
+                    }
+                    else if (jsonValue.TryGetValue<bool>(out var boolValue))
+                    {
+                        propValue = new PropertyValue(boolValue);
+                    }
+                }
+
+                if (propValue.HasValue)
+                {
+                    var data = (key, propValue.Value);
+                    entity.SetBehavior<PropertiesBehavior, (string Key, PropertyValue Value)>(
+                        in data,
+                        static (ref readonly (string Key, PropertyValue Value) _data, ref PropertiesBehavior b) =>
+                            b = b with { Properties = b.Properties.With(_data.Key, _data.Value) }
+                    );
+                }
+            }
+        }
+
+        // Transform
+        if (mutEntity.Transform.HasValue)
+        {
+            var transform = mutEntity.Transform.Value;
+            
+            // Position.X
+            if (transform.Position.HasValue && transform.Position.Value.X.HasValue)
+            {
+                var x = transform.Position.Value.X.Value;
+                entity.SetBehavior<TransformBehavior, float>(
+                    in x,
+                    static (ref readonly float _x, ref TransformBehavior b) => b = b with
+                    {
+                        Position = b.Position with { X = _x }
+                    }
+                );
+            }
+            
+            // Position.Y
+            if (transform.Position.HasValue && transform.Position.Value.Y.HasValue)
+            {
+                var y = transform.Position.Value.Y.Value;
+                entity.SetBehavior<TransformBehavior, float>(
+                    in y,
+                    static (ref readonly float _y, ref TransformBehavior b) => b = b with
+                    {
+                        Position = b.Position with { Y = _y }
+                    }
+                );
+            }
+            
+            // Position.Z
+            if (transform.Position.HasValue && transform.Position.Value.Z.HasValue)
+            {
+                var z = transform.Position.Value.Z.Value;
+                entity.SetBehavior<TransformBehavior, float>(
+                    in z,
+                    static (ref readonly float _z, ref TransformBehavior b) => b = b with
+                    {
+                        Position = b.Position with { Z = _z }
+                    }
+                );
+            }
+
+            // Rotation.X
+            if (transform.Rotation.HasValue && transform.Rotation.Value.X.HasValue)
+            {
+                var x = transform.Rotation.Value.X.Value;
+                entity.SetBehavior<TransformBehavior, float>(
+                    in x,
+                    static (ref readonly float _x, ref TransformBehavior b) => b = b with
+                    {
+                        Rotation = b.Rotation with { X = _x }
+                    }
+                );
+            }
+            
+            // Rotation.Y
+            if (transform.Rotation.HasValue && transform.Rotation.Value.Y.HasValue)
+            {
+                var y = transform.Rotation.Value.Y.Value;
+                entity.SetBehavior<TransformBehavior, float>(
+                    in y,
+                    static (ref readonly float _y, ref TransformBehavior b) => b = b with
+                    {
+                        Rotation = b.Rotation with { Y = _y }
+                    }
+                );
+            }
+            
+            // Rotation.Z
+            if (transform.Rotation.HasValue && transform.Rotation.Value.Z.HasValue)
+            {
+                var z = transform.Rotation.Value.Z.Value;
+                entity.SetBehavior<TransformBehavior, float>(
+                    in z,
+                    static (ref readonly float _z, ref TransformBehavior b) => b = b with
+                    {
+                        Rotation = b.Rotation with { Z = _z }
+                    }
+                );
+            }
+            
+            // Rotation.W
+            if (transform.Rotation.HasValue && transform.Rotation.Value.W.HasValue)
+            {
+                var w = transform.Rotation.Value.W.Value;
+                entity.SetBehavior<TransformBehavior, float>(
+                    in w,
+                    static (ref readonly float _w, ref TransformBehavior b) => b = b with
+                    {
+                        Rotation = b.Rotation with { W = _w }
+                    }
+                );
+            }
+
+            // Scale.X
+            if (transform.Scale.HasValue && transform.Scale.Value.X.HasValue)
+            {
+                var x = transform.Scale.Value.X.Value;
+                entity.SetBehavior<TransformBehavior, float>(
+                    in x,
+                    static (ref readonly float _x, ref TransformBehavior b) => b = b with
+                    {
+                        Scale = b.Scale with { X = _x }
+                    }
+                );
+            }
+            
+            // Scale.Y
+            if (transform.Scale.HasValue && transform.Scale.Value.Y.HasValue)
+            {
+                var y = transform.Scale.Value.Y.Value;
+                entity.SetBehavior<TransformBehavior, float>(
+                    in y,
+                    static (ref readonly float _y, ref TransformBehavior b) => b = b with
+                    {
+                        Scale = b.Scale with { Y = _y }
+                    }
+                );
+            }
+            
+            // Scale.Z
+            if (transform.Scale.HasValue && transform.Scale.Value.Z.HasValue)
+            {
+                var z = transform.Scale.Value.Z.Value;
+                entity.SetBehavior<TransformBehavior, float>(
+                    in z,
+                    static (ref readonly float _z, ref TransformBehavior b) => b = b with
+                    {
+                        Scale = b.Scale with { Z = _z }
+                    }
+                );
+            }
+
+            // Anchor.X
+            if (transform.Anchor.HasValue && transform.Anchor.Value.X.HasValue)
+            {
+                var x = transform.Anchor.Value.X.Value;
+                entity.SetBehavior<TransformBehavior, float>(
+                    in x,
+                    static (ref readonly float _x, ref TransformBehavior b) => b = b with
+                    {
+                        Anchor = b.Anchor with { X = _x }
+                    }
+                );
+            }
+            
+            // Anchor.Y
+            if (transform.Anchor.HasValue && transform.Anchor.Value.Y.HasValue)
+            {
+                var y = transform.Anchor.Value.Y.Value;
+                entity.SetBehavior<TransformBehavior, float>(
+                    in y,
+                    static (ref readonly float _y, ref TransformBehavior b) => b = b with
+                    {
+                        Anchor = b.Anchor with { Y = _y }
+                    }
+                );
+            }
+            
+            // Anchor.Z
+            if (transform.Anchor.HasValue && transform.Anchor.Value.Z.HasValue)
+            {
+                var z = transform.Anchor.Value.Z.Value;
+                entity.SetBehavior<TransformBehavior, float>(
+                    in z,
+                    static (ref readonly float _z, ref TransformBehavior b) => b = b with
+                    {
+                        Anchor = b.Anchor with { Z = _z }
+                    }
+                );
+            }
+        }
+
+        // Parent
+        if (mutEntity.Parent != null)
+        {
+            if (!SelectorRegistry.Instance.TryParse(mutEntity.Parent, out var parentSelector))
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent($"Parent mutation failed: invalid selector '{mutEntity.Parent}'"));
+            }
             else
             {
-                hasInvalidTag = true;
+                entity.SetBehavior<ParentBehavior, EntitySelector>(
+                    in parentSelector,
+                    static (ref readonly EntitySelector _selector, ref ParentBehavior b) => b = new ParentBehavior(_selector)
+                );
             }
         }
 
-        if (hasInvalidTag)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Tags mutation failed: all tags must be string values"
-            ));
-        }
-    }
-
-    private static void WriteParent(Entity entity, JsonValue parentValue)
-    {
-        if (!parentValue.TryGetValue<string>(out var parentSelector))
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Parent mutation failed: expected string selector value"
-            ));
-            return;
-        }
-
-        if (!SelectorRegistry.Instance.TryParse(parentSelector, out var selector))
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Parent mutation failed: invalid selector syntax '{parentSelector}'"
-            ));
-            return;
-        }
-
-        entity.SetBehavior<ParentBehavior, EntitySelector>(
-            in selector,
-            static (ref readonly EntitySelector _selector, ref ParentBehavior b) => b = b with { ParentSelector = _selector }
-        );
-    }
-
-    private readonly record struct TransformData(Vector3 Position, Quaternion Rotation, Vector3 Scale, Vector3 Anchor);
-
-    private static void WriteTransform(Entity entity, JsonObject transformObj)
-    {
-        // Get current transform or use defaults if not present
-        entity.TryGetBehavior<TransformBehavior>(out var currentTransformNullable);
-        var currentTransform = currentTransformNullable ?? default(TransformBehavior);
-        
-        var position = currentTransform.Position;
-        var rotation = currentTransform.Rotation;
-        var scale = currentTransform.Scale;
-        var anchor = currentTransform.Anchor;
-        var hasError = false;
-
-        // Update position if present
-        if (transformObj.TryGetPropertyValue("position", out var positionNode) && positionNode is JsonObject positionObj)
-        {
-            if (!positionObj.TryGetVector3Value(position, out position))
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Transform position mutation failed: expected numeric x/y/z values"
-                ));
-                hasError = true;
-            }
-        }
-
-        // Update rotation if present
-        if (transformObj.TryGetPropertyValue("rotation", out var rotationNode) && rotationNode is JsonObject rotationObj)
-        {
-            if (!rotationObj.TryGetQuaternionValue(rotation, out rotation))
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Transform rotation mutation failed: expected numeric x/y/z/w values"
-                ));
-                hasError = true;
-            }
-        }
-
-        // Update scale if present
-        if (transformObj.TryGetPropertyValue("scale", out var scaleNode) && scaleNode is JsonObject scaleObj)
-        {
-            if (!scaleObj.TryGetVector3Value(scale, out scale))
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Transform scale mutation failed: expected numeric x/y/z values"
-                ));
-                hasError = true;
-            }
-        }
-
-        // Update anchor if present
-        if (transformObj.TryGetPropertyValue("anchor", out var anchorNode) && anchorNode is JsonObject anchorObj)
-        {
-            if (!anchorObj.TryGetVector3Value(anchor, out anchor))
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Transform anchor mutation failed: expected numeric x/y/z values"
-                ));
-                hasError = true;
-            }
-        }
-
-        // Only apply if no errors
-        if (!hasError)
-        {
-            var data = new TransformData(position, rotation, scale, anchor);
-            entity.SetBehavior<TransformBehavior, TransformData>(
-                in data,
-                static (ref readonly _data, ref b) => b = b with 
-                {
-                    Position = _data.Position,
-                    Rotation = _data.Rotation,
-                    Scale = _data.Scale,
-                    Anchor = _data.Anchor
-                }
-            );
-        }
-    }
-
-
-    private static void WriteFlexBehaviors(Entity entity, JsonObject entityObj)
-    {
         // FlexAlignItems
-        if (entityObj.TryGetPropertyValue("flexAlignItems", out var alignItemsNode) && alignItemsNode is JsonValue alignItemsValue)
+        if (mutEntity.FlexAlignItems != null)
         {
-            if (!alignItemsValue.TryGetValue<string>(out var alignItemsStr) || 
-                !Enum.TryParse<Align>(alignItemsStr, true, out var alignItems))
+            if (!Enum.TryParse<Align>(mutEntity.FlexAlignItems, true, out var alignItems))
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"FlexAlignItems mutation failed: expected valid Align enum value"
-                ));
+                EventBus<ErrorEvent>.Push(new ErrorEvent($"FlexAlignItems mutation failed: expected valid Align enum value"));
             }
             else
             {
@@ -387,14 +397,11 @@ public static class JsonEntityConverter
         }
 
         // FlexAlignSelf
-        if (entityObj.TryGetPropertyValue("flexAlignSelf", out var alignSelfNode) && alignSelfNode is JsonValue alignSelfValue)
+        if (mutEntity.FlexAlignSelf != null)
         {
-            if (!alignSelfValue.TryGetValue<string>(out var alignSelfStr) || 
-                !Enum.TryParse<Align>(alignSelfStr, true, out var alignSelf))
+            if (!Enum.TryParse<Align>(mutEntity.FlexAlignSelf, true, out var alignSelf))
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"FlexAlignSelf mutation failed: expected valid Align enum value"
-                ));
+                EventBus<ErrorEvent>.Push(new ErrorEvent($"FlexAlignSelf mutation failed: expected valid Align enum value"));
             }
             else
             {
@@ -406,74 +413,51 @@ public static class JsonEntityConverter
         }
 
         // FlexBorderBottom
-        if (entityObj.TryGetPropertyValue("flexBorderBottom", out var borderBottomNode) && borderBottomNode is JsonValue borderBottomValue)
+        if (mutEntity.FlexBorderBottom.HasValue)
         {
-            if (!borderBottomValue.TryGetFloatValue(out var borderBottom))
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"FlexBorderBottom mutation failed: expected numeric value"
-                ));
-            }
-            else
-            {
-                entity.SetBehavior<FlexBorderBottomBehavior, float>(
-                    in borderBottom,
-                    static (ref readonly float val, ref FlexBorderBottomBehavior b) => b = new FlexBorderBottomBehavior(val)
-                );
-            }
+            var borderBottom = mutEntity.FlexBorderBottom.Value;
+            entity.SetBehavior<FlexBorderBottomBehavior, float>(
+                in borderBottom,
+                static (ref readonly float val, ref FlexBorderBottomBehavior b) => b = new FlexBorderBottomBehavior(val)
+            );
         }
 
         // FlexBorderLeft
-        if (entityObj.TryGetPropertyValue("flexBorderLeft", out var borderLeftNode) && borderLeftNode is JsonValue borderLeftValue)
+        if (mutEntity.FlexBorderLeft.HasValue)
         {
-            if (!borderLeftValue.TryGetFloatValue(out var borderLeft))
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"FlexBorderLeft mutation failed: expected numeric value"
-                ));
-            }
-            else
-            {
-                entity.SetBehavior<FlexBorderLeftBehavior, float>(
-                    in borderLeft,
-                    static (ref readonly float val, ref FlexBorderLeftBehavior b) => b = new FlexBorderLeftBehavior(val)
-                );
-            }
+            var borderLeft = mutEntity.FlexBorderLeft.Value;
+            entity.SetBehavior<FlexBorderLeftBehavior, float>(
+                in borderLeft,
+                static (ref readonly float val, ref FlexBorderLeftBehavior b) => b = new FlexBorderLeftBehavior(val)
+            );
         }
 
         // FlexBorderRight
-        if (entityObj.TryGetPropertyValue("flexBorderRight", out var borderRightNode) && borderRightNode is JsonValue borderRightValue)
+        if (mutEntity.FlexBorderRight.HasValue)
         {
-            if (borderRightValue.TryGetFloatValue(out var borderRight))
-            {
-                entity.SetBehavior<FlexBorderRightBehavior, float>(
-                    in borderRight,
-                    static (ref readonly float val, ref FlexBorderRightBehavior b) => b = new FlexBorderRightBehavior(val)
-                );
-            }
+            var borderRight = mutEntity.FlexBorderRight.Value;
+            entity.SetBehavior<FlexBorderRightBehavior, float>(
+                in borderRight,
+                static (ref readonly float val, ref FlexBorderRightBehavior b) => b = new FlexBorderRightBehavior(val)
+            );
         }
 
         // FlexBorderTop
-        if (entityObj.TryGetPropertyValue("flexBorderTop", out var borderTopNode) && borderTopNode is JsonValue borderTopValue)
+        if (mutEntity.FlexBorderTop.HasValue)
         {
-            if (borderTopValue.TryGetFloatValue(out var borderTop))
-            {
-                entity.SetBehavior<FlexBorderTopBehavior, float>(
-                    in borderTop,
-                    static (ref readonly float val, ref FlexBorderTopBehavior b) => b = new FlexBorderTopBehavior(val)
-                );
-            }
+            var borderTop = mutEntity.FlexBorderTop.Value;
+            entity.SetBehavior<FlexBorderTopBehavior, float>(
+                in borderTop,
+                static (ref readonly float val, ref FlexBorderTopBehavior b) => b = new FlexBorderTopBehavior(val)
+            );
         }
 
         // FlexDirection
-        if (entityObj.TryGetPropertyValue("flexDirection", out var directionNode) && directionNode is JsonValue directionValue)
+        if (mutEntity.FlexDirection != null)
         {
-            if (!directionValue.TryGetValue<string>(out var directionStr) || 
-                !Enum.TryParse<FlexDirection>(directionStr, true, out var direction))
+            if (!Enum.TryParse<FlexDirection>(mutEntity.FlexDirection, true, out var direction))
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"FlexDirection mutation failed: expected valid FlexDirection enum value"
-                ));
+                EventBus<ErrorEvent>.Push(new ErrorEvent($"FlexDirection mutation failed: expected valid FlexDirection enum value"));
             }
             else
             {
@@ -485,32 +469,21 @@ public static class JsonEntityConverter
         }
 
         // FlexGrow
-        if (entityObj.TryGetPropertyValue("flexGrow", out var growNode) && growNode is JsonValue growValue)
+        if (mutEntity.FlexGrow.HasValue)
         {
-            if (!growValue.TryGetFloatValue(out var grow))
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"FlexGrow mutation failed: expected numeric value"
-                ));
-            }
-            else
-            {
-                entity.SetBehavior<FlexGrowBehavior, float>(
-                    in grow,
-                    static (ref readonly float val, ref FlexGrowBehavior b) => b = new FlexGrowBehavior(val)
-                );
-            }
+            var grow = mutEntity.FlexGrow.Value;
+            entity.SetBehavior<FlexGrowBehavior, float>(
+                in grow,
+                static (ref readonly float val, ref FlexGrowBehavior b) => b = new FlexGrowBehavior(val)
+            );
         }
 
         // FlexWrap
-        if (entityObj.TryGetPropertyValue("flexWrap", out var wrapNode) && wrapNode is JsonValue wrapValue)
+        if (mutEntity.FlexWrap != null)
         {
-            if (!wrapValue.TryGetValue<string>(out var wrapStr) || 
-                !Enum.TryParse<Wrap>(wrapStr, true, out var wrap))
+            if (!Enum.TryParse<Wrap>(mutEntity.FlexWrap, true, out var wrap))
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"FlexWrap mutation failed: expected valid Wrap enum value"
-                ));
+                EventBus<ErrorEvent>.Push(new ErrorEvent($"FlexWrap mutation failed: expected valid Wrap enum value"));
             }
             else
             {
@@ -522,57 +495,33 @@ public static class JsonEntityConverter
         }
 
         // FlexZOverride
-        if (entityObj.TryGetPropertyValue("flexZOverride", out var zOverrideNode) && zOverrideNode is JsonValue zOverrideValue)
+        if (mutEntity.FlexZOverride.HasValue)
         {
-            if (!zOverrideValue.TryGetValue<int>(out var zOverride))
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"FlexZOverride mutation failed: expected integer value"
-                ));
-            }
-            else
-            {
-                entity.SetBehavior<FlexZOverride, int>(
-                    in zOverride,
-                    static (ref readonly int val, ref FlexZOverride b) => b = new FlexZOverride(val)
-                );
-            }
+            var zOverride = mutEntity.FlexZOverride.Value;
+            entity.SetBehavior<FlexZOverride, int>(
+                in zOverride,
+                static (ref readonly int val, ref FlexZOverride b) => b = new FlexZOverride(val)
+            );
         }
 
         // FlexHeight
-        if (entityObj.TryGetPropertyValue("flexHeight", out var heightNode) && heightNode is JsonValue heightValue)
+        if (mutEntity.FlexHeight.HasValue)
         {
-            if (!heightValue.TryGetFloatValue(out var height))
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"FlexHeight mutation failed: expected numeric value"
-                ));
-            }
-            else
-            {
-                var percent = false;
-                if (entityObj.TryGetPropertyValue("flexHeightPercent", out var heightPercentNode) && 
-                    heightPercentNode is JsonValue heightPercentValue)
-                {
-                    heightPercentValue.TryGetValue<bool>(out percent);
-                }
-                var data = (height, percent);
-                entity.SetBehavior<FlexHeightBehavior, (float, bool)>(
-                    in data,
-                    static (ref readonly (float Height, bool Percent) val, ref FlexHeightBehavior b) => b = new FlexHeightBehavior(val.Height, val.Percent)
-                );
-            }
+            var height = mutEntity.FlexHeight.Value;
+            var percent = mutEntity.FlexHeightPercent ?? false;
+            var data = (height, percent);
+            entity.SetBehavior<FlexHeightBehavior, (float Height, bool Percent)>(
+                in data,
+                static (ref readonly (float Height, bool Percent) val, ref FlexHeightBehavior b) => b = new FlexHeightBehavior(val.Height, val.Percent)
+            );
         }
 
         // FlexJustifyContent
-        if (entityObj.TryGetPropertyValue("flexJustifyContent", out var justifyNode) && justifyNode is JsonValue justifyValue)
+        if (mutEntity.FlexJustifyContent != null)
         {
-            if (!justifyValue.TryGetValue<string>(out var justifyStr) || 
-                !Enum.TryParse<Justify>(justifyStr, true, out var justify))
+            if (!Enum.TryParse<Justify>(mutEntity.FlexJustifyContent, true, out var justify))
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"FlexJustifyContent mutation failed: expected valid Justify enum value"
-                ));
+                EventBus<ErrorEvent>.Push(new ErrorEvent($"FlexJustifyContent mutation failed: expected valid Justify enum value"));
             }
             else
             {
@@ -584,204 +533,139 @@ public static class JsonEntityConverter
         }
 
         // FlexMarginBottom
-        if (entityObj.TryGetPropertyValue("flexMarginBottom", out var marginBottomNode) && marginBottomNode is JsonValue marginBottomValue)
+        if (mutEntity.FlexMarginBottom.HasValue)
         {
-            if (marginBottomValue.TryGetFloatValue(out var marginBottom))
-            {
-                entity.SetBehavior<FlexMarginBottomBehavior, float>(
-                    in marginBottom,
-                    static (ref readonly float val, ref FlexMarginBottomBehavior b) => b = new FlexMarginBottomBehavior(val)
-                );
-            }
+            var marginBottom = mutEntity.FlexMarginBottom.Value;
+            entity.SetBehavior<FlexMarginBottomBehavior, float>(
+                in marginBottom,
+                static (ref readonly float val, ref FlexMarginBottomBehavior b) => b = new FlexMarginBottomBehavior(val)
+            );
         }
 
         // FlexMarginLeft
-        if (entityObj.TryGetPropertyValue("flexMarginLeft", out var marginLeftNode) && marginLeftNode is JsonValue marginLeftValue)
+        if (mutEntity.FlexMarginLeft.HasValue)
         {
-            if (!marginLeftValue.TryGetFloatValue(out var marginLeft))
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"FlexMarginLeft mutation failed: expected numeric value"
-                ));
-            }
-            else
-            {
-                entity.SetBehavior<FlexMarginLeftBehavior, float>(
-                    in marginLeft,
-                    static (ref readonly float val, ref FlexMarginLeftBehavior b) => b = new FlexMarginLeftBehavior(val)
-                );
-            }
+            var marginLeft = mutEntity.FlexMarginLeft.Value;
+            entity.SetBehavior<FlexMarginLeftBehavior, float>(
+                in marginLeft,
+                static (ref readonly float val, ref FlexMarginLeftBehavior b) => b = new FlexMarginLeftBehavior(val)
+            );
         }
 
         // FlexMarginRight
-        if (entityObj.TryGetPropertyValue("flexMarginRight", out var marginRightNode) && marginRightNode is JsonValue marginRightValue)
+        if (mutEntity.FlexMarginRight.HasValue)
         {
-            if (marginRightValue.TryGetFloatValue(out var marginRight))
-            {
-                entity.SetBehavior<FlexMarginRightBehavior, float>(
-                    in marginRight,
-                    static (ref readonly float val, ref FlexMarginRightBehavior b) => b = new FlexMarginRightBehavior(val)
-                );
-            }
+            var marginRight = mutEntity.FlexMarginRight.Value;
+            entity.SetBehavior<FlexMarginRightBehavior, float>(
+                in marginRight,
+                static (ref readonly float val, ref FlexMarginRightBehavior b) => b = new FlexMarginRightBehavior(val)
+            );
         }
 
         // FlexMarginTop
-        if (entityObj.TryGetPropertyValue("flexMarginTop", out var marginTopNode) && marginTopNode is JsonValue marginTopValue)
+        if (mutEntity.FlexMarginTop.HasValue)
         {
-            if (marginTopValue.TryGetFloatValue(out var marginTop))
-            {
-                entity.SetBehavior<FlexMarginTopBehavior, float>(
-                    in marginTop,
-                    static (ref readonly float val, ref FlexMarginTopBehavior b) => b = new FlexMarginTopBehavior(val)
-                );
-            }
+            var marginTop = mutEntity.FlexMarginTop.Value;
+            entity.SetBehavior<FlexMarginTopBehavior, float>(
+                in marginTop,
+                static (ref readonly float val, ref FlexMarginTopBehavior b) => b = new FlexMarginTopBehavior(val)
+            );
         }
 
         // FlexPaddingBottom
-        if (entityObj.TryGetPropertyValue("flexPaddingBottom", out var paddingBottomNode) && paddingBottomNode is JsonValue paddingBottomValue)
+        if (mutEntity.FlexPaddingBottom.HasValue)
         {
-            if (paddingBottomValue.TryGetFloatValue(out var paddingBottom))
-            {
-                entity.SetBehavior<FlexPaddingBottomBehavior, float>(
-                    in paddingBottom,
-                    static (ref readonly float val, ref FlexPaddingBottomBehavior b) => b = new FlexPaddingBottomBehavior(val)
-                );
-            }
+            var paddingBottom = mutEntity.FlexPaddingBottom.Value;
+            entity.SetBehavior<FlexPaddingBottomBehavior, float>(
+                in paddingBottom,
+                static (ref readonly float val, ref FlexPaddingBottomBehavior b) => b = new FlexPaddingBottomBehavior(val)
+            );
         }
 
         // FlexPaddingLeft
-        if (entityObj.TryGetPropertyValue("flexPaddingLeft", out var paddingLeftNode) && paddingLeftNode is JsonValue paddingLeftValue)
+        if (mutEntity.FlexPaddingLeft.HasValue)
         {
-            if (!paddingLeftValue.TryGetFloatValue(out var paddingLeft))
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"FlexPaddingLeft mutation failed: expected numeric value"
-                ));
-            }
-            else
-            {
-                entity.SetBehavior<FlexPaddingLeftBehavior, float>(
-                    in paddingLeft,
-                    static (ref readonly float val, ref FlexPaddingLeftBehavior b) => b = new FlexPaddingLeftBehavior(val)
-                );
-            }
+            var paddingLeft = mutEntity.FlexPaddingLeft.Value;
+            entity.SetBehavior<FlexPaddingLeftBehavior, float>(
+                in paddingLeft,
+                static (ref readonly float val, ref FlexPaddingLeftBehavior b) => b = new FlexPaddingLeftBehavior(val)
+            );
         }
 
         // FlexPaddingRight
-        if (entityObj.TryGetPropertyValue("flexPaddingRight", out var paddingRightNode) && paddingRightNode is JsonValue paddingRightValue)
+        if (mutEntity.FlexPaddingRight.HasValue)
         {
-            if (paddingRightValue.TryGetFloatValue(out var paddingRight))
-            {
-                entity.SetBehavior<FlexPaddingRightBehavior, float>(
-                    in paddingRight,
-                    static (ref readonly float val, ref FlexPaddingRightBehavior b) => b = new FlexPaddingRightBehavior(val)
-                );
-            }
+            var paddingRight = mutEntity.FlexPaddingRight.Value;
+            entity.SetBehavior<FlexPaddingRightBehavior, float>(
+                in paddingRight,
+                static (ref readonly float val, ref FlexPaddingRightBehavior b) => b = new FlexPaddingRightBehavior(val)
+            );
         }
 
         // FlexPaddingTop
-        if (entityObj.TryGetPropertyValue("flexPaddingTop", out var paddingTopNode) && paddingTopNode is JsonValue paddingTopValue)
+        if (mutEntity.FlexPaddingTop.HasValue)
         {
-            if (paddingTopValue.TryGetFloatValue(out var paddingTop))
-            {
-                entity.SetBehavior<FlexPaddingTopBehavior, float>(
-                    in paddingTop,
-                    static (ref readonly float val, ref FlexPaddingTopBehavior b) => b = new FlexPaddingTopBehavior(val)
-                );
-            }
+            var paddingTop = mutEntity.FlexPaddingTop.Value;
+            entity.SetBehavior<FlexPaddingTopBehavior, float>(
+                in paddingTop,
+                static (ref readonly float val, ref FlexPaddingTopBehavior b) => b = new FlexPaddingTopBehavior(val)
+            );
         }
 
         // FlexPositionBottom
-        if (entityObj.TryGetPropertyValue("flexPositionBottom", out var positionBottomNode) && positionBottomNode is JsonValue positionBottomValue)
+        if (mutEntity.FlexPositionBottom.HasValue)
         {
-            if (positionBottomValue.TryGetFloatValue(out var positionBottom))
-            {
-                var percent = false;
-                if (entityObj.TryGetPropertyValue("flexPositionBottomPercent", out var positionBottomPercentNode) && 
-                    positionBottomPercentNode is JsonValue positionBottomPercentValue)
-                {
-                    positionBottomPercentValue.TryGetValue<bool>(out percent);
-                }
-                var data = (positionBottom, percent);
-                entity.SetBehavior<FlexPositionBottomBehavior, (float, bool)>(
-                    in data,
-                    static (ref readonly (float Value, bool Percent) val, ref FlexPositionBottomBehavior b) => b = new FlexPositionBottomBehavior(val.Value, val.Percent)
-                );
-            }
+            var positionBottom = mutEntity.FlexPositionBottom.Value;
+            var percent = mutEntity.FlexPositionBottomPercent ?? false;
+            var data = (positionBottom, percent);
+            entity.SetBehavior<FlexPositionBottomBehavior, (float Value, bool Percent)>(
+                in data,
+                static (ref readonly (float Value, bool Percent) val, ref FlexPositionBottomBehavior b) => b = new FlexPositionBottomBehavior(val.Value, val.Percent)
+            );
         }
 
         // FlexPositionLeft
-        if (entityObj.TryGetPropertyValue("flexPositionLeft", out var positionLeftNode) && positionLeftNode is JsonValue positionLeftValue)
+        if (mutEntity.FlexPositionLeft.HasValue)
         {
-            if (!positionLeftValue.TryGetFloatValue(out var positionLeft))
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"FlexPositionLeft mutation failed: expected numeric value"
-                ));
-            }
-            else
-            {
-                var percent = false;
-                if (entityObj.TryGetPropertyValue("flexPositionLeftPercent", out var positionLeftPercentNode) && 
-                    positionLeftPercentNode is JsonValue positionLeftPercentValue)
-                {
-                    positionLeftPercentValue.TryGetValue<bool>(out percent);
-                }
-                var data = (positionLeft, percent);
-                entity.SetBehavior<FlexPositionLeftBehavior, (float, bool)>(
-                    in data,
-                    static (ref readonly (float Value, bool Percent) val, ref FlexPositionLeftBehavior b) => b = new FlexPositionLeftBehavior(val.Value, val.Percent)
-                );
-            }
+            var positionLeft = mutEntity.FlexPositionLeft.Value;
+            var percent = mutEntity.FlexPositionLeftPercent ?? false;
+            var data = (positionLeft, percent);
+            entity.SetBehavior<FlexPositionLeftBehavior, (float Value, bool Percent)>(
+                in data,
+                static (ref readonly (float Value, bool Percent) val, ref FlexPositionLeftBehavior b) => b = new FlexPositionLeftBehavior(val.Value, val.Percent)
+            );
         }
 
         // FlexPositionRight
-        if (entityObj.TryGetPropertyValue("flexPositionRight", out var positionRightNode) && positionRightNode is JsonValue positionRightValue)
+        if (mutEntity.FlexPositionRight.HasValue)
         {
-            if (positionRightValue.TryGetFloatValue(out var positionRight))
-            {
-                var percent = false;
-                if (entityObj.TryGetPropertyValue("flexPositionRightPercent", out var positionRightPercentNode) && 
-                    positionRightPercentNode is JsonValue positionRightPercentValue)
-                {
-                    positionRightPercentValue.TryGetValue<bool>(out percent);
-                }
-                var data = (positionRight, percent);
-                entity.SetBehavior<FlexPositionRightBehavior, (float, bool)>(
-                    in data,
-                    static (ref readonly (float Value, bool Percent) val, ref FlexPositionRightBehavior b) => b = new FlexPositionRightBehavior(val.Value, val.Percent)
-                );
-            }
+            var positionRight = mutEntity.FlexPositionRight.Value;
+            var percent = mutEntity.FlexPositionRightPercent ?? false;
+            var data = (positionRight, percent);
+            entity.SetBehavior<FlexPositionRightBehavior, (float Value, bool Percent)>(
+                in data,
+                static (ref readonly (float Value, bool Percent) val, ref FlexPositionRightBehavior b) => b = new FlexPositionRightBehavior(val.Value, val.Percent)
+            );
         }
 
         // FlexPositionTop
-        if (entityObj.TryGetPropertyValue("flexPositionTop", out var positionTopNode) && positionTopNode is JsonValue positionTopValue)
+        if (mutEntity.FlexPositionTop.HasValue)
         {
-            if (positionTopValue.TryGetFloatValue(out var positionTop))
-            {
-                var percent = false;
-                if (entityObj.TryGetPropertyValue("flexPositionTopPercent", out var positionTopPercentNode) && 
-                    positionTopPercentNode is JsonValue positionTopPercentValue)
-                {
-                    positionTopPercentValue.TryGetValue<bool>(out percent);
-                }
-                var data = (positionTop, percent);
-                entity.SetBehavior<FlexPositionTopBehavior, (float, bool)>(
-                    in data,
-                    static (ref readonly (float Value, bool Percent) val, ref FlexPositionTopBehavior b) => b = new FlexPositionTopBehavior(val.Value, val.Percent)
-                );
-            }
+            var positionTop = mutEntity.FlexPositionTop.Value;
+            var percent = mutEntity.FlexPositionTopPercent ?? false;
+            var data = (positionTop, percent);
+            entity.SetBehavior<FlexPositionTopBehavior, (float Value, bool Percent)>(
+                in data,
+                static (ref readonly (float Value, bool Percent) val, ref FlexPositionTopBehavior b) => b = new FlexPositionTopBehavior(val.Value, val.Percent)
+            );
         }
 
         // FlexPositionType
-        if (entityObj.TryGetPropertyValue("flexPositionType", out var positionTypeNode) && positionTypeNode is JsonValue positionTypeValue)
+        if (mutEntity.FlexPositionType != null)
         {
-            if (!positionTypeValue.TryGetValue<string>(out var positionTypeStr) || 
-                !Enum.TryParse<PositionType>(positionTypeStr, true, out var positionType))
+            if (!Enum.TryParse<PositionType>(mutEntity.FlexPositionType, true, out var positionType))
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"FlexPositionType mutation failed: expected valid PositionType enum value"
-                ));
+                EventBus<ErrorEvent>.Push(new ErrorEvent($"FlexPositionType mutation failed: expected valid PositionType enum value"));
             }
             else
             {
@@ -793,31 +677,17 @@ public static class JsonEntityConverter
         }
 
         // FlexWidth
-        if (entityObj.TryGetPropertyValue("flexWidth", out var widthNode) && widthNode is JsonValue widthValue)
+        if (mutEntity.FlexWidth.HasValue)
         {
-            if (!widthValue.TryGetFloatValue(out var width))
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"FlexWidth mutation failed: expected numeric value"
-                ));
-            }
-            else
-            {
-                var percent = false;
-                if (entityObj.TryGetPropertyValue("flexWidthPercent", out var widthPercentNode) && 
-                    widthPercentNode is JsonValue widthPercentValue)
-                {
-                    widthPercentValue.TryGetValue<bool>(out percent);
-                }
-                var data = (width, percent);
-                entity.SetBehavior<FlexWidthBehavior, (float, bool)>(
-                    in data,
-                    static (ref readonly (float Value, bool Percent) val, ref FlexWidthBehavior b) => b = new FlexWidthBehavior(val.Value, val.Percent)
-                );
-            }
+            var width = mutEntity.FlexWidth.Value;
+            var percent = mutEntity.FlexWidthPercent ?? false;
+            var data = (width, percent);
+            entity.SetBehavior<FlexWidthBehavior, (float Width, bool Percent)>(
+                in data,
+                static (ref readonly (float Width, bool Percent) val, ref FlexWidthBehavior b) => b = new FlexWidthBehavior(val.Width, val.Percent)
+            );
         }
     }
-
 
     private static JsonObject SerializeVector3(Vector3 vector)
     {
