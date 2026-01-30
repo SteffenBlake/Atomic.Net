@@ -2,22 +2,40 @@
   "entities": [
     {
       "id": "cube",
-      "tags": ["rotatable"],
+      "tags": [
+        "rotatable"
+      ],
       "transform": {
-        "rotation": { "x": 0, "y": 0, "z": 0, "w": 1 }
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "w": 1
+        }
       }
     }
   ],
-  "rules": [{
-    "from": "#rotatable",
-    "where": { "var": "entities" },
-    "do": {
-      "mut": [
-        {
-          "target": { "transform": { "rotation": true } },
-          "value": { "x": 0, "y": 0 }
-        }
-      ]
+  "rules": [
+    {
+      "from": "#rotatable",
+      "where": {
+        "var": "entities"
+      },
+      "do": {
+        "mut": [
+          {
+            "target": {
+              "transform": {
+                "rotation": true
+              }
+            },
+            "value": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        ]
+      }
     }
-  }]
+  ]
 }

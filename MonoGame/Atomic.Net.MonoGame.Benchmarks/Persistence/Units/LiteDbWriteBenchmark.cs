@@ -20,9 +20,24 @@ public class TestEntity
 
 public class TransformData
 {
-    public float[] Position { get; set; } = [0, 0, 0];
-    public float[] Rotation { get; set; } = [0, 0, 0, 1];
-    public float[] Scale { get; set; } = [1, 1, 1];
+    public Vector3Data Position { get; set; } = new() { X = 0, Y = 0, Z = 0 };
+    public QuaternionData Rotation { get; set; } = new() { X = 0, Y = 0, Z = 0, W = 1 };
+    public Vector3Data Scale { get; set; } = new() { X = 1, Y = 1, Z = 1 };
+}
+
+public class Vector3Data
+{
+    public float X { get; set; }
+    public float Y { get; set; }
+    public float Z { get; set; }
+}
+
+public class QuaternionData
+{
+    public float X { get; set; }
+    public float Y { get; set; }
+    public float Z { get; set; }
+    public float W { get; set; }
 }
 
 [MemoryDiagnoser]
@@ -54,9 +69,9 @@ public class LiteDbWriteBenchmark
                 Id = $"entity-{i}",
                 Transform = new TransformData
                 {
-                    Position = [rng.Next(100), rng.Next(100), 0],
-                    Rotation = [0, 0, 0, 1],
-                    Scale = [1, 1, 1]
+                    Position = new Vector3Data { X = rng.Next(100), Y = rng.Next(100), Z = 0 },
+                    Rotation = new QuaternionData { X = 0, Y = 0, Z = 0, W = 1 },
+                    Scale = new Vector3Data { X = 1, Y = 1, Z = 1 }
                 },
                 Properties = new Dictionary<string, object>
                 {
@@ -143,9 +158,25 @@ public class LiteDbWriteBenchmark
                 ["id"] = entity.Id,
                 ["transform"] = new BsonDocument
                 {
-                    ["position"] = new BsonArray(entity.Transform!.Position.Select(x => new BsonValue(x))),
-                    ["rotation"] = new BsonArray(entity.Transform.Rotation.Select(x => new BsonValue(x))),
-                    ["scale"] = new BsonArray(entity.Transform.Scale.Select(x => new BsonValue(x)))
+                    ["position"] = new BsonDocument
+                    {
+                        ["x"] = entity.Transform!.Position.X,
+                        ["y"] = entity.Transform.Position.Y,
+                        ["z"] = entity.Transform.Position.Z
+                    },
+                    ["rotation"] = new BsonDocument
+                    {
+                        ["x"] = entity.Transform.Rotation.X,
+                        ["y"] = entity.Transform.Rotation.Y,
+                        ["z"] = entity.Transform.Rotation.Z,
+                        ["w"] = entity.Transform.Rotation.W
+                    },
+                    ["scale"] = new BsonDocument
+                    {
+                        ["x"] = entity.Transform.Scale.X,
+                        ["y"] = entity.Transform.Scale.Y,
+                        ["z"] = entity.Transform.Scale.Z
+                    }
                 },
                 ["properties"] = new BsonDocument(entity.Properties!.ToDictionary(
                     kvp => kvp.Key,
@@ -238,9 +269,25 @@ public class LiteDbWriteBenchmark
                 ["id"] = entity.Id,
                 ["transform"] = new BsonDocument
                 {
-                    ["position"] = new BsonArray(entity.Transform!.Position.Select(x => new BsonValue(x))),
-                    ["rotation"] = new BsonArray(entity.Transform.Rotation.Select(x => new BsonValue(x))),
-                    ["scale"] = new BsonArray(entity.Transform.Scale.Select(x => new BsonValue(x)))
+                    ["position"] = new BsonDocument
+                    {
+                        ["x"] = entity.Transform!.Position.X,
+                        ["y"] = entity.Transform.Position.Y,
+                        ["z"] = entity.Transform.Position.Z
+                    },
+                    ["rotation"] = new BsonDocument
+                    {
+                        ["x"] = entity.Transform.Rotation.X,
+                        ["y"] = entity.Transform.Rotation.Y,
+                        ["z"] = entity.Transform.Rotation.Z,
+                        ["w"] = entity.Transform.Rotation.W
+                    },
+                    ["scale"] = new BsonDocument
+                    {
+                        ["x"] = entity.Transform.Scale.X,
+                        ["y"] = entity.Transform.Scale.Y,
+                        ["z"] = entity.Transform.Scale.Z
+                    }
                 },
                 ["properties"] = new BsonDocument(entity.Properties!.ToDictionary(
                     kvp => kvp.Key,
@@ -263,9 +310,25 @@ public class LiteDbWriteBenchmark
                 ["id"] = entity.Id,
                 ["transform"] = new BsonDocument
                 {
-                    ["position"] = new BsonArray(entity.Transform!.Position.Select(x => new BsonValue(x))),
-                    ["rotation"] = new BsonArray(entity.Transform.Rotation.Select(x => new BsonValue(x))),
-                    ["scale"] = new BsonArray(entity.Transform.Scale.Select(x => new BsonValue(x)))
+                    ["position"] = new BsonDocument
+                    {
+                        ["x"] = entity.Transform!.Position.X,
+                        ["y"] = entity.Transform.Position.Y,
+                        ["z"] = entity.Transform.Position.Z
+                    },
+                    ["rotation"] = new BsonDocument
+                    {
+                        ["x"] = entity.Transform.Rotation.X,
+                        ["y"] = entity.Transform.Rotation.Y,
+                        ["z"] = entity.Transform.Rotation.Z,
+                        ["w"] = entity.Transform.Rotation.W
+                    },
+                    ["scale"] = new BsonDocument
+                    {
+                        ["x"] = entity.Transform.Scale.X,
+                        ["y"] = entity.Transform.Scale.Y,
+                        ["z"] = entity.Transform.Scale.Z
+                    }
                 },
                 ["properties"] = new BsonDocument(entity.Properties!.ToDictionary(
                     kvp => kvp.Key,
@@ -327,9 +390,25 @@ public class LiteDbWriteBenchmark
                 ["id"] = entity.Id,
                 ["transform"] = new BsonDocument
                 {
-                    ["position"] = new BsonArray(entity.Transform!.Position.Select(x => new BsonValue(x))),
-                    ["rotation"] = new BsonArray(entity.Transform.Rotation.Select(x => new BsonValue(x))),
-                    ["scale"] = new BsonArray(entity.Transform.Scale.Select(x => new BsonValue(x)))
+                    ["position"] = new BsonDocument
+                    {
+                        ["x"] = entity.Transform!.Position.X,
+                        ["y"] = entity.Transform.Position.Y,
+                        ["z"] = entity.Transform.Position.Z
+                    },
+                    ["rotation"] = new BsonDocument
+                    {
+                        ["x"] = entity.Transform.Rotation.X,
+                        ["y"] = entity.Transform.Rotation.Y,
+                        ["z"] = entity.Transform.Rotation.Z,
+                        ["w"] = entity.Transform.Rotation.W
+                    },
+                    ["scale"] = new BsonDocument
+                    {
+                        ["x"] = entity.Transform.Scale.X,
+                        ["y"] = entity.Transform.Scale.Y,
+                        ["z"] = entity.Transform.Scale.Z
+                    }
                 },
                 ["properties"] = new BsonDocument(entity.Properties!.ToDictionary(
                     kvp => kvp.Key,

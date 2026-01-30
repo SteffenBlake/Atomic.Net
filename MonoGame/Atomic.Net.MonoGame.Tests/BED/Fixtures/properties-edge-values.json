@@ -3,7 +3,11 @@
     {
       "id": "entity-with-edge-cases",
       "transform": {
-        "position": [0, 0, 0]
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
       },
       "properties": {
         "empty-string": "",

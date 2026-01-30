@@ -2,22 +2,40 @@
   "entities": [
     {
       "id": "sprite",
-      "tags": ["scalable"],
+      "tags": [
+        "scalable"
+      ],
       "transform": {
-        "scale": [1, 1, 1]
+        "scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
       }
     }
   ],
-  "rules": [{
-    "from": "#scalable",
-    "where": { "var": "entities" },
-    "do": {
-      "mut": [
-        {
-          "target": { "transform": { "scale": true } },
-          "value": { "x": 2, "y": 2, "z": 1 }
-        }
-      ]
+  "rules": [
+    {
+      "from": "#scalable",
+      "where": {
+        "var": "entities"
+      },
+      "do": {
+        "mut": [
+          {
+            "target": {
+              "transform": {
+                "scale": true
+              }
+            },
+            "value": {
+              "x": 2,
+              "y": 2,
+              "z": 1
+            }
+          }
+        ]
+      }
     }
-  }]
+  ]
 }

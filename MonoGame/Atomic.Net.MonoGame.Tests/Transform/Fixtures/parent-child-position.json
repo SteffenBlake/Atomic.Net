@@ -3,14 +3,22 @@
     {
       "id": "parent",
       "transform": {
-        "position": [10, 0, 0]
+        "position": {
+          "x": 10,
+          "y": 0,
+          "z": 0
+        }
       }
     },
     {
       "id": "child",
       "parent": "@parent",
       "transform": {
-        "position": [5, 0, 0]
+        "position": {
+          "x": 5,
+          "y": 0,
+          "z": 0
+        }
       }
     }
   ]

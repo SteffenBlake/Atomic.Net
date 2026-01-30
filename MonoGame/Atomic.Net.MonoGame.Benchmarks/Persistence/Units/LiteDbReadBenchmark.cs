@@ -45,9 +45,9 @@ public class LiteDbReadBenchmark
                 Id = $"entity-{i}",
                 Transform = new TransformData
                 {
-                    Position = [rng.Next(100), rng.Next(100), 0],
-                    Rotation = [0, 0, 0, 1],
-                    Scale = [1, 1, 1]
+                    Position = new Vector3Data { X = rng.Next(100), Y = rng.Next(100), Z = 0 },
+                    Rotation = new QuaternionData { X = 0, Y = 0, Z = 0, W = 1 },
+                    Scale = new Vector3Data { X = 1, Y = 1, Z = 1 }
                 },
                 Properties = new Dictionary<string, object>
                 {
