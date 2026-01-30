@@ -25,25 +25,33 @@
         "mut": [
           {
             "target": {
-              "rotation": "x"
+              "transform": {
+                "rotation": "x"
+              }
             },
             "value": 0
           },
           {
             "target": {
-              "rotation": "y"
+              "transform": {
+                "rotation": "y"
+              }
             },
             "value": 0.707
           },
           {
             "target": {
-              "rotation": "z"
+              "transform": {
+                "rotation": "z"
+              }
             },
             "value": 0
           },
           {
             "target": {
-              "rotation": "w"
+              "transform": {
+                "rotation": "w"
+              }
             },
             "value": 0.707
           }

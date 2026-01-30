@@ -33,8 +33,8 @@ public class JsonTargetConverter : JsonConverter<JsonTarget>
         {
             "properties" => firstProperty.Value?.Deserialize<JsonPropertiesTarget>(options)
                 ?? throw new JsonException("Failed to deserialize properties target"),
-            "position" or "rotation" or "scale" or "anchor" => 
-                jsonObject.Deserialize<JsonTransformTarget>(options),
+            "transform" => firstProperty.Value?.Deserialize<JsonTransformTarget>(options)
+                ?? throw new JsonException("Failed to deserialize transform target"),
             _ => throw new JsonException($"Unrecognized object target: '{propertyKey}'")
         };
     }

@@ -24,7 +24,9 @@
         "mut": [
           {
             "target": {
-              "anchor": "x"
+              "transform": {
+                "anchor": "x"
+              }
             },
             "value": "not a number"
           }

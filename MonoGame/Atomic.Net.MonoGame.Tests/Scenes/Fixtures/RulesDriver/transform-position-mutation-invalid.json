@@ -24,7 +24,9 @@
         "mut": [
           {
             "target": {
-              "position": "x"
+              "transform": {
+                "position": "x"
+              }
             },
             "value": "not a number"
           }
