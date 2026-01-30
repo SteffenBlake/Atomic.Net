@@ -21,7 +21,7 @@
           },
           {
             "target": "flexWidthPercent",
-            "value": false
+            "value": true
           }
         ]
       }
