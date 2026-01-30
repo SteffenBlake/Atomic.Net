@@ -1069,137 +1069,137 @@ public static class JsonEntityConverter
 
     private static void SerializeFlexBehaviors(Entity entity, JsonObject entityObj)
     {
-        if (BehaviorRegistry<FlexAlignItemsBehavior>.Instance.TryGetBehavior(entity, out var alignItems))
+        if (entity.TryGetBehavior<FlexAlignItemsBehavior>(out var alignItems))
         {
             entityObj["flexAlignItems"] = alignItems.Value.Value.ToString();
         }
 
-        if (BehaviorRegistry<FlexAlignSelfBehavior>.Instance.TryGetBehavior(entity, out var alignSelf))
+        if (entity.TryGetBehavior<FlexAlignSelfBehavior>(out var alignSelf))
         {
             entityObj["flexAlignSelf"] = alignSelf.Value.Value.ToString();
         }
 
-        if (BehaviorRegistry<FlexBorderBottomBehavior>.Instance.TryGetBehavior(entity, out var borderBottom))
+        if (entity.TryGetBehavior<FlexBorderBottomBehavior>(out var borderBottom))
         {
             entityObj["flexBorderBottom"] = borderBottom.Value.Value;
         }
 
-        if (BehaviorRegistry<FlexBorderLeftBehavior>.Instance.TryGetBehavior(entity, out var borderLeft))
+        if (entity.TryGetBehavior<FlexBorderLeftBehavior>(out var borderLeft))
         {
             entityObj["flexBorderLeft"] = borderLeft.Value.Value;
         }
 
-        if (BehaviorRegistry<FlexBorderRightBehavior>.Instance.TryGetBehavior(entity, out var borderRight))
+        if (entity.TryGetBehavior<FlexBorderRightBehavior>(out var borderRight))
         {
             entityObj["flexBorderRight"] = borderRight.Value.Value;
         }
 
-        if (BehaviorRegistry<FlexBorderTopBehavior>.Instance.TryGetBehavior(entity, out var borderTop))
+        if (entity.TryGetBehavior<FlexBorderTopBehavior>(out var borderTop))
         {
             entityObj["flexBorderTop"] = borderTop.Value.Value;
         }
 
-        if (BehaviorRegistry<FlexDirectionBehavior>.Instance.TryGetBehavior(entity, out var direction))
+        if (entity.TryGetBehavior<FlexDirectionBehavior>(out var direction))
         {
             entityObj["flexDirection"] = direction.Value.Value.ToString();
         }
 
-        if (BehaviorRegistry<FlexGrowBehavior>.Instance.TryGetBehavior(entity, out var grow))
+        if (entity.TryGetBehavior<FlexGrowBehavior>(out var grow))
         {
             entityObj["flexGrow"] = grow.Value.Value;
         }
 
-        if (BehaviorRegistry<FlexWrapBehavior>.Instance.TryGetBehavior(entity, out var wrap))
+        if (entity.TryGetBehavior<FlexWrapBehavior>(out var wrap))
         {
             entityObj["flexWrap"] = wrap.Value.Value.ToString();
         }
 
-        if (BehaviorRegistry<FlexZOverride>.Instance.TryGetBehavior(entity, out var zOverride))
+        if (entity.TryGetBehavior<FlexZOverride>(out var zOverride))
         {
             entityObj["flexZOverride"] = zOverride.Value.ZIndex;
         }
 
-        if (BehaviorRegistry<FlexHeightBehavior>.Instance.TryGetBehavior(entity, out var height))
+        if (entity.TryGetBehavior<FlexHeightBehavior>(out var height))
         {
             entityObj["flexHeight"] = height.Value.Value;
             entityObj["flexHeightPercent"] = height.Value.Percent;
         }
 
-        if (BehaviorRegistry<FlexJustifyContentBehavior>.Instance.TryGetBehavior(entity, out var justifyContent))
+        if (entity.TryGetBehavior<FlexJustifyContentBehavior>(out var justifyContent))
         {
             entityObj["flexJustifyContent"] = justifyContent.Value.Value.ToString();
         }
 
-        if (BehaviorRegistry<FlexMarginBottomBehavior>.Instance.TryGetBehavior(entity, out var marginBottom))
+        if (entity.TryGetBehavior<FlexMarginBottomBehavior>(out var marginBottom))
         {
             entityObj["flexMarginBottom"] = marginBottom.Value.Value;
         }
 
-        if (BehaviorRegistry<FlexMarginLeftBehavior>.Instance.TryGetBehavior(entity, out var marginLeft))
+        if (entity.TryGetBehavior<FlexMarginLeftBehavior>(out var marginLeft))
         {
             entityObj["flexMarginLeft"] = marginLeft.Value.Value;
         }
 
-        if (BehaviorRegistry<FlexMarginRightBehavior>.Instance.TryGetBehavior(entity, out var marginRight))
+        if (entity.TryGetBehavior<FlexMarginRightBehavior>(out var marginRight))
         {
             entityObj["flexMarginRight"] = marginRight.Value.Value;
         }
 
-        if (BehaviorRegistry<FlexMarginTopBehavior>.Instance.TryGetBehavior(entity, out var marginTop))
+        if (entity.TryGetBehavior<FlexMarginTopBehavior>(out var marginTop))
         {
             entityObj["flexMarginTop"] = marginTop.Value.Value;
         }
 
-        if (BehaviorRegistry<FlexPaddingBottomBehavior>.Instance.TryGetBehavior(entity, out var paddingBottom))
+        if (entity.TryGetBehavior<FlexPaddingBottomBehavior>(out var paddingBottom))
         {
             entityObj["flexPaddingBottom"] = paddingBottom.Value.Value;
         }
 
-        if (BehaviorRegistry<FlexPaddingLeftBehavior>.Instance.TryGetBehavior(entity, out var paddingLeft))
+        if (entity.TryGetBehavior<FlexPaddingLeftBehavior>(out var paddingLeft))
         {
             entityObj["flexPaddingLeft"] = paddingLeft.Value.Value;
         }
 
-        if (BehaviorRegistry<FlexPaddingRightBehavior>.Instance.TryGetBehavior(entity, out var paddingRight))
+        if (entity.TryGetBehavior<FlexPaddingRightBehavior>(out var paddingRight))
         {
             entityObj["flexPaddingRight"] = paddingRight.Value.Value;
         }
 
-        if (BehaviorRegistry<FlexPaddingTopBehavior>.Instance.TryGetBehavior(entity, out var paddingTop))
+        if (entity.TryGetBehavior<FlexPaddingTopBehavior>(out var paddingTop))
         {
             entityObj["flexPaddingTop"] = paddingTop.Value.Value;
         }
 
-        if (BehaviorRegistry<FlexPositionBottomBehavior>.Instance.TryGetBehavior(entity, out var positionBottom))
+        if (entity.TryGetBehavior<FlexPositionBottomBehavior>(out var positionBottom))
         {
             entityObj["flexPositionBottom"] = positionBottom.Value.Value;
             entityObj["flexPositionBottomPercent"] = positionBottom.Value.Percent;
         }
 
-        if (BehaviorRegistry<FlexPositionLeftBehavior>.Instance.TryGetBehavior(entity, out var positionLeft))
+        if (entity.TryGetBehavior<FlexPositionLeftBehavior>(out var positionLeft))
         {
             entityObj["flexPositionLeft"] = positionLeft.Value.Value;
             entityObj["flexPositionLeftPercent"] = positionLeft.Value.Percent;
         }
 
-        if (BehaviorRegistry<FlexPositionRightBehavior>.Instance.TryGetBehavior(entity, out var positionRight))
+        if (entity.TryGetBehavior<FlexPositionRightBehavior>(out var positionRight))
         {
             entityObj["flexPositionRight"] = positionRight.Value.Value;
             entityObj["flexPositionRightPercent"] = positionRight.Value.Percent;
         }
 
-        if (BehaviorRegistry<FlexPositionTopBehavior>.Instance.TryGetBehavior(entity, out var positionTop))
+        if (entity.TryGetBehavior<FlexPositionTopBehavior>(out var positionTop))
         {
             entityObj["flexPositionTop"] = positionTop.Value.Value;
             entityObj["flexPositionTopPercent"] = positionTop.Value.Percent;
         }
 
-        if (BehaviorRegistry<FlexPositionTypeBehavior>.Instance.TryGetBehavior(entity, out var positionType))
+        if (entity.TryGetBehavior<FlexPositionTypeBehavior>(out var positionType))
         {
             entityObj["flexPositionType"] = positionType.Value.Value.ToString();
         }
 
-        if (BehaviorRegistry<FlexWidthBehavior>.Instance.TryGetBehavior(entity, out var width))
+        if (entity.TryGetBehavior<FlexWidthBehavior>(out var width))
         {
             entityObj["flexWidth"] = width.Value.Value;
             entityObj["flexWidthPercent"] = width.Value.Percent;
