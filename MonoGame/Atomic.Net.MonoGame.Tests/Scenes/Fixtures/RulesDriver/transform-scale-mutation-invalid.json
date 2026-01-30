@@ -24,11 +24,9 @@
         "mut": [
           {
             "target": {
-              "transform": {
-                "scale": true
-              }
+              "scale": "x"
             },
-            "value": 123
+            "value": "not a number"
           }
         ]
       }

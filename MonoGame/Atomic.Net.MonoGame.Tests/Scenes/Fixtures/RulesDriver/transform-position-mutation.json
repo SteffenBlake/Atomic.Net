@@ -24,15 +24,21 @@
         "mut": [
           {
             "target": {
-              "transform": {
-                "position": true
-              }
+              "position": "x"
             },
-            "value": {
-              "x": 100,
-              "y": 200,
-              "z": 50
-            }
+            "value": 100
+          },
+          {
+            "target": {
+              "position": "y"
+            },
+            "value": 200
+          },
+          {
+            "target": {
+              "position": "z"
+            },
+            "value": 50
           }
         ]
       }

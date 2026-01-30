@@ -1,10 +1,26 @@
 {
-  "entities": [{"id": "container", "tags": ["flex"]}],
-  "rules": [{
-    "from": "#flex",
-    "where": { "var": "entities" },
-    "do": {
-      "mut": [{"target": { "flexJustifyContent": true }, "value": "BadJustify"}]
+  "entities": [
+    {
+      "id": "container",
+      "tags": [
+        "flex"
+      ]
     }
-  }]
+  ],
+  "rules": [
+    {
+      "from": "#flex",
+      "where": {
+        "var": "entities"
+      },
+      "do": {
+        "mut": [
+          {
+            "target": "flexJustifyContent",
+            "value": "invalidJustify"
+          }
+        ]
+      }
+    }
+  ]
 }

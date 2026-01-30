@@ -24,11 +24,9 @@
         "mut": [
           {
             "target": {
-              "transform": {
-                "position": true
-              }
+              "position": "x"
             },
-            "value": "not a vector"
+            "value": "not a number"
           }
         ]
       }

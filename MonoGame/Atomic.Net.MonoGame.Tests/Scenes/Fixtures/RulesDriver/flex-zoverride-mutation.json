@@ -1,10 +1,26 @@
 {
-  "entities": [{"id": "item", "tags": ["layered"]}],
-  "rules": [{
-    "from": "#layered",
-    "where": { "var": "entities" },
-    "do": {
-      "mut": [{"target": { "flexZOverride": true }, "value": 10}]
+  "entities": [
+    {
+      "id": "item",
+      "tags": [
+        "layered"
+      ]
     }
-  }]
+  ],
+  "rules": [
+    {
+      "from": "#layered",
+      "where": {
+        "var": "entities"
+      },
+      "do": {
+        "mut": [
+          {
+            "target": "flexZOverride",
+            "value": 10
+          }
+        ]
+      }
+    }
+  ]
 }
