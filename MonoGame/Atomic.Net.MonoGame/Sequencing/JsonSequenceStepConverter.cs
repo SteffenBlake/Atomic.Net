@@ -31,8 +31,7 @@ public class JsonSequenceStepConverter : JsonConverter<JsonSequenceStep>
 
             "do" => firstProperty.Value is not null
                 ? new DoStep(
-                    firstProperty.Value.Deserialize<Scenes.SceneCommand>(options)
-                    ?? throw new JsonException("Failed to deserialize 'do' command"))
+                    firstProperty.Value.Deserialize<Scenes.SceneCommand>(options))
                 : throw new JsonException("'do' value cannot be null"),
 
             "tween" => jsonObject.Deserialize<TweenStep>(options),

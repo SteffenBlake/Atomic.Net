@@ -100,8 +100,9 @@ public class SequenceRegistry : IEventHandler<ResetEvent>, IEventHandler<Shutdow
     /// <returns>True if the sequence was found.</returns>
     public bool TryResolveByIndex(ushort index, out JsonSequence sequence)
     {
-        if (_sequences.TryGet(index, out sequence))
+        if (_sequences.TryGetValue(index, out var seq))
         {
+            sequence = seq.Value;
             return true;
         }
 
@@ -128,9 +129,9 @@ public class SequenceRegistry : IEventHandler<ResetEvent>, IEventHandler<Shutdow
         // Clear scene partition only (>= MaxGlobalSequences)
         for (ushort i = Constants.MaxGlobalSequences; i < Constants.MaxSequences; i++)
         {
-            if (_sequences.TryGet(i, out var sequence))
+            if (_sequences.TryGetValue(i, out var sequence))
             {
-                _idToIndex.Remove(sequence.Id);
+                _idToIndex.Remove(sequence.Value.Id);
                 _sequences.Remove(i);
             }
         }

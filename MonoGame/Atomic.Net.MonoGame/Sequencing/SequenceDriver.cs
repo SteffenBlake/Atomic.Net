@@ -190,7 +190,7 @@ public sealed class SequenceDriver :
         if (currentStepIndex >= sequence.Steps.Length)
         {
             // Sequence complete, remove from active sequences
-            var sequenceStates = _activeSequences.Get(entityIndex);
+            var sequenceStates = _activeSequences[entityIndex];
             if (sequenceStates != null)
             {
                 sequenceStates.Remove(sequenceIndex);
@@ -205,7 +205,7 @@ public sealed class SequenceDriver :
         else
         {
             // Update sequence state
-            var sequenceStates = _activeSequences.Get(entityIndex);
+            var sequenceStates = _activeSequences[entityIndex];
             if (sequenceStates != null)
             {
                 sequenceStates.Set(sequenceIndex, state);
@@ -278,9 +278,9 @@ public sealed class SequenceDriver :
         try
         {
             var evalResult = JsonLogic.Apply(condition, context);
-            if (evalResult != null && evalResult.TryGetBoolValue(out var boolValue))
+            if (evalResult != null && evalResult is JsonValue jsonValue && jsonValue.TryGetValue<bool>(out var boolValue))
             {
-                result = boolValue.Value;
+                result = boolValue;
                 return true;
             }
 
@@ -303,11 +303,10 @@ public sealed class SequenceDriver :
     public void StartSequence(ushort entityIndex, ushort sequenceIndex)
     {
         // Get or create the sequence states for this entity
-        var sequenceStates = _activeSequences.Get(entityIndex);
-        if (sequenceStates == null)
+        if (!_activeSequences.TryGetValue(entityIndex, out var sequenceStates))
         {
             sequenceStates = new SparseArray<SequenceState>(Constants.MaxActiveSequencesPerEntity);
-            _activeSequences.Set(entityIndex, sequenceStates);
+            _activeSequences[entityIndex] = sequenceStates;
         }
 
         // Check if sequence is already running
@@ -326,8 +325,7 @@ public sealed class SequenceDriver :
     /// </summary>
     public void StopSequence(ushort entityIndex, ushort sequenceIndex)
     {
-        var sequenceStates = _activeSequences.Get(entityIndex);
-        if (sequenceStates == null)
+        if (!_activeSequences.TryGetValue(entityIndex, out var sequenceStates))
         {
             return; // No sequences for this entity
         }
@@ -346,8 +344,7 @@ public sealed class SequenceDriver :
     /// </summary>
     public void ResetSequence(ushort entityIndex, ushort sequenceIndex)
     {
-        var sequenceStates = _activeSequences.Get(entityIndex);
-        if (sequenceStates == null)
+        if (!_activeSequences.TryGetValue(entityIndex, out var sequenceStates))
         {
             return; // No sequences for this entity
         }
