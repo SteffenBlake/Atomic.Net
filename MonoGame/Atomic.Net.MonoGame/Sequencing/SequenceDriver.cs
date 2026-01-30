@@ -169,7 +169,7 @@ public sealed class SequenceDriver :
                 stepElapsedTime += remainingTime;
                 if (stepElapsedTime >= tweenStep.Duration)
                 {
-                    ExecuteCommand(tweenStep.Do, entityJsonNode, BuildTweenContext(entityJsonNode, 1.0f));
+                    ExecuteCommand(tweenStep.Do, entityJsonNode, BuildTweenContext(entityJsonNode, tweenStep.To));
                     remainingTime = stepElapsedTime - tweenStep.Duration;
                     currentStepIndex++;
                     stepElapsedTime = 0;
@@ -177,7 +177,6 @@ public sealed class SequenceDriver :
                 else
                 {
                     var t = stepElapsedTime / tweenStep.Duration;
-                    // senior-dev: Linear interpolation only (no easing functions yet)
                     var interpolatedValue = tweenStep.From + (tweenStep.To - tweenStep.From) * t;
                     ExecuteCommand(tweenStep.Do, entityJsonNode, BuildTweenContext(entityJsonNode, interpolatedValue));
                     remainingTime = 0;
@@ -242,6 +241,7 @@ public sealed class SequenceDriver :
     /// </summary>
     private JsonObject BuildDoContext(JsonNode entityJsonNode, float deltaTime)
     {
+        _doContext.Remove("self");
         _doContext["world"]!["deltaTime"] = deltaTime;
         _doContext["self"] = entityJsonNode;
         return _doContext;
@@ -253,6 +253,7 @@ public sealed class SequenceDriver :
     /// </summary>
     private JsonObject BuildTweenContext(JsonNode entityJsonNode, float tweenValue)
     {
+        _tweenContext.Remove("self");
         _tweenContext["tween"] = tweenValue;
         _tweenContext["self"] = entityJsonNode;
         return _tweenContext;
@@ -264,6 +265,7 @@ public sealed class SequenceDriver :
     /// </summary>
     private JsonObject BuildRepeatContext(JsonNode entityJsonNode, float elapsed)
     {
+        _repeatContext.Remove("self");
         _repeatContext["elapsed"] = elapsed;
         _repeatContext["self"] = entityJsonNode;
         return _repeatContext;
