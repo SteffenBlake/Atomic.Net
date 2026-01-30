@@ -1,18 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Nodes;
-using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Core.Extensions;
-using Atomic.Net.MonoGame.Flex;
-using Atomic.Net.MonoGame.Hierarchy;
-using Atomic.Net.MonoGame.Ids;
-using Atomic.Net.MonoGame.Properties;
 using Atomic.Net.MonoGame.Selectors;
-using Atomic.Net.MonoGame.Tags;
-using Atomic.Net.MonoGame.Transform;
-using FlexLayoutSharp;
+using Atomic.Net.MonoGame.Sequencing;
 using Json.Logic;
-using Microsoft.Xna.Framework;
 
 namespace Atomic.Net.MonoGame.Scenes;
 
@@ -23,13 +15,14 @@ namespace Atomic.Net.MonoGame.Scenes;
 public sealed class RulesDriver : 
     ISingleton<RulesDriver>
 {
-    private readonly JsonObject _worldContext = new()
+    private readonly JsonObject _ruleContext = new()
     {
         ["world"] = new JsonObject()
         {
             ["deltaTime"] = 0.0f
         },
-        ["entities"] = new JsonArray()
+        ["entities"] = new JsonArray(),
+        ["index"] = -1
     };
 
     internal static void Initialize()
@@ -63,11 +56,11 @@ public sealed class RulesDriver :
     private void ProcessRule(JsonRule rule, float deltaTime)
     {
         var selectorMatches = rule.From.Matches;
-        _worldContext["world"]!["deltaTime"] = deltaTime;
-        _worldContext["index"] = -1;
+        _ruleContext["world"]!["deltaTime"] = deltaTime;
+        _ruleContext["index"] = -1;
         BuildEntitiesArray(selectorMatches);
 
-        if (!TryApplyJsonLogic(rule.Where, _worldContext, out var filteredResult))
+        if (!TryApplyJsonLogic(rule.Where, _ruleContext, out var filteredResult))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 "Failed to evaluate WHERE clause"
@@ -85,23 +78,41 @@ public sealed class RulesDriver :
 
         for (var i = 0; i < filteredEntities.Count; i++)
         {
-            var entity = filteredEntities[i];
+            var entityJsonNode = filteredEntities[i];
             // JsonLogic filter can return null entries in sparse results
-            if (entity == null)
+            if (entityJsonNode == null)
             {
                 continue;
             }
 
             // Update context for this entity
-            _worldContext["index"] = i;
-            
-            // Execute the scene command on this entity
-            rule.Do.Execute(entity, _worldContext);
-            
-            // Write mutations back to real entity
-            if (entity.TryGetEntityIndex(out var entityIndex))
+            _ruleContext["index"] = i;
+
+            if (!entityJsonNode.TryGetEntityIndex(out var entityIndex))
             {
-                WriteEntityChanges(entity, entityIndex.Value);
+                continue;
+            }
+            
+            // Execute the scene command based on its type
+            if (rule.Do.TryMatch(out MutCommand mutCommand))
+            {
+                // Execute mutation on JsonNode
+                mutCommand.Execute(entityJsonNode, _ruleContext);
+                
+                // Write mutations back to real entity
+                WriteEntityChanges(entityJsonNode, entityIndex.Value);
+            }
+            else if (rule.Do.TryMatch(out SequenceStartCommand startCommand))
+            {
+                SequenceStartCmdDriver.Instance.Execute(entityIndex.Value, startCommand.SequenceId);
+            }
+            else if (rule.Do.TryMatch(out SequenceStopCommand stopCommand))
+            {
+                SequenceStopCmdDriver.Instance.Execute(entityIndex.Value, stopCommand.SequenceId);
+            }
+            else if (rule.Do.TryMatch(out SequenceResetCommand resetCommand))
+            {
+                SequenceResetCmdDriver.Instance.Execute(entityIndex.Value, resetCommand.SequenceId);
             }
         }
     }
@@ -111,7 +122,7 @@ public sealed class RulesDriver :
     /// </summary>
     private void BuildEntitiesArray(SparseArray<bool> selectorMatches)
     {
-        var entities = (JsonArray)_worldContext["entities"]!;
+        var entities = (JsonArray)_ruleContext["entities"]!;
         entities.Clear();
         foreach (var (entityIndex, _) in selectorMatches)
         {
@@ -121,19 +132,7 @@ public sealed class RulesDriver :
     }
 
     /// <summary>
-    /// Extracts the _index property from entity JSON.
-    /// </summary>
-
-    /// <summary>
-    /// Applies the computed value to the target path.
-    /// Target can be either:
-    /// - A string for root-level scalar properties (e.g., "flexHeight", "parent", "id", "tags")
-    /// - An object for nested properties (e.g., { "properties": "health" }, { "position": "x" })
-    /// </summary>
-
-
-    /// <summary>
-    /// Applies a property mutation to an entity.
+    /// Applies JsonLogic evaluation to a rule with a given context.
     /// </summary>
     private static bool TryApplyJsonLogic(
         JsonNode rule,
