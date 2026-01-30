@@ -11,9 +11,10 @@ public static class JsonObjectExtensions
     /// <summary>
     /// Tries to parse an enum value from a JsonNode string.
     /// Fires ErrorEvent on failure with descriptive message.
+    /// Caller must ensure value is not null.
     /// </summary>
     public static bool TryGetEnumWithError<TEnum>(
-        this JsonNode? value, 
+        this JsonNode value, 
         ushort entityIndex, 
         string fieldName, 
         out TEnum result
@@ -21,14 +22,6 @@ public static class JsonObjectExtensions
         where TEnum : struct, Enum
     {
         result = default;
-        
-        if (value == null)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} for entity {entityIndex}: value is null"
-            ));
-            return false;
-        }
 
         // Use TryGetStringValue instead of try/catch
         if (!value.TryGetStringValue(out var stringValue))
@@ -53,23 +46,16 @@ public static class JsonObjectExtensions
     /// <summary>
     /// Tries to get a float value from a JsonNode with error reporting.
     /// Fires ErrorEvent on failure with descriptive message.
+    /// Caller must ensure value is not null.
     /// </summary>
     public static bool TryGetFloatWithError(
-        this JsonNode? value, 
+        this JsonNode value, 
         ushort entityIndex, 
         string fieldName, 
         out float result
     )
     {
         result = default;
-        
-        if (value == null)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} for entity {entityIndex}: value is null"
-            ));
-            return false;
-        }
 
         // Use TryGetFloatValue instead of try/catch
         if (!value.TryGetFloatValue(out result))
@@ -86,23 +72,16 @@ public static class JsonObjectExtensions
     /// <summary>
     /// Tries to parse an int value from a JsonNode.
     /// Fires ErrorEvent on failure with descriptive message.
+    /// Caller must ensure value is not null.
     /// </summary>
     public static bool TryGetIntWithError(
-        this JsonNode? value, 
+        this JsonNode value, 
         ushort entityIndex, 
         string fieldName, 
         out int result
     )
     {
         result = default;
-        
-        if (value == null)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} for entity {entityIndex}: value is null"
-            ));
-            return false;
-        }
 
         // Use TryGetIntValue instead of try/catch
         if (!value.TryGetIntValue(out result))
@@ -120,9 +99,10 @@ public static class JsonObjectExtensions
     /// Tries to parse a two-field behavior (value + percent) from a JsonNode.
     /// Expects JsonObject with "value" and "percent" fields.
     /// Fires ErrorEvent on failure with descriptive message.
+    /// Caller must ensure value is not null.
     /// </summary>
     public static bool TryParseTwoFieldBehavior(
-        this JsonNode? value, 
+        this JsonNode value, 
         ushort entityIndex, 
         string fieldName, 
         out float floatValue, 
@@ -140,7 +120,7 @@ public static class JsonObjectExtensions
             return false;
         }
 
-        if (!obj.TryGetPropertyValue("value", out var valueNode) || 
+        if (!obj.TryGetChild("value", out var valueNode) || 
             !valueNode.TryGetFloatValue(out floatValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
@@ -149,7 +129,7 @@ public static class JsonObjectExtensions
             return false;
         }
 
-        if (!obj.TryGetPropertyValue("percent", out var percentNode) || 
+        if (!obj.TryGetChild("percent", out var percentNode) || 
             !percentNode.TryGetBoolValue(out percentValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(

@@ -9,20 +9,34 @@ namespace Atomic.Net.MonoGame.Core.Extensions;
 public static class JsonNodeExtensions
 {
     /// <summary>
+    /// Tries to get a child property from a JsonObject, ensuring it exists and is not null.
+    /// </summary>
+    public static bool TryGetChild(
+        this JsonObject obj,
+        string propertyName,
+        [NotNullWhen(true)]
+        out JsonNode? child
+    )
+    {
+        if (obj.TryGetPropertyValue(propertyName, out child) && child != null)
+        {
+            return true;
+        }
+
+        child = null;
+        return false;
+    }
+
+    /// <summary>
     /// Tries to get a string value from a JsonNode.
+    /// Caller must ensure node is not null.
     /// </summary>
     public static bool TryGetStringValue(
-        this JsonNode? node,
+        this JsonNode node,
         [NotNullWhen(true)]
         out string? result
     )
     {
-        if (node == null)
-        {
-            result = null;
-            return false;
-        }
-
         // Use JsonValue.TryGetValue instead of try/catch
         if (node is JsonValue jsonValue && jsonValue.TryGetValue<string>(out result))
         {
@@ -36,8 +50,9 @@ public static class JsonNodeExtensions
     /// <summary>
     /// Tries to get a float value from a JsonNode.
     /// Supports conversion from double, int, and decimal.
+    /// Caller must ensure node is not null.
     /// </summary>
-    public static bool TryGetFloatValue(this JsonNode? node, out float result)
+    public static bool TryGetFloatValue(this JsonNode node, out float result)
     {
         if (node is not JsonValue jsonValue)
         {
@@ -74,8 +89,9 @@ public static class JsonNodeExtensions
 
     /// <summary>
     /// Tries to get a bool value from a JsonNode.
+    /// Caller must ensure node is not null.
     /// </summary>
-    public static bool TryGetBoolValue(this JsonNode? node, out bool result)
+    public static bool TryGetBoolValue(this JsonNode node, out bool result)
     {
         if (node is not JsonValue jsonValue)
         {
@@ -94,8 +110,9 @@ public static class JsonNodeExtensions
 
     /// <summary>
     /// Tries to get an int value from a JsonNode.
+    /// Caller must ensure node is not null.
     /// </summary>
-    public static bool TryGetIntValue(this JsonNode? node, out int result)
+    public static bool TryGetIntValue(this JsonNode node, out int result)
     {
         if (node is not JsonValue jsonValue)
         {

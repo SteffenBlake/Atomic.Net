@@ -509,23 +509,23 @@ public sealed class RulesDriver :
             return false;
         }
 
-        if (targetObj.TryGetPropertyValue("properties", out var propertyKeyNode) && propertyKeyNode != null)
+        if (targetObj.TryGetChild("properties", out var propertyKeyNode))
         {
             return ApplyPropertyMutation(entityIndex, propertyKeyNode, value);
         }
-        else if (targetObj.TryGetPropertyValue("position", out var positionComponent) && positionComponent != null)
+        else if (targetObj.TryGetChild("position", out var positionComponent))
         {
             return ApplyTransformVector3ComponentMutation(entityIndex, "position", positionComponent, value);
         }
-        else if (targetObj.TryGetPropertyValue("rotation", out var rotationComponent) && rotationComponent != null)
+        else if (targetObj.TryGetChild("rotation", out var rotationComponent))
         {
             return ApplyTransformQuaternionComponentMutation(entityIndex, rotationComponent, value);
         }
-        else if (targetObj.TryGetPropertyValue("scale", out var scaleComponent) && scaleComponent != null)
+        else if (targetObj.TryGetChild("scale", out var scaleComponent))
         {
             return ApplyTransformVector3ComponentMutation(entityIndex, "scale", scaleComponent, value);
         }
-        else if (targetObj.TryGetPropertyValue("anchor", out var anchorComponent) && anchorComponent != null)
+        else if (targetObj.TryGetChild("anchor", out var anchorComponent))
         {
             return ApplyTransformVector3ComponentMutation(entityIndex, "anchor", anchorComponent, value);
         }
