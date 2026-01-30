@@ -25,7 +25,9 @@
         "mut": [
           {
             "target": {
-              "rotation": "x"
+              "transform": {
+                "rotation": "x"
+              }
             },
             "value": "not a number"
           }

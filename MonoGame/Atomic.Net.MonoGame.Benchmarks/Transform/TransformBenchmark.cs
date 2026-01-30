@@ -1,7 +1,8 @@
 using Atomic.Net.MonoGame.Core;
+using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Transform;
 using Atomic.Net.MonoGame.Hierarchy;
-using BenchmarkDotNet. Attributes;
+using BenchmarkDotNet.Attributes;
 using Microsoft. Xna.Framework;
 
 namespace Atomic.Net.MonoGame.Benchmarks.Transform;
@@ -119,13 +120,17 @@ public class TransformBenchmark
             var entity = EntityRegistry.Instance.Activate();
             var data = _transformData[i];
 
-            entity.WithTransform((ref t) =>
-            {
-                t.Position = data.Position;
-                t.Rotation = data.Rotation;
-                t.Scale = data.Scale;
-                t.Anchor = data.Anchor;
-            });
+
+            entity.SetBehavior<TransformBehavior, TransformData>(
+                in data,
+                static (ref readonly _data, ref b) => b = b with
+                {
+                    Position = _data.Position,
+                    Rotation = _data.Rotation,
+                    Scale = _data.Scale,
+                    Anchor = _data.Anchor
+                }
+            );
 
             if (_parentIndices[i] >= 0)
             {
@@ -133,11 +138,6 @@ public class TransformBenchmark
                 entity.WithParent(EntityRegistry.Instance[parentIndex]);
             }
         }
-
-        // var processId = Environment.ProcessId;
-        // Console.WriteLine($"Waiting for profiler to attach to PID: {processId}");
-        // Console.WriteLine("Press ENTER after attaching profiler.. .");
-        // Console.ReadLine();
     }
 
     [Benchmark]

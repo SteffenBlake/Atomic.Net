@@ -24,19 +24,25 @@
         "mut": [
           {
             "target": {
-              "anchor": "x"
+              "transform": {
+                "anchor": "x"
+              }
             },
             "value": 0.5
           },
           {
             "target": {
-              "anchor": "y"
+              "transform": {
+                "anchor": "y"
+              }
             },
             "value": 0.5
           },
           {
             "target": {
-              "anchor": "z"
+              "transform": {
+                "anchor": "z"
+              }
             },
             "value": 0
           }

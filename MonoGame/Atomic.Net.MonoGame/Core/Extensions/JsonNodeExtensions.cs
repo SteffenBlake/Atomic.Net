@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Nodes;
+using Microsoft.Xna.Framework;
 
 namespace Atomic.Net.MonoGame.Core.Extensions;
 
@@ -127,5 +128,153 @@ public static class JsonNodeExtensions
 
         result = default;
         return false;
+    }
+
+    /// <summary>
+    /// Tries to parse a Vector3 from a JsonObject with x/y/z properties.
+    /// Missing properties use values from the default.
+    /// </summary>
+    public static bool TryGetVector3Value(
+        this JsonObject obj,
+        Vector3 defaultValue,
+        out Vector3 result
+    )
+    {
+        var x = defaultValue.X;
+        var y = defaultValue.Y;
+        var z = defaultValue.Z;
+        var success = true;
+
+        if (obj.TryGetPropertyValue("x", out var xNode) && xNode != null)
+        {
+            if (!xNode.TryGetFloatValue(out x))
+            {
+                success = false;
+            }
+        }
+
+        if (obj.TryGetPropertyValue("y", out var yNode) && yNode != null)
+        {
+            if (!yNode.TryGetFloatValue(out y))
+            {
+                success = false;
+            }
+        }
+
+        if (obj.TryGetPropertyValue("z", out var zNode) && zNode != null)
+        {
+            if (!zNode.TryGetFloatValue(out z))
+            {
+                success = false;
+            }
+        }
+
+        result = new Vector3(x, y, z);
+        return success;
+    }
+
+    /// <summary>
+    /// Tries to parse a Quaternion from a JsonObject with x/y/z/w properties.
+    /// Missing properties use values from the default.
+    /// </summary>
+    public static bool TryGetQuaternionValue(
+        this JsonObject obj,
+        Quaternion defaultValue,
+        out Quaternion result
+    )
+    {
+        var x = defaultValue.X;
+        var y = defaultValue.Y;
+        var z = defaultValue.Z;
+        var w = defaultValue.W;
+        var success = true;
+
+        if (obj.TryGetPropertyValue("x", out var xNode) && xNode != null)
+        {
+            if (!xNode.TryGetFloatValue(out x))
+            {
+                success = false;
+            }
+        }
+
+        if (obj.TryGetPropertyValue("y", out var yNode) && yNode != null)
+        {
+            if (!yNode.TryGetFloatValue(out y))
+            {
+                success = false;
+            }
+        }
+
+        if (obj.TryGetPropertyValue("z", out var zNode) && zNode != null)
+        {
+            if (!zNode.TryGetFloatValue(out z))
+            {
+                success = false;
+            }
+        }
+
+        if (obj.TryGetPropertyValue("w", out var wNode) && wNode != null)
+        {
+            if (!wNode.TryGetFloatValue(out w))
+            {
+                success = false;
+            }
+        }
+
+        result = new Quaternion(x, y, z, w);
+        return success;
+    }
+
+    /// <summary>
+    /// Tries to extract the _index property from entity JSON.
+    /// Entity index is ushort, but JsonLogic may serialize as int.
+    /// </summary>
+    public static bool TryGetEntityIndex(
+        this JsonNode entityJson,
+        [NotNullWhen(true)] out ushort? entityIndex
+    )
+    {
+        if (entityJson is not JsonObject entityObj)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Entity JSON is not a JsonObject"));
+            entityIndex = null;
+            return false;
+        }
+
+        if (!entityObj.TryGetPropertyValue("_index", out var indexNode) || indexNode == null)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Entity missing _index property"));
+            entityIndex = null;
+            return false;
+        }
+
+        try
+        {
+            // Entity index is ushort, but JsonLogic may serialize as int
+            if (indexNode is JsonValue jsonValue && jsonValue.TryGetValue<ushort>(out var ushortValue))
+            {
+                entityIndex = ushortValue;
+                return true;
+            }
+
+            var indexValue = indexNode.GetValue<int>();
+            if (indexValue < 0 || indexValue >= Constants.MaxEntities)
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Entity _index {indexValue} out of bounds (max: {Constants.MaxEntities})"
+                ));
+                entityIndex = null;
+                return false;
+            }
+
+            entityIndex = (ushort)indexValue;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent($"Failed to parse _index: {ex.Message}"));
+            entityIndex = null;
+            return false;
+        }
     }
 }

@@ -1,0 +1,37 @@
+{
+  "entities": [
+    {
+      "id": "ui-element",
+      "tags": [
+        "anchored"
+      ],
+      "transform": {
+        "anchor": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      }
+    }
+  ],
+  "rules": [
+    {
+      "from": "#anchored",
+      "where": {
+        "var": "entities"
+      },
+      "do": {
+        "mut": [
+          {
+            "target": {
+              "transform": {
+                "anchor": "z"
+              }
+            },
+            "value": 1.0
+          }
+        ]
+      }
+    }
+  ]
+}
