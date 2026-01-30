@@ -1784,27 +1784,13 @@ public sealed class RulesDriver :
     /// <summary>
     /// Applies FlexZOverride mutation.
     /// </summary>
-    private static bool ApplyFlexZOverrideMutation(ushort entityIndex, JsonNode value)
-    {
-        if (!value.TryParseInt(entityIndex, "flexZOverride", out var intValue))
-        {
-            return false;
-        }
-
-        var entity = EntityRegistry.Instance[entityIndex];
-        if (!entity.Active)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
-            return false;
-        }
-
-        var behavior = new FlexZOverride(intValue);
-        entity.SetBehavior<FlexZOverride, FlexZOverride>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
+    private static bool ApplyFlexZOverrideMutation(ushort entityIndex, JsonNode value) =>
+        ApplyIntBehavior<FlexZOverride>(
+            entityIndex,
+            value,
+            "flexZOverride",
+            static v => new FlexZOverride(v)
         );
-        return true;
-    }
 
     // ========== Helper Methods ==========
 
@@ -1833,6 +1819,38 @@ public sealed class RulesDriver :
         }
 
         var behavior = behaviorConstructor(floatValue);
+        entity.SetBehavior<TBehavior, TBehavior>(
+            in behavior,
+            static (ref readonly _b, ref b) => b = _b
+        );
+        return true;
+    }
+
+    /// <summary>
+    /// Generic helper for applying single-value int behaviors.
+    /// Eliminates duplication for integer-based mutations.
+    /// </summary>
+    private static bool ApplyIntBehavior<TBehavior>(
+        ushort entityIndex, 
+        JsonNode value, 
+        string fieldName,
+        Func<int, TBehavior> behaviorConstructor
+    )
+        where TBehavior : struct
+    {
+        if (!value.TryParseInt(entityIndex, fieldName, out var intValue))
+        {
+            return false;
+        }
+
+        var entity = EntityRegistry.Instance[entityIndex];
+        if (!entity.Active)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
+            return false;
+        }
+
+        var behavior = behaviorConstructor(intValue);
         entity.SetBehavior<TBehavior, TBehavior>(
             in behavior,
             static (ref readonly _b, ref b) => b = _b
