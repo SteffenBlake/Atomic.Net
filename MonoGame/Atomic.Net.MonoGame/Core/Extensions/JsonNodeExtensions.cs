@@ -49,11 +49,11 @@ public static class JsonNodeExtensions
     }
 
     /// <summary>
-    /// Tries to get a float value from a JsonNode.
+    /// Tries to coerce a float value from a JsonNode.
     /// Supports conversion from double, int, and decimal.
     /// Caller must ensure node is not null.
     /// </summary>
-    public static bool TryGetFloatValue(this JsonNode node, [NotNullWhen(true)] out float? result)
+    public static bool TryCoerceFloatValue(this JsonNode node, [NotNullWhen(true)] out float? result)
     {
         if (node is not JsonValue jsonValue)
         {
@@ -90,10 +90,10 @@ public static class JsonNodeExtensions
     }
 
     /// <summary>
-    /// Tries to get a bool value from a JsonNode.
+    /// Tries to coerce a bool value from a JsonNode.
     /// Caller must ensure node is not null.
     /// </summary>
-    public static bool TryGetBoolValue(this JsonNode node, [NotNullWhen(true)] out bool? result)
+    public static bool TryCoerceBoolValue(this JsonNode node, [NotNullWhen(true)] out bool? result)
     {
         if (node is not JsonValue jsonValue)
         {
@@ -112,10 +112,10 @@ public static class JsonNodeExtensions
     }
 
     /// <summary>
-    /// Tries to get an int value from a JsonNode.
+    /// Tries to coerce an int value from a JsonNode.
     /// Caller must ensure node is not null.
     /// </summary>
-    public static bool TryGetIntValue(this JsonNode node, [NotNullWhen(true)] out int? result)
+    public static bool TryCoerceIntValue(this JsonNode node, [NotNullWhen(true)] out int? result)
     {
         if (node is not JsonValue jsonValue)
         {
@@ -151,7 +151,7 @@ public static class JsonNodeExtensions
 
         if (obj.TryGetChild("x", out var xNode))
         {
-            if (xNode.TryGetFloatValue(out var xValue))
+            if (xNode.TryCoerceFloatValue(out var xValue))
             {
                 x = xValue.Value;
             }
@@ -163,7 +163,7 @@ public static class JsonNodeExtensions
 
         if (obj.TryGetChild("y", out var yNode))
         {
-            if (yNode.TryGetFloatValue(out var yValue))
+            if (yNode.TryCoerceFloatValue(out var yValue))
             {
                 y = yValue.Value;
             }
@@ -175,7 +175,7 @@ public static class JsonNodeExtensions
 
         if (obj.TryGetChild("z", out var zNode))
         {
-            if (zNode.TryGetFloatValue(out var zValue))
+            if (zNode.TryCoerceFloatValue(out var zValue))
             {
                 z = zValue.Value;
             }
@@ -208,7 +208,7 @@ public static class JsonNodeExtensions
 
         if (obj.TryGetChild("x", out var xNode))
         {
-            if (xNode.TryGetFloatValue(out var xValue))
+            if (xNode.TryCoerceFloatValue(out var xValue))
             {
                 x = xValue.Value;
             }
@@ -220,7 +220,7 @@ public static class JsonNodeExtensions
 
         if (obj.TryGetChild("y", out var yNode))
         {
-            if (yNode.TryGetFloatValue(out var yValue))
+            if (yNode.TryCoerceFloatValue(out var yValue))
             {
                 y = yValue.Value;
             }
@@ -232,7 +232,7 @@ public static class JsonNodeExtensions
 
         if (obj.TryGetChild("z", out var zNode))
         {
-            if (zNode.TryGetFloatValue(out var zValue))
+            if (zNode.TryCoerceFloatValue(out var zValue))
             {
                 z = zValue.Value;
             }
@@ -244,7 +244,7 @@ public static class JsonNodeExtensions
 
         if (obj.TryGetChild("w", out var wNode))
         {
-            if (wNode.TryGetFloatValue(out var wValue))
+            if (wNode.TryCoerceFloatValue(out var wValue))
             {
                 w = wValue.Value;
             }

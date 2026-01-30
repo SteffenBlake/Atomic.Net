@@ -44,60 +44,6 @@ public static class JsonObjectExtensions
     }
 
     /// <summary>
-    /// Tries to get a float value from a JsonNode with error reporting.
-    /// Fires ErrorEvent on failure with descriptive message.
-    /// Caller must ensure value is not null.
-    /// </summary>
-    public static bool TryGetFloatWithError(
-        this JsonNode value, 
-        ushort entityIndex, 
-        string fieldName, 
-        out float result
-    )
-    {
-        result = default;
-
-        // Use TryGetFloatValue instead of try/catch
-        if (!value.TryGetFloatValue(out var floatValue))
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} for entity {entityIndex}: Expected a numeric value"
-            ));
-            return false;
-        }
-
-        result = floatValue.Value;
-        return true;
-    }
-
-    /// <summary>
-    /// Tries to parse an int value from a JsonNode.
-    /// Fires ErrorEvent on failure with descriptive message.
-    /// Caller must ensure value is not null.
-    /// </summary>
-    public static bool TryGetIntWithError(
-        this JsonNode value, 
-        ushort entityIndex, 
-        string fieldName, 
-        out int result
-    )
-    {
-        result = default;
-
-        // Use TryGetIntValue instead of try/catch
-        if (!value.TryGetIntValue(out var intValue))
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} for entity {entityIndex}: Expected an integer value"
-            ));
-            return false;
-        }
-
-        result = intValue.Value;
-        return true;
-    }
-
-    /// <summary>
     /// Tries to parse a two-field behavior (value + percent) from a JsonNode.
     /// Expects JsonObject with "value" and "percent" fields.
     /// Fires ErrorEvent on failure with descriptive message.
@@ -123,7 +69,7 @@ public static class JsonObjectExtensions
         }
 
         if (!obj.TryGetChild("value", out var valueNode) || 
-            !valueNode.TryGetFloatValue(out var floatVal))
+            !valueNode.TryCoerceFloatValue(out var floatVal))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Failed to parse {fieldName}.value for entity {entityIndex}: Expected numeric 'value' field"
@@ -134,7 +80,7 @@ public static class JsonObjectExtensions
         floatValue = floatVal.Value;
 
         if (!obj.TryGetChild("percent", out var percentNode) || 
-            !percentNode.TryGetBoolValue(out var boolVal))
+            !percentNode.TryCoerceBoolValue(out var boolVal))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Failed to parse {fieldName}.percent for entity {entityIndex}: Expected boolean 'percent' field"
