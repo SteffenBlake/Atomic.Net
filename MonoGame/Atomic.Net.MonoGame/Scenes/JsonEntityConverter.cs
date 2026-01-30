@@ -32,12 +32,12 @@ public static class JsonEntityConverter
             ["_index"] = entity.Index
         };
 
-        if (BehaviorRegistry<IdBehavior>.Instance.TryGetBehavior(entity, out var idBehavior))
+        if (entity.TryGetBehavior<IdBehavior>(out var idBehavior))
         {
             entityObj["id"] = idBehavior.Value.Id;
         }
 
-        if (BehaviorRegistry<TagsBehavior>.Instance.TryGetBehavior(entity, out var tagBehavior))
+        if (entity.TryGetBehavior<TagsBehavior>(out var tagBehavior))
         {
             var tagsJson = new JsonArray();
             if (tagBehavior.Value.Tags != null)
@@ -50,7 +50,7 @@ public static class JsonEntityConverter
             entityObj["tags"] = tagsJson;
         }
 
-        if (BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out var propertiesBehavior))
+        if (entity.TryGetBehavior<PropertiesBehavior>(out var propertiesBehavior))
         {
             var propertiesJson = new JsonObject();
             foreach (var (key, value) in propertiesBehavior.Value.Properties)
@@ -70,7 +70,7 @@ public static class JsonEntityConverter
             entityObj["properties"] = propertiesJson;
         }
 
-        if (BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var transformBehavior))
+        if (entity.TryGetBehavior<TransformBehavior>(out var transformBehavior))
         {
             var transformJson = new JsonObject
             {
@@ -82,7 +82,7 @@ public static class JsonEntityConverter
             entityObj["transform"] = transformJson;
         }
 
-        if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(entity, out var parentBehavior))
+        if (entity.TryGetBehavior<ParentBehavior>(out var parentBehavior))
         {
             entityObj["parent"] = parentBehavior.Value.ParentSelector.ToString();
         }
