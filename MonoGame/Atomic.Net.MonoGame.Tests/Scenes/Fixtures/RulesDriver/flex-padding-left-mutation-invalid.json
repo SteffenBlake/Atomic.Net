@@ -1,10 +1,26 @@
 {
-  "entities": [{"id": "box", "tags": ["padded"]}],
-  "rules": [{
-    "from": "#padded",
-    "where": { "var": "entities" },
-    "do": {
-      "mut": [{"target": { "flexPaddingLeft": true }, "value": {"nested": "object"}}]
+  "entities": [
+    {
+      "id": "box",
+      "tags": [
+        "padded"
+      ]
     }
-  }]
+  ],
+  "rules": [
+    {
+      "from": "#padded",
+      "where": {
+        "var": "entities"
+      },
+      "do": {
+        "mut": [
+          {
+            "target": "flexPaddingLeft",
+            "value": "not a number"
+          }
+        ]
+      }
+    }
+  ]
 }

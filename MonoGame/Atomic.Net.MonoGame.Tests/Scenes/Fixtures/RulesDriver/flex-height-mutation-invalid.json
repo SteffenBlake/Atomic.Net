@@ -1,10 +1,26 @@
 {
-  "entities": [{"id": "box", "tags": ["sized"]}],
-  "rules": [{
-    "from": "#sized",
-    "where": { "var": "entities" },
-    "do": {
-      "mut": [{"target": { "flexHeight": true }, "value": 100.0}]
+  "entities": [
+    {
+      "id": "box",
+      "tags": [
+        "sized"
+      ]
     }
-  }]
+  ],
+  "rules": [
+    {
+      "from": "#sized",
+      "where": {
+        "var": "entities"
+      },
+      "do": {
+        "mut": [
+          {
+            "target": "flexHeight",
+            "value": "not a number"
+          }
+        ]
+      }
+    }
+  ]
 }

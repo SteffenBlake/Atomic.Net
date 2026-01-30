@@ -1,10 +1,30 @@
 {
-  "entities": [{"id": "item", "tags": ["positioned"]}],
-  "rules": [{
-    "from": "#positioned",
-    "where": { "var": "entities" },
-    "do": {
-      "mut": [{"target": { "flexPositionLeft": true }, "value": {"value": 50.0, "percent": false}}]
+  "entities": [
+    {
+      "id": "item",
+      "tags": [
+        "positioned"
+      ]
     }
-  }]
+  ],
+  "rules": [
+    {
+      "from": "#positioned",
+      "where": {
+        "var": "entities"
+      },
+      "do": {
+        "mut": [
+          {
+            "target": "flexPositionLeft",
+            "value": 50.0
+          },
+          {
+            "target": "flexPositionLeftPercent",
+            "value": false
+          }
+        ]
+      }
+    }
+  ]
 }

@@ -25,16 +25,27 @@
         "mut": [
           {
             "target": {
-              "transform": {
-                "rotation": true
-              }
+              "rotation": "x"
             },
-            "value": {
-              "x": 0,
-              "y": 0.707,
-              "z": 0,
-              "w": 0.707
-            }
+            "value": 0
+          },
+          {
+            "target": {
+              "rotation": "y"
+            },
+            "value": 0.707
+          },
+          {
+            "target": {
+              "rotation": "z"
+            },
+            "value": 0
+          },
+          {
+            "target": {
+              "rotation": "w"
+            },
+            "value": 0.707
           }
         ]
       }

@@ -1,10 +1,26 @@
 {
-  "entities": [{"id": "item", "tags": ["flex-item"]}],
-  "rules": [{
-    "from": "#flex-item",
-    "where": { "var": "entities" },
-    "do": {
-      "mut": [{"target": { "flexAlignSelf": true }, "value": "FlexStart"}]
+  "entities": [
+    {
+      "id": "item",
+      "tags": [
+        "flex-item"
+      ]
     }
-  }]
+  ],
+  "rules": [
+    {
+      "from": "#flex-item",
+      "where": {
+        "var": "entities"
+      },
+      "do": {
+        "mut": [
+          {
+            "target": "flexAlignSelf",
+            "value": "flexStart"
+          }
+        ]
+      }
+    }
+  ]
 }

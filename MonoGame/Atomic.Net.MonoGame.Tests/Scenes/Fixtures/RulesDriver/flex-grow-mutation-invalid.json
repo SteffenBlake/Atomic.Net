@@ -1,10 +1,26 @@
 {
-  "entities": [{"id": "item", "tags": ["growable"]}],
-  "rules": [{
-    "from": "#growable",
-    "where": { "var": "entities" },
-    "do": {
-      "mut": [{"target": { "flexGrow": true }, "value": true}]
+  "entities": [
+    {
+      "id": "item",
+      "tags": [
+        "growable"
+      ]
     }
-  }]
+  ],
+  "rules": [
+    {
+      "from": "#growable",
+      "where": {
+        "var": "entities"
+      },
+      "do": {
+        "mut": [
+          {
+            "target": "flexGrow",
+            "value": "not a number"
+          }
+        ]
+      }
+    }
+  ]
 }

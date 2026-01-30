@@ -487,13 +487,23 @@ public sealed class RulesDriver :
 
     /// <summary>
     /// Applies the computed value to the target path.
+    /// Target can be either:
+    /// - A string for root-level scalar properties (e.g., "flexHeight", "parent", "id", "tags")
+    /// - An object for nested properties (e.g., { "properties": "health" }, { "position": "x" })
     /// </summary>
     private bool ApplyToTarget(ushort entityIndex, JsonNode target, JsonNode value)
     {
+        // Handle string targets (root-level scalar properties)
+        if (target is JsonValue targetValue && targetValue.TryGetValue<string>(out var targetString))
+        {
+            return ApplyStringTarget(entityIndex, targetString, value);
+        }
+
+        // Handle object targets (nested properties)
         if (target is not JsonObject targetObj)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Target is not a JsonObject for entity {entityIndex}"
+                $"Target must be a string or JsonObject for entity {entityIndex}"
             ));
             return false;
         }
@@ -502,141 +512,114 @@ public sealed class RulesDriver :
         {
             return ApplyPropertyMutation(entityIndex, propertyKeyNode, value);
         }
-        else if (targetObj.TryGetPropertyValue("id", out _))
+        else if (targetObj.TryGetPropertyValue("position", out var positionComponent) && positionComponent != null)
         {
-            return ApplyIdMutation(entityIndex, value);
+            return ApplyTransformVector3ComponentMutation(entityIndex, "position", positionComponent, value);
         }
-        else if (targetObj.TryGetPropertyValue("tags", out _))
+        else if (targetObj.TryGetPropertyValue("rotation", out var rotationComponent) && rotationComponent != null)
         {
-            return ApplyTagsMutation(entityIndex, value);
+            return ApplyTransformQuaternionComponentMutation(entityIndex, rotationComponent, value);
         }
-        else if (targetObj.TryGetPropertyValue("transform", out var transformField) && transformField != null)
+        else if (targetObj.TryGetPropertyValue("scale", out var scaleComponent) && scaleComponent != null)
         {
-            return ApplyTransformMutation(entityIndex, transformField, value);
+            return ApplyTransformVector3ComponentMutation(entityIndex, "scale", scaleComponent, value);
         }
-        else if (targetObj.TryGetPropertyValue("parent", out _))
+        else if (targetObj.TryGetPropertyValue("anchor", out var anchorComponent) && anchorComponent != null)
         {
-            return ApplyParentMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexAlignItems", out _))
-        {
-            return ApplyFlexAlignItemsMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexAlignSelf", out _))
-        {
-            return ApplyFlexAlignSelfMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexBorderBottom", out _))
-        {
-            return ApplyFlexBorderBottomMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexBorderLeft", out _))
-        {
-            return ApplyFlexBorderLeftMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexBorderRight", out _))
-        {
-            return ApplyFlexBorderRightMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexBorderTop", out _))
-        {
-            return ApplyFlexBorderTopMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexDirection", out _))
-        {
-            return ApplyFlexDirectionMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexGrow", out _))
-        {
-            return ApplyFlexGrowMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexWrap", out _))
-        {
-            return ApplyFlexWrapMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexZOverride", out _))
-        {
-            return ApplyFlexZOverrideMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexHeight", out _))
-        {
-            return ApplyFlexHeightMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexJustifyContent", out _))
-        {
-            return ApplyFlexJustifyContentMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexMarginBottom", out _))
-        {
-            return ApplyFlexMarginBottomMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexMarginLeft", out _))
-        {
-            return ApplyFlexMarginLeftMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexMarginRight", out _))
-        {
-            return ApplyFlexMarginRightMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexMarginTop", out _))
-        {
-            return ApplyFlexMarginTopMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexPaddingBottom", out _))
-        {
-            return ApplyFlexPaddingBottomMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexPaddingLeft", out _))
-        {
-            return ApplyFlexPaddingLeftMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexPaddingRight", out _))
-        {
-            return ApplyFlexPaddingRightMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexPaddingTop", out _))
-        {
-            return ApplyFlexPaddingTopMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexPositionBottom", out _))
-        {
-            return ApplyFlexPositionBottomMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexPositionLeft", out _))
-        {
-            return ApplyFlexPositionLeftMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexPositionRight", out _))
-        {
-            return ApplyFlexPositionRightMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexPositionTop", out _))
-        {
-            return ApplyFlexPositionTopMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexPositionType", out _))
-        {
-            return ApplyFlexPositionTypeMutation(entityIndex, value);
-        }
-        else if (targetObj.TryGetPropertyValue("flexWidth", out _))
-        {
-            return ApplyFlexWidthMutation(entityIndex, value);
+            return ApplyTransformVector3ComponentMutation(entityIndex, "anchor", anchorComponent, value);
         }
 
-        var validTargets = string.Join(", ", new[]
+        // NOTE: This allocates an array for the error message, but this is acceptable
+        // because this is an error path that only occurs during scene load, not gameplay.
+        var validObjectTargets = string.Join(", ", new[]
         {
-            "properties", "id", "tags", "transform", "parent",
+            "properties (with key)", "position (with component)", "rotation (with component)",
+            "scale (with component)", "anchor (with component)"
+        });
+        EventBus<ErrorEvent>.Push(new ErrorEvent(
+            $"Unrecognized object target for entity {entityIndex}. Expected one of: {validObjectTargets}"
+        ));
+        return false;
+    }
+
+    /// <summary>
+    /// Applies a mutation for string-based targets (root-level scalar properties).
+    /// </summary>
+    private bool ApplyStringTarget(ushort entityIndex, string targetName, JsonNode value)
+    {
+        return targetName switch
+        {
+            "id" => ApplyIdMutation(entityIndex, value),
+            "tags" => ApplyTagsMutation(entityIndex, value),
+            "parent" => ApplyParentMutation(entityIndex, value),
+            "flexAlignItems" => ApplyFlexAlignItemsMutation(entityIndex, value),
+            "flexAlignSelf" => ApplyFlexAlignSelfMutation(entityIndex, value),
+            "flexBorderBottom" => ApplyFlexBorderBottomMutation(entityIndex, value),
+            "flexBorderLeft" => ApplyFlexBorderLeftMutation(entityIndex, value),
+            "flexBorderRight" => ApplyFlexBorderRightMutation(entityIndex, value),
+            "flexBorderTop" => ApplyFlexBorderTopMutation(entityIndex, value),
+            "flexDirection" => ApplyFlexDirectionMutation(entityIndex, value),
+            "flexGrow" => ApplyFlexGrowMutation(entityIndex, value),
+            "flexWrap" => ApplyFlexWrapMutation(entityIndex, value),
+            "flexZOverride" => ApplyFlexZOverrideMutation(entityIndex, value),
+            "flexHeight" => ApplyFlexHeightValueMutation(entityIndex, value),
+            "flexHeightPercent" => ApplyFlexHeightPercentMutation(entityIndex, value),
+            "flexJustifyContent" => ApplyFlexJustifyContentMutation(entityIndex, value),
+            "flexMarginBottom" => ApplyFlexMarginBottomMutation(entityIndex, value),
+            "flexMarginLeft" => ApplyFlexMarginLeftMutation(entityIndex, value),
+            "flexMarginRight" => ApplyFlexMarginRightMutation(entityIndex, value),
+            "flexMarginTop" => ApplyFlexMarginTopMutation(entityIndex, value),
+            "flexPaddingBottom" => ApplyFlexPaddingBottomMutation(entityIndex, value),
+            "flexPaddingLeft" => ApplyFlexPaddingLeftMutation(entityIndex, value),
+            "flexPaddingRight" => ApplyFlexPaddingRightMutation(entityIndex, value),
+            "flexPaddingTop" => ApplyFlexPaddingTopMutation(entityIndex, value),
+            "flexPositionBottom" => ApplyFlexPositionBottomValueMutation(entityIndex, value),
+            "flexPositionBottomPercent" => ApplyFlexPositionBottomPercentMutation(entityIndex, value),
+            "flexPositionLeft" => ApplyFlexPositionLeftValueMutation(entityIndex, value),
+            "flexPositionLeftPercent" => ApplyFlexPositionLeftPercentMutation(entityIndex, value),
+            "flexPositionRight" => ApplyFlexPositionRightValueMutation(entityIndex, value),
+            "flexPositionRightPercent" => ApplyFlexPositionRightPercentMutation(entityIndex, value),
+            "flexPositionTop" => ApplyFlexPositionTopValueMutation(entityIndex, value),
+            "flexPositionTopPercent" => ApplyFlexPositionTopPercentMutation(entityIndex, value),
+            "flexPositionType" => ApplyFlexPositionTypeMutation(entityIndex, value),
+            "flexWidth" => ApplyFlexWidthValueMutation(entityIndex, value),
+            "flexWidthPercent" => ApplyFlexWidthPercentMutation(entityIndex, value),
+            
+            // senior-dev: FINDING: Error path allocates string for error message.
+            // This is acceptable because:
+            // 1. Only occurs during scene load (not during gameplay)
+            // 2. Indicates malformed JSON which should be fixed by designer
+            // 3. Error path, not hot path - clarity > allocation in this case
+            _ => HandleUnrecognizedStringTarget(entityIndex, targetName)
+        };
+    }
+
+    /// <summary>
+    /// Handles unrecognized string targets by logging an error with all valid options.
+    /// </summary>
+    private static bool HandleUnrecognizedStringTarget(ushort entityIndex, string targetName)
+    {
+        // NOTE: This allocates an array for the error message, but this is acceptable
+        // because this is an error path that only occurs during scene load, not gameplay.
+        var validStringTargets = string.Join(", ", new[]
+        {
+            "id", "tags", "parent",
             "flexAlignItems", "flexAlignSelf",
             "flexBorderBottom", "flexBorderLeft", "flexBorderRight", "flexBorderTop",
             "flexDirection", "flexGrow", "flexWrap", "flexZOverride",
-            "flexHeight", "flexJustifyContent",
+            "flexHeight", "flexHeightPercent",
+            "flexJustifyContent",
             "flexMarginBottom", "flexMarginLeft", "flexMarginRight", "flexMarginTop",
             "flexPaddingBottom", "flexPaddingLeft", "flexPaddingRight", "flexPaddingTop",
-            "flexPositionBottom", "flexPositionLeft", "flexPositionRight", "flexPositionTop", "flexPositionType",
-            "flexWidth"
+            "flexPositionBottom", "flexPositionBottomPercent",
+            "flexPositionLeft", "flexPositionLeftPercent",
+            "flexPositionRight", "flexPositionRightPercent",
+            "flexPositionTop", "flexPositionTopPercent",
+            "flexPositionType",
+            "flexWidth", "flexWidthPercent"
         });
         EventBus<ErrorEvent>.Push(new ErrorEvent(
-            $"Unrecognized target for entity {entityIndex}. Expected one of: {validTargets}"
+            $"Unrecognized string target '{targetName}' for entity {entityIndex}. Expected one of: {validStringTargets}"
         ));
         return false;
     }
@@ -836,21 +819,42 @@ public sealed class RulesDriver :
     }
 
     /// <summary>
-    /// Applies a Transform mutation to an entity.
-    /// Handles position, rotation, scale, and anchor fields.
+    /// Applies a mutation to a Vector3 component (position, scale, or anchor) of TransformBehavior.
+    /// Component parameter should be a string indicating which component to set: "x", "y", or "z".
+    /// Value must be a scalar float.
     /// </summary>
-    private static bool ApplyTransformMutation(ushort entityIndex, JsonNode field, JsonNode value)
+    private static bool ApplyTransformVector3ComponentMutation(
+        ushort entityIndex,
+        string fieldName,
+        JsonNode componentNode,
+        JsonNode value
+    )
     {
-        if (field is not JsonObject fieldObj)
+        if (!TryGetStringValue(componentNode, out var component))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Transform field must be a JsonObject for entity {entityIndex}"
+                $"Transform {fieldName} component must be a string (x, y, or z) for entity {entityIndex}"
+            ));
+            return false;
+        }
+
+        if (component != "x" && component != "y" && component != "z")
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Transform {fieldName} component must be 'x', 'y', or 'z', got '{component}' for entity {entityIndex}"
+            ));
+            return false;
+        }
+
+        if (!TryGetFloatValue(value, out var floatValue))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Transform {fieldName}.{component} value must be a number for entity {entityIndex}"
             ));
             return false;
         }
 
         var entity = EntityRegistry.Instance[entityIndex];
-        
         if (!entity.Active)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
@@ -859,124 +863,126 @@ public sealed class RulesDriver :
             return false;
         }
 
-        if (fieldObj.TryGetPropertyValue("position", out _))
+        if (!BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var transform))
         {
-            if (!TryParseVector3(value, entityIndex, "position", out var vector))
-            {
-                return false;
-            }
-            entity.SetBehavior<TransformBehavior, Vector3>(
-                in vector,
-                static (ref readonly _vec, ref b) => b.Position = _vec
-            );
-            return true;
-        }
-        else if (fieldObj.TryGetPropertyValue("rotation", out _))
-        {
-            if (!TryParseQuaternion(value, entityIndex, "rotation", out var quat))
-            {
-                return false;
-            }
-            entity.SetBehavior<TransformBehavior, Quaternion>(
-                in quat,
-                static (ref readonly _quat, ref b) => b.Rotation = _quat
-            );
-            return true;
-        }
-        else if (fieldObj.TryGetPropertyValue("scale", out _))
-        {
-            if (!TryParseVector3(value, entityIndex, "scale", out var vector))
-            {
-                return false;
-            }
-            entity.SetBehavior<TransformBehavior, Vector3>(
-                in vector,
-                static (ref readonly _vec, ref b) => b.Scale = _vec
-            );
-            return true;
-        }
-        else if (fieldObj.TryGetPropertyValue("anchor", out _))
-        {
-            if (!TryParseVector3(value, entityIndex, "anchor", out var vector))
-            {
-                return false;
-            }
-            entity.SetBehavior<TransformBehavior, Vector3>(
-                in vector,
-                static (ref readonly _vec, ref b) => b.Anchor = _vec
-            );
-            return true;
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Entity {entityIndex} does not have TransformBehavior"
+            ));
+            return false;
         }
 
-        EventBus<ErrorEvent>.Push(new ErrorEvent(
-            $"Transform mutation must specify position, rotation, scale, or anchor for entity {entityIndex}"
-        ));
-        return false;
+        // Get the current vector based on field name
+        Vector3 currentVector = fieldName switch
+        {
+            "position" => transform.Value.Position,
+            "scale" => transform.Value.Scale,
+            "anchor" => transform.Value.Anchor,
+            _ => throw new InvalidOperationException($"Unknown Vector3 field: {fieldName}")
+        };
+
+        // Update the specific component
+        var newVector = component switch
+        {
+            "x" => currentVector with { X = floatValue },
+            "y" => currentVector with { Y = floatValue },
+            "z" => currentVector with { Z = floatValue },
+            _ => throw new InvalidOperationException($"Unknown component: {component}")
+        };
+
+        // Apply the mutation based on field name
+        switch (fieldName)
+        {
+            case "position":
+                entity.SetBehavior<TransformBehavior, Vector3>(
+                    in newVector,
+                    static (ref readonly _vec, ref b) => b.Position = _vec
+                );
+                break;
+            case "scale":
+                entity.SetBehavior<TransformBehavior, Vector3>(
+                    in newVector,
+                    static (ref readonly _vec, ref b) => b.Scale = _vec
+                );
+                break;
+            case "anchor":
+                entity.SetBehavior<TransformBehavior, Vector3>(
+                    in newVector,
+                    static (ref readonly _vec, ref b) => b.Anchor = _vec
+                );
+                break;
+        }
+
+        return true;
     }
 
     /// <summary>
-    /// Tries to parse a Vector3 from a JsonNode.
+    /// Applies a mutation to a Quaternion component (rotation) of TransformBehavior.
+    /// Component parameter should be a string indicating which component to set: "x", "y", "z", or "w".
+    /// Value must be a scalar float.
     /// </summary>
-    private static bool TryParseVector3(JsonNode value, ushort entityIndex, string fieldName, out Vector3 result)
+    private static bool ApplyTransformQuaternionComponentMutation(
+        ushort entityIndex,
+        JsonNode componentNode,
+        JsonNode value
+    )
     {
-        if (value is not JsonObject vecObj)
+        if (!TryGetStringValue(componentNode, out var component))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"{fieldName} must be a JsonObject with x, y, z fields for entity {entityIndex}"
+                $"Transform rotation component must be a string (x, y, z, or w) for entity {entityIndex}"
             ));
-            result = default;
             return false;
         }
 
-        try
-        {
-            var x = vecObj["x"]!.GetValue<float>();
-            var y = vecObj["y"]!.GetValue<float>();
-            var z = vecObj["z"]!.GetValue<float>();
-            result = new Vector3(x, y, z);
-            return true;
-        }
-        catch (Exception ex)
+        if (component != "x" && component != "y" && component != "z" && component != "w")
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} for entity {entityIndex}: {ex.Message}"
+                $"Transform rotation component must be 'x', 'y', 'z', or 'w', got '{component}' for entity {entityIndex}"
             ));
-            result = default;
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Tries to parse a Quaternion from a JsonNode.
-    /// </summary>
-    private static bool TryParseQuaternion(JsonNode value, ushort entityIndex, string fieldName, out Quaternion result)
-    {
-        if (value is not JsonObject quatObj)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"{fieldName} must be a JsonObject with x, y, z, w fields for entity {entityIndex}"
-            ));
-            result = default;
             return false;
         }
 
-        try
-        {
-            var x = quatObj["x"]!.GetValue<float>();
-            var y = quatObj["y"]!.GetValue<float>();
-            var z = quatObj["z"]!.GetValue<float>();
-            var w = quatObj["w"]!.GetValue<float>();
-            result = new Quaternion(x, y, z, w);
-            return true;
-        }
-        catch (Exception ex)
+        if (!TryGetFloatValue(value, out var floatValue))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Failed to parse {fieldName} for entity {entityIndex}: {ex.Message}"
+                $"Transform rotation.{component} value must be a number for entity {entityIndex}"
             ));
-            result = default;
             return false;
         }
+
+        var entity = EntityRegistry.Instance[entityIndex];
+        if (!entity.Active)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Cannot mutate inactive entity {entityIndex}"
+            ));
+            return false;
+        }
+
+        if (!BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var transform))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Entity {entityIndex} does not have TransformBehavior"
+            ));
+            return false;
+        }
+
+        var currentQuat = transform.Value.Rotation;
+        var newQuat = component switch
+        {
+            "x" => currentQuat with { X = floatValue },
+            "y" => currentQuat with { Y = floatValue },
+            "z" => currentQuat with { Z = floatValue },
+            "w" => currentQuat with { W = floatValue },
+            _ => throw new InvalidOperationException($"Unknown component: {component}")
+        };
+
+        entity.SetBehavior<TransformBehavior, Quaternion>(
+            in newQuat,
+            static (ref readonly _quat, ref b) => b.Rotation = _quat
+        );
+
+        return true;
     }
 
     /// <summary>
@@ -1515,12 +1521,15 @@ public sealed class RulesDriver :
     // ========== Two-Field Behaviors (Value + Percent) ==========
 
     /// <summary>
-    /// Applies FlexHeight mutation.
+    /// Applies FlexHeight value mutation (not percent).
     /// </summary>
-    private static bool ApplyFlexHeightMutation(ushort entityIndex, JsonNode value)
+    private static bool ApplyFlexHeightValueMutation(ushort entityIndex, JsonNode value)
     {
-        if (!TryParseTwoFieldBehavior(value, entityIndex, "flexHeight", out var floatValue, out var percentValue))
+        if (!TryGetFloatValue(value, out var floatValue))
         {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"flexHeight value must be a number for entity {entityIndex}"
+            ));
             return false;
         }
 
@@ -1531,21 +1540,37 @@ public sealed class RulesDriver :
             return false;
         }
 
-        var behavior = new FlexHeightBehavior(floatValue, percentValue);
-        entity.SetBehavior<FlexHeightBehavior, FlexHeightBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
-        );
+        if (!BehaviorRegistry<FlexHeightBehavior>.Instance.TryGetBehavior(entity, out var currentBehavior))
+        {
+            // Create new behavior with default percent = false
+            var newBehavior = new FlexHeightBehavior(floatValue, false);
+            entity.SetBehavior<FlexHeightBehavior, FlexHeightBehavior>(
+                in newBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
+        else
+        {
+            // Update existing behavior, keeping percent
+            var updatedBehavior = new FlexHeightBehavior(floatValue, currentBehavior.Value.Percent);
+            entity.SetBehavior<FlexHeightBehavior, FlexHeightBehavior>(
+                in updatedBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
         return true;
     }
 
     /// <summary>
-    /// Applies FlexWidth mutation.
+    /// Applies FlexHeight percent mutation (not value).
     /// </summary>
-    private static bool ApplyFlexWidthMutation(ushort entityIndex, JsonNode value)
+    private static bool ApplyFlexHeightPercentMutation(ushort entityIndex, JsonNode value)
     {
-        if (!TryParseTwoFieldBehavior(value, entityIndex, "flexWidth", out var floatValue, out var percentValue))
+        if (!TryGetBoolValue(value, out var boolValue))
         {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"flexHeightPercent value must be a boolean for entity {entityIndex}"
+            ));
             return false;
         }
 
@@ -1556,21 +1581,37 @@ public sealed class RulesDriver :
             return false;
         }
 
-        var behavior = new FlexWidthBehavior(floatValue, percentValue);
-        entity.SetBehavior<FlexWidthBehavior, FlexWidthBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
-        );
+        if (!BehaviorRegistry<FlexHeightBehavior>.Instance.TryGetBehavior(entity, out var currentBehavior))
+        {
+            // Create new behavior with default value = 0
+            var newBehavior = new FlexHeightBehavior(0, boolValue);
+            entity.SetBehavior<FlexHeightBehavior, FlexHeightBehavior>(
+                in newBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
+        else
+        {
+            // Update existing behavior, keeping value
+            var updatedBehavior = new FlexHeightBehavior(currentBehavior.Value.Value, boolValue);
+            entity.SetBehavior<FlexHeightBehavior, FlexHeightBehavior>(
+                in updatedBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
         return true;
     }
 
     /// <summary>
-    /// Applies FlexPositionBottom mutation.
+    /// Applies FlexWidth value mutation (not percent).
     /// </summary>
-    private static bool ApplyFlexPositionBottomMutation(ushort entityIndex, JsonNode value)
+    private static bool ApplyFlexWidthValueMutation(ushort entityIndex, JsonNode value)
     {
-        if (!TryParseTwoFieldBehavior(value, entityIndex, "flexPositionBottom", out var floatValue, out var percentValue))
+        if (!TryGetFloatValue(value, out var floatValue))
         {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"flexWidth value must be a number for entity {entityIndex}"
+            ));
             return false;
         }
 
@@ -1581,21 +1622,35 @@ public sealed class RulesDriver :
             return false;
         }
 
-        var behavior = new FlexPositionBottomBehavior(floatValue, percentValue);
-        entity.SetBehavior<FlexPositionBottomBehavior, FlexPositionBottomBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
-        );
+        if (!BehaviorRegistry<FlexWidthBehavior>.Instance.TryGetBehavior(entity, out var currentBehavior))
+        {
+            var newBehavior = new FlexWidthBehavior(floatValue, false);
+            entity.SetBehavior<FlexWidthBehavior, FlexWidthBehavior>(
+                in newBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
+        else
+        {
+            var updatedBehavior = new FlexWidthBehavior(floatValue, currentBehavior.Value.Percent);
+            entity.SetBehavior<FlexWidthBehavior, FlexWidthBehavior>(
+                in updatedBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
         return true;
     }
 
     /// <summary>
-    /// Applies FlexPositionLeft mutation.
+    /// Applies FlexWidth percent mutation (not value).
     /// </summary>
-    private static bool ApplyFlexPositionLeftMutation(ushort entityIndex, JsonNode value)
+    private static bool ApplyFlexWidthPercentMutation(ushort entityIndex, JsonNode value)
     {
-        if (!TryParseTwoFieldBehavior(value, entityIndex, "flexPositionLeft", out var floatValue, out var percentValue))
+        if (!TryGetBoolValue(value, out var boolValue))
         {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"flexWidthPercent value must be a boolean for entity {entityIndex}"
+            ));
             return false;
         }
 
@@ -1606,21 +1661,35 @@ public sealed class RulesDriver :
             return false;
         }
 
-        var behavior = new FlexPositionLeftBehavior(floatValue, percentValue);
-        entity.SetBehavior<FlexPositionLeftBehavior, FlexPositionLeftBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
-        );
+        if (!BehaviorRegistry<FlexWidthBehavior>.Instance.TryGetBehavior(entity, out var currentBehavior))
+        {
+            var newBehavior = new FlexWidthBehavior(0, boolValue);
+            entity.SetBehavior<FlexWidthBehavior, FlexWidthBehavior>(
+                in newBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
+        else
+        {
+            var updatedBehavior = new FlexWidthBehavior(currentBehavior.Value.Value, boolValue);
+            entity.SetBehavior<FlexWidthBehavior, FlexWidthBehavior>(
+                in updatedBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
         return true;
     }
 
     /// <summary>
-    /// Applies FlexPositionRight mutation.
+    /// Applies FlexPositionBottom value mutation (not percent).
     /// </summary>
-    private static bool ApplyFlexPositionRightMutation(ushort entityIndex, JsonNode value)
+    private static bool ApplyFlexPositionBottomValueMutation(ushort entityIndex, JsonNode value)
     {
-        if (!TryParseTwoFieldBehavior(value, entityIndex, "flexPositionRight", out var floatValue, out var percentValue))
+        if (!TryGetFloatValue(value, out var floatValue))
         {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"flexPositionBottom value must be a number for entity {entityIndex}"
+            ));
             return false;
         }
 
@@ -1631,21 +1700,35 @@ public sealed class RulesDriver :
             return false;
         }
 
-        var behavior = new FlexPositionRightBehavior(floatValue, percentValue);
-        entity.SetBehavior<FlexPositionRightBehavior, FlexPositionRightBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
-        );
+        if (!BehaviorRegistry<FlexPositionBottomBehavior>.Instance.TryGetBehavior(entity, out var currentBehavior))
+        {
+            var newBehavior = new FlexPositionBottomBehavior(floatValue, false);
+            entity.SetBehavior<FlexPositionBottomBehavior, FlexPositionBottomBehavior>(
+                in newBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
+        else
+        {
+            var updatedBehavior = new FlexPositionBottomBehavior(floatValue, currentBehavior.Value.Percent);
+            entity.SetBehavior<FlexPositionBottomBehavior, FlexPositionBottomBehavior>(
+                in updatedBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
         return true;
     }
 
     /// <summary>
-    /// Applies FlexPositionTop mutation.
+    /// Applies FlexPositionBottom percent mutation (not value).
     /// </summary>
-    private static bool ApplyFlexPositionTopMutation(ushort entityIndex, JsonNode value)
+    private static bool ApplyFlexPositionBottomPercentMutation(ushort entityIndex, JsonNode value)
     {
-        if (!TryParseTwoFieldBehavior(value, entityIndex, "flexPositionTop", out var floatValue, out var percentValue))
+        if (!TryGetBoolValue(value, out var boolValue))
         {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"flexPositionBottomPercent value must be a boolean for entity {entityIndex}"
+            ));
             return false;
         }
 
@@ -1656,11 +1739,256 @@ public sealed class RulesDriver :
             return false;
         }
 
-        var behavior = new FlexPositionTopBehavior(floatValue, percentValue);
-        entity.SetBehavior<FlexPositionTopBehavior, FlexPositionTopBehavior>(
-            in behavior,
-            static (ref readonly _b, ref b) => b = _b
-        );
+        if (!BehaviorRegistry<FlexPositionBottomBehavior>.Instance.TryGetBehavior(entity, out var currentBehavior))
+        {
+            var newBehavior = new FlexPositionBottomBehavior(0, boolValue);
+            entity.SetBehavior<FlexPositionBottomBehavior, FlexPositionBottomBehavior>(
+                in newBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
+        else
+        {
+            var updatedBehavior = new FlexPositionBottomBehavior(currentBehavior.Value.Value, boolValue);
+            entity.SetBehavior<FlexPositionBottomBehavior, FlexPositionBottomBehavior>(
+                in updatedBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Applies FlexPositionLeft value mutation (not percent).
+    /// </summary>
+    private static bool ApplyFlexPositionLeftValueMutation(ushort entityIndex, JsonNode value)
+    {
+        if (!TryGetFloatValue(value, out var floatValue))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"flexPositionLeft value must be a number for entity {entityIndex}"
+            ));
+            return false;
+        }
+
+        var entity = EntityRegistry.Instance[entityIndex];
+        if (!entity.Active)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
+            return false;
+        }
+
+        if (!BehaviorRegistry<FlexPositionLeftBehavior>.Instance.TryGetBehavior(entity, out var currentBehavior))
+        {
+            var newBehavior = new FlexPositionLeftBehavior(floatValue, false);
+            entity.SetBehavior<FlexPositionLeftBehavior, FlexPositionLeftBehavior>(
+                in newBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
+        else
+        {
+            var updatedBehavior = new FlexPositionLeftBehavior(floatValue, currentBehavior.Value.Percent);
+            entity.SetBehavior<FlexPositionLeftBehavior, FlexPositionLeftBehavior>(
+                in updatedBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Applies FlexPositionLeft percent mutation (not value).
+    /// </summary>
+    private static bool ApplyFlexPositionLeftPercentMutation(ushort entityIndex, JsonNode value)
+    {
+        if (!TryGetBoolValue(value, out var boolValue))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"flexPositionLeftPercent value must be a boolean for entity {entityIndex}"
+            ));
+            return false;
+        }
+
+        var entity = EntityRegistry.Instance[entityIndex];
+        if (!entity.Active)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
+            return false;
+        }
+
+        if (!BehaviorRegistry<FlexPositionLeftBehavior>.Instance.TryGetBehavior(entity, out var currentBehavior))
+        {
+            var newBehavior = new FlexPositionLeftBehavior(0, boolValue);
+            entity.SetBehavior<FlexPositionLeftBehavior, FlexPositionLeftBehavior>(
+                in newBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
+        else
+        {
+            var updatedBehavior = new FlexPositionLeftBehavior(currentBehavior.Value.Value, boolValue);
+            entity.SetBehavior<FlexPositionLeftBehavior, FlexPositionLeftBehavior>(
+                in updatedBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Applies FlexPositionRight value mutation (not percent).
+    /// </summary>
+    private static bool ApplyFlexPositionRightValueMutation(ushort entityIndex, JsonNode value)
+    {
+        if (!TryGetFloatValue(value, out var floatValue))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"flexPositionRight value must be a number for entity {entityIndex}"
+            ));
+            return false;
+        }
+
+        var entity = EntityRegistry.Instance[entityIndex];
+        if (!entity.Active)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
+            return false;
+        }
+
+        if (!BehaviorRegistry<FlexPositionRightBehavior>.Instance.TryGetBehavior(entity, out var currentBehavior))
+        {
+            var newBehavior = new FlexPositionRightBehavior(floatValue, false);
+            entity.SetBehavior<FlexPositionRightBehavior, FlexPositionRightBehavior>(
+                in newBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
+        else
+        {
+            var updatedBehavior = new FlexPositionRightBehavior(floatValue, currentBehavior.Value.Percent);
+            entity.SetBehavior<FlexPositionRightBehavior, FlexPositionRightBehavior>(
+                in updatedBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Applies FlexPositionRight percent mutation (not value).
+    /// </summary>
+    private static bool ApplyFlexPositionRightPercentMutation(ushort entityIndex, JsonNode value)
+    {
+        if (!TryGetBoolValue(value, out var boolValue))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"flexPositionRightPercent value must be a boolean for entity {entityIndex}"
+            ));
+            return false;
+        }
+
+        var entity = EntityRegistry.Instance[entityIndex];
+        if (!entity.Active)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
+            return false;
+        }
+
+        if (!BehaviorRegistry<FlexPositionRightBehavior>.Instance.TryGetBehavior(entity, out var currentBehavior))
+        {
+            var newBehavior = new FlexPositionRightBehavior(0, boolValue);
+            entity.SetBehavior<FlexPositionRightBehavior, FlexPositionRightBehavior>(
+                in newBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
+        else
+        {
+            var updatedBehavior = new FlexPositionRightBehavior(currentBehavior.Value.Value, boolValue);
+            entity.SetBehavior<FlexPositionRightBehavior, FlexPositionRightBehavior>(
+                in updatedBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Applies FlexPositionTop value mutation (not percent).
+    /// </summary>
+    private static bool ApplyFlexPositionTopValueMutation(ushort entityIndex, JsonNode value)
+    {
+        if (!TryGetFloatValue(value, out var floatValue))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"flexPositionTop value must be a number for entity {entityIndex}"
+            ));
+            return false;
+        }
+
+        var entity = EntityRegistry.Instance[entityIndex];
+        if (!entity.Active)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
+            return false;
+        }
+
+        if (!BehaviorRegistry<FlexPositionTopBehavior>.Instance.TryGetBehavior(entity, out var currentBehavior))
+        {
+            var newBehavior = new FlexPositionTopBehavior(floatValue, false);
+            entity.SetBehavior<FlexPositionTopBehavior, FlexPositionTopBehavior>(
+                in newBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
+        else
+        {
+            var updatedBehavior = new FlexPositionTopBehavior(floatValue, currentBehavior.Value.Percent);
+            entity.SetBehavior<FlexPositionTopBehavior, FlexPositionTopBehavior>(
+                in updatedBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Applies FlexPositionTop percent mutation (not value).
+    /// </summary>
+    private static bool ApplyFlexPositionTopPercentMutation(ushort entityIndex, JsonNode value)
+    {
+        if (!TryGetBoolValue(value, out var boolValue))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"flexPositionTopPercent value must be a boolean for entity {entityIndex}"
+            ));
+            return false;
+        }
+
+        var entity = EntityRegistry.Instance[entityIndex];
+        if (!entity.Active)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent($"Cannot mutate inactive entity {entityIndex}"));
+            return false;
+        }
+
+        if (!BehaviorRegistry<FlexPositionTopBehavior>.Instance.TryGetBehavior(entity, out var currentBehavior))
+        {
+            var newBehavior = new FlexPositionTopBehavior(0, boolValue);
+            entity.SetBehavior<FlexPositionTopBehavior, FlexPositionTopBehavior>(
+                in newBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
+        else
+        {
+            var updatedBehavior = new FlexPositionTopBehavior(currentBehavior.Value.Value, boolValue);
+            entity.SetBehavior<FlexPositionTopBehavior, FlexPositionTopBehavior>(
+                in updatedBehavior,
+                static (ref readonly _b, ref b) => b = _b
+            );
+        }
         return true;
     }
 
@@ -1841,5 +2169,57 @@ public sealed class RulesDriver :
             result = null;
             return false;
         }
+    }
+
+    /// <summary>
+    /// Tries to get a float value from a JsonNode.
+    /// </summary>
+    private static bool TryGetFloatValue(JsonNode node, out float result)
+    {
+        if (node is not JsonValue jsonValue)
+        {
+            result = default;
+            return false;
+        }
+
+        if (jsonValue.TryGetValue<float>(out result))
+        {
+            return true;
+        }
+
+        if (jsonValue.TryGetValue<double>(out var doubleVal))
+        {
+            result = (float)doubleVal;
+            return true;
+        }
+
+        if (jsonValue.TryGetValue<int>(out var intVal))
+        {
+            result = intVal;
+            return true;
+        }
+
+        if (jsonValue.TryGetValue<decimal>(out var decimalVal))
+        {
+            result = (float)decimalVal;
+            return true;
+        }
+
+        result = default;
+        return false;
+    }
+
+    /// <summary>
+    /// Tries to get a bool value from a JsonNode.
+    /// </summary>
+    private static bool TryGetBoolValue(JsonNode node, out bool result)
+    {
+        if (node is not JsonValue jsonValue)
+        {
+            result = default;
+            return false;
+        }
+
+        return jsonValue.TryGetValue<bool>(out result);
     }
 }
