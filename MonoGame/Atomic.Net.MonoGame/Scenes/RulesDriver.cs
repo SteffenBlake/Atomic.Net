@@ -83,13 +83,6 @@ public sealed class RulesDriver :
             return;
         }
 
-        // Pre-create DO context template to avoid per-entity allocations
-        var doContext = new JsonObject
-        {
-            ["world"] = new JsonObject { ["deltaTime"] = deltaTime },
-            ["entities"] = filteredEntities
-        };
-
         for (var i = 0; i < filteredEntities.Count; i++)
         {
             var entity = filteredEntities[i];
@@ -99,15 +92,14 @@ public sealed class RulesDriver :
                 continue;
             }
 
-            // Update DO context for this entity
-            doContext["index"] = i;
-            doContext["self"] = entity.DeepClone();  // Clone to avoid parent conflict
+            // Update context for this entity
+            _worldContext["index"] = i;
+            // Remove and re-add self to avoid parent conflicts
+            _worldContext.Remove("self");
+            _worldContext["self"] = entity.DeepClone();
             
             // Execute the scene command on this entity
-            rule.Do.Execute(entity, doContext);
-            
-            // Remove self to allow reassignment in next iteration
-            doContext.Remove("self");
+            rule.Do.Execute(entity, _worldContext);
             
             // Write mutations back to real entity
             if (TryGetEntityIndex(entity, out var entityIndex))

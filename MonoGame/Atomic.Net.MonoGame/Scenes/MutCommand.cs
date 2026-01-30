@@ -29,8 +29,12 @@ public readonly record struct MutCommand(MutOperation[] Operations)
                 continue;
             }
 
+            // Clone result only if it has a parent to avoid JsonNode parent conflicts
+            // JsonLogic.Apply may return nodes that already have parents
+            var valueToApply = result.Parent != null ? result.DeepClone() : result;
+
             // Apply the mutation to the JsonNode entity
-            operation.Target.Apply(jsonEntity, result);
+            operation.Target.Apply(jsonEntity, valueToApply);
         }
     }
 }

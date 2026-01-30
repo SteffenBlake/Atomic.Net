@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Nodes;
 using Atomic.Net.MonoGame.BED;
@@ -6,8 +7,10 @@ using Atomic.Net.MonoGame.Flex;
 using Atomic.Net.MonoGame.Hierarchy;
 using Atomic.Net.MonoGame.Ids;
 using Atomic.Net.MonoGame.Properties;
+using Atomic.Net.MonoGame.Selectors;
 using Atomic.Net.MonoGame.Tags;
 using Atomic.Net.MonoGame.Transform;
+using FlexLayoutSharp;
 
 namespace Atomic.Net.MonoGame.Scenes;
 
@@ -148,8 +151,8 @@ public static class JsonEntityConverter
 
             var setter = (key, propertyValue.Value);
             entity.SetBehavior<PropertiesBehavior, (string Key, PropertyValue Value)>(
-                ref setter,
-                static (ref readonly _setter, ref b) => b = b with { 
+                in setter,
+                static (ref readonly (string Key, PropertyValue Value) _setter, ref PropertiesBehavior b) => b = b with { 
                     Properties = b.Properties.With(_setter.Key, _setter.Value) 
                 }
             );
@@ -208,30 +211,548 @@ public static class JsonEntityConverter
         return false;
     }
 
-    // Stub implementations for other behaviors - can be expanded later
     private static void WriteId(Entity entity, JsonValue idValue)
     {
-        // TODO: Implement ID writing
+        if (!idValue.TryGetValue<string>(out var newId))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"ID mutation failed: expected string value, got {idValue.GetValueKind()}"
+            ));
+            return;
+        }
+
+        entity.SetBehavior<IdBehavior, string>(
+            in newId,
+            static (ref readonly string _newId, ref IdBehavior b) => b = new IdBehavior(_newId)
+        );
     }
 
     private static void WriteTags(Entity entity, JsonArray tagsArray)
     {
-        // TODO: Implement tags writing
+        var tags = new FluentHashSet<string>(tagsArray.Count, StringComparer.OrdinalIgnoreCase);
+        foreach (var tagNode in tagsArray)
+        {
+            if (tagNode is JsonValue tagValue && tagValue.TryGetValue<string>(out var tag))
+            {
+                tags = tags.With(tag);
+            }
+        }
+
+        entity.SetBehavior<TagsBehavior, FluentHashSet<string>>(
+            in tags,
+            static (ref readonly FluentHashSet<string> _tags, ref TagsBehavior b) => b = b with { Tags = _tags }
+        );
     }
 
     private static void WriteParent(Entity entity, JsonValue parentValue)
     {
-        // TODO: Implement parent writing
+        if (!parentValue.TryGetValue<string>(out var parentSelector))
+        {
+            return;
+        }
+
+        if (!SelectorRegistry.Instance.TryParse(parentSelector, out var selector))
+        {
+            return;
+        }
+
+        entity.SetBehavior<ParentBehavior, EntitySelector>(
+            in selector,
+            static (ref readonly EntitySelector _selector, ref ParentBehavior b) => b = b with { ParentSelector = _selector }
+        );
     }
 
     private static void WriteTransform(Entity entity, JsonObject transformObj)
     {
-        // TODO: Implement transform writing
+        BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var currentTransformRef);
+        var currentTransform = currentTransformRef.Value;
+        var position = currentTransform.Position;
+        var rotation = currentTransform.Rotation;
+        var scale = currentTransform.Scale;
+        var anchor = currentTransform.Anchor;
+
+        // Update position if present
+        if (transformObj.TryGetPropertyValue("position", out var positionNode) && positionNode is JsonObject positionObj)
+        {
+            position = ParseVector3(positionObj, position);
+        }
+
+        // Update rotation if present
+        if (transformObj.TryGetPropertyValue("rotation", out var rotationNode) && rotationNode is JsonObject rotationObj)
+        {
+            rotation = ParseQuaternion(rotationObj, rotation);
+        }
+
+        // Update scale if present
+        if (transformObj.TryGetPropertyValue("scale", out var scaleNode) && scaleNode is JsonObject scaleObj)
+        {
+            scale = ParseVector3(scaleObj, scale);
+        }
+
+        // Update anchor if present
+        if (transformObj.TryGetPropertyValue("anchor", out var anchorNode) && anchorNode is JsonObject anchorObj)
+        {
+            anchor = ParseVector3(anchorObj, anchor);
+        }
+
+        var data = (Pos: position, Rot: rotation, Scale: scale, Anchor: anchor);
+        entity.SetBehavior<TransformBehavior, (Microsoft.Xna.Framework.Vector3 Pos, Microsoft.Xna.Framework.Quaternion Rot, Microsoft.Xna.Framework.Vector3 Scale, Microsoft.Xna.Framework.Vector3 Anchor)>(
+            in data,
+            static (ref readonly (Microsoft.Xna.Framework.Vector3 Pos, Microsoft.Xna.Framework.Quaternion Rot, Microsoft.Xna.Framework.Vector3 Scale, Microsoft.Xna.Framework.Vector3 Anchor) _data, ref TransformBehavior b) =>
+            {
+                b.Position = _data.Pos;
+                b.Rotation = _data.Rot;
+                b.Scale = _data.Scale;
+                b.Anchor = _data.Anchor;
+            }
+        );
+    }
+
+    private static Microsoft.Xna.Framework.Vector3 ParseVector3(JsonObject obj, Microsoft.Xna.Framework.Vector3 defaultValue)
+    {
+        var x = defaultValue.X;
+        var y = defaultValue.Y;
+        var z = defaultValue.Z;
+
+        if (obj.TryGetPropertyValue("x", out var xNode) && xNode is JsonValue xValue)
+        {
+            x = xValue.TryGetValue<float>(out var xFloat) ? xFloat : 
+                xValue.TryGetValue<double>(out var xDouble) ? (float)xDouble :
+                xValue.TryGetValue<int>(out var xInt) ? xInt : x;
+        }
+
+        if (obj.TryGetPropertyValue("y", out var yNode) && yNode is JsonValue yValue)
+        {
+            y = yValue.TryGetValue<float>(out var yFloat) ? yFloat : 
+                yValue.TryGetValue<double>(out var yDouble) ? (float)yDouble :
+                yValue.TryGetValue<int>(out var yInt) ? yInt : y;
+        }
+
+        if (obj.TryGetPropertyValue("z", out var zNode) && zNode is JsonValue zValue)
+        {
+            z = zValue.TryGetValue<float>(out var zFloat) ? zFloat : 
+                zValue.TryGetValue<double>(out var zDouble) ? (float)zDouble :
+                zValue.TryGetValue<int>(out var zInt) ? zInt : z;
+        }
+
+        return new Microsoft.Xna.Framework.Vector3(x, y, z);
+    }
+
+    private static Microsoft.Xna.Framework.Quaternion ParseQuaternion(JsonObject obj, Microsoft.Xna.Framework.Quaternion defaultValue)
+    {
+        var x = defaultValue.X;
+        var y = defaultValue.Y;
+        var z = defaultValue.Z;
+        var w = defaultValue.W;
+
+        if (obj.TryGetPropertyValue("x", out var xNode) && xNode is JsonValue xValue)
+        {
+            x = xValue.TryGetValue<float>(out var xFloat) ? xFloat : 
+                xValue.TryGetValue<double>(out var xDouble) ? (float)xDouble : x;
+        }
+
+        if (obj.TryGetPropertyValue("y", out var yNode) && yNode is JsonValue yValue)
+        {
+            y = yValue.TryGetValue<float>(out var yFloat) ? yFloat : 
+                yValue.TryGetValue<double>(out var yDouble) ? (float)yDouble : y;
+        }
+
+        if (obj.TryGetPropertyValue("z", out var zNode) && zNode is JsonValue zValue)
+        {
+            z = zValue.TryGetValue<float>(out var zFloat) ? zFloat : 
+                zValue.TryGetValue<double>(out var zDouble) ? (float)zDouble : z;
+        }
+
+        if (obj.TryGetPropertyValue("w", out var wNode) && wNode is JsonValue wValue)
+        {
+            w = wValue.TryGetValue<float>(out var wFloat) ? wFloat : 
+                wValue.TryGetValue<double>(out var wDouble) ? (float)wDouble : w;
+        }
+
+        return new Microsoft.Xna.Framework.Quaternion(x, y, z, w);
     }
 
     private static void WriteFlexBehaviors(Entity entity, JsonObject entityObj)
     {
-        // TODO: Implement flex behaviors writing
+        // FlexAlignItems
+        if (entityObj.TryGetPropertyValue("flexAlignItems", out var alignItemsNode) && alignItemsNode is JsonValue alignItemsValue)
+        {
+            if (alignItemsValue.TryGetValue<string>(out var alignItemsStr) && 
+                Enum.TryParse<Align>(alignItemsStr, true, out var alignItems))
+            {
+                entity.SetBehavior<FlexAlignItemsBehavior, Align>(
+                    in alignItems,
+                    static (ref readonly Align val, ref FlexAlignItemsBehavior b) => b = new FlexAlignItemsBehavior(val)
+                );
+            }
+        }
+
+        // FlexAlignSelf
+        if (entityObj.TryGetPropertyValue("flexAlignSelf", out var alignSelfNode) && alignSelfNode is JsonValue alignSelfValue)
+        {
+            if (alignSelfValue.TryGetValue<string>(out var alignSelfStr) && 
+                Enum.TryParse<Align>(alignSelfStr, true, out var alignSelf))
+            {
+                entity.SetBehavior<FlexAlignSelfBehavior, Align>(
+                    in alignSelf,
+                    static (ref readonly Align val, ref FlexAlignSelfBehavior b) => b = new FlexAlignSelfBehavior(val)
+                );
+            }
+        }
+
+        // FlexBorderBottom
+        if (entityObj.TryGetPropertyValue("flexBorderBottom", out var borderBottomNode) && borderBottomNode is JsonValue borderBottomValue)
+        {
+            if (TryGetFloat(borderBottomValue, out var borderBottom))
+            {
+                entity.SetBehavior<FlexBorderBottomBehavior, float>(
+                    in borderBottom,
+                    static (ref readonly float val, ref FlexBorderBottomBehavior b) => b = new FlexBorderBottomBehavior(val)
+                );
+            }
+        }
+
+        // FlexBorderLeft
+        if (entityObj.TryGetPropertyValue("flexBorderLeft", out var borderLeftNode) && borderLeftNode is JsonValue borderLeftValue)
+        {
+            if (TryGetFloat(borderLeftValue, out var borderLeft))
+            {
+                entity.SetBehavior<FlexBorderLeftBehavior, float>(
+                    in borderLeft,
+                    static (ref readonly float val, ref FlexBorderLeftBehavior b) => b = new FlexBorderLeftBehavior(val)
+                );
+            }
+        }
+
+        // FlexBorderRight
+        if (entityObj.TryGetPropertyValue("flexBorderRight", out var borderRightNode) && borderRightNode is JsonValue borderRightValue)
+        {
+            if (TryGetFloat(borderRightValue, out var borderRight))
+            {
+                entity.SetBehavior<FlexBorderRightBehavior, float>(
+                    in borderRight,
+                    static (ref readonly float val, ref FlexBorderRightBehavior b) => b = new FlexBorderRightBehavior(val)
+                );
+            }
+        }
+
+        // FlexBorderTop
+        if (entityObj.TryGetPropertyValue("flexBorderTop", out var borderTopNode) && borderTopNode is JsonValue borderTopValue)
+        {
+            if (TryGetFloat(borderTopValue, out var borderTop))
+            {
+                entity.SetBehavior<FlexBorderTopBehavior, float>(
+                    in borderTop,
+                    static (ref readonly float val, ref FlexBorderTopBehavior b) => b = new FlexBorderTopBehavior(val)
+                );
+            }
+        }
+
+        // FlexDirection
+        if (entityObj.TryGetPropertyValue("flexDirection", out var directionNode) && directionNode is JsonValue directionValue)
+        {
+            if (directionValue.TryGetValue<string>(out var directionStr) && 
+                Enum.TryParse<FlexDirection>(directionStr, true, out var direction))
+            {
+                entity.SetBehavior<FlexDirectionBehavior, FlexDirection>(
+                    in direction,
+                    static (ref readonly FlexDirection val, ref FlexDirectionBehavior b) => b = new FlexDirectionBehavior(val)
+                );
+            }
+        }
+
+        // FlexGrow
+        if (entityObj.TryGetPropertyValue("flexGrow", out var growNode) && growNode is JsonValue growValue)
+        {
+            if (TryGetFloat(growValue, out var grow))
+            {
+                entity.SetBehavior<FlexGrowBehavior, float>(
+                    in grow,
+                    static (ref readonly float val, ref FlexGrowBehavior b) => b = new FlexGrowBehavior(val)
+                );
+            }
+        }
+
+        // FlexWrap
+        if (entityObj.TryGetPropertyValue("flexWrap", out var wrapNode) && wrapNode is JsonValue wrapValue)
+        {
+            if (wrapValue.TryGetValue<string>(out var wrapStr) && 
+                Enum.TryParse<Wrap>(wrapStr, true, out var wrap))
+            {
+                entity.SetBehavior<FlexWrapBehavior, Wrap>(
+                    in wrap,
+                    static (ref readonly Wrap val, ref FlexWrapBehavior b) => b = new FlexWrapBehavior(val)
+                );
+            }
+        }
+
+        // FlexZOverride
+        if (entityObj.TryGetPropertyValue("flexZOverride", out var zOverrideNode) && zOverrideNode is JsonValue zOverrideValue)
+        {
+            if (zOverrideValue.TryGetValue<int>(out var zOverride))
+            {
+                entity.SetBehavior<FlexZOverride, int>(
+                    in zOverride,
+                    static (ref readonly int val, ref FlexZOverride b) => b = new FlexZOverride(val)
+                );
+            }
+        }
+
+        // FlexHeight
+        if (entityObj.TryGetPropertyValue("flexHeight", out var heightNode) && heightNode is JsonValue heightValue)
+        {
+            if (TryGetFloat(heightValue, out var height))
+            {
+                var percent = false;
+                if (entityObj.TryGetPropertyValue("flexHeightPercent", out var heightPercentNode) && 
+                    heightPercentNode is JsonValue heightPercentValue)
+                {
+                    heightPercentValue.TryGetValue<bool>(out percent);
+                }
+                var data = (height, percent);
+                entity.SetBehavior<FlexHeightBehavior, (float, bool)>(
+                    in data,
+                    static (ref readonly (float Height, bool Percent) val, ref FlexHeightBehavior b) => b = new FlexHeightBehavior(val.Height, val.Percent)
+                );
+            }
+        }
+
+        // FlexJustifyContent
+        if (entityObj.TryGetPropertyValue("flexJustifyContent", out var justifyNode) && justifyNode is JsonValue justifyValue)
+        {
+            if (justifyValue.TryGetValue<string>(out var justifyStr) && 
+                Enum.TryParse<Justify>(justifyStr, true, out var justify))
+            {
+                entity.SetBehavior<FlexJustifyContentBehavior, Justify>(
+                    in justify,
+                    static (ref readonly Justify val, ref FlexJustifyContentBehavior b) => b = new FlexJustifyContentBehavior(val)
+                );
+            }
+        }
+
+        // FlexMarginBottom
+        if (entityObj.TryGetPropertyValue("flexMarginBottom", out var marginBottomNode) && marginBottomNode is JsonValue marginBottomValue)
+        {
+            if (TryGetFloat(marginBottomValue, out var marginBottom))
+            {
+                entity.SetBehavior<FlexMarginBottomBehavior, float>(
+                    in marginBottom,
+                    static (ref readonly float val, ref FlexMarginBottomBehavior b) => b = new FlexMarginBottomBehavior(val)
+                );
+            }
+        }
+
+        // FlexMarginLeft
+        if (entityObj.TryGetPropertyValue("flexMarginLeft", out var marginLeftNode) && marginLeftNode is JsonValue marginLeftValue)
+        {
+            if (TryGetFloat(marginLeftValue, out var marginLeft))
+            {
+                entity.SetBehavior<FlexMarginLeftBehavior, float>(
+                    in marginLeft,
+                    static (ref readonly float val, ref FlexMarginLeftBehavior b) => b = new FlexMarginLeftBehavior(val)
+                );
+            }
+        }
+
+        // FlexMarginRight
+        if (entityObj.TryGetPropertyValue("flexMarginRight", out var marginRightNode) && marginRightNode is JsonValue marginRightValue)
+        {
+            if (TryGetFloat(marginRightValue, out var marginRight))
+            {
+                entity.SetBehavior<FlexMarginRightBehavior, float>(
+                    in marginRight,
+                    static (ref readonly float val, ref FlexMarginRightBehavior b) => b = new FlexMarginRightBehavior(val)
+                );
+            }
+        }
+
+        // FlexMarginTop
+        if (entityObj.TryGetPropertyValue("flexMarginTop", out var marginTopNode) && marginTopNode is JsonValue marginTopValue)
+        {
+            if (TryGetFloat(marginTopValue, out var marginTop))
+            {
+                entity.SetBehavior<FlexMarginTopBehavior, float>(
+                    in marginTop,
+                    static (ref readonly float val, ref FlexMarginTopBehavior b) => b = new FlexMarginTopBehavior(val)
+                );
+            }
+        }
+
+        // FlexPaddingBottom
+        if (entityObj.TryGetPropertyValue("flexPaddingBottom", out var paddingBottomNode) && paddingBottomNode is JsonValue paddingBottomValue)
+        {
+            if (TryGetFloat(paddingBottomValue, out var paddingBottom))
+            {
+                entity.SetBehavior<FlexPaddingBottomBehavior, float>(
+                    in paddingBottom,
+                    static (ref readonly float val, ref FlexPaddingBottomBehavior b) => b = new FlexPaddingBottomBehavior(val)
+                );
+            }
+        }
+
+        // FlexPaddingLeft
+        if (entityObj.TryGetPropertyValue("flexPaddingLeft", out var paddingLeftNode) && paddingLeftNode is JsonValue paddingLeftValue)
+        {
+            if (TryGetFloat(paddingLeftValue, out var paddingLeft))
+            {
+                entity.SetBehavior<FlexPaddingLeftBehavior, float>(
+                    in paddingLeft,
+                    static (ref readonly float val, ref FlexPaddingLeftBehavior b) => b = new FlexPaddingLeftBehavior(val)
+                );
+            }
+        }
+
+        // FlexPaddingRight
+        if (entityObj.TryGetPropertyValue("flexPaddingRight", out var paddingRightNode) && paddingRightNode is JsonValue paddingRightValue)
+        {
+            if (TryGetFloat(paddingRightValue, out var paddingRight))
+            {
+                entity.SetBehavior<FlexPaddingRightBehavior, float>(
+                    in paddingRight,
+                    static (ref readonly float val, ref FlexPaddingRightBehavior b) => b = new FlexPaddingRightBehavior(val)
+                );
+            }
+        }
+
+        // FlexPaddingTop
+        if (entityObj.TryGetPropertyValue("flexPaddingTop", out var paddingTopNode) && paddingTopNode is JsonValue paddingTopValue)
+        {
+            if (TryGetFloat(paddingTopValue, out var paddingTop))
+            {
+                entity.SetBehavior<FlexPaddingTopBehavior, float>(
+                    in paddingTop,
+                    static (ref readonly float val, ref FlexPaddingTopBehavior b) => b = new FlexPaddingTopBehavior(val)
+                );
+            }
+        }
+
+        // FlexPositionBottom
+        if (entityObj.TryGetPropertyValue("flexPositionBottom", out var positionBottomNode) && positionBottomNode is JsonValue positionBottomValue)
+        {
+            if (TryGetFloat(positionBottomValue, out var positionBottom))
+            {
+                var percent = false;
+                if (entityObj.TryGetPropertyValue("flexPositionBottomPercent", out var positionBottomPercentNode) && 
+                    positionBottomPercentNode is JsonValue positionBottomPercentValue)
+                {
+                    positionBottomPercentValue.TryGetValue<bool>(out percent);
+                }
+                var data = (positionBottom, percent);
+                entity.SetBehavior<FlexPositionBottomBehavior, (float, bool)>(
+                    in data,
+                    static (ref readonly (float Value, bool Percent) val, ref FlexPositionBottomBehavior b) => b = new FlexPositionBottomBehavior(val.Value, val.Percent)
+                );
+            }
+        }
+
+        // FlexPositionLeft
+        if (entityObj.TryGetPropertyValue("flexPositionLeft", out var positionLeftNode) && positionLeftNode is JsonValue positionLeftValue)
+        {
+            if (TryGetFloat(positionLeftValue, out var positionLeft))
+            {
+                var percent = false;
+                if (entityObj.TryGetPropertyValue("flexPositionLeftPercent", out var positionLeftPercentNode) && 
+                    positionLeftPercentNode is JsonValue positionLeftPercentValue)
+                {
+                    positionLeftPercentValue.TryGetValue<bool>(out percent);
+                }
+                var data = (positionLeft, percent);
+                entity.SetBehavior<FlexPositionLeftBehavior, (float, bool)>(
+                    in data,
+                    static (ref readonly (float Value, bool Percent) val, ref FlexPositionLeftBehavior b) => b = new FlexPositionLeftBehavior(val.Value, val.Percent)
+                );
+            }
+        }
+
+        // FlexPositionRight
+        if (entityObj.TryGetPropertyValue("flexPositionRight", out var positionRightNode) && positionRightNode is JsonValue positionRightValue)
+        {
+            if (TryGetFloat(positionRightValue, out var positionRight))
+            {
+                var percent = false;
+                if (entityObj.TryGetPropertyValue("flexPositionRightPercent", out var positionRightPercentNode) && 
+                    positionRightPercentNode is JsonValue positionRightPercentValue)
+                {
+                    positionRightPercentValue.TryGetValue<bool>(out percent);
+                }
+                var data = (positionRight, percent);
+                entity.SetBehavior<FlexPositionRightBehavior, (float, bool)>(
+                    in data,
+                    static (ref readonly (float Value, bool Percent) val, ref FlexPositionRightBehavior b) => b = new FlexPositionRightBehavior(val.Value, val.Percent)
+                );
+            }
+        }
+
+        // FlexPositionTop
+        if (entityObj.TryGetPropertyValue("flexPositionTop", out var positionTopNode) && positionTopNode is JsonValue positionTopValue)
+        {
+            if (TryGetFloat(positionTopValue, out var positionTop))
+            {
+                var percent = false;
+                if (entityObj.TryGetPropertyValue("flexPositionTopPercent", out var positionTopPercentNode) && 
+                    positionTopPercentNode is JsonValue positionTopPercentValue)
+                {
+                    positionTopPercentValue.TryGetValue<bool>(out percent);
+                }
+                var data = (positionTop, percent);
+                entity.SetBehavior<FlexPositionTopBehavior, (float, bool)>(
+                    in data,
+                    static (ref readonly (float Value, bool Percent) val, ref FlexPositionTopBehavior b) => b = new FlexPositionTopBehavior(val.Value, val.Percent)
+                );
+            }
+        }
+
+        // FlexPositionType
+        if (entityObj.TryGetPropertyValue("flexPositionType", out var positionTypeNode) && positionTypeNode is JsonValue positionTypeValue)
+        {
+            if (positionTypeValue.TryGetValue<string>(out var positionTypeStr) && 
+                Enum.TryParse<PositionType>(positionTypeStr, true, out var positionType))
+            {
+                entity.SetBehavior<FlexPositionTypeBehavior, PositionType>(
+                    in positionType,
+                    static (ref readonly PositionType val, ref FlexPositionTypeBehavior b) => b = new FlexPositionTypeBehavior(val)
+                );
+            }
+        }
+
+        // FlexWidth
+        if (entityObj.TryGetPropertyValue("flexWidth", out var widthNode) && widthNode is JsonValue widthValue)
+        {
+            if (TryGetFloat(widthValue, out var width))
+            {
+                var percent = false;
+                if (entityObj.TryGetPropertyValue("flexWidthPercent", out var widthPercentNode) && 
+                    widthPercentNode is JsonValue widthPercentValue)
+                {
+                    widthPercentValue.TryGetValue<bool>(out percent);
+                }
+                var data = (width, percent);
+                entity.SetBehavior<FlexWidthBehavior, (float, bool)>(
+                    in data,
+                    static (ref readonly (float Value, bool Percent) val, ref FlexWidthBehavior b) => b = new FlexWidthBehavior(val.Value, val.Percent)
+                );
+            }
+        }
+    }
+
+    private static bool TryGetFloat(JsonValue value, out float result)
+    {
+        if (value.TryGetValue<float>(out result))
+        {
+            return true;
+        }
+        if (value.TryGetValue<double>(out var doubleVal))
+        {
+            result = (float)doubleVal;
+            return true;
+        }
+        if (value.TryGetValue<int>(out var intVal))
+        {
+            result = intVal;
+            return true;
+        }
+        result = 0;
+        return false;
     }
 
     private static JsonObject SerializeVector3(Microsoft.Xna.Framework.Vector3 vector)
