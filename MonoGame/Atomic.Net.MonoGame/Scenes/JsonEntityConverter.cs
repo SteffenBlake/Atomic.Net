@@ -89,7 +89,161 @@ public static class JsonEntityConverter
             entityObj["parent"] = parentBehavior.Value.ParentSelector.ToString();
         }
 
-        SerializeFlexBehaviors(entity, entityObj);
+
+        // Flex behaviors
+        if (entity.TryGetBehavior<FlexAlignItemsBehavior>(out var alignItems))
+        {
+            entityObj["flexAlignItems"] = alignItems.Value.Value.ToString();
+        }
+
+        if (entity.TryGetBehavior<FlexAlignSelfBehavior>(out var alignSelf))
+        {
+            entityObj["flexAlignSelf"] = alignSelf.Value.Value.ToString();
+        }
+
+        if (entity.TryGetBehavior<FlexBorderBottomBehavior>(out var borderBottom))
+        {
+            entityObj["flexBorderBottom"] = borderBottom.Value.Value;
+        }
+
+        if (entity.TryGetBehavior<FlexBorderLeftBehavior>(out var borderLeft))
+        {
+            entityObj["flexBorderLeft"] = borderLeft.Value.Value;
+        }
+
+        if (entity.TryGetBehavior<FlexBorderRightBehavior>(out var borderRight))
+        {
+            entityObj["flexBorderRight"] = borderRight.Value.Value;
+        }
+
+        if (entity.TryGetBehavior<FlexBorderTopBehavior>(out var borderTop))
+        {
+            entityObj["flexBorderTop"] = borderTop.Value.Value;
+        }
+
+        if (entity.TryGetBehavior<FlexDirectionBehavior>(out var direction))
+        {
+            entityObj["flexDirection"] = direction.Value.Value.ToString();
+        }
+
+        if (entity.TryGetBehavior<FlexGrowBehavior>(out var grow))
+        {
+            entityObj["flexGrow"] = grow.Value.Value;
+        }
+
+        if (entity.TryGetBehavior<FlexWrapBehavior>(out var wrap))
+        {
+            entityObj["flexWrap"] = wrap.Value.Value.ToString();
+        }
+
+        if (entity.TryGetBehavior<FlexZOverride>(out var zOverride))
+        {
+            entityObj["flexZOverride"] = zOverride.Value.ZIndex;
+        }
+
+        if (entity.TryGetBehavior<FlexHeightBehavior>(out var height))
+        {
+            entityObj["flexHeight"] = new JsonObject
+            {
+                ["value"] = height.Value.Value,
+                ["percent"] = height.Value.Percent
+            };
+        }
+
+        if (entity.TryGetBehavior<FlexJustifyContentBehavior>(out var justifyContent))
+        {
+            entityObj["flexJustifyContent"] = justifyContent.Value.Value.ToString();
+        }
+
+        if (entity.TryGetBehavior<FlexMarginBottomBehavior>(out var marginBottom))
+        {
+            entityObj["flexMarginBottom"] = marginBottom.Value.Value;
+        }
+
+        if (entity.TryGetBehavior<FlexMarginLeftBehavior>(out var marginLeft))
+        {
+            entityObj["flexMarginLeft"] = marginLeft.Value.Value;
+        }
+
+        if (entity.TryGetBehavior<FlexMarginRightBehavior>(out var marginRight))
+        {
+            entityObj["flexMarginRight"] = marginRight.Value.Value;
+        }
+
+        if (entity.TryGetBehavior<FlexMarginTopBehavior>(out var marginTop))
+        {
+            entityObj["flexMarginTop"] = marginTop.Value.Value;
+        }
+
+        if (entity.TryGetBehavior<FlexPaddingBottomBehavior>(out var paddingBottom))
+        {
+            entityObj["flexPaddingBottom"] = paddingBottom.Value.Value;
+        }
+
+        if (entity.TryGetBehavior<FlexPaddingLeftBehavior>(out var paddingLeft))
+        {
+            entityObj["flexPaddingLeft"] = paddingLeft.Value.Value;
+        }
+
+        if (entity.TryGetBehavior<FlexPaddingRightBehavior>(out var paddingRight))
+        {
+            entityObj["flexPaddingRight"] = paddingRight.Value.Value;
+        }
+
+        if (entity.TryGetBehavior<FlexPaddingTopBehavior>(out var paddingTop))
+        {
+            entityObj["flexPaddingTop"] = paddingTop.Value.Value;
+        }
+
+        if (entity.TryGetBehavior<FlexPositionBottomBehavior>(out var positionBottom))
+        {
+            entityObj["flexPositionBottom"] = new JsonObject
+            {
+                ["value"] = positionBottom.Value.Value,
+                ["percent"] = positionBottom.Value.Percent
+            };
+        }
+
+        if (entity.TryGetBehavior<FlexPositionLeftBehavior>(out var positionLeft))
+        {
+            entityObj["flexPositionLeft"] = new JsonObject
+            {
+                ["value"] = positionLeft.Value.Value,
+                ["percent"] = positionLeft.Value.Percent
+            };
+        }
+
+        if (entity.TryGetBehavior<FlexPositionRightBehavior>(out var positionRight))
+        {
+            entityObj["flexPositionRight"] = new JsonObject
+            {
+                ["value"] = positionRight.Value.Value,
+                ["percent"] = positionRight.Value.Percent
+            };
+        }
+
+        if (entity.TryGetBehavior<FlexPositionTopBehavior>(out var positionTop))
+        {
+            entityObj["flexPositionTop"] = new JsonObject
+            {
+                ["value"] = positionTop.Value.Value,
+                ["percent"] = positionTop.Value.Percent
+            };
+        }
+
+        if (entity.TryGetBehavior<FlexPositionTypeBehavior>(out var positionType))
+        {
+            entityObj["flexPositionType"] = positionType.Value.Value.ToString();
+        }
+
+        if (entity.TryGetBehavior<FlexWidthBehavior>(out var width))
+        {
+            entityObj["flexWidth"] = new JsonObject
+            {
+                ["value"] = width.Value.Value,
+                ["percent"] = width.Value.Percent
+            };
+        }
 
         return entityObj;
     }
@@ -127,7 +281,7 @@ public static class JsonEntityConverter
         {
             entity.SetBehavior<TagsBehavior>(static (ref b) => b = b with { Tags = b.Tags.Clear() });
             
-            foreach (var tagNode in mutEntity.Tags)
+            foreach (var tagNode in mutEntity.Value.Tags)
             {
                 if (tagNode == null)
                 {
@@ -152,7 +306,7 @@ public static class JsonEntityConverter
         // Properties
         if (mutEntity.Value.Properties != null)
         {
-            foreach (KeyValuePair<string, JsonNode> kvp in mutEntity.Properties)
+            foreach (KeyValuePair<string, JsonNode> kvp in mutEntity.Value.Properties)
             {
                 var key = kvp.Key;
                 var valueNode = kvp.Value;
@@ -325,9 +479,9 @@ public static class JsonEntityConverter
         // Parent
         if (mutEntity.Value.Parent != null)
         {
-            if (!SelectorRegistry.Instance.TryParse(mutEntity.Parent, out var parentSelector))
+            if (!SelectorRegistry.Instance.TryParse(mutEntity.Value.Parent, out var parentSelector))
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent($"Parent mutation failed: invalid selector '{mutEntity.Parent}'"));
+                EventBus<ErrorEvent>.Push(new ErrorEvent($"Parent mutation failed: invalid selector '{mutEntity.Value.Parent}'"));
             }
             else
             {
@@ -341,7 +495,7 @@ public static class JsonEntityConverter
         // FlexAlignItems
         if (mutEntity.Value.FlexAlignItems != null)
         {
-            if (!Enum.TryParse<Align>(mutEntity.FlexAlignItems, true, out var alignItems))
+            if (!Enum.TryParse<Align>(mutEntity.Value.FlexAlignItems, true, out var alignItems))
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent($"FlexAlignItems mutation failed: expected valid Align enum value"));
             }
@@ -357,7 +511,7 @@ public static class JsonEntityConverter
         // FlexAlignSelf
         if (mutEntity.Value.FlexAlignSelf != null)
         {
-            if (!Enum.TryParse<Align>(mutEntity.FlexAlignSelf, true, out var alignSelf))
+            if (!Enum.TryParse<Align>(mutEntity.Value.FlexAlignSelf, true, out var alignSelf))
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent($"FlexAlignSelf mutation failed: expected valid Align enum value"));
             }
@@ -413,7 +567,7 @@ public static class JsonEntityConverter
         // FlexDirection
         if (mutEntity.Value.FlexDirection != null)
         {
-            if (!Enum.TryParse<FlexDirection>(mutEntity.FlexDirection, true, out var direction))
+            if (!Enum.TryParse<FlexDirection>(mutEntity.Value.FlexDirection, true, out var direction))
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent($"FlexDirection mutation failed: expected valid FlexDirection enum value"));
             }
@@ -439,7 +593,7 @@ public static class JsonEntityConverter
         // FlexWrap
         if (mutEntity.Value.FlexWrap != null)
         {
-            if (!Enum.TryParse<Wrap>(mutEntity.FlexWrap, true, out var wrap))
+            if (!Enum.TryParse<Wrap>(mutEntity.Value.FlexWrap, true, out var wrap))
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent($"FlexWrap mutation failed: expected valid Wrap enum value"));
             }
@@ -485,7 +639,7 @@ public static class JsonEntityConverter
         // FlexJustifyContent
         if (mutEntity.Value.FlexJustifyContent != null)
         {
-            if (!Enum.TryParse<Justify>(mutEntity.FlexJustifyContent, true, out var justify))
+            if (!Enum.TryParse<Justify>(mutEntity.Value.FlexJustifyContent, true, out var justify))
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent($"FlexJustifyContent mutation failed: expected valid Justify enum value"));
             }
@@ -661,7 +815,7 @@ public static class JsonEntityConverter
         // FlexPositionType
         if (mutEntity.Value.FlexPositionType != null)
         {
-            if (!Enum.TryParse<PositionType>(mutEntity.FlexPositionType, true, out var positionType))
+            if (!Enum.TryParse<PositionType>(mutEntity.Value.FlexPositionType, true, out var positionType))
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent($"FlexPositionType mutation failed: expected valid PositionType enum value"));
             }
@@ -716,162 +870,6 @@ public static class JsonEntityConverter
         };
     }
 
-    private static void SerializeFlexBehaviors(Entity entity, JsonObject entityObj)
-    {
-        if (entity.TryGetBehavior<FlexAlignItemsBehavior>(out var alignItems))
-        {
-            entityObj["flexAlignItems"] = alignItems.Value.Value.ToString();
-        }
-
-        if (entity.TryGetBehavior<FlexAlignSelfBehavior>(out var alignSelf))
-        {
-            entityObj["flexAlignSelf"] = alignSelf.Value.Value.ToString();
-        }
-
-        if (entity.TryGetBehavior<FlexBorderBottomBehavior>(out var borderBottom))
-        {
-            entityObj["flexBorderBottom"] = borderBottom.Value.Value;
-        }
-
-        if (entity.TryGetBehavior<FlexBorderLeftBehavior>(out var borderLeft))
-        {
-            entityObj["flexBorderLeft"] = borderLeft.Value.Value;
-        }
-
-        if (entity.TryGetBehavior<FlexBorderRightBehavior>(out var borderRight))
-        {
-            entityObj["flexBorderRight"] = borderRight.Value.Value;
-        }
-
-        if (entity.TryGetBehavior<FlexBorderTopBehavior>(out var borderTop))
-        {
-            entityObj["flexBorderTop"] = borderTop.Value.Value;
-        }
-
-        if (entity.TryGetBehavior<FlexDirectionBehavior>(out var direction))
-        {
-            entityObj["flexDirection"] = direction.Value.Value.ToString();
-        }
-
-        if (entity.TryGetBehavior<FlexGrowBehavior>(out var grow))
-        {
-            entityObj["flexGrow"] = grow.Value.Value;
-        }
-
-        if (entity.TryGetBehavior<FlexWrapBehavior>(out var wrap))
-        {
-            entityObj["flexWrap"] = wrap.Value.Value.ToString();
-        }
-
-        if (entity.TryGetBehavior<FlexZOverride>(out var zOverride))
-        {
-            entityObj["flexZOverride"] = zOverride.Value.ZIndex;
-        }
-
-        if (entity.TryGetBehavior<FlexHeightBehavior>(out var height))
-        {
-            entityObj["flexHeight"] = new JsonObject
-            {
-                ["value"] = height.Value.Value,
-                ["percent"] = height.Value.Percent
-            };
-        }
-
-        if (entity.TryGetBehavior<FlexJustifyContentBehavior>(out var justifyContent))
-        {
-            entityObj["flexJustifyContent"] = justifyContent.Value.Value.ToString();
-        }
-
-        if (entity.TryGetBehavior<FlexMarginBottomBehavior>(out var marginBottom))
-        {
-            entityObj["flexMarginBottom"] = marginBottom.Value.Value;
-        }
-
-        if (entity.TryGetBehavior<FlexMarginLeftBehavior>(out var marginLeft))
-        {
-            entityObj["flexMarginLeft"] = marginLeft.Value.Value;
-        }
-
-        if (entity.TryGetBehavior<FlexMarginRightBehavior>(out var marginRight))
-        {
-            entityObj["flexMarginRight"] = marginRight.Value.Value;
-        }
-
-        if (entity.TryGetBehavior<FlexMarginTopBehavior>(out var marginTop))
-        {
-            entityObj["flexMarginTop"] = marginTop.Value.Value;
-        }
-
-        if (entity.TryGetBehavior<FlexPaddingBottomBehavior>(out var paddingBottom))
-        {
-            entityObj["flexPaddingBottom"] = paddingBottom.Value.Value;
-        }
-
-        if (entity.TryGetBehavior<FlexPaddingLeftBehavior>(out var paddingLeft))
-        {
-            entityObj["flexPaddingLeft"] = paddingLeft.Value.Value;
-        }
-
-        if (entity.TryGetBehavior<FlexPaddingRightBehavior>(out var paddingRight))
-        {
-            entityObj["flexPaddingRight"] = paddingRight.Value.Value;
-        }
-
-        if (entity.TryGetBehavior<FlexPaddingTopBehavior>(out var paddingTop))
-        {
-            entityObj["flexPaddingTop"] = paddingTop.Value.Value;
-        }
-
-        if (entity.TryGetBehavior<FlexPositionBottomBehavior>(out var positionBottom))
-        {
-            entityObj["flexPositionBottom"] = new JsonObject
-            {
-                ["value"] = positionBottom.Value.Value,
-                ["percent"] = positionBottom.Value.Percent
-            };
-        }
-
-        if (entity.TryGetBehavior<FlexPositionLeftBehavior>(out var positionLeft))
-        {
-            entityObj["flexPositionLeft"] = new JsonObject
-            {
-                ["value"] = positionLeft.Value.Value,
-                ["percent"] = positionLeft.Value.Percent
-            };
-        }
-
-        if (entity.TryGetBehavior<FlexPositionRightBehavior>(out var positionRight))
-        {
-            entityObj["flexPositionRight"] = new JsonObject
-            {
-                ["value"] = positionRight.Value.Value,
-                ["percent"] = positionRight.Value.Percent
-            };
-        }
-
-        if (entity.TryGetBehavior<FlexPositionTopBehavior>(out var positionTop))
-        {
-            entityObj["flexPositionTop"] = new JsonObject
-            {
-                ["value"] = positionTop.Value.Value,
-                ["percent"] = positionTop.Value.Percent
-            };
-        }
-
-        if (entity.TryGetBehavior<FlexPositionTypeBehavior>(out var positionType))
-        {
-            entityObj["flexPositionType"] = positionType.Value.Value.ToString();
-        }
-
-        if (entity.TryGetBehavior<FlexWidthBehavior>(out var width))
-        {
-            entityObj["flexWidth"] = new JsonObject
-            {
-                ["value"] = width.Value.Value,
-                ["percent"] = width.Value.Percent
-            };
-        }
-    }
 
     private static bool TryDeserializeMutEntity(
         JsonObject entityObj,
