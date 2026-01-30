@@ -267,14 +267,12 @@ public static class JsonEntityConverter
         }
 
         // Id
-        if (mutEntity.Value.Id != null)
-        {
-            var newId = mutEntity.Value.Id;
-            entity.SetBehavior<IdBehavior, string>(
-                in newId,
-                static (ref readonly _newId, ref b) => b = new IdBehavior(_newId)
-            );
-        }
+        
+        TrySetRef<string, IdBehavior>(
+            entity,
+            mutEntity.Value.Id,
+            static (ref readonly _newId, ref b) => b = new IdBehavior(_newId)
+        );
 
         // Tags
         if (mutEntity.Value.Tags != null)
@@ -363,30 +361,25 @@ public static class JsonEntityConverter
         }
 
         // Transform - Position.X
-        if (mutEntity.Value.Transform?.Position?.X.HasValue ?? false)
-        {
-            var x = mutEntity.Value.Transform!.Value!.Position!.Value!.X!.Value;
-            entity.SetBehavior<TransformBehavior, float>(
-                in x,
-                static (ref readonly _x, ref b) => b = b with
-                {
-                    Position = b.Position with { X = _x }
-                }
-            );
-        }
+        TrySetStruct<float, TransformBehavior>(
+            entity,
+            mutEntity.Value.Transform?.Position?.X,
+            static (ref readonly _x, ref b) => b = b with
+            {
+                Position = b.Position with { X = _x }
+            }
+        );
+
 
         // Transform - Position.Y
-        if (mutEntity.Value.Transform?.Position?.Y.HasValue ?? false)
-        {
-            var y = mutEntity.Value.Transform!.Value!.Position!.Value!.Y!.Value;
-            entity.SetBehavior<TransformBehavior, float>(
-                in y,
-                static (ref readonly _y, ref b) => b = b with
-                {
-                    Position = b.Position with { Y = _y }
-                }
-            );
-        }
+        TrySetStruct<float, TransformBehavior>(
+            entity,
+            mutEntity.Value.Transform?.Position?.Y,
+            static (ref readonly _y, ref b) => b = b with
+            {
+                Position = b.Position with { Y = _y }
+            }
+        );
 
         // Transform - Position.Z
         if (mutEntity.Value.Transform?.Position?.Z.HasValue ?? false)
@@ -534,57 +527,33 @@ public static class JsonEntityConverter
         // Parent
         if (mutEntity.Value.Parent != null)
         {
-            if (!SelectorRegistry.Instance.TryParse(mutEntity.Value.Parent, out var parentSelector))
-            {
-                EventBus<ErrorEvent>.Push(
-                    new ErrorEvent($"Parent mutation failed: invalid selector '{mutEntity.Value.Parent}'")
-                );
-            }
-            else
-            {
-                entity.SetBehavior<ParentBehavior, EntitySelector>(
-                    in parentSelector,
-                    static (ref readonly _selector, ref b) => b = new ParentBehavior(_selector)
-                );
-            }
+            var parentSelector = mutEntity.Value.Parent;
+            entity.SetBehavior<ParentBehavior, EntitySelector>(
+                in parentSelector,
+                static (ref readonly _selector, ref b) => b = new ParentBehavior(_selector)
+            );
         }
 
         // FlexAlignItems
         if (mutEntity.Value.FlexAlignItems != null)
         {
-            if (!Enum.TryParse<Align>(mutEntity.Value.FlexAlignItems, true, out var alignItems))
-            {
-                EventBus<ErrorEvent>.Push(
-                    new ErrorEvent($"FlexAlignItems mutation failed: expected valid Align enum value")
-                );
-            }
-            else
-            {
-                entity.SetBehavior<FlexAlignItemsBehavior, Align>(
-                    in alignItems,
-                    static (ref readonly _alignItems, ref b) =>
-                        b = new FlexAlignItemsBehavior(_alignItems)
-                );
-            }
+            var alignItems = mutEntity.Value.FlexAlignItems.Value;
+            entity.SetBehavior<FlexAlignItemsBehavior, Align>(
+                in alignItems,
+                static (ref readonly _alignItems, ref b) =>
+                    b = new FlexAlignItemsBehavior(_alignItems)
+            );
         }
 
         // FlexAlignSelf
         if (mutEntity.Value.FlexAlignSelf != null)
         {
-            if (!Enum.TryParse<Align>(mutEntity.Value.FlexAlignSelf, true, out var alignSelf))
-            {
-                EventBus<ErrorEvent>.Push(
-                    new ErrorEvent($"FlexAlignSelf mutation failed: expected valid Align enum value")
-                );
-            }
-            else
-            {
-                entity.SetBehavior<FlexAlignSelfBehavior, Align>(
-                    in alignSelf,
-                    static (ref readonly _alignSelf, ref b) =>
-                        b = new FlexAlignSelfBehavior(_alignSelf)
-                );
-            }
+            var alignSelf = mutEntity.Value.FlexAlignSelf.Value;
+            entity.SetBehavior<FlexAlignSelfBehavior, Align>(
+                in alignSelf,
+                static (ref readonly _alignSelf, ref b) =>
+                    b = new FlexAlignSelfBehavior(_alignSelf)
+            );
         }
 
         // FlexBorderBottom
@@ -634,20 +603,12 @@ public static class JsonEntityConverter
         // FlexDirection
         if (mutEntity.Value.FlexDirection != null)
         {
-            if (!Enum.TryParse<FlexDirection>(mutEntity.Value.FlexDirection, true, out var direction))
-            {
-                EventBus<ErrorEvent>.Push(
-                    new ErrorEvent($"FlexDirection mutation failed: expected valid FlexDirection enum value")
-                );
-            }
-            else
-            {
-                entity.SetBehavior<FlexDirectionBehavior, FlexDirection>(
-                    in direction,
-                    static (ref readonly _direction, ref b) =>
-                        b = new FlexDirectionBehavior(_direction)
-                );
-            }
+            var direction = mutEntity.Value.FlexDirection.Value;
+            entity.SetBehavior<FlexDirectionBehavior, FlexDirection>(
+                in direction,
+                static (ref readonly _direction, ref b) =>
+                    b = new FlexDirectionBehavior(_direction)
+            );
         }
 
         // FlexGrow
@@ -664,20 +625,12 @@ public static class JsonEntityConverter
         // FlexWrap
         if (mutEntity.Value.FlexWrap != null)
         {
-            if (!Enum.TryParse<Wrap>(mutEntity.Value.FlexWrap, true, out var wrap))
-            {
-                EventBus<ErrorEvent>.Push(
-                    new ErrorEvent($"FlexWrap mutation failed: expected valid Wrap enum value")
-                );
-            }
-            else
-            {
-                entity.SetBehavior<FlexWrapBehavior, Wrap>(
-                    in wrap,
-                    static (ref readonly _wrap, ref b) =>
-                        b = new FlexWrapBehavior(_wrap)
-                );
-            }
+            var wrap = mutEntity.Value.FlexWrap.Value;
+            entity.SetBehavior<FlexWrapBehavior, Wrap>(
+                in wrap,
+                static (ref readonly _wrap, ref b) =>
+                    b = new FlexWrapBehavior(_wrap)
+            );
         }
 
         // FlexZOverride
@@ -720,20 +673,12 @@ public static class JsonEntityConverter
         // FlexJustifyContent
         if (mutEntity.Value.FlexJustifyContent != null)
         {
-            if (!Enum.TryParse<Justify>(mutEntity.Value.FlexJustifyContent, true, out var justify))
-            {
-                EventBus<ErrorEvent>.Push(
-                    new ErrorEvent($"FlexJustifyContent mutation failed: expected valid Justify enum value")
-                );
-            }
-            else
-            {
-                entity.SetBehavior<FlexJustifyContentBehavior, Justify>(
-                    in justify,
-                    static (ref readonly _justify, ref b) =>
-                        b = new FlexJustifyContentBehavior(_justify)
-                );
-            }
+            var justify = mutEntity.Value.FlexJustifyContent.Value;
+            entity.SetBehavior<FlexJustifyContentBehavior, Justify>(
+                in justify,
+                static (ref readonly _justify, ref b) =>
+                    b = new FlexJustifyContentBehavior(_justify)
+            );
         }
 
         // FlexMarginBottom
@@ -931,20 +876,12 @@ public static class JsonEntityConverter
         // FlexPositionType
         if (mutEntity.Value.FlexPositionType != null)
         {
-            if (!Enum.TryParse<PositionType>(mutEntity.Value.FlexPositionType, true, out var positionType))
-            {
-                EventBus<ErrorEvent>.Push(
-                    new ErrorEvent($"FlexPositionType mutation failed: expected valid PositionType enum value")
-                );
-            }
-            else
-            {
-                entity.SetBehavior<FlexPositionTypeBehavior, PositionType>(
-                    in positionType,
-                    static (ref readonly _positionType, ref b) =>
-                        b = new FlexPositionTypeBehavior(_positionType)
-                );
-            }
+            var flexPositionType = mutEntity.Value.FlexPositionType.Value;
+            entity.SetBehavior<FlexPositionTypeBehavior, PositionType>(
+                in flexPositionType,
+                static (ref readonly _flexPositionType, ref b) =>
+                    b = new FlexPositionTypeBehavior(_flexPositionType)
+            );
         }
 
         // FlexWidth - Value
@@ -972,6 +909,40 @@ public static class JsonEntityConverter
                 }
             );
         }
+    }
+
+
+    private static void TrySetRef<TValue, TBehavior>(
+        Entity entity,
+        TValue? value,
+        RefInAction<TBehavior, TValue> mutate
+    )
+        where TBehavior : struct
+        where TValue : class
+    {
+        if (value == null)
+        {
+            return;
+        }
+
+        entity.SetBehavior(in value, mutate);
+    }
+
+    private static void TrySetStruct<TValue, TBehavior>(
+        Entity entity,
+        TValue? value,
+        RefInAction<TBehavior, TValue> mutate
+    )
+        where TBehavior : struct
+        where TValue : struct
+    {
+        if (!value.HasValue)
+        {
+            return;
+        }
+
+        var helper = value.Value;
+        entity.SetBehavior(in helper, mutate);
     }
 
     private static JsonObject SerializeVector3(Vector3 vector)

@@ -1,4 +1,8 @@
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using Atomic.Net.MonoGame.Core.JsonConverters;
+using Atomic.Net.MonoGame.Selectors;
+using FlexLayoutSharp;
 
 namespace Atomic.Net.MonoGame.Scenes;
 
@@ -12,19 +16,33 @@ public readonly record struct MutEntity(
     JsonNode[]? Tags,
     Dictionary<string, JsonNode>? Properties,
     MutTransform? Transform,
-    string? Parent,
-    string? FlexAlignItems,
-    string? FlexAlignSelf,
+
+    [property: JsonConverter(typeof(NullableEntitySelectorConverter))]
+    EntitySelector? Parent,
+    
+    [property: JsonConverter(typeof(InvariantJsonStringEnumConverter<Align>))]
+    Align? FlexAlignItems,
+    
+    [property: JsonConverter(typeof(InvariantJsonStringEnumConverter<Align>))]
+    Align? FlexAlignSelf,
     float? FlexBorderBottom,
     float? FlexBorderLeft,
     float? FlexBorderRight,
     float? FlexBorderTop,
-    string? FlexDirection,
+    
+    [property: JsonConverter(typeof(InvariantJsonStringEnumConverter<FlexDirection>))]
+    FlexDirection? FlexDirection,
     float? FlexGrow,
-    string? FlexWrap,
+    
+    [property: JsonConverter(typeof(InvariantJsonStringEnumConverter<Wrap>))]
+    Wrap? FlexWrap,
+
     int? FlexZOverride,
     MutFlexHeight? FlexHeight,
-    string? FlexJustifyContent,
+    
+    [property: JsonConverter(typeof(InvariantJsonStringEnumConverter<Justify>))]
+    Justify? FlexJustifyContent,
+    
     float? FlexMarginBottom,
     float? FlexMarginLeft,
     float? FlexMarginRight,
@@ -37,6 +55,9 @@ public readonly record struct MutEntity(
     MutFlexPositionLeft? FlexPositionLeft,
     MutFlexPositionRight? FlexPositionRight,
     MutFlexPositionTop? FlexPositionTop,
-    string? FlexPositionType,
+
+    [property: JsonConverter(typeof(InvariantJsonStringEnumConverter<PositionType>))]
+    PositionType? FlexPositionType,
+
     MutFlexWidth? FlexWidth
 );
