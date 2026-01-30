@@ -1,0 +1,44 @@
+{
+  "entities": [
+    {
+      "id": "testEntity",
+      "properties": {
+        "value": 0
+      }
+    }
+  ],
+  "sequences": [
+    {
+      "id": "delay-test",
+      "steps": [
+        {
+          "delay": 0.5
+        },
+        {
+          "do": {
+            "mut": [
+              {
+                "target": { "properties": "value" },
+                "value": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "from": "@testEntity",
+      "where": {
+        "filter": [
+          { "var": "entities" },
+          { "==": [1, 1] }
+        ]
+      },
+      "do": {
+        "sequence-start": "delay-test"
+      }
+    }
+  ]
+}
