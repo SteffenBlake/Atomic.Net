@@ -12,8 +12,7 @@ using Atomic.Net.MonoGame.Tags;
 using Atomic.Net.MonoGame.Transform;
 using FlexLayoutSharp;
 
-using Vector3 = Microsoft.Xna.Framework.Vector3;
-using Quaternion = Microsoft.Xna.Framework.Quaternion;
+using Microsoft.Xna.Framework;
 
 namespace Atomic.Net.MonoGame.Scenes;
 
