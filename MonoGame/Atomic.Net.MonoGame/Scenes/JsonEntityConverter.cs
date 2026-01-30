@@ -248,9 +248,9 @@ public static class JsonEntityConverter
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Tags mutation failed: all tags must be string values"
             ));
-            return; // Don't apply mutation if there are invalid tags
         }
 
+        // Apply valid tags even if there were invalid ones
         entity.SetBehavior<TagsBehavior, FluentHashSet<string>>(
             in tags,
             static (ref readonly FluentHashSet<string> _tags, ref TagsBehavior b) => b = b with { Tags = _tags }
