@@ -90,50 +90,6 @@ public static class JsonNodeExtensions
     }
 
     /// <summary>
-    /// Tries to coerce a bool value from a JsonNode.
-    /// Caller must ensure node is not null.
-    /// </summary>
-    public static bool TryCoerceBoolValue(this JsonNode node, [NotNullWhen(true)] out bool? result)
-    {
-        if (node is not JsonValue jsonValue)
-        {
-            result = default;
-            return false;
-        }
-
-        if (jsonValue.TryGetValue<bool>(out var boolVal))
-        {
-            result = boolVal;
-            return true;
-        }
-
-        result = default;
-        return false;
-    }
-
-    /// <summary>
-    /// Tries to coerce an int value from a JsonNode.
-    /// Caller must ensure node is not null.
-    /// </summary>
-    public static bool TryCoerceIntValue(this JsonNode node, [NotNullWhen(true)] out int? result)
-    {
-        if (node is not JsonValue jsonValue)
-        {
-            result = default;
-            return false;
-        }
-
-        if (jsonValue.TryGetValue<int>(out var intVal))
-        {
-            result = intVal;
-            return true;
-        }
-
-        result = default;
-        return false;
-    }
-
-    /// <summary>
     /// Tries to parse a Vector3 from a JsonObject with x/y/z properties.
     /// Missing properties use values from the default.
     /// Returns false if any property fails to parse, but always outputs a result using defaults for missing/invalid fields.
