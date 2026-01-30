@@ -112,15 +112,17 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         // Act: Rule tries to add numeric tag
         RulesDriver.Instance.RunFrame(0.016f);
         
-        // Assert: Error fired
+        // Assert: Error fired for invalid tag
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
         Assert.False(string.IsNullOrEmpty(error.Message));
         
-        // Assert: Tags unchanged
+        // Assert: Valid tags applied (graceful degradation)
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin", out var entity));
         Assert.True(BehaviorRegistry<TagsBehavior>.Instance.TryGetBehavior(entity.Value, out var tags));
-        Assert.Single(tags.Value.Tags); // Only original "enemy" tag
+        Assert.Equal(2, tags.Value.Tags.Count); // validTag + anotherTag (12345 skipped)
+        Assert.Contains("validTag", tags.Value.Tags);
+        Assert.Contains("anotherTag", tags.Value.Tags);
     }
 
     // ========== TransformBehavior Tests ==========

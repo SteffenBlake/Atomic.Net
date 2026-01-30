@@ -283,7 +283,12 @@ public static class JsonEntityConverter
 
     private static void WriteTransform(Entity entity, JsonObject transformObj)
     {
-        BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var currentTransformRef);
+        if (!BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var currentTransformRef))
+        {
+            // No transform behavior, nothing to update
+            return;
+        }
+        
         var currentTransform = currentTransformRef.Value;
         var position = currentTransform.Position;
         var rotation = currentTransform.Rotation;

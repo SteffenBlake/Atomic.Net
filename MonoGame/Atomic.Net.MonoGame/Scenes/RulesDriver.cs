@@ -213,8 +213,11 @@ public sealed class RulesDriver :
             result = tempResult;
             return true;
         }
-        catch
+        catch (Exception ex)
         {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"JsonLogic evaluation failed: {ex.Message}"
+            ));
             result = null;
             return false;
         }
