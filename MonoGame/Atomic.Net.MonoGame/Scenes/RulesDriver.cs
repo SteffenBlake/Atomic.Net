@@ -494,51 +494,103 @@ public sealed class RulesDriver :
     /// </summary>
     private bool ApplyToTarget(ushort entityIndex, JsonNode target, JsonNode value)
     {
-        // Handle string targets (root-level scalar properties)
-        if (target is JsonValue targetValue && targetValue.TryGetValue<string>(out var targetString))
-        {
-            return ApplyStringTarget(entityIndex, targetString, value);
-        }
-
-        // Handle object targets (nested properties)
-        if (target is not JsonObject targetObj)
+        // Build the target path recursively
+        var path = new List<string>();
+        if (!TryBuildTargetPath(target, path))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Target must be a string or JsonObject for entity {entityIndex}"
+                $"Failed to parse target path for entity {entityIndex}"
             ));
             return false;
         }
 
-        if (targetObj.TryGetPropertyValue("properties", out var propertyKeyNode) && propertyKeyNode != null)
+        // Dispatch based on the path
+        return ApplyTargetPath(entityIndex, path, value);
+    }
+
+    /// <summary>
+    /// Recursively traverses the target JsonNode to build a list of property names.
+    /// Base case: string value → add to path and return
+    /// Recursive case: object → extract property name and recurse on value
+    /// </summary>
+    private static bool TryBuildTargetPath(JsonNode target, List<string> path)
+    {
+        // Base case: target is a string - this is a property name
+        if (target is JsonValue targetValue && targetValue.TryGetValue<string>(out var propertyName))
         {
-            return ApplyPropertyMutation(entityIndex, propertyKeyNode, value);
-        }
-        else if (targetObj.TryGetPropertyValue("position", out var positionComponent) && positionComponent != null)
-        {
-            return ApplyTransformVector3ComponentMutation(entityIndex, "position", positionComponent, value);
-        }
-        else if (targetObj.TryGetPropertyValue("rotation", out var rotationComponent) && rotationComponent != null)
-        {
-            return ApplyTransformQuaternionComponentMutation(entityIndex, rotationComponent, value);
-        }
-        else if (targetObj.TryGetPropertyValue("scale", out var scaleComponent) && scaleComponent != null)
-        {
-            return ApplyTransformVector3ComponentMutation(entityIndex, "scale", scaleComponent, value);
-        }
-        else if (targetObj.TryGetPropertyValue("anchor", out var anchorComponent) && anchorComponent != null)
-        {
-            return ApplyTransformVector3ComponentMutation(entityIndex, "anchor", anchorComponent, value);
+            path.Add(propertyName);
+            return true;
         }
 
-        // NOTE: This allocates an array for the error message, but this is acceptable
-        // because this is an error path that only occurs during scene load, not gameplay.
-        var validObjectTargets = string.Join(", ", new[]
+        // Recursive case: target is an object - navigate deeper
+        if (target is not JsonObject targetObj)
         {
-            "properties (with key)", "position (with component)", "rotation (with component)",
-            "scale (with component)", "anchor (with component)"
+            return false;
+        }
+
+        // Get the first (and should be only) property
+        var property = targetObj.FirstOrDefault();
+        if (property.Key == null || property.Value == null)
+        {
+            return false;
+        }
+
+        // Add this level's property name
+        path.Add(property.Key);
+
+        // Recurse on the value
+        return TryBuildTargetPath(property.Value, path);
+    }
+
+    /// <summary>
+    /// Applies a mutation based on the parsed target path.
+    /// Path examples:
+    ///   ["flexWidth"] → direct flex property
+    ///   ["properties", "health"] → entity property
+    ///   ["position", "x"] → transform component
+    /// </summary>
+    private bool ApplyTargetPath(ushort entityIndex, List<string> path, JsonNode value)
+    {
+        if (path.Count == 0)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Target path is empty for entity {entityIndex}"
+            ));
+            return false;
+        }
+
+        // Single-level path: direct property mutation
+        if (path.Count == 1)
+        {
+            return ApplyStringTarget(entityIndex, path[0], value);
+        }
+
+        // Multi-level path: dispatch based on root property
+        var rootProperty = path[0];
+        var leafProperty = path[path.Count - 1];
+
+        return rootProperty switch
+        {
+            "properties" => ApplyPropertyMutation(entityIndex, JsonValue.Create(leafProperty), value),
+            "position" => ApplyTransformVector3ComponentMutation(entityIndex, "position", JsonValue.Create(leafProperty), value),
+            "rotation" => ApplyTransformQuaternionComponentMutation(entityIndex, JsonValue.Create(leafProperty), value),
+            "scale" => ApplyTransformVector3ComponentMutation(entityIndex, "scale", JsonValue.Create(leafProperty), value),
+            "anchor" => ApplyTransformVector3ComponentMutation(entityIndex, "anchor", JsonValue.Create(leafProperty), value),
+            _ => HandleUnrecognizedRootProperty(entityIndex, rootProperty)
+        };
+    }
+
+    /// <summary>
+    /// Handles unrecognized root properties in target paths.
+    /// </summary>
+    private static bool HandleUnrecognizedRootProperty(ushort entityIndex, string rootProperty)
+    {
+        var validRootProperties = string.Join(", ", new[]
+        {
+            "properties", "position", "rotation", "scale", "anchor"
         });
         EventBus<ErrorEvent>.Push(new ErrorEvent(
-            $"Unrecognized object target for entity {entityIndex}. Expected one of: {validObjectTargets}"
+            $"Unrecognized root property '{rootProperty}' in target path for entity {entityIndex}. Expected one of: {validRootProperties}"
         ));
         return false;
     }
