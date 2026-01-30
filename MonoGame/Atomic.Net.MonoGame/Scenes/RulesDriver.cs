@@ -94,9 +94,6 @@ public sealed class RulesDriver :
 
             // Update context for this entity
             _worldContext["index"] = i;
-            // Remove and re-add self to avoid parent conflicts
-            _worldContext.Remove("self");
-            _worldContext["self"] = entity.DeepClone();
             
             // Execute the scene command on this entity
             rule.Do.Execute(entity, _worldContext);

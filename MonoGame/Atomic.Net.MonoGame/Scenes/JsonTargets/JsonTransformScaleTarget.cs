@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Scenes.JsonTargets;
 
@@ -9,18 +10,24 @@ namespace Atomic.Net.MonoGame.Scenes.JsonTargets;
 /// </summary>
 public readonly record struct JsonTransformScaleTarget(string Scale)
 {
-    public void Apply(JsonNode transform, JsonNode value) 
-    {
-        if (transform is not JsonObject transformObj)
-        {
-            return;
-        }
+    private static readonly ErrorEvent UnrecognizedFieldError = new(
+        "Unrecognized scale field. Expected one of: x, y, z"
+    );
 
+    public void Apply(JsonObject transform, JsonNode value) 
+    {
         // Get or create the "scale" object inside transform
-        if (!transformObj.TryGetPropertyValue("scale", out var scaleNode) || scaleNode is not JsonObject scaleObj)
+        if (!transform.TryGetPropertyValue("scale", out var scaleNode) || scaleNode is not JsonObject scaleObj)
         {
             scaleObj = new JsonObject();
-            transformObj["scale"] = scaleObj;
+            transform["scale"] = scaleObj;
+        }
+
+        // Validate field name
+        if (Scale != "x" && Scale != "y" && Scale != "z")
+        {
+            EventBus<ErrorEvent>.Push(UnrecognizedFieldError);
+            return;
         }
 
         // Set the component (x/y/z) inside the scale object

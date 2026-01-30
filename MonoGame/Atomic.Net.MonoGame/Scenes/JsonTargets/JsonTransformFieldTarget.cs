@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using Atomic.Net.MonoGame.Core;
 using dotVariant;
 
@@ -8,6 +9,7 @@ namespace Atomic.Net.MonoGame.Scenes.JsonTargets;
 /// Variant for different transform field targets (position, rotation, scale, anchor).
 /// </summary>
 [Variant]
+[JsonConverter(typeof(JsonTransformFieldTargetConverter))]
 public partial struct JsonTransformFieldTarget
 {
     private static readonly ErrorEvent UnrecognizedFieldError = new(
@@ -21,18 +23,13 @@ public partial struct JsonTransformFieldTarget
         JsonTransformAnchorTarget anchor
     );
 
-    public void Apply(JsonNode jsonEntity, JsonNode value)
+    public void Apply(JsonObject jsonEntity, JsonNode value)
     {
-        if (jsonEntity is not JsonObject entityObj)
-        {
-            return;
-        }
-
         // Get or create transform object
-        if (!entityObj.TryGetPropertyValue("transform", out var transformNode) || transformNode is not JsonObject transform)
+        if (!jsonEntity.TryGetPropertyValue("transform", out var transformNode) || transformNode is not JsonObject transform)
         {
             transform = new JsonObject();
-            entityObj["transform"] = transform;
+            jsonEntity["transform"] = transform;
         }
 
         if (TryMatch(out JsonTransformPositionTarget position))

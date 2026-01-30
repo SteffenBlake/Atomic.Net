@@ -8,18 +8,13 @@ namespace Atomic.Net.MonoGame.Scenes.JsonTargets;
 /// </summary>
 public readonly record struct JsonPropertiesTarget(string PropertyKey)
 {
-    public void Apply(JsonNode jsonEntity, JsonNode value)
+    public void Apply(JsonObject jsonEntity, JsonNode value)
     {
-        if (jsonEntity is not JsonObject entityObj)
-        {
-            return;
-        }
-
         // Get or create the properties object
-        if (!entityObj.TryGetPropertyValue("properties", out var propertiesNode) || propertiesNode is not JsonObject properties)
+        if (!jsonEntity.TryGetPropertyValue("properties", out var propertiesNode) || propertiesNode is not JsonObject properties)
         {
             properties = new JsonObject();
-            entityObj["properties"] = properties;
+            jsonEntity["properties"] = properties;
         }
 
         properties[PropertyKey] = value;

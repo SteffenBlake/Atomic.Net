@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Scenes.JsonTargets;
 
@@ -9,18 +10,24 @@ namespace Atomic.Net.MonoGame.Scenes.JsonTargets;
 /// </summary>
 public readonly record struct JsonTransformRotationTarget(string Rotation)
 {
-    public void Apply(JsonNode transform, JsonNode value) 
-    {
-        if (transform is not JsonObject transformObj)
-        {
-            return;
-        }
+    private static readonly ErrorEvent UnrecognizedFieldError = new(
+        "Unrecognized rotation field. Expected one of: x, y, z, w"
+    );
 
+    public void Apply(JsonObject transform, JsonNode value) 
+    {
         // Get or create the "rotation" object inside transform
-        if (!transformObj.TryGetPropertyValue("rotation", out var rotationNode) || rotationNode is not JsonObject rotationObj)
+        if (!transform.TryGetPropertyValue("rotation", out var rotationNode) || rotationNode is not JsonObject rotationObj)
         {
             rotationObj = new JsonObject();
-            transformObj["rotation"] = rotationObj;
+            transform["rotation"] = rotationObj;
+        }
+
+        // Validate field name
+        if (Rotation != "x" && Rotation != "y" && Rotation != "z" && Rotation != "w")
+        {
+            EventBus<ErrorEvent>.Push(UnrecognizedFieldError);
+            return;
         }
 
         // Set the component (x/y/z/w) inside the rotation object

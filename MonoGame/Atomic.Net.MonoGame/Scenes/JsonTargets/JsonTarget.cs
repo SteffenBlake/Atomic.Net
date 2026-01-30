@@ -17,40 +17,53 @@ public partial struct JsonTarget
         "Unrecognized target type"
     );
 
+    private static readonly HashSet<string> _validLeaves = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "id", "tags", "parent",
+        // All flex behaviors
+        "flexAlignItems", "flexAlignSelf", "flexBorderBottom", "flexBorderLeft",
+        "flexBorderRight", "flexBorderTop", "flexDirection", "flexGrow",
+        "flexHeight", "flexHeightPercent", "flexJustifyContent", "flexMarginBottom",
+        "flexMarginLeft", "flexMarginRight", "flexMarginTop", "flexPaddingBottom",
+        "flexPaddingLeft", "flexPaddingRight", "flexPaddingTop", "flexPositionBottom",
+        "flexPositionBottomPercent", "flexPositionLeft", "flexPositionLeftPercent",
+        "flexPositionRight", "flexPositionRightPercent", "flexPositionTop",
+        "flexPositionTopPercent", "flexPositionType", "flexWidth", "flexWidthPercent",
+        "flexWrap", "flexZOverride"
+    };
+
     static partial void VariantOf(
         JsonPropertiesTarget properties,
-        JsonIdTarget id,
-        JsonTagsTarget tags,
-        JsonParentTarget parent,
         JsonTransformFieldTarget transform,
-        JsonFlexTarget flex
+        string leaf
     );
 
     public void Apply(JsonNode jsonEntity, JsonNode value)
     {
+        if (jsonEntity is not JsonObject entityObj)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Entity JSON must be a JsonObject"));
+            return;
+        }
+
         if (TryMatch(out JsonPropertiesTarget properties))
         {
-            properties.Apply(jsonEntity, value);
-        }
-        else if (TryMatch(out JsonIdTarget id))
-        {
-            id.Apply(jsonEntity, value);
-        }
-        else if (TryMatch(out JsonTagsTarget tags))
-        {
-            tags.Apply(jsonEntity, value);
-        }
-        else if (TryMatch(out JsonParentTarget parent))
-        {
-            parent.Apply(jsonEntity, value);
+            properties.Apply(entityObj, value);
         }
         else if (TryMatch(out JsonTransformFieldTarget transform))
         {
-            transform.Apply(jsonEntity, value);
+            transform.Apply(entityObj, value);
         }
-        else if (TryMatch(out JsonFlexTarget flex))
+        else if (TryMatch(out string? leaf))
         {
-            flex.Apply(jsonEntity, value);
+            if (_validLeaves.Contains(leaf))
+            {
+                entityObj[leaf] = value;
+                return;
+            }
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Unrecognized leaf target: '{leaf}'. Expected one of: {string.Join(", ", _validLeaves)}"
+            ));
         }
         else
         {

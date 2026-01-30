@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Scenes.JsonTargets;
 
@@ -9,18 +10,24 @@ namespace Atomic.Net.MonoGame.Scenes.JsonTargets;
 /// </summary>
 public readonly record struct JsonTransformAnchorTarget(string Anchor)
 {
-    public void Apply(JsonNode transform, JsonNode value) 
-    {
-        if (transform is not JsonObject transformObj)
-        {
-            return;
-        }
+    private static readonly ErrorEvent UnrecognizedFieldError = new(
+        "Unrecognized anchor field. Expected one of: x, y, z"
+    );
 
+    public void Apply(JsonObject transform, JsonNode value) 
+    {
         // Get or create the "anchor" object inside transform
-        if (!transformObj.TryGetPropertyValue("anchor", out var anchorNode) || anchorNode is not JsonObject anchorObj)
+        if (!transform.TryGetPropertyValue("anchor", out var anchorNode) || anchorNode is not JsonObject anchorObj)
         {
             anchorObj = new JsonObject();
-            transformObj["anchor"] = anchorObj;
+            transform["anchor"] = anchorObj;
+        }
+
+        // Validate field name
+        if (Anchor != "x" && Anchor != "y" && Anchor != "z")
+        {
+            EventBus<ErrorEvent>.Push(UnrecognizedFieldError);
+            return;
         }
 
         // Set the component (x/y/z) inside the anchor object

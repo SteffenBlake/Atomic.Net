@@ -17,15 +17,7 @@ public class JsonTargetConverter : JsonConverter<JsonTarget>
         // Handle string targets (id, tags, parent, flex behaviors)
         if (jsonNode is JsonValue jsonValue && jsonValue.TryGetValue<string>(out var targetString))
         {
-            return targetString switch
-            {
-                "id" => new JsonIdTarget(),
-                "tags" => new JsonTagsTarget(),
-                "parent" => new JsonParentTarget(),
-                // All flex behaviors are string targets
-                _ when targetString.StartsWith("flex") => new JsonFlexTarget(targetString),
-                _ => throw new JsonException($"Unrecognized string target: '{targetString}'")
-            };
+            return targetString;
         }
 
         // Handle object targets (properties, transform fields)
@@ -43,24 +35,20 @@ public class JsonTargetConverter : JsonConverter<JsonTarget>
                 firstProperty.Value?.GetValue<string>() 
                 ?? throw new JsonException("'properties' target must have a string value")
             ),
-            "position" => new JsonTransformFieldTarget(new JsonTransformPositionTarget(
-                firstProperty.Value?.GetValue<string>() 
-                ?? throw new JsonException("'position' target must have a string value")
-            )),
-            "rotation" => new JsonTransformFieldTarget(new JsonTransformRotationTarget(
-                firstProperty.Value?.GetValue<string>() 
-                ?? throw new JsonException("'rotation' target must have a string value")
-            )),
-            "scale" => new JsonTransformFieldTarget(new JsonTransformScaleTarget(
-                firstProperty.Value?.GetValue<string>() 
-                ?? throw new JsonException("'scale' target must have a string value")
-            )),
-            "anchor" => new JsonTransformFieldTarget(new JsonTransformAnchorTarget(
-                firstProperty.Value?.GetValue<string>() 
-                ?? throw new JsonException("'anchor' target must have a string value")
-            )),
+            "position" or "rotation" or "scale" or "anchor" => 
+                DeserializeTransformTarget(jsonObject, options),
             _ => throw new JsonException($"Unrecognized object target: '{propertyKey}'")
         };
+    }
+
+    private static JsonTransformFieldTarget DeserializeTransformTarget(JsonObject jsonObject, JsonSerializerOptions options)
+    {
+        var result = jsonObject.Deserialize<JsonTransformFieldTarget>(options);
+        if (result.Equals(default(JsonTransformFieldTarget)))
+        {
+            throw new JsonException("Failed to deserialize transform target");
+        }
+        return result;
     }
 
     public override void Write(Utf8JsonWriter writer, JsonTarget value, JsonSerializerOptions options)

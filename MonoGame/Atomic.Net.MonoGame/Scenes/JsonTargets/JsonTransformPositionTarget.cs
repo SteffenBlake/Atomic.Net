@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Scenes.JsonTargets;
 
@@ -9,18 +10,24 @@ namespace Atomic.Net.MonoGame.Scenes.JsonTargets;
 /// </summary>
 public readonly record struct JsonTransformPositionTarget(string Position)
 {
-    public void Apply(JsonNode transform, JsonNode value) 
-    {
-        if (transform is not JsonObject transformObj)
-        {
-            return;
-        }
+    private static readonly ErrorEvent UnrecognizedFieldError = new(
+        "Unrecognized position field. Expected one of: x, y, z"
+    );
 
+    public void Apply(JsonObject transform, JsonNode value) 
+    {
         // Get or create the "position" object inside transform
-        if (!transformObj.TryGetPropertyValue("position", out var positionNode) || positionNode is not JsonObject positionObj)
+        if (!transform.TryGetPropertyValue("position", out var positionNode) || positionNode is not JsonObject positionObj)
         {
             positionObj = new JsonObject();
-            transformObj["position"] = positionObj;
+            transform["position"] = positionObj;
+        }
+
+        // Validate field name
+        if (Position != "x" && Position != "y" && Position != "z")
+        {
+            EventBus<ErrorEvent>.Push(UnrecognizedFieldError);
+            return;
         }
 
         // Set the component (x/y/z) inside the position object
