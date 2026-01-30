@@ -8,6 +8,7 @@ using Atomic.Net.MonoGame.Persistence;
 using Atomic.Net.MonoGame.Properties;
 using Atomic.Net.MonoGame.Scenes;
 using Atomic.Net.MonoGame.Selectors;
+using Atomic.Net.MonoGame.Sequencing;
 using Atomic.Net.MonoGame.Tags;
 using Atomic.Net.MonoGame.Transform;
 
@@ -81,9 +82,14 @@ public static class AtomicSystem
         SelectorRegistry.Initialize();
         TransformRegistry.Initialize();
         RuleRegistry.Initialize();
+        SequenceRegistry.Initialize();
 
         // Scene System
         SceneLoader.Initialize();
         RulesDriver.Initialize();
+        SequenceDriver.Initialize();
+        SequenceStartCmdDriver.Initialize();
+        SequenceStopCmdDriver.Initialize();
+        SequenceResetCmdDriver.Initialize();
     }
 }
