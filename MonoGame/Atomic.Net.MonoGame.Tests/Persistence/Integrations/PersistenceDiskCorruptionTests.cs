@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using Xunit;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
@@ -6,6 +5,7 @@ using Atomic.Net.MonoGame.Properties;
 using Atomic.Net.MonoGame.Persistence;
 using Atomic.Net.MonoGame.Transform;
 using LiteDB;
+using Microsoft.Xna.Framework;
 
 namespace Atomic.Net.MonoGame.Tests.Persistence.Integrations;
 
@@ -133,9 +133,9 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         EventBus<ResetEvent>.Push(new());
         
         var entity2 = EntityRegistry.Instance.Activate();
-        entity2.SetBehavior<TransformBehavior>(static (ref behavior) =>
+        entity2.SetBehavior<TransformBehavior>(static (ref b) => b = b with
         {
-            behavior.Position = new Microsoft.Xna.Framework.Vector3(50, 75, 0);
+            Position = new Vector3(50, 75, 0)
         });
 
         entity2.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
@@ -146,7 +146,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         // Assert: Entity should have loaded Properties from disk
         // test-architect: Disk had Properties, scene added Transform
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity2, out var transform));
-        Assert.Equal(new Microsoft.Xna.Framework.Vector3(50, 75, 0), transform.Value.Position);
+        Assert.Equal(new Vector3(50, 75, 0), transform.Value.Position);
         
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity2, out var props));
         Assert.NotNull(props.Value.Properties);

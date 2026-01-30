@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Nodes;
 using Atomic.Net.MonoGame.BED;
@@ -11,6 +10,8 @@ using Atomic.Net.MonoGame.Selectors;
 using Atomic.Net.MonoGame.Tags;
 using Atomic.Net.MonoGame.Transform;
 using FlexLayoutSharp;
+
+using Microsoft.Xna.Framework;
 
 namespace Atomic.Net.MonoGame.Scenes;
 
@@ -348,20 +349,20 @@ public static class JsonEntityConverter
         if (!hasError)
         {
             var data = (Pos: position, Rot: rotation, Scale: scale, Anchor: anchor);
-            entity.SetBehavior<TransformBehavior, (Microsoft.Xna.Framework.Vector3 Pos, Microsoft.Xna.Framework.Quaternion Rot, Microsoft.Xna.Framework.Vector3 Scale, Microsoft.Xna.Framework.Vector3 Anchor)>(
+            entity.SetBehavior<TransformBehavior, (Vector3 Pos, Quaternion Rot, Vector3 Scale, Vector3 Anchor)>(
                 in data,
-                static (ref readonly (Microsoft.Xna.Framework.Vector3 Pos, Microsoft.Xna.Framework.Quaternion Rot, Microsoft.Xna.Framework.Vector3 Scale, Microsoft.Xna.Framework.Vector3 Anchor) _data, ref TransformBehavior b) =>
+                static (ref readonly _data, ref b) => b = b with 
                 {
-                    b.Position = _data.Pos;
-                    b.Rotation = _data.Rot;
-                    b.Scale = _data.Scale;
-                    b.Anchor = _data.Anchor;
+                    Position = _data.Pos,
+                    Rotation = _data.Rot,
+                    Scale = _data.Scale,
+                    Anchor = _data.Anchor
                 }
             );
         }
     }
 
-    private static bool TryParseVector3(JsonObject obj, Microsoft.Xna.Framework.Vector3 defaultValue, out Microsoft.Xna.Framework.Vector3 result)
+    private static bool TryParseVector3(JsonObject obj, Vector3 defaultValue, out Vector3 result)
     {
         var x = defaultValue.X;
         var y = defaultValue.Y;
@@ -428,11 +429,11 @@ public static class JsonEntityConverter
             }
         }
 
-        result = new Microsoft.Xna.Framework.Vector3(x, y, z);
+        result = new Vector3(x, y, z);
         return success;
     }
 
-    private static bool TryParseQuaternion(JsonObject obj, Microsoft.Xna.Framework.Quaternion defaultValue, out Microsoft.Xna.Framework.Quaternion result)
+    private static bool TryParseQuaternion(JsonObject obj, Quaternion defaultValue, out Quaternion result)
     {
         var x = defaultValue.X;
         var y = defaultValue.Y;
@@ -504,7 +505,7 @@ public static class JsonEntityConverter
             }
         }
 
-        result = new Microsoft.Xna.Framework.Quaternion(x, y, z, w);
+        result = new Quaternion(x, y, z, w);
         return success;
     }
 
@@ -981,7 +982,7 @@ public static class JsonEntityConverter
         return false;
     }
 
-    private static JsonObject SerializeVector3(Microsoft.Xna.Framework.Vector3 vector)
+    private static JsonObject SerializeVector3(Vector3 vector)
     {
         return new JsonObject
         {
@@ -991,7 +992,7 @@ public static class JsonEntityConverter
         };
     }
 
-    private static JsonObject SerializeQuaternion(Microsoft.Xna.Framework.Quaternion quaternion)
+    private static JsonObject SerializeQuaternion(Quaternion quaternion)
     {
         return new JsonObject
         {
@@ -1002,7 +1003,7 @@ public static class JsonEntityConverter
         };
     }
 
-    private static Microsoft.Xna.Framework.Vector3 ParseVector3(JsonObject obj, Microsoft.Xna.Framework.Vector3 defaultValue)
+    private static Vector3 ParseVector3(JsonObject obj, Vector3 defaultValue)
     {
         var x = defaultValue.X;
         var y = defaultValue.Y;
@@ -1029,10 +1030,10 @@ public static class JsonEntityConverter
                 zValue.TryGetValue<int>(out var zInt) ? zInt : z;
         }
 
-        return new Microsoft.Xna.Framework.Vector3(x, y, z);
+        return new Vector3(x, y, z);
     }
 
-    private static Microsoft.Xna.Framework.Quaternion ParseQuaternion(JsonObject obj, Microsoft.Xna.Framework.Quaternion defaultValue)
+    private static Quaternion ParseQuaternion(JsonObject obj, Quaternion defaultValue)
     {
         var x = defaultValue.X;
         var y = defaultValue.Y;
@@ -1063,7 +1064,7 @@ public static class JsonEntityConverter
                 wValue.TryGetValue<double>(out var wDouble) ? (float)wDouble : w;
         }
 
-        return new Microsoft.Xna.Framework.Quaternion(x, y, z, w);
+        return new Quaternion(x, y, z, w);
     }
 
     private static void SerializeFlexBehaviors(Entity entity, JsonObject entityObj)
