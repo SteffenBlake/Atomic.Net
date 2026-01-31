@@ -28,9 +28,8 @@ public sealed class SequenceDriver :
 
     public static SequenceDriver Instance { get; private set; } = null!;
 
-    // Outer index: entity, inner index: sequence
-    // senior-dev: CRITICAL - Inner array MUST be sized to MaxSequences (512) not MaxActiveSequencesPerEntity (8)
-    // because we index by global sequence index, not by "slot number"
+    // CRITICAL: Inner array must be sized to MaxSequences (512) because we index by
+    // global sequence index, not by entity's active sequence slot number
     private readonly SparseReferenceArray<SparseArray<SequenceState>> _activeSequences = 
         new(Constants.MaxEntities);
 
@@ -157,12 +156,10 @@ public sealed class SequenceDriver :
             }
             else if (step.TryMatch(out DoStep doStep))
             {
-                // senior-dev: Do steps execute once per frame, consuming the entire frame
-                // This prevents cascading do steps in a single frame
                 ExecuteCommand(doStep.Do, entityJsonNode, BuildDoContext(entityJsonNode, remainingTime));
                 currentStepIndex++;
                 stepElapsedTime = 0;
-                remainingTime = 0;
+                // Do NOT consume remaining time - allow progression to next step in same frame
             }
             else if (step.TryMatch(out TweenStep tweenStep))
             {
@@ -186,35 +183,33 @@ public sealed class SequenceDriver :
             {
                 stepElapsedTime += remainingTime;
 
+                // Execute command for each interval that passed this frame
+                var intervalsPassed = (int)(stepElapsedTime / repeatStep.Every);
+                var lastExecutedInterval = (int)((stepElapsedTime - remainingTime) / repeatStep.Every);
+                
+                for (var i = lastExecutedInterval; i < intervalsPassed; i++)
+                {
+                    var execTime = (i + 1) * repeatStep.Every;
+                    var execContext = BuildRepeatContext(entityJsonNode, execTime);
+                    ExecuteCommand(repeatStep.Do, entityJsonNode, execContext);
+                }
+
+                // Check condition AFTER executing
                 var repeatContext = BuildRepeatContext(entityJsonNode, stepElapsedTime);
                 if (TryEvaluateCondition(repeatStep.Until, repeatContext, out var conditionMet) && conditionMet)
                 {
-                    // senior-dev: Don't carry over time from repeat step to avoid unexpected behavior
                     remainingTime = 0;
                     currentStepIndex++;
                     stepElapsedTime = 0;
                 }
                 else
                 {
-                    // senior-dev: Execute command for each interval that passed this frame
-                    // If multiple intervals passed, execute the command multiple times
-                    // carrying forward mutations from each execution
-                    var intervalsPassed = (int)(stepElapsedTime / repeatStep.Every);
-                    var lastExecutedInterval = (int)((stepElapsedTime - remainingTime) / repeatStep.Every);
-                    
-                    for (var i = lastExecutedInterval; i < intervalsPassed; i++)
-                    {
-                        var execTime = (i + 1) * repeatStep.Every;
-                        var execContext = BuildRepeatContext(entityJsonNode, execTime);
-                        ExecuteCommand(repeatStep.Do, entityJsonNode, execContext);
-                    }
-
                     remainingTime = 0;
                 }
             }
             else
             {
-                // senior-dev: Unknown step type - skip it and push error
+                // Unknown step type - skip and push error
                 EventBus<ErrorEvent>.Push(new ErrorEvent(
                     $"Unknown sequence step type at step {currentStepIndex} in sequence {sequenceIndex}"
                 ));
@@ -236,38 +231,38 @@ public sealed class SequenceDriver :
     }
 
     /// <summary>
-    /// Build context for DoStep execution.
-    /// Reuses pre-allocated context object.
+    /// Build context for DoStep execution with current deltaTime and entity state.
+    /// Clones entityJsonNode to avoid JsonObject parent conflicts when reused across steps.
     /// </summary>
     private JsonObject BuildDoContext(JsonNode entityJsonNode, float deltaTime)
     {
         _doContext.Remove("self");
         _doContext["world"]!["deltaTime"] = deltaTime;
-        _doContext["self"] = entityJsonNode;
+        _doContext["self"] = entityJsonNode.DeepClone();
         return _doContext;
     }
 
     /// <summary>
-    /// Build context for TweenStep execution.
-    /// Reuses pre-allocated context object.
+    /// Build context for TweenStep execution with interpolated value and entity state.
+    /// Clones entityJsonNode to avoid JsonObject parent conflicts when reused across steps.
     /// </summary>
     private JsonObject BuildTweenContext(JsonNode entityJsonNode, float tweenValue)
     {
         _tweenContext.Remove("self");
         _tweenContext["tween"] = tweenValue;
-        _tweenContext["self"] = entityJsonNode;
+        _tweenContext["self"] = entityJsonNode.DeepClone();
         return _tweenContext;
     }
 
     /// <summary>
-    /// Build context for RepeatStep execution.
-    /// Reuses pre-allocated context object.
+    /// Build context for RepeatStep execution with elapsed time and entity state.
+    /// Clones entityJsonNode to avoid JsonObject parent conflicts when reused across steps.
     /// </summary>
     private JsonObject BuildRepeatContext(JsonNode entityJsonNode, float elapsed)
     {
         _repeatContext.Remove("self");
         _repeatContext["elapsed"] = elapsed;
-        _repeatContext["self"] = entityJsonNode;
+        _repeatContext["self"] = entityJsonNode.DeepClone();
         return _repeatContext;
     }
 
@@ -289,30 +284,18 @@ public sealed class SequenceDriver :
     private static bool TryEvaluateCondition(
         JsonNode condition,
         JsonNode context,
-        [NotNullWhen(true)]
         out bool result
     )
     {
-        try
+        var evalResult = JsonLogic.Apply(condition, context);
+        if (evalResult != null && evalResult is JsonValue jsonValue && jsonValue.TryGetValue<bool>(out var boolValue))
         {
-            var evalResult = JsonLogic.Apply(condition, context);
-            if (evalResult != null && evalResult is JsonValue jsonValue && jsonValue.TryGetValue<bool>(out var boolValue))
-            {
-                result = boolValue;
-                return true;
-            }
+            result = boolValue;
+            return true;
+        }
 
-            result = false;
-            return false;
-        }
-        catch (Exception ex)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Repeat condition evaluation failed: {ex.Message}"
-            ));
-            result = false;
-            return false;
-        }
+        result = false;
+        return false;
     }
 
     /// <summary>

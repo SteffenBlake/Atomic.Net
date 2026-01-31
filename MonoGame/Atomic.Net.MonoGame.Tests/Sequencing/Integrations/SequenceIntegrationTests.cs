@@ -161,11 +161,11 @@ public sealed class SequenceIntegrationTests : IDisposable
         Assert.True(SequenceRegistry.Instance.TryResolveById("test-sequence", out var seqIndex));
         
         // Act: Start and run partially through delay
-        SequenceDriver.Instance.StartSequence(entity.Value, seqIndex);
+        SequenceDriver.Instance.StartSequence(entity.Value.Index, seqIndex);
         SequenceDriver.Instance.RunFrame(0.05f);
         
         // Act: Stop sequence
-        SequenceDriver.Instance.StopSequence(entity.Value, seqIndex);
+        SequenceDriver.Instance.StopSequence(entity.Value.Index, seqIndex);
         
         // Act: Run past delay (would complete if not stopped)
         SequenceDriver.Instance.RunFrame(0.2f);
@@ -190,11 +190,11 @@ public sealed class SequenceIntegrationTests : IDisposable
         Assert.True(SequenceRegistry.Instance.TryResolveById("test-sequence", out var seqIndex));
         
         // Act: Start and run partially
-        SequenceDriver.Instance.StartSequence(entity.Value, seqIndex);
+        SequenceDriver.Instance.StartSequence(entity.Value.Index, seqIndex);
         SequenceDriver.Instance.RunFrame(0.05f);
         
         // Act: Reset sequence
-        SequenceDriver.Instance.ResetSequence(entity.Value, seqIndex);
+        SequenceDriver.Instance.ResetSequence(entity.Value.Index, seqIndex);
         
         // Act: Run past delay
         SequenceDriver.Instance.RunFrame(0.2f);
@@ -256,8 +256,8 @@ public sealed class SequenceIntegrationTests : IDisposable
         Assert.True(SequenceRegistry.Instance.TryResolveById("sequence-2", out var seq2));
         
         // Act: Start both
-        SequenceDriver.Instance.StartSequence(entity.Value, seq1);
-        SequenceDriver.Instance.StartSequence(entity.Value, seq2);
+        SequenceDriver.Instance.StartSequence(entity.Value.Index, seq1);
+        SequenceDriver.Instance.StartSequence(entity.Value.Index, seq2);
         
         // Run for 0.15s (seq1 completes at 0.1s, seq2 still running)
         SequenceDriver.Instance.RunFrame(0.15f);
@@ -287,7 +287,7 @@ public sealed class SequenceIntegrationTests : IDisposable
         Assert.True(SequenceRegistry.Instance.TryResolveById("test-sequence", out var seqIndex));
         
         // Act: Start sequence
-        SequenceDriver.Instance.StartSequence(entity.Value, seqIndex);
+        SequenceDriver.Instance.StartSequence(entity.Value.Index, seqIndex);
         
         // Act: Deactivate entity
         EntityRegistry.Instance.Deactivate(entity.Value);
