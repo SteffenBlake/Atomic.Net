@@ -1,53 +1,63 @@
 #!/usr/bin/env python3
 """
-Analyzes speedscope.json files to find hot methods in specified namespaces.
-This script processes EventPipe traces to identify where time is being spent.
+Analyzes speedscope.json files to show hierarchical call tree of hot methods.
+
+Displays a pure nested tree view starting from the primary entry point in the target
+namespace, excluding benchmark harness and setup code overhead.
 
 Usage:
     ./analyze_speedscope.py <speedscope.json> [options]
 
 Options:
-    --namespace <ns>     Filter methods by namespace (default: Atomic.Net.MonoGame)
-    --top <n>            Show top N methods (default: 50)
-    --min-pct <pct>      Only show methods above this % threshold (default: 0.01)
-    --exclude-init       Exclude initialization methods (default: True)
+    --namespace <ns>     Root namespace to analyze (default: Atomic.Net.MonoGame)
+    --min-pct <pct>      Only show tree nodes above this % threshold (default: 0.5)
     --output <file>      Write report to file instead of stdout
-    --call-tree          Show hierarchical call tree for top hot methods
-    --tree-depth <n>     Max depth for call tree display (default: 5)
 """
 
 import json
 import sys
-from collections import defaultdict, Counter
+from collections import defaultdict
 from argparse import ArgumentParser
 
 def parse_args():
     """Parse command line arguments."""
-    parser = ArgumentParser(description='Analyze speedscope.json traces for hot methods')
+    parser = ArgumentParser(description='Analyze speedscope.json with hierarchical tree view')
     parser.add_argument('trace_file', help='Path to speedscope.json file')
     parser.add_argument('--namespace', default='Atomic.Net.MonoGame', 
-                       help='Filter methods by namespace (default: Atomic.Net.MonoGame)')
-    parser.add_argument('--top', type=int, default=50,
-                       help='Show top N methods (default: 50)')
-    parser.add_argument('--min-pct', type=float, default=0.01,
-                       help='Only show methods above this percent threshold (default: 0.01)')
-    parser.add_argument('--exclude-init', action='store_true', default=True,
-                       help='Exclude initialization methods (default: True)')
-    parser.add_argument('--include-init', action='store_false', dest='exclude_init',
-                       help='Include initialization methods')
+                       help='Root namespace to analyze (default: Atomic.Net.MonoGame)')
+    parser.add_argument('--min-pct', type=float, default=0.5,
+                       help='Only show tree nodes above this percent threshold (default: 0.5)')
     parser.add_argument('--output', help='Write report to file instead of stdout')
-    parser.add_argument('--include-system', action='store_true',
-                       help='Include System.* methods in analysis')
-    parser.add_argument('--call-tree', action='store_true',
-                       help='Show hierarchical call tree for hot methods')
-    parser.add_argument('--tree-depth', type=int, default=5,
-                       help='Maximum depth for call tree display (default: 5)')
     return parser.parse_args()
 
-def build_call_tree(events, frame_names, filtered_frames):
-    """Build hierarchical call tree from events."""
-    # Structure: {parent_frame: {child_frame: time_spent}}
-    call_relationships = defaultdict(lambda: defaultdict(float))
+def should_skip_method(method_name):
+    """Check if method should be skipped (setup, harness, unmanaged, etc.)."""
+    skip_patterns = [
+        'UNMANAGED_CODE_TIME',
+        'GlobalSetup',
+        'GlobalCleanup', 
+        'IterationSetup',
+        'IterationCleanup',
+        'BenchmarkDotNet.',
+        'Perfolizer.',
+        '..cctor()',
+        '.cctor()',
+        '.Initialize()',
+        'BeforeAnythingElse',
+        'AfterAll',
+        'BeforeActualRun',
+        'AfterActualRun',
+        'OverheadJitting',
+        'WorkloadJitting',
+        'OverheadWarmup',
+        'OverheadActual',
+        'WorkloadWarmup',
+    ]
+    return any(pattern in method_name for pattern in skip_patterns)
+
+def build_call_tree(events, frame_names):
+    """Build tree with inclusive time and parent-child relationships."""
+    tree = defaultdict(lambda: {'time': 0.0, 'children': defaultdict(float)})
     stack = []
     
     for event in events:
@@ -55,292 +65,184 @@ def build_call_tree(events, frame_names, filtered_frames):
         frame_idx = event['frame']
         timestamp = event['at']
         
-        if event_type == 'O':  # Open
-            # Record parent-child relationship if there's a parent
-            if stack:
-                parent_idx = stack[-1][0]
-                call_relationships[parent_idx][frame_idx] = 0.0  # Initialize
+        if event_type == 'O':
             stack.append((frame_idx, timestamp))
-        elif event_type == 'C':  # Close
+        elif event_type == 'C':
             if stack:
                 opened_frame, start_time = stack.pop()
                 if opened_frame == frame_idx:
                     duration = timestamp - start_time
+                    tree[frame_idx]['time'] += duration
                     
-                    # Attribute time to parent->child relationship
-                    if stack:  # If there's a parent on the stack
+                    if stack:
                         parent_idx = stack[-1][0]
-                        call_relationships[parent_idx][frame_idx] += duration
+                        tree[parent_idx]['children'][frame_idx] += duration
     
-    return call_relationships
+    return tree
 
-def get_method_name(frame_idx, frame_names, filtered_frames):
-    """Get clean method name for a frame."""
-    if frame_idx in filtered_frames:
-        return filtered_frames[frame_idx]
-    elif frame_idx in frame_names:
+def get_method_name(frame_idx, frame_names):
+    """Extract method name from frame."""
+    if frame_idx not in frame_names:
+        return f"<frame {frame_idx}>"
+    name = frame_names[frame_idx]
+    return name.split('!', 1)[1] if '!' in name else name
+
+def find_primary_root(tree, frame_names, namespace_filter):
+    """
+    Find the primary root - the method in our namespace with the most inclusive time
+    that isn't a setup/harness method.
+    """
+    best_root = None
+    best_time = 0.0
+    
+    for frame_idx, data in tree.items():
+        if frame_idx not in frame_names:
+            continue
+        
         name = frame_names[frame_idx]
-        if '!' in name:
-            return name.split('!')[1]
-        return name
-    return f"<unknown frame {frame_idx}>"
-
-def print_call_tree(parent_idx, call_relationships, frame_names, filtered_frames, 
-                   total_time, depth=0, max_depth=5, min_pct=0.5, visited=None):
-    """Recursively print call tree."""
-    if depth >= max_depth:
-        return []
+        if namespace_filter not in name or '!' not in name:
+            continue
+        
+        method_name = get_method_name(frame_idx, frame_names)
+        if should_skip_method(method_name):
+            continue
+        
+        # This is a valid namespace method
+        inclusive_time = data['time']
+        if inclusive_time > best_time:
+            best_time = inclusive_time
+            best_root = frame_idx
     
+    return best_root, best_time
+
+def print_tree(frame_idx, tree, frame_names, total_time, min_pct, depth=0, prefix="", visited=None):
+    """Recursively print call tree."""
     if visited is None:
         visited = set()
     
-    if parent_idx in visited:
-        return []  # Prevent infinite recursion
+    if frame_idx in visited or frame_idx not in frame_names:
+        return []
     
-    visited.add(parent_idx)
+    visited = visited.copy()
+    visited.add(frame_idx)
     lines = []
     
-    children = call_relationships.get(parent_idx, {})
-    if not children:
+    method_name = get_method_name(frame_idx, frame_names)
+    
+    # Skip unwanted methods
+    if should_skip_method(method_name):
+        # But traverse children
+        data = tree.get(frame_idx, {'children': {}})
+        for child_idx in data.get('children', {}).keys():
+            lines.extend(print_tree(child_idx, tree, frame_names, total_time, min_pct, depth, prefix, visited))
         return lines
     
-    # Sort children by time spent
-    sorted_children = sorted(children.items(), key=lambda x: x[1], reverse=True)
+    data = tree.get(frame_idx, {'time': 0.0, 'children': {}})
+    inclusive_time = data['time']
+    pct = (inclusive_time / total_time * 100) if total_time > 0 else 0
     
-    for child_idx, time_spent in sorted_children:
-        pct = (time_spent / total_time * 100) if total_time > 0 else 0
+    if pct < min_pct:
+        return lines
+    
+    # Format line
+    if depth == 0:
+        line = f"{inclusive_time:12.3f} ({pct:6.2f}%) {method_name}"
+    else:
+        line = f"{prefix}{inclusive_time:12.3f} ({pct:6.2f}%) {method_name}"
+    lines.append(line)
+    
+    # Process children
+    children = data.get('children', {})
+    if children:
+        # Sort by time
+        sorted_children = sorted(children.items(), key=lambda x: x[1], reverse=True)
         
-        # Skip very small contributors
-        if pct < min_pct and depth > 0:
-            continue
+        # Filter by threshold
+        significant = [(idx, time) for idx, time in sorted_children
+                      if (time / total_time * 100) >= min_pct]
         
-        indent = "  " * depth
-        method_name = get_method_name(child_idx, frame_names, filtered_frames)
-        
-        # Truncate long method names
-        if len(method_name) > 100:
-            method_name = method_name[:97] + "..."
-        
-        lines.append(f"{indent}├─ {time_spent:10.3f} ({pct:5.2f}%) {method_name}")
-        
-        # Recurse into children
-        child_lines = print_call_tree(
-            child_idx, call_relationships, frame_names, filtered_frames,
-            total_time, depth + 1, max_depth, min_pct, visited.copy()
-        )
-        lines.extend(child_lines)
+        for i, (child_idx, _) in enumerate(significant):
+            is_last = (i == len(significant) - 1)
+            
+            if is_last:
+                child_prefix = prefix + "└─ "
+                next_prefix = prefix + "   "
+            else:
+                child_prefix = prefix + "├─ "
+                next_prefix = prefix + "│  "
+            
+            child_lines = print_tree(child_idx, tree, frame_names, total_time, min_pct, depth + 1, next_prefix, visited)
+            
+            if child_lines:
+                # Fix first line prefix
+                first = child_lines[0]
+                if first.startswith(next_prefix):
+                    first = first[len(next_prefix):]
+                child_lines[0] = child_prefix + first
+                lines.extend(child_lines)
     
     return lines
-
-def analyze_speedscope(filename, namespace_filter='Atomic.Net.MonoGame', 
-                       exclude_init=True, include_system=False, build_tree=False):
-    """Parse speedscope JSON and extract hot methods."""
-    print(f"Loading {filename}...")
-    with open(filename, 'r') as f:
-        data = json.load(f)
-    
-    frames = data['shared']['frames']
-    profiles = data['profiles']
-    
-    print(f"Found {len(frames)} unique frames")
-    print(f"Found {len(profiles)} profiles (threads)")
-    
-    # Build frame lookup
-    frame_names = {i: frame['name'] for i, frame in enumerate(frames)}
-    
-    # Find the main thread (one with most events)
-    main_profile = max(profiles, key=lambda p: len(p['events']))
-    events = main_profile['events']
-    print(f"\nAnalyzing main thread: {main_profile['name']}")
-    print(f"  Events: {len(events)}")
-    
-    # Track frame open/close times
-    stack = []
-    frame_times = defaultdict(float)  # exclusive time
-    frame_samples = Counter()  # inclusive samples
-    
-    for event in events:
-        event_type = event['type']
-        frame_idx = event['frame']
-        timestamp = event['at']
-        
-        if event_type == 'O':  # Open
-            stack.append((frame_idx, timestamp))
-            frame_samples[frame_idx] += 1
-        elif event_type == 'C':  # Close
-            if stack:
-                opened_frame, start_time = stack.pop()
-                if opened_frame == frame_idx:
-                    duration = timestamp - start_time
-                    frame_times[frame_idx] += duration
-    
-    print(f"\nProcessed {len(events)} events")
-    print(f"Unique frames with time: {len(frame_times)}")
-    
-    # Build call tree if requested
-    call_tree = None
-    if build_tree:
-        print("Building call tree...")
-        call_tree = build_call_tree(events, frame_names, {})
-        print(f"Call tree built with {len(call_tree)} parent nodes")
-    
-    # Filter for target namespace methods
-    filtered_frames = {}
-    for frame_idx, name in frame_names.items():
-        # Check if this is a method from our target namespace
-        if namespace_filter in name and '!' in name:
-            # Extract method part (after '!')
-            parts = name.split('!')
-            if len(parts) > 1:
-                method = parts[1]
-                
-                # Apply filters
-                if exclude_init:
-                    # Skip common initialization patterns
-                    skip_patterns = [
-                        '.Initialize()',
-                        '..cctor()',
-                        '..ctor()',
-                        'GlobalSetup',
-                        'GlobalCleanup',
-                        'IterationSetup',
-                        'IterationCleanup'
-                    ]
-                    if any(pattern in method for pattern in skip_patterns):
-                        continue
-                
-                filtered_frames[frame_idx] = method
-        
-        # Optionally include System.* methods for comparison
-        elif include_system and name.startswith('System.') and '!' in name:
-            parts = name.split('!')
-            if len(parts) > 1:
-                filtered_frames[frame_idx] = parts[1]
-    
-    print(f"\nFound {len(filtered_frames)} filtered method frames")
-    
-    # Sort by exclusive time
-    sorted_by_time = [(idx, frame_times.get(idx, 0), filtered_frames[idx]) 
-                      for idx in filtered_frames.keys()]
-    sorted_by_time.sort(key=lambda x: x[1], reverse=True)
-    
-    # Sort by inclusive samples
-    sorted_by_samples = [(idx, frame_samples.get(idx, 0), filtered_frames[idx])
-                         for idx in filtered_frames.keys()]
-    sorted_by_samples.sort(key=lambda x: x[1], reverse=True)
-    
-    return {
-        'sorted_by_time': sorted_by_time,
-        'sorted_by_samples': sorted_by_samples,
-        'total_time': sum(frame_times.values()),
-        'total_samples': sum(frame_samples.values()),
-        'frame_times': frame_times,
-        'frame_samples': frame_samples,
-        'call_tree': call_tree,
-        'frame_names': frame_names,
-        'filtered_frames': filtered_frames
-    }
-
-def format_report(results, top_n=50, min_pct=0.01, namespace='Atomic.Net.MonoGame',
-                 show_call_tree=False, tree_depth=5):
-    """Format analysis results as a report."""
-    lines = []
-    
-    sorted_by_time = results['sorted_by_time']
-    sorted_by_samples = results['sorted_by_samples']
-    total_time = results['total_time']
-    total_samples = results['total_samples']
-    
-    lines.append("=" * 100)
-    lines.append(f"TOP {top_n} METHODS BY EXCLUSIVE TIME (actual work done)")
-    lines.append(f"Namespace: {namespace}")
-    lines.append("=" * 100)
-    
-    count = 0
-    for i, (idx, time_val, method) in enumerate(sorted_by_time, 1):
-        pct = (time_val / total_time * 100) if total_time > 0 else 0
-        if pct < min_pct and i > 10:  # Always show top 10
-            continue
-        lines.append(f"{i:3d}. {time_val:12.6f} ({pct:6.2f}%) - {method}")
-        count += 1
-        if count >= top_n:
-            break
-    
-    lines.append("\n" + "=" * 100)
-    lines.append(f"TOP {top_n} METHODS BY INCLUSIVE SAMPLES (on call stack)")
-    lines.append(f"Namespace: {namespace}")
-    lines.append("=" * 100)
-    
-    count = 0
-    for i, (idx, samples, method) in enumerate(sorted_by_samples, 1):
-        pct = (samples / total_samples * 100) if total_samples > 0 else 0
-        if pct < min_pct and i > 10:  # Always show top 10
-            continue
-        lines.append(f"{i:3d}. {samples:8d} samples ({pct:5.2f}%) - {method}")
-        count += 1
-        if count >= top_n:
-            break
-    
-    # Add call tree analysis if requested
-    if show_call_tree and results['call_tree']:
-        lines.append("\n" + "=" * 100)
-        lines.append(f"CALL TREE ANALYSIS (Top 10 Hot Methods)")
-        lines.append(f"Shows hierarchical breakdown of where time is spent within each method")
-        lines.append(f"Max depth: {tree_depth}, Min % to show: 0.5%")
-        lines.append("=" * 100)
-        
-        call_tree = results['call_tree']
-        frame_names = results['frame_names']
-        filtered_frames = results['filtered_frames']
-        
-        # Show call tree for top 10 hot methods
-        for i, (idx, time_val, method) in enumerate(sorted_by_time[:10], 1):
-            pct = (time_val / total_time * 100) if total_time > 0 else 0
-            lines.append(f"\n{i}. {method}")
-            lines.append(f"   Exclusive time: {time_val:.3f} ({pct:.2f}%)")
-            lines.append(f"   Children breakdown:")
-            
-            tree_lines = print_call_tree(
-                idx, call_tree, frame_names, filtered_frames,
-                total_time, depth=0, max_depth=tree_depth, min_pct=0.5
-            )
-            
-            if tree_lines:
-                lines.extend(["   " + line for line in tree_lines])
-            else:
-                lines.append("   └─ (no significant children or leaf node)")
-    
-    lines.append("\n" + "=" * 100)
-    lines.append("SUMMARY")
-    lines.append("=" * 100)
-    lines.append(f"Total execution time (all methods): {total_time:.2f} time units")
-    lines.append(f"Total samples (all methods): {total_samples:,}")
-    lines.append(f"Methods analyzed: {len(results['sorted_by_time'])}")
-    lines.append(f"Showing methods with >= {min_pct}% of total time")
-    
-    return '\n'.join(lines)
 
 def main():
     """Main entry point."""
     args = parse_args()
     
     try:
-        results = analyze_speedscope(
-            args.trace_file,
-            namespace_filter=args.namespace,
-            exclude_init=args.exclude_init,
-            include_system=args.include_system,
-            build_tree=args.call_tree
-        )
+        print(f"Loading {args.trace_file}...")
+        with open(args.trace_file) as f:
+            data = json.load(f)
         
-        report = format_report(
-            results,
-            top_n=args.top,
-            min_pct=args.min_pct,
-            namespace=args.namespace,
-            show_call_tree=args.call_tree,
-            tree_depth=args.tree_depth
-        )
+        frames = data['shared']['frames']
+        profiles = data['profiles']
+        
+        print(f"Found {len(frames)} frames, {len(profiles)} profiles")
+        
+        frame_names = {i: frame['name'] for i, frame in enumerate(frames)}
+        main_profile = max(profiles, key=lambda p: len(p['events']))
+        events = main_profile['events']
+        
+        print(f"Analyzing thread: {main_profile['name']} ({len(events)} events)")
+        
+        # Build tree
+        print("Building call tree...")
+        tree = build_call_tree(events, frame_names)
+        print(f"Built tree with {len(tree)} nodes")
+        
+        # Find primary root
+        print(f"Finding primary root in {args.namespace}...")
+        root_idx, root_time = find_primary_root(tree, frame_names, args.namespace)
+        
+        if root_idx is None:
+            print(f"Error: No methods found in namespace {args.namespace}", file=sys.stderr)
+            return 1
+        
+        root_method = get_method_name(root_idx, frame_names)
+        print(f"Root method: {root_method}")
+        print(f"Root inclusive time: {root_time:.2f}")
+        
+        # Generate tree
+        lines = []
+        lines.append("=" * 100)
+        lines.append(f"HIERARCHICAL CALL TREE - {args.namespace}")
+        lines.append(f"Root method: {root_method}")
+        lines.append(f"Total time: {root_time:.2f}")
+        lines.append(f"Percentages relative to root time (benchmark harness excluded)")
+        lines.append(f"Minimum threshold: {args.min_pct}%")
+        lines.append("=" * 100)
+        lines.append("")
+        
+        tree_lines = print_tree(root_idx, tree, frame_names, root_time, args.min_pct)
+        lines.extend(tree_lines)
+        
+        lines.append("")
+        lines.append("=" * 100)
+        lines.append("SUMMARY")
+        lines.append("=" * 100)
+        lines.append(f"Total time analyzed: {root_time:.2f}")
+        lines.append(f"Threshold: {args.min_pct}%")
+        lines.append("Setup/harness/unmanaged methods excluded from tree")
+        
+        report = '\n'.join(lines)
         
         if args.output:
             with open(args.output, 'w') as f:
@@ -351,12 +253,6 @@ def main():
         
         return 0
     
-    except FileNotFoundError:
-        print(f"Error: File not found: {args.trace_file}", file=sys.stderr)
-        return 1
-    except json.JSONDecodeError as e:
-        print(f"Error: Invalid JSON in {args.trace_file}: {e}", file=sys.stderr)
-        return 1
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         import traceback
