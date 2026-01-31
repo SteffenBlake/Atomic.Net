@@ -64,7 +64,7 @@ public partial class TagsBehaviorConverter : JsonConverter<TagsBehavior>
             }
             
             // Normalize to lowercase for case-insensitive matching
-            var normalizedTag = tag.Trim().ToLowerInvariant();
+            var normalizedTag = tag.Trim().ToLower();
             
             // Guard: invalid characters in tag
             if (!ValidTagPattern().IsMatch(normalizedTag))

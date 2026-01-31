@@ -42,7 +42,7 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
         out SparseArray<bool>? entities
     )
     {
-        var normalizedTag = tag.ToLowerInvariant();
+        var normalizedTag = tag.ToLower();
         
         if (_tagToEntities.TryGetValue(normalizedTag, out entities))
         {

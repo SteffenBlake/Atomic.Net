@@ -19,7 +19,7 @@ public readonly record struct PropertiesBehavior : IBehavior<PropertiesBehavior>
     public FluentDictionary<string, PropertyValue> Properties
     {
         init => _properties = value;
-        get => _properties ?? new(8, StringComparer.InvariantCultureIgnoreCase);
+        get => _properties ?? new(8, StringComparer.OrdinalIgnoreCase);
     }
     
     public static PropertiesBehavior CreateFor(Entity entity)
