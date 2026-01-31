@@ -249,12 +249,29 @@ public static class JsonEntityConverter
     /// <summary>
     /// Writes mutations from a JsonNode back to the real Entity.
     /// Uses direct JsonNode access patterns without MutEntity deserialization for optimal performance.
+    /// Optimized to handle common cases (id, tags, properties) with a fast path that skips unnecessary field checks.
     /// </summary>
     public static void Write(JsonNode jsonEntity, Entity entity)
     {
         if (jsonEntity is not JsonObject entityObj)
         {
             return;
+        }
+
+        // Fast path: Check if we have any Transform/Parent/Flex properties
+        // If not, we can skip ~40 unnecessary field checks (performance optimization for common case)
+        // Use a single pass through keys instead of multiple ContainsKey calls
+        var hasComplexFields = false;
+        foreach (var kvp in entityObj)
+        {
+            var key = kvp.Key;
+            // Check if this key requires checking Transform/Parent/Flex fields
+            // Fast path only handles: _index, id, tags, properties
+            if (key != "_index" && key != "id" && key != "tags" && key != "properties")
+            {
+                hasComplexFields = true;
+                break;
+            }
         }
 
         // Id
@@ -349,6 +366,12 @@ public static class JsonEntityConverter
                         }
                 );
             }
+        }
+
+        // Fast path: Skip Transform/Parent/Flex checks if they weren't in the JSON
+        if (!hasComplexFields)
+        {
+            return;
         }
 
         // Transform - Position.X
