@@ -146,4 +146,123 @@ public sealed class SequenceNegativeTests : IDisposable
         Assert.Single(_errorListener.ReceivedEvents);
         Assert.Contains("not found", _errorListener.ReceivedEvents[0].Message);
     }
+    
+    [Fact]
+    public void MalformedDelayStep_MissingDuration_LogsErrorAndNotRegistered()
+    {
+        // Arrange
+        _errorListener.Clear();
+        var sequenceCountBefore = SequenceRegistry.Instance.Sequences.Count;
+        
+        // Act: Load scene with malformed delay step (missing duration field)
+        SceneLoader.Instance.LoadGameScene("Sequencing/Fixtures/malformed-delay-missing-duration.json");
+        
+        // Assert: Error event logged
+        Assert.NotEmpty(_errorListener.ReceivedEvents);
+        
+        // Assert: Malformed sequence NOT added to registry
+        Assert.False(SequenceRegistry.Instance.TryResolveById("malformed-delay", out _));
+    }
+    
+    [Fact]
+    public void MalformedTweenStep_MissingRequiredFields_LogsErrorAndNotRegistered()
+    {
+        // Arrange
+        _errorListener.Clear();
+        
+        // Act: Load scene with malformed tween step (missing 'to' and 'do' fields)
+        SceneLoader.Instance.LoadGameScene("Sequencing/Fixtures/malformed-tween-missing-fields.json");
+        
+        // Assert: Error event logged
+        Assert.NotEmpty(_errorListener.ReceivedEvents);
+        
+        // Assert: Malformed sequence NOT added to registry
+        Assert.False(SequenceRegistry.Instance.TryResolveById("malformed-tween", out _));
+    }
+    
+    [Fact]
+    public void MalformedDoStep_MissingCommand_LogsErrorAndNotRegistered()
+    {
+        // Arrange
+        _errorListener.Clear();
+        
+        // Act: Load scene with malformed do step (empty command object)
+        SceneLoader.Instance.LoadGameScene("Sequencing/Fixtures/malformed-do-missing-command.json");
+        
+        // Assert: Error event logged
+        Assert.NotEmpty(_errorListener.ReceivedEvents);
+        
+        // Assert: Malformed sequence NOT added to registry
+        Assert.False(SequenceRegistry.Instance.TryResolveById("malformed-do", out _));
+    }
+    
+    [Fact]
+    public void MalformedRepeatStep_MissingUntilCondition_LogsErrorAndNotRegistered()
+    {
+        // Arrange
+        _errorListener.Clear();
+        
+        // Act: Load scene with malformed repeat step (missing 'until' and 'do' fields)
+        SceneLoader.Instance.LoadGameScene("Sequencing/Fixtures/malformed-repeat-missing-until.json");
+        
+        // Assert: Error event logged
+        Assert.NotEmpty(_errorListener.ReceivedEvents);
+        
+        // Assert: Malformed sequence NOT added to registry
+        Assert.False(SequenceRegistry.Instance.TryResolveById("malformed-repeat", out _));
+    }
+    
+    [Fact]
+    public void UnknownStepType_LogsErrorAndNotRegistered()
+    {
+        // Arrange
+        _errorListener.Clear();
+        
+        // Act: Load scene with unknown step type
+        SceneLoader.Instance.LoadGameScene("Sequencing/Fixtures/malformed-unknown-step-type.json");
+        
+        // Assert: Error event logged
+        Assert.NotEmpty(_errorListener.ReceivedEvents);
+        
+        // Assert: Malformed sequence NOT added to registry
+        Assert.False(SequenceRegistry.Instance.TryResolveById("unknown-step", out _));
+    }
+    
+    [Fact]
+    public void SequenceMissingId_LogsErrorAndNotRegistered()
+    {
+        // Arrange
+        _errorListener.Clear();
+        var sequenceCountBefore = SequenceRegistry.Instance.Sequences.Count;
+        
+        // Act: Load scene with sequence missing ID field
+        SceneLoader.Instance.LoadGameScene("Sequencing/Fixtures/malformed-sequence-missing-id.json");
+        
+        // Assert: Error event logged
+        Assert.NotEmpty(_errorListener.ReceivedEvents);
+        
+        // Assert: No new sequences added (count unchanged)
+        Assert.Equal(sequenceCountBefore, SequenceRegistry.Instance.Sequences.Count);
+    }
+    
+    [Fact]
+    public void DuplicateSequenceId_SecondSequenceRejected()
+    {
+        // Arrange
+        _errorListener.Clear();
+        
+        // Act: Load scene with duplicate sequence IDs
+        SceneLoader.Instance.LoadGameScene("Sequencing/Fixtures/malformed-sequence-duplicate-id.json");
+        
+        // Assert: Error event logged for duplicate
+        Assert.NotEmpty(_errorListener.ReceivedEvents);
+        Assert.Contains(_errorListener.ReceivedEvents, e => e.Message.Contains("already exists"));
+        
+        // Assert: First sequence registered, second rejected
+        Assert.True(SequenceRegistry.Instance.TryResolveById("duplicate", out var seqIndex));
+        
+        // Assert: Only one sequence with this ID exists (by checking steps count matches first)
+        Assert.True(SequenceRegistry.Instance.Sequences.TryGetValue(seqIndex, out var seq));
+        Assert.Single(seq.Value.Steps);
+    }
 }

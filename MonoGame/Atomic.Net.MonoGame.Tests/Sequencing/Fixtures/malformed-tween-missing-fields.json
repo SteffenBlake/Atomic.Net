@@ -1,0 +1,24 @@
+{
+  "entities": [
+    {
+      "id": "testEntity",
+      "properties": {
+        "value": 0
+      }
+    }
+  ],
+  "sequences": [
+    {
+      "id": "malformed-tween",
+      "steps": [
+        {
+          "tween": {
+            "from": 0,
+            "duration": 1.0
+          }
+        }
+      ]
+    }
+  ],
+  "rules": []
+}

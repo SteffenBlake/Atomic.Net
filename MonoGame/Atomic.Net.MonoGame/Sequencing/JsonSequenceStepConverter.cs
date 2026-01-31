@@ -22,17 +22,19 @@ public class JsonSequenceStepConverter : JsonConverter<JsonSequenceStep>
         var firstProperty = jsonObject.First();
         var propertyKey = firstProperty.Key;
 
-        JsonSequenceStep? result = propertyKey switch
+        JsonSequenceStep? result = firstProperty.Value is null ? null : propertyKey switch
         {
-            "delay" when firstProperty.Value is not null =>
-                new DelayStep(firstProperty.Value.Deserialize<float>(options)),
-            "do" when firstProperty.Value is not null =>
+            "delay" =>
+                firstProperty.Value.Deserialize<float>(options) is var duration
+                    ? new DelayStep(duration)
+                    : null,
+            "do" =>
                 firstProperty.Value.Deserialize<Scenes.SceneCommand>(options) is { } cmd
                     ? new DoStep(cmd)
                     : null,
-            "tween" when firstProperty.Value is not null =>
+            "tween" =>
                 firstProperty.Value.Deserialize<TweenStep>(options),
-            "repeat" when firstProperty.Value is not null =>
+            "repeat" =>
                 firstProperty.Value.Deserialize<RepeatStep>(options),
             _ => null
         };

@@ -20,7 +20,7 @@ public class SequenceRegistry :
             return;
         }
 
-        Instance ??= new();
+        Instance = new();
         EventBus<InitializeEvent>.Register(Instance);
     }
 
@@ -55,6 +55,18 @@ public class SequenceRegistry :
     /// <returns>The index of the activated sequence, or ushort.MaxValue on error.</returns>
     public ushort Activate(JsonSequence sequence)
     {
+        if (string.IsNullOrWhiteSpace(sequence.Id))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Sequence ID cannot be null or empty"));
+            return ushort.MaxValue;
+        }
+
+        // Validate sequence steps
+        if (!ValidateSequence(sequence))
+        {
+            return ushort.MaxValue;
+        }
+
         if (_nextSceneSequenceIndex >= Constants.MaxSequences)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Scene sequence capacity exceeded"));
@@ -83,6 +95,18 @@ public class SequenceRegistry :
     /// <returns>The index of the activated sequence, or ushort.MaxValue on error.</returns>
     public ushort ActivateGlobal(JsonSequence sequence)
     {
+        if (string.IsNullOrWhiteSpace(sequence.Id))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Sequence ID cannot be null or empty"));
+            return ushort.MaxValue;
+        }
+
+        // Validate sequence steps
+        if (!ValidateSequence(sequence))
+        {
+            return ushort.MaxValue;
+        }
+
         if (_nextGlobalSequenceIndex >= Constants.MaxGlobalSequences)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Global sequence capacity exceeded"));
@@ -102,6 +126,71 @@ public class SequenceRegistry :
         _sequences.Set(index, sequence);
         _idToIndex[sequence.Id] = index;
         return index;
+    }
+
+    /// <summary>
+    /// Validates that a sequence has valid steps with required fields.
+    /// Pushes ErrorEvent for any validation failures.
+    /// </summary>
+    private bool ValidateSequence(JsonSequence sequence)
+    {
+        if (sequence.Steps == null || sequence.Steps.Length == 0)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Sequence '{sequence.Id}' has no steps"
+            ));
+            return false;
+        }
+
+        for (int i = 0; i < sequence.Steps.Length; i++)
+        {
+            var step = sequence.Steps[i];
+            
+            if (step.TryMatch(out DelayStep delayStep))
+            {
+                if (delayStep.Duration <= 0)
+                {
+                    EventBus<ErrorEvent>.Push(new ErrorEvent(
+                        $"Sequence '{sequence.Id}' step {i}: Delay duration must be greater than 0"
+                    ));
+                    return false;
+                }
+            }
+            else if (step.TryMatch(out DoStep doStep))
+            {
+                // DoStep contains a SceneCommand which has its own validation
+                // If it deserialized, it's valid enough
+            }
+            else if (step.TryMatch(out TweenStep tweenStep))
+            {
+                if (tweenStep.Duration <= 0)
+                {
+                    EventBus<ErrorEvent>.Push(new ErrorEvent(
+                        $"Sequence '{sequence.Id}' step {i}: Tween duration must be greater than 0"
+                    ));
+                    return false;
+                }
+            }
+            else if (step.TryMatch(out RepeatStep repeatStep))
+            {
+                if (repeatStep.Every <= 0)
+                {
+                    EventBus<ErrorEvent>.Push(new ErrorEvent(
+                        $"Sequence '{sequence.Id}' step {i}: Repeat interval must be greater than 0"
+                    ));
+                    return false;
+                }
+            }
+            else
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Sequence '{sequence.Id}' step {i}: Unknown step type"
+                ));
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>
