@@ -34,9 +34,13 @@ public class JsonSequenceStepConverter : JsonConverter<JsonSequenceStep>
                     firstProperty.Value.Deserialize<Scenes.SceneCommand>(options))
                 : throw new JsonException("'do' value cannot be null"),
 
-            "tween" => jsonObject.Deserialize<TweenStep>(options),
+            "tween" => firstProperty.Value is not null
+                ? firstProperty.Value.Deserialize<TweenStep>(options)
+                : throw new JsonException("'tween' value cannot be null"),
 
-            "repeat" => jsonObject.Deserialize<RepeatStep>(options),
+            "repeat" => firstProperty.Value is not null
+                ? firstProperty.Value.Deserialize<RepeatStep>(options)
+                : throw new JsonException("'repeat' value cannot be null"),
 
             _ => throw new JsonException($"Unrecognized sequence step discriminator key: '{propertyKey}'")
         };
