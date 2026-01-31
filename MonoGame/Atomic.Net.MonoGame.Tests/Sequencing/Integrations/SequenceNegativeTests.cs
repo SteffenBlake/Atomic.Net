@@ -98,4 +98,52 @@ public sealed class SequenceNegativeTests : IDisposable
             () => Assert.Fail("Expected value")
         );
     }
+    
+    [Fact]
+    public void StartSequence_InvalidId_ErrorEvent()
+    {
+        // Arrange
+        SceneLoader.Instance.LoadGameScene("Sequencing/Fixtures/error-test.json");
+        Assert.True(EntityIdRegistry.Instance.TryResolve("testEntity", out var entity));
+        _errorListener.Clear();
+        
+        // Act: Try to start nonexistent sequence
+        SequenceStartCmdDriver.Instance.Execute(entity.Value.Index, "invalid-id");
+        
+        // Assert: Error event pushed
+        Assert.Single(_errorListener.ReceivedEvents);
+        Assert.Contains("not found", _errorListener.ReceivedEvents[0].Message);
+    }
+    
+    [Fact]
+    public void StopSequence_InvalidId_ErrorEvent()
+    {
+        // Arrange
+        SceneLoader.Instance.LoadGameScene("Sequencing/Fixtures/error-test.json");
+        Assert.True(EntityIdRegistry.Instance.TryResolve("testEntity", out var entity));
+        _errorListener.Clear();
+        
+        // Act: Try to stop nonexistent sequence
+        SequenceStopCmdDriver.Instance.Execute(entity.Value.Index, "invalid-id");
+        
+        // Assert: Error event pushed
+        Assert.Single(_errorListener.ReceivedEvents);
+        Assert.Contains("not found", _errorListener.ReceivedEvents[0].Message);
+    }
+    
+    [Fact]
+    public void ResetSequence_InvalidId_ErrorEvent()
+    {
+        // Arrange
+        SceneLoader.Instance.LoadGameScene("Sequencing/Fixtures/error-test.json");
+        Assert.True(EntityIdRegistry.Instance.TryResolve("testEntity", out var entity));
+        _errorListener.Clear();
+        
+        // Act: Try to reset nonexistent sequence
+        SequenceResetCmdDriver.Instance.Execute(entity.Value.Index, "invalid-id");
+        
+        // Assert: Error event pushed
+        Assert.Single(_errorListener.ReceivedEvents);
+        Assert.Contains("not found", _errorListener.ReceivedEvents[0].Message);
+    }
 }

@@ -298,4 +298,33 @@ public sealed class SequenceIntegrationTests : IDisposable
         // Assert: No crash (sequence was canceled)
         Assert.Empty(_errorListener.ReceivedEvents);
     }
+    
+    // ========== Large Timestep Tests ==========
+    
+    [Fact]
+    public void RepeatStep_LargeTimestep_ExecutesMultipleTimes()
+    {
+        // Arrange
+        SceneLoader.Instance.LoadGameScene("Sequencing/Fixtures/large-timestep-test.json");
+        
+        // Act: Start sequence with large timestep (350ms on 100ms intervals = 3 executions)
+        RulesDriver.Instance.RunFrame(0.016f);
+        Assert.Empty(_errorListener.ReceivedEvents);
+        
+        Assert.True(EntityIdRegistry.Instance.TryResolve("testEntity", out var entity));
+        Assert.True(SequenceRegistry.Instance.TryResolveById("fast-repeat", out var seqIndex));
+        
+        SequenceDriver.Instance.StartSequence(entity.Value.Index, seqIndex);
+        SequenceDriver.Instance.RunFrame(0.35f); // Should trigger 3 times (at 0.1, 0.2, 0.3)
+        
+        // Assert: Counter incremented 3 times
+        Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity.Value, out var props));
+        Assert.True(props.Value.Properties.TryGetValue("counter", out var counter));
+        counter.Visit(
+            s => Assert.Fail("Expected float"),
+            f => Assert.Equal(3f, f),
+            b => Assert.Fail("Expected float"),
+            () => Assert.Fail("Expected value")
+        );
+    }
 }
