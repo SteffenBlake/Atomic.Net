@@ -22,8 +22,25 @@ public readonly record struct MutCommand(List<MutOperation> Mut)
     {
         foreach (var operation in Mut)
         {
-            // Evaluate the value expression using JsonLogic
-            var result = JsonLogic.Apply(operation.Value, context);
+            JsonNode? result;
+            
+            // Optimization: Skip JsonLogic.Apply for literal values (numbers, strings, booleans, null)
+            // JsonLogic only needs to run for objects/arrays (complex expressions)
+            if (operation.Value is JsonValue)
+            {
+                // Literal value - use directly without JsonLogic overhead
+                result = operation.Value;
+            }
+            else if (operation.Value is null)
+            {
+                // Null literal
+                result = null;
+            }
+            else
+            {
+                // Complex expression (JsonObject or JsonArray) - needs JsonLogic evaluation
+                result = JsonLogic.Apply(operation.Value, context);
+            }
             
             if (result == null)
             {
