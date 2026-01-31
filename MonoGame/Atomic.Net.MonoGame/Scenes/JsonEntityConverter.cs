@@ -262,35 +262,19 @@ public static class JsonEntityConverter
 
         // Fast path: Check if we have any Transform/Parent/Flex properties
         // If not, we can skip expensive deserialization
-        var needsFullDeserialization = 
-            entityObj.ContainsKey("transform") ||
-            entityObj.ContainsKey("parent") ||
-            entityObj.ContainsKey("flexAlignItems") ||
-            entityObj.ContainsKey("flexAlignSelf") ||
-            entityObj.ContainsKey("flexBorderBottom") ||
-            entityObj.ContainsKey("flexBorderLeft") ||
-            entityObj.ContainsKey("flexBorderRight") ||
-            entityObj.ContainsKey("flexBorderTop") ||
-            entityObj.ContainsKey("flexDirection") ||
-            entityObj.ContainsKey("flexGrow") ||
-            entityObj.ContainsKey("flexWrap") ||
-            entityObj.ContainsKey("flexZOverride") ||
-            entityObj.ContainsKey("flexHeight") ||
-            entityObj.ContainsKey("flexJustifyContent") ||
-            entityObj.ContainsKey("flexMarginBottom") ||
-            entityObj.ContainsKey("flexMarginLeft") ||
-            entityObj.ContainsKey("flexMarginRight") ||
-            entityObj.ContainsKey("flexMarginTop") ||
-            entityObj.ContainsKey("flexPaddingBottom") ||
-            entityObj.ContainsKey("flexPaddingLeft") ||
-            entityObj.ContainsKey("flexPaddingRight") ||
-            entityObj.ContainsKey("flexPaddingTop") ||
-            entityObj.ContainsKey("flexPositionBottom") ||
-            entityObj.ContainsKey("flexPositionLeft") ||
-            entityObj.ContainsKey("flexPositionRight") ||
-            entityObj.ContainsKey("flexPositionTop") ||
-            entityObj.ContainsKey("flexPositionType") ||
-            entityObj.ContainsKey("flexWidth");
+        // Use a single pass through keys instead of multiple ContainsKey calls
+        var needsFullDeserialization = false;
+        foreach (var kvp in entityObj)
+        {
+            var key = kvp.Key;
+            // Check if this key requires full deserialization
+            // Fast path only handles: _index, id, tags, properties
+            if (key != "_index" && key != "id" && key != "tags" && key != "properties")
+            {
+                needsFullDeserialization = true;
+                break;
+            }
+        }
 
         if (needsFullDeserialization)
         {
@@ -360,51 +344,7 @@ public static class JsonEntityConverter
         if (entityObj.TryGetPropertyValue("properties", out var propertiesNode) && 
             propertiesNode is JsonObject propertiesObj)
         {
-            foreach (KeyValuePair<string, JsonNode?> kvp in propertiesObj)
-            {
-                var key = kvp.Key;
-                var valueNode = kvp.Value;
-
-                if (valueNode == null)
-                {
-                    continue;
-                }
-
-                if (valueNode is not JsonValue jsonValue)
-                {
-                    continue;
-                }
-
-                PropertyValue? propValue = null;
-
-                if (jsonValue.TryGetValue<string>(out var strValue))
-                {
-                    propValue = new PropertyValue(strValue);
-                }
-                else if (jsonValue.TryCoerceFloatValue(out var floatValue))
-                {
-                    propValue = new PropertyValue(floatValue.Value);
-                }
-                else if (jsonValue.TryGetValue<bool>(out var boolValue))
-                {
-                    propValue = new PropertyValue(boolValue);
-                }
-
-                if (!propValue.HasValue)
-                {
-                    continue;
-                }
-
-                var data = (key, propValue.Value);
-                entity.SetBehavior<PropertiesBehavior, (string Key, PropertyValue Value)>(
-                    in data,
-                    static (ref readonly _data, ref b) =>
-                        b = b with
-                        {
-                            Properties = b.Properties.With(_data.Key, _data.Value)
-                        }
-                );
-            }
+            ProcessProperties(entity, propertiesObj);
         }
     }
 
@@ -466,51 +406,8 @@ public static class JsonEntityConverter
         // Properties
         if (mutEntity.Value.Properties != null)
         {
-            foreach (KeyValuePair<string, JsonNode> kvp in mutEntity.Value.Properties)
-            {
-                var key = kvp.Key;
-                var valueNode = kvp.Value;
-
-                if (valueNode == null)
-                {
-                    continue;
-                }
-
-                if (valueNode is not JsonValue jsonValue)
-                {
-                    continue;
-                }
-
-                PropertyValue? propValue = null;
-
-                if (jsonValue.TryGetValue<string>(out var strValue))
-                {
-                    propValue = new PropertyValue(strValue);
-                }
-                else if (jsonValue.TryCoerceFloatValue(out var floatValue))
-                {
-                    propValue = new PropertyValue(floatValue.Value);
-                }
-                else if (jsonValue.TryGetValue<bool>(out var boolValue))
-                {
-                    propValue = new PropertyValue(boolValue);
-                }
-
-                if (!propValue.HasValue)
-                {
-                    continue;
-                }
-
-                var data = (key, propValue.Value);
-                entity.SetBehavior<PropertiesBehavior, (string Key, PropertyValue Value)>(
-                    in data,
-                    static (ref readonly _data, ref b) =>
-                        b = b with
-                        {
-                            Properties = b.Properties.With(_data.Key, _data.Value)
-                        }
-                );
-            }
+            // Cast to IEnumerable to handle nullability difference
+            ProcessProperties(entity, (IEnumerable<KeyValuePair<string, JsonNode?>>)mutEntity.Value.Properties);
         }
 
         // Transform - Position.X
@@ -987,6 +884,60 @@ public static class JsonEntityConverter
         };
     }
 
+
+
+    /// <summary>
+    /// Helper method to process properties and apply to entity.
+    /// Shared by fast path and full deserialization path.
+    /// </summary>
+    private static void ProcessProperties(Entity entity, IEnumerable<KeyValuePair<string, JsonNode?>> properties)
+    {
+        foreach (KeyValuePair<string, JsonNode?> kvp in properties)
+        {
+            var key = kvp.Key;
+            var valueNode = kvp.Value;
+
+            if (valueNode == null)
+            {
+                continue;
+            }
+
+            if (valueNode is not JsonValue jsonValue)
+            {
+                continue;
+            }
+
+            PropertyValue? propValue = null;
+
+            if (jsonValue.TryGetValue<string>(out var strValue))
+            {
+                propValue = new PropertyValue(strValue);
+            }
+            else if (jsonValue.TryCoerceFloatValue(out var floatValue))
+            {
+                propValue = new PropertyValue(floatValue.Value);
+            }
+            else if (jsonValue.TryGetValue<bool>(out var boolValue))
+            {
+                propValue = new PropertyValue(boolValue);
+            }
+
+            if (!propValue.HasValue)
+            {
+                continue;
+            }
+
+            var data = (key, propValue.Value);
+            entity.SetBehavior<PropertiesBehavior, (string Key, PropertyValue Value)>(
+                in data,
+                static (ref readonly _data, ref b) =>
+                    b = b with
+                    {
+                        Properties = b.Properties.With(_data.Key, _data.Value)
+                    }
+            );
+        }
+    }
 
     private static bool TryDeserializeMutEntity(
         JsonObject entityObj,
