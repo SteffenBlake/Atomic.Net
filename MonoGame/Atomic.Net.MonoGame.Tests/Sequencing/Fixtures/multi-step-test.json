@@ -1,0 +1,59 @@
+{
+  "entities": [
+    {
+      "id": "testEntity",
+      "properties": {
+        "step1": 0,
+        "step2": 0,
+        "step3": 0,
+        "step4": 0
+      }
+    }
+  ],
+  "sequences": [
+    {
+      "id": "multi-step",
+      "steps": [
+        {
+          "do": {
+            "mut": [{ "target": { "properties": "step1" }, "value": 1 }]
+          }
+        },
+        {
+          "delay": 0.1
+        },
+        {
+          "do": {
+            "mut": [{ "target": { "properties": "step2" }, "value": 2 }]
+          }
+        },
+        {
+          "tween": {
+            "from": 0,
+            "to": 10,
+            "duration": 0.2,
+            "do": {
+              "mut": [{ "target": { "properties": "step3" }, "value": { "var": "tween" } }]
+            }
+          }
+        },
+        {
+          "do": {
+            "mut": [{ "target": { "properties": "step4" }, "value": 4 }]
+          }
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "from": "@testEntity",
+      "where": {
+        "filter": [{ "var": "entities" }, { "==": [1, 1] }]
+      },
+      "do": {
+        "sequence-start": "multi-step"
+      }
+    }
+  ]
+}

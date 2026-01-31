@@ -1,0 +1,45 @@
+{
+  "entities": [
+    {
+      "id": "testEntity",
+      "properties": {
+        "value": 10,
+        "counter": 0
+      }
+    }
+  ],
+  "sequences": [
+    {
+      "id": "do-test",
+      "steps": [
+        {
+          "do": {
+            "mut": [
+              {
+                "target": { "properties": "counter" },
+                "value": { "+": [
+                  { "var": "self.properties.counter" },
+                  1
+                ]}
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "from": "@testEntity",
+      "where": {
+        "filter": [
+          { "var": "entities" },
+          { "==": [1, 1] }
+        ]
+      },
+      "do": {
+        "sequence-start": "do-test"
+      }
+    }
+  ]
+}

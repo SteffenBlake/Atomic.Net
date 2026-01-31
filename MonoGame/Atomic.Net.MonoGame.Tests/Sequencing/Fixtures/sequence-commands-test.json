@@ -1,0 +1,31 @@
+{
+  "entities": [
+    {
+      "id": "testEntity",
+      "properties": {
+        "value": 0
+      }
+    }
+  ],
+  "sequences": [
+    {
+      "id": "test-sequence",
+      "steps": [
+        {
+          "delay": 0.1
+        },
+        {
+          "do": {
+            "mut": [
+              {
+                "target": { "properties": "value" },
+                "value": 42
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "rules": []
+}
