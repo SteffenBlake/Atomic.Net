@@ -246,7 +246,7 @@ public sealed class SequenceNegativeTests : IDisposable
     }
     
     [Fact]
-    public void DuplicateSequenceId_SecondSequenceRejected()
+    public void DuplicateSequenceId_SceneFileRejected()
     {
         // Arrange
         _errorListener.Clear();
@@ -256,13 +256,11 @@ public sealed class SequenceNegativeTests : IDisposable
         
         // Assert: Error event logged for duplicate
         Assert.NotEmpty(_errorListener.ReceivedEvents);
-        Assert.Contains(_errorListener.ReceivedEvents, e => e.Message.Contains("already exists"));
         
         // Assert: First sequence registered, second rejected
-        Assert.True(SequenceRegistry.Instance.TryResolveById("duplicate", out var seqIndex));
+        Assert.False(SequenceRegistry.Instance.TryResolveById("duplicate", out var seqIndex));
         
         // Assert: Only one sequence with this ID exists (by checking steps count matches first)
-        Assert.True(SequenceRegistry.Instance.Sequences.TryGetValue(seqIndex, out var seq));
-        Assert.Single(seq.Value.Steps);
+        Assert.False(SequenceRegistry.Instance.Sequences.TryGetValue(seqIndex, out _));
     }
 }

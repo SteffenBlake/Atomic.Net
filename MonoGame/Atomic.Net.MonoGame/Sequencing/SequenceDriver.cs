@@ -1,9 +1,6 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Nodes;
 using Atomic.Net.MonoGame.Core;
-using Atomic.Net.MonoGame.Core.Extensions;
 using Atomic.Net.MonoGame.Scenes;
-using Json.Logic;
 
 namespace Atomic.Net.MonoGame.Sequencing;
 
@@ -37,19 +34,19 @@ public sealed class SequenceDriver :
     private readonly JsonObject _doContext = new()
     {
         ["world"] = new JsonObject { ["deltaTime"] = 0.0f },
-        ["self"] = null!
+        ["self"] = null
     };
 
     private readonly JsonObject _tweenContext = new()
     {
         ["tween"] = 0.0f,
-        ["self"] = null!
+        ["self"] = null
     };
 
     private readonly JsonObject _repeatContext = new()
     {
         ["elapsed"] = 0.0f,
-        ["self"] = null!
+        ["self"] = null
     };
 
     // Pre-allocated lists for tracking removals (zero-alloc after init)
@@ -105,7 +102,7 @@ public sealed class SequenceDriver :
                 sequenceStates.Remove(sequenceIndex);
             }
 
-            if (!sequenceStates.Any())
+            if (sequenceStates.Count == 0)
             {
                 _entitiesToRemove.Add(entityIndex);
             }
@@ -291,7 +288,7 @@ public sealed class SequenceDriver :
 
         sequenceStates.Remove(sequenceIndex);
 
-        if (!sequenceStates.Any())
+        if (sequenceStates.Count == 0)
         {
             _activeSequences.Remove(entityIndex);
         }

@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using Atomic.Net.MonoGame.Scenes;
 
 namespace Atomic.Net.MonoGame.Sequencing;
@@ -8,7 +9,10 @@ namespace Atomic.Net.MonoGame.Sequencing;
 /// Exposes 'elapsed' time to the condition and command context.
 /// </summary>
 public readonly record struct RepeatStep(
+    [property: JsonRequired]
     float Every,
+    [property: JsonRequired]
     JsonNode Until,
+    [property: JsonRequired]
     SceneCommand Do
 );

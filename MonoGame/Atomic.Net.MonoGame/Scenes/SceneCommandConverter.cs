@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Atomic.Net.MonoGame.Sequencing;
+using Json.More;
 
 namespace Atomic.Net.MonoGame.Scenes;
 
@@ -20,31 +21,22 @@ public class SceneCommandConverter : JsonConverter<SceneCommand>
             throw new JsonException("Expected JSON object");
         }
 
-        var firstProperty = jsonObject.First();
-        var propertyKey = firstProperty.Key;
+        KeyValuePair<string, JsonNode?>? firstProperty = 
+            jsonObject.Count == 0 ? null :
+            jsonObject.FirstOrDefault();
+
+        var propertyKey = firstProperty?.Key;
         
-        SceneCommand? result = propertyKey switch
+        SceneCommand? result = propertyKey == null ? null : propertyKey switch
         {
-            "mut" when firstProperty.Value is not null => 
-                firstProperty.Value.Deserialize<MutOperation[]>(options) is { } ops
-                    ? new MutCommand(ops)
-                    : null,
-            "sequenceStart" when firstProperty.Value is not null => 
-                firstProperty.Value.Deserialize<string>(options) is { } id
-                    ? new SequenceStartCommand(id)
-                    : null,
-            "sequenceStop" when firstProperty.Value is not null => 
-                firstProperty.Value.Deserialize<string>(options) is { } id
-                    ? new SequenceStopCommand(id)
-                    : null,
-            "sequenceReset" when firstProperty.Value is not null => 
-                firstProperty.Value.Deserialize<string>(options) is { } id
-                    ? new SequenceResetCommand(id)
-                    : null,
+            "mut" => jsonNode.Deserialize<MutCommand>(options),
+            "sequenceStart" => jsonNode.Deserialize<SequenceStartCommand>(options),
+            "sequenceStop" => jsonNode.Deserialize<SequenceStopCommand>(options),
+            "sequenceReset" => jsonNode.Deserialize<SequenceResetCommand>(options),
             _ => null
         };
 
-        return result ?? throw new JsonException($"Unexpected value for '{propertyKey}': {firstProperty.Value}");
+        return result ?? throw new JsonException($"Unexpected value for '{propertyKey}': {firstProperty?.Value}");
     }
 
     public override void Write(Utf8JsonWriter writer, SceneCommand value, JsonSerializerOptions options)

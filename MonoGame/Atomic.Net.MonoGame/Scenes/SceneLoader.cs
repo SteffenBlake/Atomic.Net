@@ -61,6 +61,12 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         GC.WaitForPendingFinalizers();
     }
 
+    private static readonly JsonSerializerOptions _serializerOptions = 
+        new(JsonSerializerOptions.Web)
+        {
+            RespectRequiredConstructorParameters = true
+        };
+
     // Separate method for parsing JSON to ensure proper scoping for GC
     private static bool TryParseSceneFile(
         string scenePath,
@@ -76,11 +82,11 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         }
 
         var jsonText = File.ReadAllText(scenePath);
-        
+
         try
         {
             scene = JsonSerializer.Deserialize<JsonScene>(
-                jsonText, JsonSerializerOptions.Web
+                jsonText, _serializerOptions
             ) ?? new();
 
             return true;
@@ -157,7 +163,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     /// <summary>
     /// Loads rules from scene into RuleRegistry.
     /// </summary>
-    private void LoadRules(JsonScene scene, bool useGlobalPartition)
+    private static void LoadRules(JsonScene scene, bool useGlobalPartition)
     {
         // senior-dev: Rules are optional in scenes
         if (scene.Rules == null || scene.Rules.Count == 0)
@@ -182,7 +188,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     /// <summary>
     /// Loads sequences from scene into SequenceRegistry.
     /// </summary>
-    private void LoadSequences(JsonScene scene, bool useGlobalPartition)
+    private static void LoadSequences(JsonScene scene, bool useGlobalPartition)
     {
         // senior-dev: Sequences are optional in scenes
         if (scene.Sequences == null || scene.Sequences.Count == 0)

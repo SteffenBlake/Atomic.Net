@@ -13,7 +13,7 @@ public readonly partial struct JsonSequenceStep
 {
     static partial void VariantOf(
         DelayStep delay,
-        DoStep @do,
+        DoStep doStep,
         TweenStep tween,
         RepeatStep repeat
     );

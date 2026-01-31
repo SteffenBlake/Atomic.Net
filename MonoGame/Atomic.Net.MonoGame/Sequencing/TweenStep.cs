@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Atomic.Net.MonoGame.Scenes;
 
 namespace Atomic.Net.MonoGame.Sequencing;
@@ -7,8 +8,12 @@ namespace Atomic.Net.MonoGame.Sequencing;
 /// executing a command per-frame with the interpolated value.
 /// </summary>
 public readonly record struct TweenStep(
+    [property: JsonRequired]
     float From,
+    [property: JsonRequired]
     float To,
+    [property: JsonRequired]
     float Duration,
+    [property: JsonRequired]
     SceneCommand Do
 );

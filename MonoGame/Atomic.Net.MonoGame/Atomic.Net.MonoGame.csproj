@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <RuntimeHostConfigurationOption Include="System.Text.Json.Serialization.RespectRequiredConstructorParametersDefault" Value="true" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" PrivateAssets="All" Version="3.8.4" />
     <PackageReference Include="dotVariant" Version="0.5.3" />
     <PackageReference Include="System.Numerics.Tensors" Version="10.0.1" />
