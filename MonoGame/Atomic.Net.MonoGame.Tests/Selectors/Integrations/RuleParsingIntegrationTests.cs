@@ -61,8 +61,8 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         
         // test-architect: Verify DO command is MutCommand
         Assert.True(rule.Do.TryMatch(out MutCommand mutCommand), "Do should be MutCommand");
-        Assert.NotNull(mutCommand.Operations);
-        Assert.NotEmpty(mutCommand.Operations);
+        Assert.NotNull(mutCommand.Mut);
+        Assert.NotEmpty(mutCommand.Mut);
     }
 
     [Fact]

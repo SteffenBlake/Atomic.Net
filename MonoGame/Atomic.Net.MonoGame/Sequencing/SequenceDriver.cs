@@ -137,19 +137,21 @@ public sealed class SequenceDriver :
         while (currentStepIndex < sequence.Steps.Length && remainingTime > 0)
         {
             var step = sequence.Steps[currentStepIndex];
-            var stepElapsedTime = state.StepElapsedTime;
 
             if (step.TryMatch(out DelayStep delayStep))
             {
-                stepElapsedTime += remainingTime;
-                if (stepElapsedTime >= delayStep.Duration)
+                var stepRemaining = delayStep.Duration - state.StepElapsedTime;
+
+                if (stepRemaining <= remainingTime)
                 {
-                    remainingTime = stepElapsedTime - delayStep.Duration;
+                    remainingTime -= stepRemaining;
                     currentStepIndex++;
-                    stepElapsedTime = 0;
                 }
                 else
                 {
+                    state = state with { 
+                        StepElapsedTime = state.StepElapsedTime + remainingTime 
+                    };
                     remainingTime = 0;
                 }
             }
@@ -163,97 +165,101 @@ public sealed class SequenceDriver :
                 _doContext.Remove("self");  // Clean up immediately after use
                 
                 currentStepIndex++;
-                stepElapsedTime = 0;
                 // Do NOT consume remaining time - allow progression to next step in same frame
             }
             else if (step.TryMatch(out TweenStep tweenStep))
             {
-                stepElapsedTime += remainingTime;
-                if (stepElapsedTime >= tweenStep.Duration)
+                var delta = (state.StepElapsedTime + remainingTime) / tweenStep.Duration;
+                delta = MathF.Min(1.0f, delta);
+                var tween = tweenStep.From + (tweenStep.To - tweenStep.From) * delta;
+                _tweenContext.Remove("self");
+                _tweenContext["tween"] = tween;
+                _tweenContext["self"] = entityJsonNode;
+
+                tweenStep.Do.Execute(entityJsonNode, _tweenContext);
+
+                // Clean up immediately after use
+                _tweenContext.Remove("self");  
+
+                var stepRemaining = tweenStep.Duration - state.StepElapsedTime;
+                if (stepRemaining <= remainingTime)
                 {
-                    // Complete tween with final value
-                    _tweenContext.Remove("self");
-                    _tweenContext["tween"] = tweenStep.To;
-                    _tweenContext["self"] = entityJsonNode;
-                    tweenStep.Do.Execute(entityJsonNode, _tweenContext);
-                    _tweenContext.Remove("self");  // Clean up immediately after use
-                    
-                    remainingTime = stepElapsedTime - tweenStep.Duration;
+                    remainingTime -= stepRemaining;
                     currentStepIndex++;
-                    stepElapsedTime = 0;
                 }
                 else
                 {
-                    // Interpolate and execute
-                    var t = stepElapsedTime / tweenStep.Duration;
-                    var interpolatedValue = tweenStep.From + (tweenStep.To - tweenStep.From) * t;
-                    
-                    _tweenContext.Remove("self");
-                    _tweenContext["tween"] = interpolatedValue;
-                    _tweenContext["self"] = entityJsonNode;
-                    tweenStep.Do.Execute(entityJsonNode, _tweenContext);
-                    _tweenContext.Remove("self");  // Clean up immediately after use
-                    
+                    state = state with { 
+                        StepElapsedTime = state.StepElapsedTime + remainingTime 
+                    };
                     remainingTime = 0;
                 }
             }
             else if (step.TryMatch(out RepeatStep repeatStep))
             {
-                stepElapsedTime += remainingTime;
+                var conditionMet = false;
+                var elapsed = state.StepElapsedTime;
+                _repeatContext["self"] = entityJsonNode;
 
-                // Execute command for each interval that passed this frame
-                var intervalsPassed = (int)(stepElapsedTime / repeatStep.Every);
-                var lastExecutedInterval = (int)((stepElapsedTime - remainingTime) / repeatStep.Every);
-                
-                for (var i = lastExecutedInterval; i < intervalsPassed; i++)
+                while (conditionMet == false && remainingTime >= repeatStep.Every)
                 {
-                    var execTime = (i + 1) * repeatStep.Every;
-                    _repeatContext.Remove("self");
-                    _repeatContext["elapsed"] = execTime;
-                    _repeatContext["self"] = entityJsonNode;
+                    remainingTime -= repeatStep.Every;
+                    elapsed += repeatStep.Every;
+                    _repeatContext["elapsed"] = elapsed;
+
                     repeatStep.Do.Execute(entityJsonNode, _repeatContext);
-                    _repeatContext.Remove("self");  // Clean up immediately after use
+
+                    if (!repeatStep.Until.TryEvaluateCondition(_repeatContext, out conditionMet))
+                    {
+                        EventBus<ErrorEvent>.Push(new ErrorEvent(
+                            $"Unable to evaluate bool condition from logic: {repeatStep.Until.ToJsonString()}"
+                        ));
+
+                        // Clean up immediately after use
+                        _repeatContext.Remove("self");  
+                        // something went wrong, mark this sequence to be removed
+                        return true; 
+                    }
                 }
 
-                // Check condition AFTER executing
-                _repeatContext.Remove("self");
-                _repeatContext["elapsed"] = stepElapsedTime;
-                _repeatContext["self"] = entityJsonNode;
-                var conditionMet = repeatStep.Until.TryEvaluateCondition(_repeatContext, out var result) && result;
-                _repeatContext.Remove("self");  // Clean up immediately after use
-                
+                // Clean up immediately after use
+                _repeatContext.Remove("self");  
+
                 if (conditionMet)
                 {
-                    remainingTime = 0;
                     currentStepIndex++;
-                    stepElapsedTime = 0;
                 }
                 else
                 {
+                    state = state with { 
+                        StepElapsedTime = elapsed + remainingTime 
+                    };
                     remainingTime = 0;
                 }
             }
             else
             {
-                // Unknown step type - skip and push error
+                // Unknown step type - push error
                 EventBus<ErrorEvent>.Push(new ErrorEvent(
                     $"Unknown sequence step type at step {currentStepIndex} in sequence {sequenceIndex}"
                 ));
-                currentStepIndex++;
-                stepElapsedTime = 0;
-            }
 
-            state = new SequenceState(currentStepIndex, stepElapsedTime);
+                // something went wrong, mark this sequence to be removed
+                return true;
+            }
         }
 
         if (currentStepIndex >= sequence.Steps.Length)
         {
-            return true; // Sequence complete, should be removed
+            // Sequence complete, should be removed
+            return true; 
         }
         
         // Update sequence state
         sequenceStates.Set(sequenceIndex, state);
-        return false; // Sequence still running
+
+        // Sequence still running
+        return false; 
     }
 
     /// <summary>

@@ -1,0 +1,73 @@
+{
+  "entities": [],
+  "sequences": [{
+    "id": "poison-tick",
+    "steps": [
+      {
+        "do": {
+          "mut": [
+            {
+              "target": "tags",
+              "value": {
+                "filter": [
+                  { "var": "self.tags" },
+                  { "!=": [{ "var": "" }, "poisoned"] }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "repeat": {
+          "every": 0.016667,
+          "until": {
+            "or": [
+              { "<=": [{ "var": "self.properties.poisonStacks" }, 0] },
+              { "<=": [{ "var": "self.properties.health" }, 0] }
+            ]
+          },
+          "do": {
+            "mut": [
+              {
+                "target": { "properties": "health" },
+                "value": {
+                  "-": [
+                    { "var": "self.properties.health" },
+                    { "var": "self.properties.poisonStacks" }
+                  ]
+                }
+              },
+              {
+                "target": { "properties": "poisonStacks" },
+                "value": {
+                  "-": [
+                    { "var": "self.properties.poisonStacks" },
+                    1
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "do": {
+          "mut": [
+            {
+              "target": { "properties": "poisonStacks" },
+              "value": 0
+            }
+          ]
+        }
+      }
+    ]
+  }],
+  "rules": [{
+    "from": "#poisoned",
+    "where": { "var": "entities" },
+    "do": {
+      "sequenceStart": "poison-tick"
+    }
+  }]
+}

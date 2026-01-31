@@ -3,7 +3,9 @@ using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Ids;
 using Atomic.Net.MonoGame.Properties;
 using Atomic.Net.MonoGame.Scenes;
+using Atomic.Net.MonoGame.Selectors;
 using Atomic.Net.MonoGame.Sequencing;
+using Atomic.Net.MonoGame.Tags;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -239,9 +241,24 @@ public sealed class SequenceIntegrationTests : IDisposable
         Assert.True(props2.Value.Properties.TryGetValue("step2", out var step2));
         Assert.True(props2.Value.Properties.TryGetValue("step3", out var step3));
         Assert.True(props2.Value.Properties.TryGetValue("step4", out var step4));
-        step2.Visit(s => Assert.Fail("Expected float"), f => Assert.Equal(2f, f), b => Assert.Fail("Expected float"), () => Assert.Fail("Expected value"));
-        step3.Visit(s => Assert.Fail("Expected float"), f => Assert.Equal(10f, f), b => Assert.Fail("Expected float"), () => Assert.Fail("Expected value"));
-        step4.Visit(s => Assert.Fail("Expected float"), f => Assert.Equal(4f, f), b => Assert.Fail("Expected float"), () => Assert.Fail("Expected value"));
+        step2.Visit(
+            s => Assert.Fail("Expected float"), 
+            f => Assert.Equal(2f, f), 
+            b => Assert.Fail("Expected float"), 
+            () => Assert.Fail("Expected value")
+        );
+        step3.Visit(
+            s => Assert.Fail("Expected float"), 
+            f => Assert.Equal(10f, f), 
+            b => Assert.Fail("Expected float"), 
+            () => Assert.Fail("Expected value")
+        );
+        step4.Visit(
+            s => Assert.Fail("Expected float"), 
+            f => Assert.Equal(4f, f), 
+            b => Assert.Fail("Expected float"), 
+            () => Assert.Fail("Expected value")
+        );
     }
     
     // ========== Concurrent Sequences Tests ==========
@@ -326,5 +343,89 @@ public sealed class SequenceIntegrationTests : IDisposable
             b => Assert.Fail("Expected float"),
             () => Assert.Fail("Expected value")
         );
+    }
+
+    [Fact]
+    public void SparsePoisonSequence_TicksPoisonUntilStacksDepleted()
+    {
+        // Arrange: Create entities matching benchmark setup
+        var random = new Random(42); // Same seed as benchmark
+        
+        // Create 100 test entities (smaller than benchmark for test speed)
+        for (int i = 1; i < 100; i++)
+        {
+            var entity = EntityRegistry.Instance.Activate();
+            
+            // ALL entities get health (0-6000 range, steps of 100)
+            var health = random.Next(0, 61) * 100;
+            entity.SetBehavior<PropertiesBehavior, int>(
+                in health,
+                static (ref readonly h, ref b) => 
+                    b = b with { Properties = b.Properties.With("health", (PropertyValue)h) }
+            );
+          
+            // 25% chance to get #poisoned tag
+            bool isPoisoned = random.NextDouble() < 0.25;
+            if (isPoisoned)
+            {
+                entity.SetBehavior<TagsBehavior>(static (ref b) => 
+                    b = b with { Tags = b.Tags.With("poisoned") }
+                );
+                
+                // 50% of poisoned entities get poisonStacks (90-100 range)
+                if (random.NextDouble() < 0.5)
+                {
+                    var poisonStacks = random.Next(90, 101);
+                    entity.SetBehavior<PropertiesBehavior, int>(
+                        in poisonStacks,
+                        static (ref readonly ps, ref b) => 
+                            b = b with { Properties = b.Properties.With("poisonStacks", (PropertyValue)ps) }
+                    );
+                }
+            }
+        }
+        
+        // Load sequence fixture
+        SceneLoader.Instance.LoadGameScene("Sequencing/Fixtures/sparse-poison-sequence.json");
+        
+        // Act: Frame 1 - RulesDriver starts sequences, sequences remove #poisoned tags
+        SelectorRegistry.Instance.Recalc();
+        RulesDriver.Instance.RunFrame(0.016669f);
+        SequenceDriver.Instance.RunFrame(0.016669f);
+        SelectorRegistry.Instance.Recalc();
+        
+        // Assert: No errors
+        Assert.Empty(_errorListener.ReceivedEvents);
+        
+        // Assert: NO entities have #poisoned tag anymore (sequences removed them)
+        var parsed = SelectorRegistry.Instance.TryParse("#poisoned", out var poisoned);
+        Assert.True(parsed);
+        var remainingPoisoned = poisoned!.Matches;
+        Assert.Equal(0, remainingPoisoned.Count);
+        
+        // Act: Run 99 more frames (100 total)
+        for (int frame = 2; frame <= 200; frame++)
+        {
+            SelectorRegistry.Instance.Recalc();
+            RulesDriver.Instance.RunFrame(0.016669f); // Should be no-op (no #poisoned entities)
+            SequenceDriver.Instance.RunFrame(0.016669f); // Ticks poison
+        }
+        
+        // Assert: All entities with poisonStacks should now have stacks <= 0
+        foreach (var entity in EntityRegistry.Instance.GetActiveEntities())
+        {
+            if (entity.TryGetBehavior<PropertiesBehavior>(out var props))
+            {
+                if (props.Value.Properties.TryGetValue("poisonStacks", out var stacksValue))
+                {
+                    stacksValue.Visit(
+                        s => Assert.Fail("Expected float for poisonStacks"),
+                        f => Assert.True(f <= 0, $"Entity {entity.Index} still has {f} poison stacks after 100 frames"),
+                        b => Assert.Fail("Expected float for poisonStacks"),
+                        () => { }
+                    );
+                }
+            }
+        }
     }
 }
