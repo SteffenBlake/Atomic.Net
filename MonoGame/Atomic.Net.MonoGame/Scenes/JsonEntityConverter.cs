@@ -249,7 +249,7 @@ public static class JsonEntityConverter
     /// <summary>
     /// Writes mutations from a JsonNode back to the real Entity.
     /// Uses direct JsonNode access patterns without MutEntity deserialization for optimal performance.
-    /// Optimized to handle common cases (id, tags, properties) with a fast path that skips unnecessary field checks.
+    /// All fields are processed uniformly using null-safe JsonNode navigation.
     /// </summary>
     public static void Write(JsonNode jsonEntity, Entity entity)
     {
@@ -258,30 +258,12 @@ public static class JsonEntityConverter
             return;
         }
 
-        // Fast path: Check if we have any Transform/Parent/Flex properties
-        // If not, we can skip ~40 unnecessary field checks (performance optimization for common case)
-        // Use a single pass through keys instead of multiple ContainsKey calls
-        var hasComplexFields = false;
-        foreach (var kvp in entityObj)
-        {
-            var key = kvp.Key;
-            // Check if this key requires checking Transform/Parent/Flex fields
-            // Fast path only handles: _index, id, tags, properties
-            if (key != "_index" && key != "id" && key != "tags" && key != "properties")
-            {
-                hasComplexFields = true;
-                break;
-            }
-        }
-
-        // Id
         TrySetRef<string, IdBehavior>(
             entity,
             entityObj["id"],
             static (ref readonly _newId, ref b) => b = new IdBehavior(_newId)
         );
 
-        // Tags
         if (entityObj.TryGetPropertyValue("tags", out var tagsNode) && tagsNode is JsonArray tagsArray)
         {
             entity.SetBehavior<TagsBehavior>(static (ref b) => b = b with
@@ -317,7 +299,6 @@ public static class JsonEntityConverter
             }
         }
 
-        // Properties
         if (entityObj.TryGetPropertyValue("properties", out var propertiesNode) && 
             propertiesNode is JsonObject propertiesObj)
         {
@@ -325,11 +306,6 @@ public static class JsonEntityConverter
             {
                 var key = kvp.Key;
                 var valueNode = kvp.Value;
-
-                if (valueNode == null)
-                {
-                    continue;
-                }
 
                 if (valueNode is not JsonValue jsonValue)
                 {
@@ -368,13 +344,6 @@ public static class JsonEntityConverter
             }
         }
 
-        // Fast path: Skip Transform/Parent/Flex checks if they weren't in the JSON
-        if (!hasComplexFields)
-        {
-            return;
-        }
-
-        // Transform - Position.X
         TrySetStruct<float, TransformBehavior>(
             entity,
             entityObj["transform"]?["position"]?["x"],
@@ -384,7 +353,6 @@ public static class JsonEntityConverter
             }
         );
 
-        // Transform - Position.Y
         TrySetStruct<float, TransformBehavior>(
             entity,
             entityObj["transform"]?["position"]?["y"],
@@ -394,7 +362,6 @@ public static class JsonEntityConverter
             }
         );
 
-        // Transform - Position.Z
         TrySetStruct<float, TransformBehavior>(
             entity,
             entityObj["transform"]?["position"]?["z"],
@@ -404,7 +371,6 @@ public static class JsonEntityConverter
             }
         );
 
-        // Transform - Rotation.X
         TrySetStruct<float, TransformBehavior>(
             entity,
             entityObj["transform"]?["rotation"]?["x"],
@@ -414,7 +380,6 @@ public static class JsonEntityConverter
             }
         );
 
-        // Transform - Rotation.Y
         TrySetStruct<float, TransformBehavior>(
             entity,
             entityObj["transform"]?["rotation"]?["y"],
@@ -424,7 +389,6 @@ public static class JsonEntityConverter
             }
         );
 
-        // Transform - Rotation.Z
         TrySetStruct<float, TransformBehavior>(
             entity,
             entityObj["transform"]?["rotation"]?["z"],
@@ -434,7 +398,6 @@ public static class JsonEntityConverter
             }
         );
 
-        // Transform - Rotation.W
         TrySetStruct<float, TransformBehavior>(
             entity,
             entityObj["transform"]?["rotation"]?["w"],
@@ -444,7 +407,6 @@ public static class JsonEntityConverter
             }
         );
 
-        // Transform - Scale.X
         TrySetStruct<float, TransformBehavior>(
             entity,
             entityObj["transform"]?["scale"]?["x"],
@@ -454,7 +416,6 @@ public static class JsonEntityConverter
             }
         );
 
-        // Transform - Scale.Y
         TrySetStruct<float, TransformBehavior>(
             entity,
             entityObj["transform"]?["scale"]?["y"],
@@ -464,7 +425,6 @@ public static class JsonEntityConverter
             }
         );
 
-        // Transform - Scale.Z
         TrySetStruct<float, TransformBehavior>(
             entity,
             entityObj["transform"]?["scale"]?["z"],
@@ -474,7 +434,6 @@ public static class JsonEntityConverter
             }
         );
 
-        // Transform - Anchor.X
         TrySetStruct<float, TransformBehavior>(
             entity,
             entityObj["transform"]?["anchor"]?["x"],
@@ -484,7 +443,6 @@ public static class JsonEntityConverter
             }
         );
 
-        // Transform - Anchor.Y
         TrySetStruct<float, TransformBehavior>(
             entity,
             entityObj["transform"]?["anchor"]?["y"],
@@ -494,7 +452,6 @@ public static class JsonEntityConverter
             }
         );
 
-        // Transform - Anchor.Z
         TrySetStruct<float, TransformBehavior>(
             entity,
             entityObj["transform"]?["anchor"]?["z"],
@@ -504,30 +461,26 @@ public static class JsonEntityConverter
             }
         );
 
-        // Parent
-        TrySetRef<EntitySelector, ParentBehavior>(
+        TrySetEntitySelector<ParentBehavior>(
             entity,
             entityObj["parent"],
             static (ref readonly _selector, ref b) => b = new ParentBehavior(_selector)
         );
 
-        // FlexAlignItems
-        TrySetStruct<Align, FlexAlignItemsBehavior>(
+        TrySetEnum<Align, FlexAlignItemsBehavior>(
             entity,
             entityObj["flexAlignItems"],
             static (ref readonly _alignItems, ref b) =>
                 b = new FlexAlignItemsBehavior(_alignItems)
         );
 
-        // FlexAlignSelf
-        TrySetStruct<Align, FlexAlignSelfBehavior>(
+        TrySetEnum<Align, FlexAlignSelfBehavior>(
             entity,
             entityObj["flexAlignSelf"],
             static (ref readonly _alignSelf, ref b) =>
                 b = new FlexAlignSelfBehavior(_alignSelf)
         );
 
-        // FlexBorderBottom
         TrySetStruct<float, FlexBorderBottomBehavior>(
             entity,
             entityObj["flexBorderBottom"],
@@ -535,7 +488,6 @@ public static class JsonEntityConverter
                     b = new FlexBorderBottomBehavior(_borderBottom)
         );
 
-        // FlexBorderLeft
         TrySetStruct<float, FlexBorderLeftBehavior>(
             entity,
             entityObj["flexBorderLeft"],
@@ -543,7 +495,6 @@ public static class JsonEntityConverter
                     b = new FlexBorderLeftBehavior(_borderLeft)
         );
 
-        // FlexBorderRight
         TrySetStruct<float, FlexBorderRightBehavior>(
             entity,
             entityObj["flexBorderRight"],
@@ -551,7 +502,6 @@ public static class JsonEntityConverter
                     b = new FlexBorderRightBehavior(_borderRight)
         );
 
-        // FlexBorderTop
         TrySetStruct<float, FlexBorderTopBehavior>(
             entity,
             entityObj["flexBorderTop"],
@@ -559,15 +509,13 @@ public static class JsonEntityConverter
                     b = new FlexBorderTopBehavior(_borderTop)
         );
 
-        // FlexDirection
-        TrySetStruct<FlexDirection, FlexDirectionBehavior>(
+        TrySetEnum<FlexDirection, FlexDirectionBehavior>(
             entity,
             entityObj["flexDirection"],
             static (ref readonly _direction, ref b) =>
                 b = new FlexDirectionBehavior(_direction)
         );
 
-        // FlexGrow
         TrySetStruct<float, FlexGrowBehavior>(
             entity,
             entityObj["flexGrow"],
@@ -575,15 +523,13 @@ public static class JsonEntityConverter
                     b = new FlexGrowBehavior(_grow)
         );
 
-        // FlexWrap
-        TrySetStruct<Wrap, FlexWrapBehavior>(
+        TrySetEnum<Wrap, FlexWrapBehavior>(
             entity,
             entityObj["flexWrap"],
             static (ref readonly _wrap, ref b) =>
                 b = new FlexWrapBehavior(_wrap)
         );
 
-        // FlexZOverride
         TrySetStruct<int, FlexZOverride>(
             entity,
             entityObj["flexZOverride"],
@@ -591,7 +537,6 @@ public static class JsonEntityConverter
                     b = new FlexZOverride(_zOverride)
         );
 
-        // FlexHeight - Value
         TrySetStruct<float, FlexHeightBehavior>(
             entity,
             entityObj["flexHeight"]?["value"],
@@ -601,7 +546,6 @@ public static class JsonEntityConverter
             }
         );
 
-        // FlexHeight - Percent
         TrySetStruct<bool, FlexHeightBehavior>(
             entity,
             entityObj["flexHeight"]?["percent"],
@@ -611,15 +555,13 @@ public static class JsonEntityConverter
             }
         );
 
-        // FlexJustifyContent
-        TrySetStruct<Justify, FlexJustifyContentBehavior>(
+        TrySetEnum<Justify, FlexJustifyContentBehavior>(
             entity,
             entityObj["flexJustifyContent"],
             static (ref readonly _justify, ref b) =>
                 b = new FlexJustifyContentBehavior(_justify)
         );
 
-        // FlexMarginBottom
         TrySetStruct<float, FlexMarginBottomBehavior>(
             entity,
             entityObj["flexMarginBottom"],
@@ -627,7 +569,6 @@ public static class JsonEntityConverter
                 b = new FlexMarginBottomBehavior(_marginBottom)
         );
 
-        // FlexMarginLeft
         TrySetStruct<float, FlexMarginLeftBehavior>(
             entity,
             entityObj["flexMarginLeft"],
@@ -635,7 +576,6 @@ public static class JsonEntityConverter
                 b = new FlexMarginLeftBehavior(_marginLeft)
         );
 
-        // FlexMarginRight
         TrySetStruct<float, FlexMarginRightBehavior>(
             entity,
             entityObj["flexMarginRight"],
@@ -643,7 +583,6 @@ public static class JsonEntityConverter
                 b = new FlexMarginRightBehavior(_marginRight)
         );
 
-        // FlexMarginTop
         TrySetStruct<float, FlexMarginTopBehavior>(
             entity,
             entityObj["flexMarginTop"],
@@ -651,7 +590,6 @@ public static class JsonEntityConverter
                 b = new FlexMarginTopBehavior(_marginTop)
         );
 
-        // FlexPaddingBottom
         TrySetStruct<float, FlexPaddingBottomBehavior>(
             entity,
             entityObj["flexPaddingBottom"],
@@ -659,7 +597,6 @@ public static class JsonEntityConverter
                 b = new FlexPaddingBottomBehavior(_paddingBottom)
         );
 
-        // FlexPaddingLeft
         TrySetStruct<float, FlexPaddingLeftBehavior>(
             entity,
             entityObj["flexPaddingLeft"],
@@ -667,7 +604,6 @@ public static class JsonEntityConverter
                 b = new FlexPaddingLeftBehavior(_paddingLeft)
         );
 
-        // FlexPaddingRight
         TrySetStruct<float, FlexPaddingRightBehavior>(
             entity,
             entityObj["flexPaddingRight"],
@@ -675,7 +611,6 @@ public static class JsonEntityConverter
                 b = new FlexPaddingRightBehavior(_paddingRight)
         );
 
-        // FlexPaddingTop
         TrySetStruct<float, FlexPaddingTopBehavior>(
             entity,
             entityObj["flexPaddingTop"],
@@ -683,7 +618,6 @@ public static class JsonEntityConverter
                 b = new FlexPaddingTopBehavior(_paddingTop)
         );
 
-        // FlexPositionBottom - Value
         TrySetStruct<float, FlexPositionBottomBehavior>(
             entity,
             entityObj["flexPositionBottom"]?["value"],
@@ -693,7 +627,6 @@ public static class JsonEntityConverter
             }
         );
 
-        // FlexPositionBottom - Percent
         TrySetStruct<bool, FlexPositionBottomBehavior>(
             entity,
             entityObj["flexPositionBottom"]?["percent"],
@@ -703,7 +636,6 @@ public static class JsonEntityConverter
             }
         );
 
-        // FlexPositionLeft - Value
         TrySetStruct<float, FlexPositionLeftBehavior>(
             entity,
             entityObj["flexPositionLeft"]?["value"],
@@ -713,7 +645,6 @@ public static class JsonEntityConverter
             }
         );
 
-        // FlexPositionLeft - Percent
         TrySetStruct<bool, FlexPositionLeftBehavior>(
             entity,
             entityObj["flexPositionLeft"]?["percent"],
@@ -723,7 +654,6 @@ public static class JsonEntityConverter
             }
         );
 
-        // FlexPositionRight - Value
         TrySetStruct<float, FlexPositionRightBehavior>(
             entity,
             entityObj["flexPositionRight"]?["value"],
@@ -733,7 +663,6 @@ public static class JsonEntityConverter
             }
         );
 
-        // FlexPositionRight - Percent
         TrySetStruct<bool, FlexPositionRightBehavior>(
             entity,
             entityObj["flexPositionRight"]?["percent"],
@@ -743,7 +672,6 @@ public static class JsonEntityConverter
             }
         );
 
-        // FlexPositionTop - Value
         TrySetStruct<float, FlexPositionTopBehavior>(
             entity,
             entityObj["flexPositionTop"]?["value"],
@@ -753,7 +681,6 @@ public static class JsonEntityConverter
             }
         );
 
-        // FlexPositionTop - Percent
         TrySetStruct<bool, FlexPositionTopBehavior>(
             entity,
             entityObj["flexPositionTop"]?["percent"],
@@ -763,15 +690,13 @@ public static class JsonEntityConverter
             }
         );
 
-        // FlexPositionType
-        TrySetStruct<PositionType, FlexPositionTypeBehavior>(
+        TrySetEnum<PositionType, FlexPositionTypeBehavior>(
             entity,
             entityObj["flexPositionType"],
             static (ref readonly _flexPositionType, ref b) =>
                 b = new FlexPositionTypeBehavior(_flexPositionType)
         );
 
-        // FlexWidth - Value
         TrySetStruct<float, FlexWidthBehavior>(
             entity,
             entityObj["flexWidth"]?["value"],
@@ -781,7 +706,6 @@ public static class JsonEntityConverter
             }
         );
 
-        // FlexWidth - Percent
         TrySetStruct<bool, FlexWidthBehavior>(
             entity,
             entityObj["flexWidth"]?["percent"],
@@ -800,7 +724,6 @@ public static class JsonEntityConverter
         where TBehavior : struct
         where TValue : class
     {
-        // Null just means it wont write out back to entity
         if (node == null)
         {
             return;
@@ -809,45 +732,99 @@ public static class JsonEntityConverter
         if (node is not JsonValue jsonValue)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Unable to serialize node to expected type, node was not a value type. Path:'{node?.GetPath()}'"
+                $"Unable to deserialize node to expected type, node was not a value type. Path:'{node?.GetPath()}'"
             ));
             return;
         }
 
-        // Special handling for EntitySelector
-        if (typeof(TValue) == typeof(EntitySelector))
-        {
-            if (!jsonValue.TryGetValue<string>(out var selectorString))
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Unable to serialize node to expected type. Path:'{node?.GetPath()}' ExpectedType:'{typeof(TValue)} Actual:'{node?.GetValueKind()}'"
-                ));
-                return;
-            }
-
-            if (!SelectorRegistry.Instance.TryParse(selectorString, out var selector))
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Unable to parse EntitySelector. Path:'{node?.GetPath()}' Value:'{selectorString}'"
-                ));
-                return;
-            }
-
-            var value = (TValue)(object)selector;
-            entity.SetBehavior(in value, mutate);
-            return;
-        }
-
-        if (!jsonValue.TryGetValue<TValue>(out var regularValue))
+        if (!jsonValue.TryGetValue<TValue>(out var value))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Unable to serialize node to expected type. Path:'{node?.GetPath()}' ExpectedType:'{typeof(TValue)} Actual:'{node?.GetValueKind()}'"
+                $"Unable to deserialize node to expected type. Path:'{node?.GetPath()}' ExpectedType:'{typeof(TValue)} Actual:'{node?.GetValueKind()}'"
             ));
-
             return;
         }
 
-        entity.SetBehavior(in regularValue, mutate);
+        entity.SetBehavior(in value, mutate);
+    }
+
+    private static void TrySetEntitySelector<TBehavior>(
+        Entity entity,
+        JsonNode? node,
+        RefInAction<TBehavior, EntitySelector> mutate
+    )
+        where TBehavior : struct
+    {
+        if (node == null)
+        {
+            return;
+        }
+
+        if (node is not JsonValue jsonValue)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Unable to deserialize node to expected type, node was not a value type. Path:'{node?.GetPath()}'"
+            ));
+            return;
+        }
+
+        if (!jsonValue.TryGetValue<string>(out var selectorString))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Unable to deserialize node to expected type. Path:'{node?.GetPath()}' ExpectedType:'EntitySelector' Actual:'{node?.GetValueKind()}'"
+            ));
+            return;
+        }
+
+        if (!SelectorRegistry.Instance.TryParse(selectorString, out var selector))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Unable to parse EntitySelector. Path:'{node?.GetPath()}' Value:'{selectorString}'"
+            ));
+            return;
+        }
+
+        entity.SetBehavior(in selector, mutate);
+    }
+
+    private static void TrySetEnum<TEnum, TBehavior>(
+        Entity entity,
+        JsonNode? node,
+        RefInAction<TBehavior, TEnum> mutate
+    )
+        where TBehavior : struct
+        where TEnum : struct, Enum
+    {
+        if (node == null)
+        {
+            return;
+        }
+
+        if (node is not JsonValue jsonValue)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Unable to deserialize node to expected type, node was not a value type. Path:'{node?.GetPath()}'"
+            ));
+            return;
+        }
+
+        if (!jsonValue.TryGetValue<string>(out var enumString))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Unable to deserialize node to expected type. Path:'{node?.GetPath()}' ExpectedType:'{typeof(TEnum)} Actual:'{node?.GetValueKind()}'"
+            ));
+            return;
+        }
+
+        if (!Enum.TryParse<TEnum>(enumString, ignoreCase: true, out var enumValue))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Unable to parse enum value. Path:'{node?.GetPath()}' ExpectedType:'{typeof(TEnum)}' Value:'{enumString}'"
+            ));
+            return;
+        }
+
+        entity.SetBehavior(in enumValue, mutate);
     }
 
     private static void TrySetStruct<TValue, TBehavior>(
@@ -858,7 +835,6 @@ public static class JsonEntityConverter
         where TBehavior : struct
         where TValue : struct
     {
-        // Null just means it wont write out back to entity
         if (node == null)
         {
             return;
@@ -867,45 +843,20 @@ public static class JsonEntityConverter
         if (node is not JsonValue jsonValue)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Unable to serialize node to expected type, node was not a value type. Path:'{node?.GetPath()}'"
+                $"Unable to deserialize node to expected type, node was not a value type. Path:'{node?.GetPath()}'"
             ));
             return;
         }
 
-        // Special handling for enums - they come as strings in JSON
-        if (typeof(TValue).IsEnum)
-        {
-            if (!jsonValue.TryGetValue<string>(out var enumString))
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Unable to serialize node to expected type. Path:'{node?.GetPath()}' ExpectedType:'{typeof(TValue)} Actual:'{node?.GetValueKind()}'"
-                ));
-                return;
-            }
-
-            if (!Enum.TryParse(typeof(TValue), enumString, ignoreCase: true, out var enumValue))
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Unable to parse enum value. Path:'{node?.GetPath()}' ExpectedType:'{typeof(TValue)}' Value:'{enumString}'"
-                ));
-                return;
-            }
-
-            var value = (TValue)enumValue;
-            entity.SetBehavior(in value, mutate);
-            return;
-        }
-
-        if (!jsonValue.TryGetValue<TValue>(out var regularValue))
+        if (!jsonValue.TryGetValue<TValue>(out var value))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Unable to serialize node to expected type. Path:'{node?.GetPath()}' ExpectedType:'{typeof(TValue)} Actual:'{node?.GetValueKind()}'"
+                $"Unable to deserialize node to expected type. Path:'{node?.GetPath()}' ExpectedType:'{typeof(TValue)} Actual:'{node?.GetValueKind()}'"
             ));
-
             return;
         }
 
-        entity.SetBehavior(in regularValue, mutate);
+        entity.SetBehavior(in value, mutate);
     }
 
 
