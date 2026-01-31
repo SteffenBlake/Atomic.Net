@@ -2,7 +2,7 @@
 
 ## Summary
 
-Profiled SparsePoisonSequenceBenchmark (7900 entities, 100 frames). Successfully optimized from 434.9ms to 320.6ms (26.3% improvement) by eliminating unnecessary JSON deserialization overhead.
+Profiled SparsePoisonSequenceBenchmark (7900 entities, 100 frames). Successfully optimized from 434.9ms to 303.7ms (30.2% improvement) by eliminating unnecessary JSON deserialization overhead and optimizing property access patterns.
 
 ## Benchmark Results
 
@@ -17,10 +17,10 @@ Profiled SparsePoisonSequenceBenchmark (7900 entities, 100 frames). Successfully
 ```
 | Method              | Mean     | Error   | StdDev  | Gen0      | Gen1      | Allocated |
 |-------------------- |---------:|--------:|--------:|----------:|----------:|----------:|
-| RunPoisonSimulation | 320.6 ms | 3.72 ms | 3.30 ms | 9000.0000 | 1000.0000 | 231.71 MB |
+| RunPoisonSimulation | 303.7 ms | 5.74 ms | 5.64 ms | 9000.0000 | 1000.0000 |  229.6 MB |
 ```
 
-**Improvement:** 26.3% faster, 22% less memory allocated
+**Improvement:** 30.2% faster, 22.8% less memory allocated
 
 ## Key Findings (Pre-Optimization)
 
@@ -86,9 +86,9 @@ External library (Json.Logic) allocates Stack for each evaluation. Cannot optimi
 
 This is expected overhead - the sequence driver itself is efficient.
 
-## Optimization Implemented
+## Optimizations Implemented
 
-### Modified JsonEntityConverter.Write() Fast Path
+### 1. Modified JsonEntityConverter.Write() Fast Path
 
 **File:** `Atomic.Net.MonoGame/Scenes/JsonEntityConverter.cs`
 
@@ -97,12 +97,18 @@ Added a fast path that checks which fields are present in the JSON before decidi
 
 **Implementation:**
 ```csharp
-// Check if Transform/Parent/Flex properties are present
-var needsFullDeserialization = 
-    entityObj.ContainsKey("transform") ||
-    entityObj.ContainsKey("parent") ||
-    entityObj.ContainsKey("flex*") || // ... 20+ checks
-    ...;
+// Single-pass check over entity keys
+var needsFullDeserialization = false;
+foreach (var kvp in entityObj)
+{
+    var key = kvp.Key;
+    // Fast path only handles: _index, id, tags, properties
+    if (key != "_index" && key != "id" && key != "tags" && key != "properties")
+    {
+        needsFullDeserialization = true;
+        break;
+    }
+}
 
 if (needsFullDeserialization)
 {
@@ -116,15 +122,48 @@ else
 ```
 
 **Benefits:**
-- Eliminates 197,500 unnecessary deserialization calls in this benchmark
+- Eliminates ~197,500 unnecessary deserialization calls in this benchmark
+- Single foreach over keys is faster than 24 ContainsKey calls
 - Reduces allocations (no MutEntity struct, no Dictionary for Properties)
 - Reduces CPU time (no reflection, no type converters)
 - Still handles all cases correctly via fallback
 
-**Trade-offs:**
-- Added ~30 ContainsKey checks (cheap dictionary lookups)
-- Slightly more code complexity
-- Still correct for all entity types
+### 2. Extracted ProcessProperties Helper
+
+**File:** `Atomic.Net.MonoGame/Scenes/JsonEntityConverter.cs`
+
+**Change:**
+Extracted common property processing logic into `ProcessProperties()` helper method to eliminate code duplication between fast path and full deserialization path.
+
+**Benefits:**
+- Reduces code duplication (was duplicated in 2 places)
+- Easier to maintain and update
+- Ensures consistent behavior between paths
+
+### 3. MutCommand Literal Value Bypass
+
+**File:** `Atomic.Net.MonoGame/Scenes/MutCommand.cs`
+
+**Change:**
+Modified `MutCommand.Execute()` to check if the value is a literal (JsonValue) before calling JsonLogic.Apply. Literals are used directly without JsonLogic evaluation.
+
+**Implementation:**
+```csharp
+// Skip JsonLogic.Apply for literal values
+if (operation.Value is JsonValue)
+{
+    result = operation.Value; // Direct use
+}
+else
+{
+    result = JsonLogic.Apply(operation.Value, context); // Evaluate expression
+}
+```
+
+**Benefits:**
+- Skips JsonLogic overhead for literal values
+- Reduces Stack allocations from Json.Logic library
+- Minor improvement as most values in this benchmark are expressions
 
 ## Remaining Performance Opportunities
 
@@ -155,10 +194,20 @@ Potential small wins:
 
 ## Conclusion
 
-Successfully optimized SparsePoisonSequenceBenchmark by 26.3% by eliminating unnecessary JSON deserialization. The remaining performance is dominated by external library (Json.Logic) allocations which are inherent to the design and not easily optimized without significant architectural changes.
+Successfully optimized SparsePoisonSequenceBenchmark by 30.2% (434.9ms → 303.7ms) by:
+1. Eliminating unnecessary JSON deserialization in common cases
+2. Optimizing property key checking from multiple lookups to single iteration  
+3. Extracting common code to reduce duplication
+4. Bypassing JsonLogic for literal values
 
-The benchmark now runs at 320.6ms which should be acceptable for most game scenarios. Further optimization would require major refactoring with diminishing returns.
+The benchmark now runs at 303.7ms with 229.6MB allocated, which is a significant improvement for game scenarios. The remaining performance is dominated by external library (Json.Logic) allocations which are inherent to the design and would require major refactoring to optimize further.
 
 ## Security Summary
 
-No security vulnerabilities were introduced by this optimization. The fast path maintains all error checking (invalid id type, null tags, etc.) and falls back to the original code path for complex cases.
+No security vulnerabilities were introduced by this optimization. All error checking is maintained:
+- Invalid id type detection (fast path)
+- Null tag validation (fast path) 
+- Property value type validation (shared helper)
+- Fallback to full deserialization for complex cases
+
+CodeQL security scan: 0 alerts ✅
