@@ -53,7 +53,7 @@ public sealed class SequenceDriver :
     };
 
     // Pre-allocated lists for tracking removals (zero-alloc after init)
-    private readonly List<ushort> _sequencesToRemove = new(Constants.MaxActiveSequencesPerEntity);
+    private readonly List<ushort> _sequencesToRemove = new(Constants.MaxSequences);
     private readonly List<ushort> _entitiesToRemove = new(Constants.MaxEntities);
 
     /// <summary>
@@ -77,11 +77,13 @@ public sealed class SequenceDriver :
 
             foreach (var (sequenceIndex, sequenceState) in sequenceStates)
             {
-                if (!SequenceRegistry.Instance.TryResolveByIndex(sequenceIndex, out var sequence))
+                if (!SequenceRegistry.Instance.Sequences.TryGetValue(sequenceIndex, out var sequenceNullable))
                 {
                     _sequencesToRemove.Add(sequenceIndex);
                     continue;
                 }
+                
+                var sequence = sequenceNullable.Value;
 
                 var shouldRemove = ProcessSequence(
                     sequenceIndex,
@@ -156,7 +158,13 @@ public sealed class SequenceDriver :
             }
             else if (step.TryMatch(out DoStep doStep))
             {
-                ExecuteCommand(doStep.Do, entityJsonNode, BuildDoContext(entityJsonNode, remainingTime));
+                // Build context and execute
+                _doContext.Remove("self");
+                _doContext["world"]!["deltaTime"] = remainingTime;
+                _doContext["self"] = entityJsonNode;
+                doStep.Do.Execute(entityJsonNode, _doContext);
+                _doContext.Remove("self");  // Clean up immediately after use
+                
                 currentStepIndex++;
                 stepElapsedTime = 0;
                 // Do NOT consume remaining time - allow progression to next step in same frame
@@ -166,16 +174,29 @@ public sealed class SequenceDriver :
                 stepElapsedTime += remainingTime;
                 if (stepElapsedTime >= tweenStep.Duration)
                 {
-                    ExecuteCommand(tweenStep.Do, entityJsonNode, BuildTweenContext(entityJsonNode, tweenStep.To));
+                    // Complete tween with final value
+                    _tweenContext.Remove("self");
+                    _tweenContext["tween"] = tweenStep.To;
+                    _tweenContext["self"] = entityJsonNode;
+                    tweenStep.Do.Execute(entityJsonNode, _tweenContext);
+                    _tweenContext.Remove("self");  // Clean up immediately after use
+                    
                     remainingTime = stepElapsedTime - tweenStep.Duration;
                     currentStepIndex++;
                     stepElapsedTime = 0;
                 }
                 else
                 {
+                    // Interpolate and execute
                     var t = stepElapsedTime / tweenStep.Duration;
                     var interpolatedValue = tweenStep.From + (tweenStep.To - tweenStep.From) * t;
-                    ExecuteCommand(tweenStep.Do, entityJsonNode, BuildTweenContext(entityJsonNode, interpolatedValue));
+                    
+                    _tweenContext.Remove("self");
+                    _tweenContext["tween"] = interpolatedValue;
+                    _tweenContext["self"] = entityJsonNode;
+                    tweenStep.Do.Execute(entityJsonNode, _tweenContext);
+                    _tweenContext.Remove("self");  // Clean up immediately after use
+                    
                     remainingTime = 0;
                 }
             }
@@ -190,13 +211,21 @@ public sealed class SequenceDriver :
                 for (var i = lastExecutedInterval; i < intervalsPassed; i++)
                 {
                     var execTime = (i + 1) * repeatStep.Every;
-                    var execContext = BuildRepeatContext(entityJsonNode, execTime);
-                    ExecuteCommand(repeatStep.Do, entityJsonNode, execContext);
+                    _repeatContext.Remove("self");
+                    _repeatContext["elapsed"] = execTime;
+                    _repeatContext["self"] = entityJsonNode;
+                    repeatStep.Do.Execute(entityJsonNode, _repeatContext);
+                    _repeatContext.Remove("self");  // Clean up immediately after use
                 }
 
                 // Check condition AFTER executing
-                var repeatContext = BuildRepeatContext(entityJsonNode, stepElapsedTime);
-                if (TryEvaluateCondition(repeatStep.Until, repeatContext, out var conditionMet) && conditionMet)
+                _repeatContext.Remove("self");
+                _repeatContext["elapsed"] = stepElapsedTime;
+                _repeatContext["self"] = entityJsonNode;
+                var conditionMet = repeatStep.Until.TryEvaluateCondition(_repeatContext, out var result) && result;
+                _repeatContext.Remove("self");  // Clean up immediately after use
+                
+                if (conditionMet)
                 {
                     remainingTime = 0;
                     currentStepIndex++;
@@ -228,74 +257,6 @@ public sealed class SequenceDriver :
         // Update sequence state
         sequenceStates.Set(sequenceIndex, state);
         return false; // Sequence still running
-    }
-
-    /// <summary>
-    /// Build context for DoStep execution with current deltaTime and entity state.
-    /// Clones entityJsonNode to avoid JsonObject parent conflicts when reused across steps.
-    /// </summary>
-    private JsonObject BuildDoContext(JsonNode entityJsonNode, float deltaTime)
-    {
-        _doContext.Remove("self");
-        _doContext["world"]!["deltaTime"] = deltaTime;
-        _doContext["self"] = entityJsonNode.DeepClone();
-        return _doContext;
-    }
-
-    /// <summary>
-    /// Build context for TweenStep execution with interpolated value and entity state.
-    /// Clones entityJsonNode to avoid JsonObject parent conflicts when reused across steps.
-    /// </summary>
-    private JsonObject BuildTweenContext(JsonNode entityJsonNode, float tweenValue)
-    {
-        _tweenContext.Remove("self");
-        _tweenContext["tween"] = tweenValue;
-        _tweenContext["self"] = entityJsonNode.DeepClone();
-        return _tweenContext;
-    }
-
-    /// <summary>
-    /// Build context for RepeatStep execution with elapsed time and entity state.
-    /// Clones entityJsonNode to avoid JsonObject parent conflicts when reused across steps.
-    /// </summary>
-    private JsonObject BuildRepeatContext(JsonNode entityJsonNode, float elapsed)
-    {
-        _repeatContext.Remove("self");
-        _repeatContext["elapsed"] = elapsed;
-        _repeatContext["self"] = entityJsonNode.DeepClone();
-        return _repeatContext;
-    }
-
-    /// <summary>
-    /// Execute a SceneCommand with the given context.
-    /// Only MutCommand is supported within sequences (no recursive sequence commands).
-    /// </summary>
-    private static void ExecuteCommand(SceneCommand command, JsonNode entityJsonNode, JsonObject context)
-    {
-        if (command.TryMatch(out MutCommand mutCommand))
-        {
-            mutCommand.Execute(entityJsonNode, context);
-        }
-    }
-
-    /// <summary>
-    /// Evaluate a JsonLogic condition and return the boolean result.
-    /// </summary>
-    private static bool TryEvaluateCondition(
-        JsonNode condition,
-        JsonNode context,
-        out bool result
-    )
-    {
-        var evalResult = JsonLogic.Apply(condition, context);
-        if (evalResult != null && evalResult is JsonValue jsonValue && jsonValue.TryGetValue<bool>(out var boolValue))
-        {
-            result = boolValue;
-            return true;
-        }
-
-        result = false;
-        return false;
     }
 
     /// <summary>
@@ -339,19 +300,17 @@ public sealed class SequenceDriver :
 
     /// <summary>
     /// Reset a running sequence on an entity back to step 0.
+    /// If the sequence is not running, starts it.
     /// </summary>
     public void ResetSequence(ushort entityIndex, ushort sequenceIndex)
     {
         if (!_activeSequences.TryGetValue(entityIndex, out var sequenceStates))
         {
-            return;
+            sequenceStates = new SparseArray<SequenceState>(Constants.MaxSequences);
+            _activeSequences[entityIndex] = sequenceStates;
         }
 
-        if (!sequenceStates.HasValue(sequenceIndex))
-        {
-            return;
-        }
-
+        // Always set to initial state (either reset or start)
         sequenceStates.Set(sequenceIndex, new SequenceState(0, 0));
     }
 

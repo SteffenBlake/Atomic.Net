@@ -87,32 +87,14 @@ public sealed class RulesDriver :
 
             // Update context for this entity
             _ruleContext["index"] = i;
-
-            if (!entityJsonNode.TryGetEntityIndex(out var entityIndex))
-            {
-                continue;
-            }
             
-            // Execute the scene command based on its type
-            if (rule.Do.TryMatch(out MutCommand mutCommand))
+            // Execute the scene command on this entity
+            rule.Do.Execute(entityJsonNode, _ruleContext);
+            
+            // Write mutations back to real entity (sequence commands don't mutate, only MutCommand does)
+            if (entityJsonNode.TryGetEntityIndex(out var entityIndex))
             {
-                // Execute mutation on JsonNode
-                mutCommand.Execute(entityJsonNode, _ruleContext);
-                
-                // Write mutations back to real entity
                 WriteEntityChanges(entityJsonNode, entityIndex.Value);
-            }
-            else if (rule.Do.TryMatch(out SequenceStartCommand startCommand))
-            {
-                SequenceStartCmdDriver.Instance.Execute(entityIndex.Value, startCommand.SequenceId);
-            }
-            else if (rule.Do.TryMatch(out SequenceStopCommand stopCommand))
-            {
-                SequenceStopCmdDriver.Instance.Execute(entityIndex.Value, stopCommand.SequenceId);
-            }
-            else if (rule.Do.TryMatch(out SequenceResetCommand resetCommand))
-            {
-                SequenceResetCmdDriver.Instance.Execute(entityIndex.Value, resetCommand.SequenceId);
             }
         }
     }

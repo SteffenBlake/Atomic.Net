@@ -37,7 +37,7 @@
         ]
       },
       "do": {
-        "sequence-start": "delay-test"
+        "sequenceStart": "delay-test"
       }
     }
   ]

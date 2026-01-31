@@ -20,30 +20,22 @@ public class JsonSequenceStepConverter : JsonConverter<JsonSequenceStep>
         }
 
         var firstProperty = jsonObject.First();
-        var propertyKey = firstProperty.Key.ToLower();
+        var propertyKey = firstProperty.Key;
 
-        return propertyKey switch
+        JsonSequenceStep? result = propertyKey switch
         {
-            "delay" => firstProperty.Value is not null
-                ? new DelayStep(
-                    firstProperty.Value.Deserialize<float>(options))
-                : throw new JsonException("'delay' value cannot be null"),
-
-            "do" => firstProperty.Value is not null
-                ? new DoStep(
-                    firstProperty.Value.Deserialize<Scenes.SceneCommand>(options))
-                : throw new JsonException("'do' value cannot be null"),
-
-            "tween" => firstProperty.Value is not null
-                ? firstProperty.Value.Deserialize<TweenStep>(options)
-                : throw new JsonException("'tween' value cannot be null"),
-
-            "repeat" => firstProperty.Value is not null
-                ? firstProperty.Value.Deserialize<RepeatStep>(options)
-                : throw new JsonException("'repeat' value cannot be null"),
-
-            _ => throw new JsonException($"Unrecognized sequence step discriminator key: '{propertyKey}'")
+            "delay" when firstProperty.Value is not null =>
+                new DelayStep(firstProperty.Value.Deserialize<float>(options)),
+            "do" when firstProperty.Value is not null =>
+                new DoStep(firstProperty.Value.Deserialize<Scenes.SceneCommand>(options)),
+            "tween" when firstProperty.Value is not null =>
+                firstProperty.Value.Deserialize<TweenStep>(options),
+            "repeat" when firstProperty.Value is not null =>
+                firstProperty.Value.Deserialize<RepeatStep>(options),
+            _ => null
         };
+
+        return result ?? throw new JsonException($"Unexpected value for '{propertyKey}': {firstProperty.Value}");
     }
 
     public override void Write(Utf8JsonWriter writer, JsonSequenceStep value, JsonSerializerOptions options)

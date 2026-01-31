@@ -38,7 +38,7 @@
         ]
       },
       "do": {
-        "sequence-start": "do-test"
+        "sequenceStart": "do-test"
       }
     }
   ]

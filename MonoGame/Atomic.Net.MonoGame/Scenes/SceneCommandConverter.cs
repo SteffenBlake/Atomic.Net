@@ -7,7 +7,7 @@ namespace Atomic.Net.MonoGame.Scenes;
 
 /// <summary>
 /// Custom JSON converter for SceneCommand that handles discriminator-based deserialization.
-/// Supports 'mut', 'sequence-start', 'sequence-stop', and 'sequence-reset' command types.
+/// Supports 'mut', 'sequenceStart', 'sequenceStop', and 'sequenceReset' command types.
 /// </summary>
 public class SceneCommandConverter : JsonConverter<SceneCommand>
 {
@@ -21,35 +21,22 @@ public class SceneCommandConverter : JsonConverter<SceneCommand>
         }
 
         var firstProperty = jsonObject.First();
-        var propertyKey = firstProperty.Key.ToLower();
-
-        return propertyKey switch
+        var propertyKey = firstProperty.Key;
+        
+        SceneCommand? result = propertyKey switch
         {
-            "mut" => firstProperty.Value is not null
-                ? new MutCommand(firstProperty.Value.Deserialize<MutOperation[]>(options) 
-                    ?? throw new JsonException("Failed to deserialize 'mut' array"))
-                : throw new JsonException("'mut' command value cannot be null"),
-
-            "sequence-start" => firstProperty.Value is not null
-                ? new SequenceStartCommand(
-                    firstProperty.Value.Deserialize<string>(options)
-                    ?? throw new JsonException("Failed to deserialize 'sequence-start' string"))
-                : throw new JsonException("'sequence-start' command value cannot be null"),
-
-            "sequence-stop" => firstProperty.Value is not null
-                ? new SequenceStopCommand(
-                    firstProperty.Value.Deserialize<string>(options)
-                    ?? throw new JsonException("Failed to deserialize 'sequence-stop' string"))
-                : throw new JsonException("'sequence-stop' command value cannot be null"),
-
-            "sequence-reset" => firstProperty.Value is not null
-                ? new SequenceResetCommand(
-                    firstProperty.Value.Deserialize<string>(options)
-                    ?? throw new JsonException("Failed to deserialize 'sequence-reset' string"))
-                : throw new JsonException("'sequence-reset' command value cannot be null"),
-
-            _ => throw new JsonException($"Unrecognized object discriminator key: '{propertyKey}'")
+            "mut" when firstProperty.Value is not null => 
+                new MutCommand(firstProperty.Value.Deserialize<MutOperation[]>(options)!),
+            "sequenceStart" when firstProperty.Value is not null => 
+                new SequenceStartCommand(firstProperty.Value.Deserialize<string>(options)!),
+            "sequenceStop" when firstProperty.Value is not null => 
+                new SequenceStopCommand(firstProperty.Value.Deserialize<string>(options)!),
+            "sequenceReset" when firstProperty.Value is not null => 
+                new SequenceResetCommand(firstProperty.Value.Deserialize<string>(options)!),
+            _ => null
         };
+
+        return result ?? throw new JsonException($"Unexpected value for '{propertyKey}': {firstProperty.Value}");
     }
 
     public override void Write(Utf8JsonWriter writer, SceneCommand value, JsonSerializerOptions options)

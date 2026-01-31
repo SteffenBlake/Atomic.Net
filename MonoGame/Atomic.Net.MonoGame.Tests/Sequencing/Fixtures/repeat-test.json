@@ -41,7 +41,7 @@
         ]
       },
       "do": {
-        "sequence-start": "repeat-test"
+        "sequenceStart": "repeat-test"
       }
     }
   ]

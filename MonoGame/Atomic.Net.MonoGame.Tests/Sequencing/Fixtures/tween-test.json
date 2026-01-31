@@ -39,7 +39,7 @@
         ]
       },
       "do": {
-        "sequence-start": "tween-test"
+        "sequenceStart": "tween-test"
       }
     }
   ]

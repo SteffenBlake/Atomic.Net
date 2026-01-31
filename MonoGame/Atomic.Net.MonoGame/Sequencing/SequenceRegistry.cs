@@ -7,7 +7,11 @@ namespace Atomic.Net.MonoGame.Sequencing;
 /// Manages Global vs Scene partition allocation similar to EntityRegistry and RuleRegistry.
 /// Provides dual lookup: ID → index and index → sequence.
 /// </summary>
-public class SequenceRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEvent>
+public class SequenceRegistry : 
+    ISingleton<SequenceRegistry>,
+    IEventHandler<InitializeEvent>,
+    IEventHandler<ResetEvent>, 
+    IEventHandler<ShutdownEvent>
 {
     internal static void Initialize()
     {
@@ -17,8 +21,7 @@ public class SequenceRegistry : IEventHandler<ResetEvent>, IEventHandler<Shutdow
         }
 
         Instance ??= new();
-        EventBus<ResetEvent>.Register(Instance);
-        EventBus<ShutdownEvent>.Register(Instance);
+        EventBus<InitializeEvent>.Register(Instance);
     }
 
     public static SequenceRegistry Instance { get; private set; } = null!;
@@ -35,6 +38,15 @@ public class SequenceRegistry : IEventHandler<ResetEvent>, IEventHandler<Shutdow
     /// Public accessor for sequences SparseArray for iteration and testing.
     /// </summary>
     public SparseArray<JsonSequence> Sequences => _sequences;
+
+    /// <summary>
+    /// Initialize event handler - registers for other events.
+    /// </summary>
+    public void OnEvent(InitializeEvent e)
+    {
+        EventBus<ResetEvent>.Register(this);
+        EventBus<ShutdownEvent>.Register(this);
+    }
 
     /// <summary>
     /// Activate the next available scene sequence (index greater than or equal to MaxGlobalSequences).
@@ -90,24 +102,6 @@ public class SequenceRegistry : IEventHandler<ResetEvent>, IEventHandler<Shutdow
         _sequences.Set(index, sequence);
         _idToIndex[sequence.Id] = index;
         return index;
-    }
-
-    /// <summary>
-    /// Try to resolve a sequence by its index.
-    /// </summary>
-    /// <param name="index">The sequence index.</param>
-    /// <param name="sequence">The resolved sequence.</param>
-    /// <returns>True if the sequence was found.</returns>
-    public bool TryResolveByIndex(ushort index, out JsonSequence sequence)
-    {
-        if (_sequences.TryGetValue(index, out var seq))
-        {
-            sequence = seq.Value;
-            return true;
-        }
-
-        sequence = default;
-        return false;
     }
 
     /// <summary>
