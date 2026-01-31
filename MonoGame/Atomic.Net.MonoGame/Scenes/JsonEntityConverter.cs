@@ -250,8 +250,8 @@ public static class JsonEntityConverter
 
     /// <summary>
     /// Writes mutations from a JsonNode back to the real Entity.
-    /// Deserializes the entire entity structure at once using Mut Entity structs,
-    /// then applies mutations using simple if-checks with null coalescing.
+    /// Optimized to handle common cases (id, tags, properties) without full deserialization.
+    /// Falls back to full deserialization only if Transform/Parent/Flex properties are present.
     /// </summary>
     public static void Write(JsonNode jsonEntity, Entity entity)
     {
@@ -260,6 +260,99 @@ public static class JsonEntityConverter
             return;
         }
 
+        // Fast path: Check if we have any Transform/Parent/Flex properties
+        // If not, we can skip expensive deserialization
+        // Use a single pass through keys instead of multiple ContainsKey calls
+        var needsFullDeserialization = false;
+        foreach (var kvp in entityObj)
+        {
+            var key = kvp.Key;
+            // Check if this key requires full deserialization
+            // Fast path only handles: _index, id, tags, properties
+            if (key != "_index" && key != "id" && key != "tags" && key != "properties")
+            {
+                needsFullDeserialization = true;
+                break;
+            }
+        }
+
+        if (needsFullDeserialization)
+        {
+            // Slow path: Full deserialization for Transform/Parent/Flex
+            WriteFull(entityObj, entity);
+            return;
+        }
+
+        // Fast path: Direct processing for id, tags, properties only
+        
+        // Id - direct read from JSON
+        if (entityObj.TryGetPropertyValue("id", out var idNode))
+        {
+            if (idNode is JsonValue idValue && idValue.TryGetValue<string>(out var id))
+            {
+                entity.SetBehavior<IdBehavior, string>(
+                    in id,
+                    static (ref readonly _newId, ref b) => b = new IdBehavior(_newId)
+                );
+            }
+            else if (idNode != null)
+            {
+                // Id is present but not a string - this is an error
+                EventBus<ErrorEvent>.Push(
+                    new ErrorEvent($"Id mutation failed: expected string, got {idNode.GetValueKind()}")
+                );
+            }
+        }
+
+        // Tags - direct read from JSON
+        if (entityObj.TryGetPropertyValue("tags", out var tagsNode) && tagsNode is JsonArray tagsArray)
+        {
+            entity.SetBehavior<TagsBehavior>(static (ref b) => b = b with
+            {
+                Tags = b.Tags.Clear()
+            });
+
+            foreach (var tagNode in tagsArray)
+            {
+                if (tagNode == null)
+                {
+                    EventBus<ErrorEvent>.Push(
+                        new ErrorEvent("Tags mutation failed: tag cannot be null")
+                    );
+                    continue;
+                }
+
+                if (!tagNode.TryGetStringValue(out var tag))
+                {
+                    EventBus<ErrorEvent>.Push(
+                        new ErrorEvent($"Tags mutation failed: expected string, got {tagNode.GetValueKind()}")
+                    );
+                    continue;
+                }
+
+                entity.SetBehavior<TagsBehavior, string>(
+                    in tag,
+                    static (ref readonly _tag, ref b) => b = b with
+                    {
+                        Tags = b.Tags.With(_tag)
+                    }
+                );
+            }
+        }
+
+        // Properties - direct read from JSON
+        if (entityObj.TryGetPropertyValue("properties", out var propertiesNode) && 
+            propertiesNode is JsonObject propertiesObj)
+        {
+            ProcessProperties(entity, propertiesObj);
+        }
+    }
+
+    /// <summary>
+    /// Full deserialization path for entities with Transform/Parent/Flex properties.
+    /// </summary>
+    private static void WriteFull(JsonObject entityObj, Entity entity)
+    {
         // Deserialize entire entity structure at once
         if (!TryDeserializeMutEntity(entityObj, out var mutEntity))
         {
@@ -313,51 +406,8 @@ public static class JsonEntityConverter
         // Properties
         if (mutEntity.Value.Properties != null)
         {
-            foreach (KeyValuePair<string, JsonNode> kvp in mutEntity.Value.Properties)
-            {
-                var key = kvp.Key;
-                var valueNode = kvp.Value;
-
-                if (valueNode == null)
-                {
-                    continue;
-                }
-
-                if (valueNode is not JsonValue jsonValue)
-                {
-                    continue;
-                }
-
-                PropertyValue? propValue = null;
-
-                if (jsonValue.TryGetValue<string>(out var strValue))
-                {
-                    propValue = new PropertyValue(strValue);
-                }
-                else if (jsonValue.TryCoerceFloatValue(out var floatValue))
-                {
-                    propValue = new PropertyValue(floatValue.Value);
-                }
-                else if (jsonValue.TryGetValue<bool>(out var boolValue))
-                {
-                    propValue = new PropertyValue(boolValue);
-                }
-
-                if (!propValue.HasValue)
-                {
-                    continue;
-                }
-
-                var data = (key, propValue.Value);
-                entity.SetBehavior<PropertiesBehavior, (string Key, PropertyValue Value)>(
-                    in data,
-                    static (ref readonly _data, ref b) =>
-                        b = b with
-                        {
-                            Properties = b.Properties.With(_data.Key, _data.Value)
-                        }
-                );
-            }
+            // Cast to IEnumerable to handle nullability difference
+            ProcessProperties(entity, (IEnumerable<KeyValuePair<string, JsonNode?>>)mutEntity.Value.Properties);
         }
 
         // Transform - Position.X
@@ -834,6 +884,60 @@ public static class JsonEntityConverter
         };
     }
 
+
+
+    /// <summary>
+    /// Helper method to process properties and apply to entity.
+    /// Shared by fast path and full deserialization path.
+    /// </summary>
+    private static void ProcessProperties(Entity entity, IEnumerable<KeyValuePair<string, JsonNode?>> properties)
+    {
+        foreach (KeyValuePair<string, JsonNode?> kvp in properties)
+        {
+            var key = kvp.Key;
+            var valueNode = kvp.Value;
+
+            if (valueNode == null)
+            {
+                continue;
+            }
+
+            if (valueNode is not JsonValue jsonValue)
+            {
+                continue;
+            }
+
+            PropertyValue? propValue = null;
+
+            if (jsonValue.TryGetValue<string>(out var strValue))
+            {
+                propValue = new PropertyValue(strValue);
+            }
+            else if (jsonValue.TryCoerceFloatValue(out var floatValue))
+            {
+                propValue = new PropertyValue(floatValue.Value);
+            }
+            else if (jsonValue.TryGetValue<bool>(out var boolValue))
+            {
+                propValue = new PropertyValue(boolValue);
+            }
+
+            if (!propValue.HasValue)
+            {
+                continue;
+            }
+
+            var data = (key, propValue.Value);
+            entity.SetBehavior<PropertiesBehavior, (string Key, PropertyValue Value)>(
+                in data,
+                static (ref readonly _data, ref b) =>
+                    b = b with
+                    {
+                        Properties = b.Properties.With(_data.Key, _data.Value)
+                    }
+            );
+        }
+    }
 
     private static bool TryDeserializeMutEntity(
         JsonObject entityObj,
