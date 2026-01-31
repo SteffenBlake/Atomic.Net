@@ -273,3 +273,99 @@ Created `/tmp/analyze_speedscope.py` which:
 # Show help
 ./analyze_speedscope.py --help
 ```
+
+---
+
+## Hierarchical Call Tree Analysis
+
+The analyzer has been completely rewritten to produce a pure hierarchical tree view that shows exactly where time is spent in the codebase, drilling down to leaf nodes with no depth limit.
+
+### Tool Usage
+
+```bash
+# Generate hierarchical tree (min 2% threshold)
+./analyze_speedscope.py trace.speedscope.json --min-pct 2.0
+
+# Lower threshold for more detail
+./analyze_speedscope.py trace.speedscope.json --min-pct 0.5
+
+# Save to file
+./analyze_speedscope.py trace.speedscope.json --output report.txt
+```
+
+### Key Features
+
+- **Trims benchmark harness:** Starts tree from first Atomic.Net.MonoGame method (excludes BenchmarkDotNet overhead)
+- **No depth limit:** Drills all the way to leaf nodes recursively
+- **Relative percentages:** All percentages relative to root method time only
+- **Filters setup code:** Excludes GlobalSetup, IterationSetup, IterationCleanup, etc.
+- **Pure tree format:** No flat rankings, just hierarchical breakdown
+- **Works with any benchmark:** Automatically finds root method in target namespace
+
+### Sample Output (SparsePoisonSequence)
+
+```
+Root method: RunPoisonSimulation()
+Total time: 18929.83
+
+   18929.826 (100.00%) RunPoisonSimulation()
+├─    17834.822 ( 94.22%) SequenceDriver.RunFrame()
+│  ├─    13490.466 ( 71.27%) JsonEntityConverter.Write()
+│  │  ├─     7928.378 ( 41.88%) BehaviorRegistry.SetBehavior()
+│  │  │  ├─     4171.221 ( 22.04%) PropertiesRegistry.RemoveProperties()
+│  │  │  │  └─     8563.007 ( 45.24%) System.Globalization.CompareInfo.IcuGetHashCodeOfString()
+│  │  │  ├─     3353.951 ( 17.72%) PropertiesRegistry.IndexProperties()
+│  │  │  │  └─     8563.007 ( 45.24%) System.Globalization.CompareInfo.IcuGetHashCodeOfString()
+│  │  │  └─     8563.007 ( 45.24%) System.Globalization.CompareInfo.IcuGetHashCodeOfString()
+│  │  ├─     4745.688 ( 25.07%) JsonEntityConverter.TryDeserializeMutEntity()
+│  │  │  └─     4554.419 ( 24.06%) System.Text.Json.JsonConverter.ReadCore()
+│  │  │     └─     4554.419 ( 24.06%) ObjectDefaultConverter.OnTryRead()
+│  │  │        └─     4382.622 ( 23.15%) JsonPropertyInfo.ReadJsonAndSetMember()
+│  │  │           └─     7793.228 ( 41.17%) System.Buffer.BulkMoveWithWriteBarrier()
+│  │  │              └─    10879.752 ( 57.47%) System.Threading.Thread.PollGCWorker()
+│  └─     5267.213 ( 27.82%) SequenceDriver.ProcessSequence()
+│     └─     1911.118 ( 10.10%) SceneCommand.Execute()
+└─     1091.737 (  5.77%) RulesDriver.RunFrame()
+```
+
+### True Hotspot Revealed
+
+The hierarchical view reveals the **true** performance bottleneck that wasn't obvious from flat rankings:
+
+**System.Globalization.CompareInfo.IcuGetHashCodeOfString() - 45.24%**
+
+This method appears in multiple branches because it's called from both `RemoveProperties` and `IndexProperties`. The property system uses case-insensitive string comparisons (StringComparer.InvariantCultureIgnoreCase) for property keys, causing significant hashing overhead.
+
+**Key Insights:**
+- Property indexing/removal operations do extensive string hashing
+- Case-insensitive comparisons are expensive at scale (7900 entities × properties × 100 frames)
+- String hashing appears in multiple call paths, compounding the cost
+- GC pressure from `BulkMoveWithWriteBarrier` and `PollGCWorker` also significant (41% and 57% respectively in JSON deserialization paths)
+
+**Recommendations:**
+1. **Consider caching string hash codes** for frequently used property keys
+2. **Evaluate case-sensitivity requirements** - do all property operations need case-insensitive comparison?
+3. **Profile memory allocations** in JSON deserialization paths to reduce GC pressure
+4. **Consider property key interning** to reduce string comparison overhead
+
+### Generalized for Any Benchmark
+
+The tool automatically works with any EventPipe trace from any benchmark:
+
+```bash
+# Works with SparsePoisonSequence
+./analyze_speedscope.py sparse-poison-sequence-benchmark.speedscope.json
+
+# Works with SparseArray micro-benchmarks
+./analyze_speedscope.py sparse-array-read-benchmark.speedscope.json
+
+# Works with any Atomic.Net.MonoGame benchmark
+./analyze_speedscope.py any-benchmark.speedscope.json --namespace Atomic.Net.MonoGame
+```
+
+The analyzer automatically:
+- Finds the primary root method in the target namespace
+- Excludes benchmark harness and setup methods
+- Builds complete hierarchical tree
+- Calculates percentages relative to application code only
+
