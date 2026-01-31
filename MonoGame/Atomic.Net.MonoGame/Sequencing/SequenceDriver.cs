@@ -266,8 +266,7 @@ public sealed class SequenceDriver :
     {
         if (!_activeSequences.TryGetValue(entityIndex, out var sequenceStates))
         {
-            // senior-dev: CRITICAL - Size must be MaxSequences (512) not MaxActiveSequencesPerEntity (8)
-            // because we index by global sequence index
+            // CRITICAL: Size must be MaxSequences (512) because we index by global sequence index
             sequenceStates = new SparseArray<SequenceState>(Constants.MaxSequences);
             _activeSequences[entityIndex] = sequenceStates;
         }

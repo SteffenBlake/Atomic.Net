@@ -27,7 +27,9 @@ public class JsonSequenceStepConverter : JsonConverter<JsonSequenceStep>
             "delay" when firstProperty.Value is not null =>
                 new DelayStep(firstProperty.Value.Deserialize<float>(options)),
             "do" when firstProperty.Value is not null =>
-                new DoStep(firstProperty.Value.Deserialize<Scenes.SceneCommand>(options)),
+                firstProperty.Value.Deserialize<Scenes.SceneCommand>(options) is { } cmd
+                    ? new DoStep(cmd)
+                    : null,
             "tween" when firstProperty.Value is not null =>
                 firstProperty.Value.Deserialize<TweenStep>(options),
             "repeat" when firstProperty.Value is not null =>

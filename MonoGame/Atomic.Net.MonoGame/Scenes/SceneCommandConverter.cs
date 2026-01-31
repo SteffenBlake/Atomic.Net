@@ -26,13 +26,21 @@ public class SceneCommandConverter : JsonConverter<SceneCommand>
         SceneCommand? result = propertyKey switch
         {
             "mut" when firstProperty.Value is not null => 
-                new MutCommand(firstProperty.Value.Deserialize<MutOperation[]>(options)!),
+                firstProperty.Value.Deserialize<MutOperation[]>(options) is { } ops
+                    ? new MutCommand(ops)
+                    : null,
             "sequenceStart" when firstProperty.Value is not null => 
-                new SequenceStartCommand(firstProperty.Value.Deserialize<string>(options)!),
+                firstProperty.Value.Deserialize<string>(options) is { } id
+                    ? new SequenceStartCommand(id)
+                    : null,
             "sequenceStop" when firstProperty.Value is not null => 
-                new SequenceStopCommand(firstProperty.Value.Deserialize<string>(options)!),
+                firstProperty.Value.Deserialize<string>(options) is { } id
+                    ? new SequenceStopCommand(id)
+                    : null,
             "sequenceReset" when firstProperty.Value is not null => 
-                new SequenceResetCommand(firstProperty.Value.Deserialize<string>(options)!),
+                firstProperty.Value.Deserialize<string>(options) is { } id
+                    ? new SequenceResetCommand(id)
+                    : null,
             _ => null
         };
 

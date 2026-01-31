@@ -75,20 +75,20 @@ public sealed class SequenceNegativeTests : IDisposable
     }
     
     [Fact]
-    public void StartSequenceTwice_RestartsFromBeginning()
+    public void StartSequenceTwice_IsNoOp()
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Sequencing/Fixtures/sequence-commands-test.json");
         Assert.True(EntityIdRegistry.Instance.TryResolve("testEntity", out var entity));
         Assert.True(SequenceRegistry.Instance.TryResolveById("test-sequence", out var seqIndex));
         
-        // Act: Start sequence, run partially, start again
+        // Act: Start sequence twice (second start should be no-op)
         SequenceDriver.Instance.StartSequence(entity.Value.Index, seqIndex);
         SequenceDriver.Instance.RunFrame(0.05f);
-        SequenceDriver.Instance.StartSequence(entity.Value.Index, seqIndex); // Start again
+        SequenceDriver.Instance.StartSequence(entity.Value.Index, seqIndex); // No-op
         SequenceDriver.Instance.RunFrame(0.15f);
         
-        // Assert: Sequence completed (restarted from beginning)
+        // Assert: Sequence completed normally (second start had no effect)
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity.Value, out var props));
         Assert.True(props.Value.Properties.TryGetValue("value", out var value));
         value.Visit(
