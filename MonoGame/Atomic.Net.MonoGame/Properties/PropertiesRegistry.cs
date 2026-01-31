@@ -30,10 +30,10 @@ public sealed class PropertiesRegistry : ISingleton<PropertiesRegistry>,
     public static PropertiesRegistry Instance { get; private set; } = null!;
 
     private readonly Dictionary<string, SparseArray<bool>> _keyIndex = 
-        new(Constants.DefaultAllocPropertyBag, StringComparer.InvariantCultureIgnoreCase);
+        new(Constants.DefaultAllocPropertyBag, StringComparer.OrdinalIgnoreCase);
 
     private readonly Dictionary<string, Dictionary<PropertyValue, SparseArray<bool>>> _keyValueIndex = 
-        new(Constants.DefaultAllocPropertyBag, StringComparer.InvariantCultureIgnoreCase);
+        new(Constants.DefaultAllocPropertyBag, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Indexes all properties for an entity.
