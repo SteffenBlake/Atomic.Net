@@ -1,0 +1,21 @@
+{
+  "entities": [
+    {
+      "id": "testEntity",
+      "properties": {
+        "value": 0
+      }
+    }
+  ],
+  "sequences": [
+    {
+      "id": "unknown-step",
+      "steps": [
+        {
+          "unknown": "value"
+        }
+      ]
+    }
+  ],
+  "rules": []
+}

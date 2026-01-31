@@ -1,0 +1,32 @@
+{
+  "entities": [
+    {
+      "id": "testEntity",
+      "properties": {
+        "counter": 0
+      }
+    }
+  ],
+  "sequences": [
+    {
+      "id": "fast-repeat",
+      "steps": [
+        {
+          "repeat": {
+            "every": 0.1,
+            "until": { ">=": [{ "var": "elapsed" }, 0.5] },
+            "do": {
+              "mut": [
+                {
+                  "target": { "properties": "counter" },
+                  "value": { "+": [{ "var": "self.properties.counter" }, 1] }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "rules": []
+}

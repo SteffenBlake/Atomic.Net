@@ -1,12 +1,14 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Atomic.Net.MonoGame.Sequencing;
+using Json.More;
 
 namespace Atomic.Net.MonoGame.Scenes;
 
 /// <summary>
 /// Custom JSON converter for SceneCommand that handles discriminator-based deserialization.
-/// Supports 'mut' command type and validates the command structure.
+/// Supports 'mut', 'sequenceStart', 'sequenceStop', and 'sequenceReset' command types.
 /// </summary>
 public class SceneCommandConverter : JsonConverter<SceneCommand>
 {
@@ -19,17 +21,22 @@ public class SceneCommandConverter : JsonConverter<SceneCommand>
             throw new JsonException("Expected JSON object");
         }
 
-        var firstProperty = jsonObject.First();
-        var propertyKey = firstProperty.Key.ToLower();
+        KeyValuePair<string, JsonNode?>? firstProperty = 
+            jsonObject.Count == 0 ? null :
+            jsonObject.FirstOrDefault();
 
-        return propertyKey switch
+        var propertyKey = firstProperty?.Key;
+        
+        SceneCommand? result = propertyKey == null ? null : propertyKey switch
         {
-            "mut" => firstProperty.Value is not null
-                ? new MutCommand(firstProperty.Value.Deserialize<MutOperation[]>(options) 
-                    ?? throw new JsonException("Failed to deserialize 'mut' array"))
-                : throw new JsonException("'mut' command value cannot be null"),
-            _ => throw new JsonException($"Unrecognized object discriminator key: '{propertyKey}'")
+            "mut" => jsonNode.Deserialize<MutCommand>(options),
+            "sequenceStart" => jsonNode.Deserialize<SequenceStartCommand>(options),
+            "sequenceStop" => jsonNode.Deserialize<SequenceStopCommand>(options),
+            "sequenceReset" => jsonNode.Deserialize<SequenceResetCommand>(options),
+            _ => null
         };
+
+        return result ?? throw new JsonException($"Unexpected value for '{propertyKey}': {firstProperty?.Value}");
     }
 
     public override void Write(Utf8JsonWriter writer, SceneCommand value, JsonSerializerOptions options)

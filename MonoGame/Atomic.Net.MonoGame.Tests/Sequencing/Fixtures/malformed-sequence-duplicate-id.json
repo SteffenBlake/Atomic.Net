@@ -1,0 +1,29 @@
+{
+  "entities": [
+    {
+      "id": "testEntity",
+      "properties": {
+        "value": 0
+      }
+    }
+  ],
+  "sequences": [
+    {
+      "id": "duplicate",
+      "steps": [
+        {
+          "delay": { "duration": 0.5 }
+        }
+      ]
+    },
+    {
+      "id": "duplicate",
+      "steps": [
+        {
+          "delay": { "duration": 1.0 }
+        }
+      ]
+    }
+  ],
+  "rules": []
+}

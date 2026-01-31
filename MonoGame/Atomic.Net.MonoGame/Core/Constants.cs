@@ -86,5 +86,35 @@ public static class Constants
     /// </summary>
     public const ushort MaxGlobalRules = 128;
 #endif
+
+#if MAX_SEQUENCES
+    /// <summary>
+    /// Maximum number of sequences supported.
+    /// </summary>
+    public const ushort MaxSequences = MAX_SEQUENCES;
+#else
+    /// <summary>
+    /// Maximum number of sequences supported.
+    /// </summary>
+    public const ushort MaxSequences = 512;
+#endif
+
+#if MAX_GLOBAL_SEQUENCES
+    /// <summary>
+    /// Partition point between global and scene sequences.
+    /// Sequences with indices less than MaxGlobalSequences are global sequences.
+    /// Sequences with indices greater than or equal to MaxGlobalSequences are scene sequences.
+    /// </summary>
+    public const ushort MaxGlobalSequences = MAX_GLOBAL_SEQUENCES;
+#else
+    /// <summary>
+    /// Partition point between global and scene sequences.
+    /// Sequences with indices less than MaxGlobalSequences are global sequences.
+    /// Sequences with indices greater than or equal to MaxGlobalSequences are scene sequences.
+    /// </summary>
+    public const ushort MaxGlobalSequences = 256;
+#endif
+
+
 }
 

@@ -1,0 +1,20 @@
+{
+  "entities": [
+    {
+      "id": "testEntity",
+      "properties": {
+        "value": 0
+      }
+    }
+  ],
+  "sequences": [
+    {
+      "steps": [
+        {
+          "delay": { "duration": 0.5 }
+        }
+      ]
+    }
+  ],
+  "rules": []
+}

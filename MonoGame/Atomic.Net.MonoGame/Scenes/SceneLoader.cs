@@ -5,6 +5,7 @@ using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Hierarchy;
 using Atomic.Net.MonoGame.Persistence;
 using Atomic.Net.MonoGame.Selectors;
+using Atomic.Net.MonoGame.Sequencing;
 
 namespace Atomic.Net.MonoGame.Scenes;
 
@@ -60,6 +61,12 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         GC.WaitForPendingFinalizers();
     }
 
+    private static readonly JsonSerializerOptions _serializerOptions = 
+        new(JsonSerializerOptions.Web)
+        {
+            RespectRequiredConstructorParameters = true
+        };
+
     // Separate method for parsing JSON to ensure proper scoping for GC
     private static bool TryParseSceneFile(
         string scenePath,
@@ -75,11 +82,11 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         }
 
         var jsonText = File.ReadAllText(scenePath);
-        
+
         try
         {
             scene = JsonSerializer.Deserialize<JsonScene>(
-                jsonText, JsonSerializerOptions.Web
+                jsonText, _serializerOptions
             ) ?? new();
 
             return true;
@@ -143,6 +150,9 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         // senior-dev: Load rules into RuleRegistry (must be before selector recalc)
         LoadRules(scene, useGlobalPartition);
         
+        // senior-dev: Load sequences into SequenceRegistry
+        LoadSequences(scene, useGlobalPartition);
+        
         // CRITICAL: Recalc selectors first, then hierarchy
         // SelectorRegistry.Recalc() must run before HierarchyRegistry.Recalc()
         // to ensure parent selectors have valid Matches arrays
@@ -153,7 +163,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     /// <summary>
     /// Loads rules from scene into RuleRegistry.
     /// </summary>
-    private void LoadRules(JsonScene scene, bool useGlobalPartition)
+    private static void LoadRules(JsonScene scene, bool useGlobalPartition)
     {
         // senior-dev: Rules are optional in scenes
         if (scene.Rules == null || scene.Rules.Count == 0)
@@ -171,6 +181,31 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
             else
             {
                 RuleRegistry.Instance.Activate(rule);
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Loads sequences from scene into SequenceRegistry.
+    /// </summary>
+    private static void LoadSequences(JsonScene scene, bool useGlobalPartition)
+    {
+        // senior-dev: Sequences are optional in scenes
+        if (scene.Sequences == null || scene.Sequences.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var sequence in scene.Sequences)
+        {
+            // senior-dev: Allocate to appropriate partition based on loader method
+            if (useGlobalPartition)
+            {
+                SequenceRegistry.Instance.ActivateGlobal(sequence);
+            }
+            else
+            {
+                SequenceRegistry.Instance.Activate(sequence);
             }
         }
     }

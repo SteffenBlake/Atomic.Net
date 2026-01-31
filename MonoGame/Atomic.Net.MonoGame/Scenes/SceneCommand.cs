@@ -1,5 +1,7 @@
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Atomic.Net.MonoGame.Core.Extensions;
+using Atomic.Net.MonoGame.Sequencing;
 using dotVariant;
 
 namespace Atomic.Net.MonoGame.Scenes;
@@ -8,7 +10,12 @@ namespace Atomic.Net.MonoGame.Scenes;
 [JsonConverter(typeof(SceneCommandConverter))]
 public readonly partial struct SceneCommand
 {
-    static partial void VariantOf(MutCommand mut);
+    static partial void VariantOf(
+        MutCommand mut,
+        SequenceStartCommand sequenceStart,
+        SequenceStopCommand sequenceStop,
+        SequenceResetCommand sequenceReset
+    );
 
     /// <summary>
     /// Executes the command on the given JsonNode entity with the provided context.
@@ -22,11 +29,30 @@ public readonly partial struct SceneCommand
         {
             mutCommand.Execute(jsonEntity, context);
         }
-        // Future: Add other command types here
-        // else if (TryMatch(out SomeOtherCommand otherCommand))
-        // {
-        //     otherCommand.Execute(jsonEntity, context);
-        // }
+        else if (TryMatch(out SequenceStartCommand startCommand))
+        {
+            if (!jsonEntity.TryGetEntityIndex(out var entityIndex))
+            {
+                return;
+            }
+            SequenceStartCmdDriver.Instance.Execute(entityIndex.Value, startCommand.SequenceId);
+        }
+        else if (TryMatch(out SequenceStopCommand stopCommand))
+        {
+            if (!jsonEntity.TryGetEntityIndex(out var entityIndex))
+            {
+                return;
+            }
+            SequenceStopCmdDriver.Instance.Execute(entityIndex.Value, stopCommand.SequenceId);
+        }
+        else if (TryMatch(out SequenceResetCommand resetCommand))
+        {
+            if (!jsonEntity.TryGetEntityIndex(out var entityIndex))
+            {
+                return;
+            }
+            SequenceResetCmdDriver.Instance.Execute(entityIndex.Value, resetCommand.SequenceId);
+        }
     }
 }
 

@@ -1,0 +1,46 @@
+{
+  "entities": [
+    {
+      "id": "testEntity",
+      "properties": {
+        "value": 0
+      }
+    }
+  ],
+  "sequences": [
+    {
+      "id": "tween-test",
+      "steps": [
+        {
+          "tween": {
+            "from": 0,
+            "to": 100,
+            "duration": 1.0,
+            "do": {
+              "mut": [
+                {
+                  "target": { "properties": "value" },
+                  "value": { "var": "tween" }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "from": "@testEntity",
+      "where": {
+        "filter": [
+          { "var": "entities" },
+          { "==": [1, 1] }
+        ]
+      },
+      "do": {
+        "sequenceStart": "tween-test"
+      }
+    }
+  ]
+}

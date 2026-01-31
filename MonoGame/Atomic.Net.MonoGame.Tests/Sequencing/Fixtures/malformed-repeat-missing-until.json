@@ -1,0 +1,23 @@
+{
+  "entities": [
+    {
+      "id": "testEntity",
+      "properties": {
+        "value": 0
+      }
+    }
+  ],
+  "sequences": [
+    {
+      "id": "malformed-repeat",
+      "steps": [
+        {
+          "repeat": {
+            "every": 0.5
+          }
+        }
+      ]
+    }
+  ],
+  "rules": []
+}

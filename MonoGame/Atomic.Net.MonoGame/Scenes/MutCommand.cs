@@ -8,8 +8,10 @@ namespace Atomic.Net.MonoGame.Scenes;
 /// Each operation specifies a target path and a value expression.
 /// Mutations are applied to JsonNode entity representations.
 /// </summary>
-public readonly record struct MutCommand(MutOperation[] Operations)
+public readonly record struct MutCommand(List<MutOperation> Mut)
 {
+    public readonly IReadOnlyList<MutOperation> Operations => Mut;
+
     /// <summary>
     /// Executes all mutation operations on a JsonNode entity.
     /// Mutates the jsonEntity in-place based on the context.
@@ -18,7 +20,7 @@ public readonly record struct MutCommand(MutOperation[] Operations)
     /// <param name="context">The JsonLogic context containing world, entities, and self</param>
     public void Execute(JsonNode jsonEntity, JsonObject context)
     {
-        foreach (var operation in Operations)
+        foreach (var operation in Mut)
         {
             // Evaluate the value expression using JsonLogic
             var result = JsonLogic.Apply(operation.Value, context);

@@ -11,7 +11,7 @@
   - **Do** — executes a SceneCommand immediately with deltaTime context, advances to next step on next frame
   - **Tween** — interpolates from 'from' to 'to' over a duration, running sub-commands per-frame with interpolated value
   - **Repeat-until** — runs sub-command every interval until condition met, exposes 'elapsed' time
-- Sequences are triggered via new rule commands: `sequence-start: "id"`, `sequence-stop: "id"`, `sequence-reset: "id"`
+- Sequences are triggered via new rule commands: `sequenceStart: "id"`, `sequenceStop: "id"`, `sequenceReset: "id"`
 - Rules/events reference sequences by string ID, not index
 - Sequences lock onto entity index when started; entity selector only matters at start
 - Sequences auto-remove from active registry when complete
@@ -93,8 +93,7 @@
 - Singleton that processes all active sequences per-frame
 - Called from main game loop after RulesDriver
 - Fields:
-  - `SparseReferenceArray<SparseArray<SequenceState>> _activeSequences` - outer index: entity, inner index: sequence
-  - Pre-allocated at load time with `Constants.MaxEntities` × `Constants.MaxActiveSequencesPerEntity`
+  - `SparseReferenceArray<SparseArray<SequenceState>> _activeSequences` - outer index: entity, inner index: sequence (inner array sized to MaxSequences)
 - Methods:
   - `void RunFrame(float deltaTime)` - main entry point
   - `void StartSequence(ushort entityIndex, ushort sequenceIndex)` - called by command drivers
@@ -132,12 +131,12 @@
 - Add variant cases: `SequenceStartCommand`, `SequenceStopCommand`, `SequenceResetCommand`
 
 **Update: `MonoGame/Atomic.Net.MonoGame/Scenes/SceneCommandConverter.cs`**
-- Handle deserialization of `sequence-start`, `sequence-stop`, `sequence-reset` fields
+- Handle deserialization of `sequenceStart`, `sequenceStop`, `sequenceReset` fields
 
 #### Driver Layer (Command Drivers)
 
 **File: `MonoGame/Atomic.Net.MonoGame/Sequencing/SequenceStartCmdDriver.cs`**
-- Executes sequence-start command
+- Executes sequenceStart command
 - Methods:
   - `void Execute(ushort entityIndex, string sequenceId)`
 - Error handling:
@@ -146,7 +145,7 @@
 - Calls `SequenceDriver.StartSequence(entityIndex, sequenceIndex)`
 
 **File: `MonoGame/Atomic.Net.MonoGame/Sequencing/SequenceStopCmdDriver.cs`**
-- Executes sequence-stop command
+- Executes sequenceStop command
 - Methods:
   - `void Execute(ushort entityIndex, string sequenceId)`
 - Error handling:
@@ -155,7 +154,7 @@
 - Calls `SequenceDriver.StopSequence(entityIndex, sequenceIndex)`
 
 **File: `MonoGame/Atomic.Net.MonoGame/Sequencing/SequenceResetCmdDriver.cs`**
-- Executes sequence-reset command
+- Executes sequenceReset command
 - Methods:
   - `void Execute(ushort entityIndex, string sequenceId)`
 - Error handling:
@@ -285,7 +284,7 @@ IE if you have "Delay 0.5s" + "Tween 2.0s", and you pass in 0.6s, you should now
 - `ShutdownEvent` → `SequenceRegistry` clears all sequences
 
 #### Command Execution Flow
-1. `RulesDriver` evaluates rule → `sequence-start: "id"` command
+1. `RulesDriver` evaluates rule → `sequenceStart: "id"` command
 2. `RulesDriver` → `SequenceStartCmdDriver.Execute(entityIndex, "id")`
 3. `SequenceStartCmdDriver` → `SequenceRegistry.TryResolveById("id")` → gets index
 4. `SequenceStartCmdDriver` → `SequenceDriver.StartSequence(entityIndex, sequenceIndex)`
@@ -320,20 +319,20 @@ IE if you have "Delay 0.5s" + "Tween 2.0s", and you pass in 0.6s, you should now
 - [ ] Create JsonSequenceStepConverter for deserialization
 - [ ] Create SequenceRegistry with ID↔index lookup and global/scene partitioning
 - [ ] Create SequenceState struct for tracking runtime state (byte StepIndex, float StepElapsedTime)
-- [ ] Update Constants.cs with MaxSequences (512), MaxGlobalSequences (256), MaxActiveSequencesPerEntity (8)
+- [ ] Update Constants.cs with MaxSequences (512), MaxGlobalSequences (256)
 - [ ] Update JsonScene to include Sequences list
 
 ### Phase 2: Command Layer
 - [ ] Create SequenceStartCommand, SequenceStopCommand, SequenceResetCommand structs in `Sequencing/` folder
 - [ ] Update SceneCommand variant to include new sequence commands
-- [ ] Update SceneCommandConverter to deserialize sequence-start/stop/reset fields
+- [ ] Update SceneCommandConverter to deserialize sequenceStart/stop/reset fields
 - [ ] Extract MutCmdDriver from RulesDriver with generic JsonNode context parameter
 - [ ] Extract ApplyToTarget helper from RulesDriver for reuse
 - [ ] Create SequenceStartCmdDriver, SequenceStopCmdDriver, SequenceResetCmdDriver in `Sequencing/` folder
 - [ ] Update RulesDriver to use MutCmdDriver, rename context to ruleContext, and use extracted ApplyToTarget helper
 
 ### Phase 3: Driver Implementation
-- [ ] Create SequenceDriver with `SparseReferenceArray<SparseArray<SequenceState>> _activeSequences` field
+- [ ] Create SequenceDriver with `SparseReferenceArray<SparseArray<SequenceState>> _activeSequences` field (inner array sized to MaxSequences)
 - [ ] Implement StartSequence, StopSequence, ResetSequence methods
 - [ ] Implement RunFrame() with entity-first iteration (process all sequences per entity, then apply mutations once)
 - [ ] Implement step processing logic (delay, do, tween, repeat) - use modulo for repeat timing
@@ -355,7 +354,7 @@ IE if you have "Delay 0.5s" + "Tween 2.0s", and you pass in 0.6s, you should now
 - [ ] Write negative tests for invalid sequence IDs and malformed steps
 - [ ] Write tests for concurrent sequences on same entity
 - [ ] Write tests for sequence restart after completion
-- [ ] Write tests for sequence chaining (sequence-start command within a sequence step)
+- [ ] Write tests for sequence chaining (sequenceStart command within a sequence step)
 
 ---
 
@@ -374,7 +373,7 @@ IE if you have "Delay 0.5s" + "Tween 2.0s", and you pass in 0.6s, you should now
 - **Sequence restart after completion**: Reset state, re-add to active registry
 - **Tag/selector change after start**: Sequence continues (locked to entity index)
 - **Sequence completion**: Entry is deleted from `_activeSequences` (no IsComplete flag needed)
-- **Sequence chaining**: A `do` step can contain `sequence-start` command to trigger another sequence
+- **Sequence chaining**: A `do` step can contain `sequenceStart` command to trigger another sequence
 
 ### Alignment with Existing Patterns
 - Use `ISingleton<T>` for registries and drivers
