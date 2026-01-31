@@ -250,5 +250,26 @@ Created `/tmp/analyze_speedscope.py` which:
 **Files Generated:**
 - `profiling-results/sparse-poison-sequence-benchmark.speedscope.json` (7.9 MB)
 - `profiling-results/PROFILING-REPORT.md` (this document)
-- `/tmp/analyze_speedscope.py` (reusable analysis script)
-- `/tmp/hot-methods-analysis.txt` (complete hotspot listing)
+- `profiling-results/analyze_speedscope.py` (generalized reusable analysis script)
+- Analysis outputs (can be generated on-demand for any trace)
+
+**Tool Usage Examples:**
+```bash
+# Analyze with default settings (Atomic.Net.MonoGame namespace, top 50, exclude init)
+./analyze_speedscope.py trace.speedscope.json
+
+# Include System.* methods for comparison
+./analyze_speedscope.py trace.speedscope.json --include-system
+
+# Show only top 20 methods above 0.1% threshold
+./analyze_speedscope.py trace.speedscope.json --top 20 --min-pct 0.1
+
+# Write report to file
+./analyze_speedscope.py trace.speedscope.json --output report.txt
+
+# Analyze different namespace
+./analyze_speedscope.py trace.speedscope.json --namespace MyApp.Core
+
+# Show help
+./analyze_speedscope.py --help
+```
