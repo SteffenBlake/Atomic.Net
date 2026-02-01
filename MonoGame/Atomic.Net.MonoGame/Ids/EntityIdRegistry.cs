@@ -29,8 +29,11 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
 
     public static EntityIdRegistry Instance { get; private set; } = null!;
 
-    private readonly Dictionary<string, Entity> _idToEntity = new(Constants.MaxEntities);
-    private readonly SparseReferenceArray<string> _entityToId = new(Constants.MaxEntities);
+    private readonly Dictionary<string, Entity> _idToEntity = new();
+    private readonly PartitionedSparseRefArray<string> _entityToId = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
 
     /// <summary>
     /// Attempts to register an entity with the given ID.

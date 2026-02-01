@@ -31,19 +31,28 @@ public class HierarchyRegistry :
 
     public static HierarchyRegistry Instance { get; private set; } = null!;
 
-    private readonly SparseReferenceArray<SparseArray<bool>> _parentToChildLookup 
-        = new(Constants.MaxEntities);
+    private readonly PartitionedSparseRefArray<PartitionedSparseArray<bool>> _parentToChildLookup 
+        = new(Constants.MaxGlobalEntities, Constants.MaxSceneEntities);
 
     // Track dirty children who need parent resolution during Recalc
-    private readonly SparseArray<bool> _dirtyChildren = new(Constants.MaxEntities);
+    private readonly PartitionedSparseArray<bool> _dirtyChildren = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
     
     // Track old parent index during parent change (Pre->Post event)
     // This allows us to clean up the old parent's child list during Recalc
-    private readonly SparseArray<ushort> _oldParentLookup = new(Constants.MaxEntities);
+    private readonly PartitionedSparseArray<PartitionIndex> _oldParentLookup = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
     
     // Reverse lookup: child entity index -> parent entity index
     // Enables O(1) child removal on deactivation instead of O(n) parent scan
-    private readonly SparseArray<ushort> _childToParentLookup = new(Constants.MaxEntities);
+    private readonly PartitionedSparseArray<PartitionIndex> _childToParentLookup = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
 
     /// <summary>
     /// Tracks a child entity to the specified parent.
@@ -54,7 +63,10 @@ public class HierarchyRegistry :
     {
         if (!_parentToChildLookup.HasValue(parent.Index))
         {
-            _parentToChildLookup[parent.Index] = new SparseArray<bool>(Constants.MaxEntities);
+            _parentToChildLookup[parent.Index] = new PartitionedSparseArray<bool>(
+                Constants.MaxGlobalEntities,
+                Constants.MaxSceneEntities
+            );
         }
 
         _parentToChildLookup[parent.Index].Set(child.Index, true);
@@ -89,9 +101,14 @@ public class HierarchyRegistry :
             yield break;
         }
 
-        foreach (var (childIdx, _) in children)
+        foreach (var (childIdx, _) in children.Global)
         {
-            yield return EntityRegistry.Instance[childIdx];
+            yield return EntityRegistry.Instance[(ushort)childIdx];
+        }
+        
+        foreach (var (childIdx, _) in children.Scene)
+        {
+            yield return EntityRegistry.Instance[(uint)childIdx];
         }
     }
 
@@ -101,7 +118,7 @@ public class HierarchyRegistry :
     /// </summary>
     /// <param name="parentIndex">The parent entity index.</param>
     /// <returns>The sparse array of children, or null if no children.</returns>
-    public SparseArray<bool>? GetChildrenArray(ushort parentIndex)
+    public PartitionedSparseArray<bool>? GetChildrenArray(PartitionIndex parentIndex)
     {
         return _parentToChildLookup.TryGetValue(parentIndex, out var children) ? children : null;
     }

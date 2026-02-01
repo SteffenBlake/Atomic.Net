@@ -28,9 +28,18 @@ public sealed class TransformRegistry :
 
     public static TransformRegistry Instance { get; private set; } = null!;
 
-    private SparseArray<bool> _dirty = new(Constants.MaxEntities);
-    private SparseArray<bool> _nextDirty = new(Constants.MaxEntities);
-    private readonly SparseArray<bool> _worldTransformUpdated = new(Constants.MaxEntities);
+    private PartitionedSparseArray<bool> _dirty = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
+    private PartitionedSparseArray<bool> _nextDirty = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
+    private readonly PartitionedSparseArray<bool> _worldTransformUpdated = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
 
     public void OnEvent(InitializeEvent _)
     {

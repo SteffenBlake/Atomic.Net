@@ -10,28 +10,46 @@ public partial class FlexRegistry :
 {
     public void OnEvent(BehaviorAddedEvent<FlexGrowBehavior> e)
     {
-        _dirty[e.Entity.Index.ToInt()] = true;
-        _nodes[e.Entity.Index.ToInt()] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _dirty.Set(e.Entity.Index.ToInt(), true);
+        if (!_nodes.HasValue(e.Entity.Index.ToInt()))
+        {
+            _nodes[e.Entity.Index.ToInt()] = FlexLayoutSharp.Flex.CreateDefaultNode();
+        }
         if (e.Entity.TryGetBehavior<FlexGrowBehavior>(out var grow))
         {
-            _nodes[e.Entity.Index.ToInt()]!.StyleSetFlexGrow(grow.Value.Value);
+            if (_nodes.TryGetValue(e.Entity.Index.ToInt(), out var node))
+            {
+                node!.StyleSetFlexGrow(grow.Value.Value);
+            }
         }
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexGrowBehavior> e)
     {
-        _dirty[e.Entity.Index.ToInt()] = true;
-        _nodes[e.Entity.Index.ToInt()] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _dirty.Set(e.Entity.Index.ToInt(), true);
+        if (!_nodes.HasValue(e.Entity.Index.ToInt()))
+        {
+            _nodes[e.Entity.Index.ToInt()] = FlexLayoutSharp.Flex.CreateDefaultNode();
+        }
         if (e.Entity.TryGetBehavior<FlexGrowBehavior>(out var grow))
         {
-            _nodes[e.Entity.Index.ToInt()]!.StyleSetFlexGrow(grow.Value.Value);
+            if (_nodes.TryGetValue(e.Entity.Index.ToInt(), out var node))
+            {
+                node!.StyleSetFlexGrow(grow.Value.Value);
+            }
         }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexGrowBehavior> e)
     {
-        _dirty[e.Entity.Index.ToInt()] = true;
-        _nodes[e.Entity.Index.ToInt()] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        _nodes[e.Entity.Index.ToInt()]!.StyleSetFlexGrow(float.NaN);
+        _dirty.Set(e.Entity.Index.ToInt(), true);
+        if (!_nodes.HasValue(e.Entity.Index.ToInt()))
+        {
+            _nodes[e.Entity.Index.ToInt()] = FlexLayoutSharp.Flex.CreateDefaultNode();
+        }
+        if (_nodes.TryGetValue(e.Entity.Index.ToInt(), out var node))
+        {
+            node!.StyleSetFlexGrow(float.NaN);
+        }
     }
 }

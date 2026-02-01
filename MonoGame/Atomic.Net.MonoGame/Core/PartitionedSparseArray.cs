@@ -124,4 +124,18 @@ public sealed class PartitionedSparseArray<T>(ushort globalCapacity, uint sceneC
         }
         return false;
     }
+
+    /// <summary>
+    /// Returns total count of elements across both partitions.
+    /// </summary>
+    public int Count => Global.Count + Scene.Count;
+
+    /// <summary>
+    /// Clears both partitions.
+    /// </summary>
+    public void Clear()
+    {
+        Global.Clear();
+        Scene.Clear();
+    }
 }

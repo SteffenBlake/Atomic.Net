@@ -220,7 +220,7 @@ public static class JsonNodeExtensions
     /// </summary>
     public static bool TryGetEntityIndex(
         this JsonNode entityJson,
-        [NotNullWhen(true)] out ushort? entityIndex
+        [NotNullWhen(true)] out PartitionIndex? entityIndex
     )
     {
         if (entityJson is not JsonObject entityObj)
@@ -239,24 +239,33 @@ public static class JsonNodeExtensions
 
         try
         {
-            // Entity index is ushort, but JsonLogic may serialize as int
+            // Try to read as ushort (global partition)
             if (indexNode is JsonValue jsonValue && jsonValue.TryGetValue<ushort>(out var ushortValue))
             {
-                entityIndex = ushortValue;
+                entityIndex = (PartitionIndex)ushortValue;
                 return true;
             }
 
+            // Try to read as uint (scene partition)
+            if (indexNode is JsonValue jsonValue2 && jsonValue2.TryGetValue<uint>(out var uintValue))
+            {
+                entityIndex = (PartitionIndex)uintValue;
+                return true;
+            }
+
+            // Fallback: try as int and decide based on value
             var indexValue = indexNode.GetValue<int>();
-            if (indexValue < 0 || indexValue >= Constants.MaxEntities)
+            if (indexValue < 0)
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Entity _index {indexValue} out of bounds (max: {Constants.MaxEntities})"
+                    $"Entity _index {indexValue} is negative"
                 ));
                 entityIndex = null;
                 return false;
             }
 
-            entityIndex = (ushort)indexValue;
+            // Assume scene partition for positive values
+            entityIndex = (PartitionIndex)(uint)indexValue;
             return true;
         }
         catch (Exception ex)

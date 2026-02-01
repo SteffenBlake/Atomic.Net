@@ -25,112 +25,184 @@ public partial class FlexRegistry :
     // MarginLeft
     public void OnEvent(BehaviorAddedEvent<FlexMarginLeftBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _dirty.Set(e.Entity.Index, true);
+        if (!_nodes.HasValue(e.Entity.Index))
+        {
+            _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode();
+        }
         if (e.Entity.TryGetBehavior<FlexMarginLeftBehavior>(out var val))
         {
-            _nodes[e.Entity.Index]!.StyleSetMargin(Edge.Left, val.Value.Value);
+            if (_nodes.TryGetValue(e.Entity.Index, out var node))
+            {
+                node!.StyleSetMargin(Edge.Left, val.Value.Value);
+            }
         }
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexMarginLeftBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _dirty.Set(e.Entity.Index, true);
+        if (!_nodes.HasValue(e.Entity.Index))
+        {
+            _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode();
+        }
         if (e.Entity.TryGetBehavior<FlexMarginLeftBehavior>(out var val))
         {
-            _nodes[e.Entity.Index]!.StyleSetMargin(Edge.Left, val.Value.Value);
+            if (_nodes.TryGetValue(e.Entity.Index, out var node))
+            {
+                node!.StyleSetMargin(Edge.Left, val.Value.Value);
+            }
         }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexMarginLeftBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        _nodes[e.Entity.Index]!.StyleSetMargin(Edge.Left, float.NaN);
+        _dirty.Set(e.Entity.Index, true);
+        if (!_nodes.HasValue(e.Entity.Index))
+        {
+            _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode();
+        }
+        if (_nodes.TryGetValue(e.Entity.Index, out var node))
+        {
+            node!.StyleSetMargin(Edge.Left, float.NaN);
+        }
     }
 
     // MarginRight
     public void OnEvent(BehaviorAddedEvent<FlexMarginRightBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _dirty.Set(e.Entity.Index, true);
+        if (!_nodes.HasValue(e.Entity.Index))
+        {
+            _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode();
+        }
         if (e.Entity.TryGetBehavior<FlexMarginRightBehavior>(out var val))
         {
-            _nodes[e.Entity.Index]!.StyleSetMargin(Edge.Right, val.Value.Value);
+            if (_nodes.TryGetValue(e.Entity.Index, out var node))
+            {
+                node!.StyleSetMargin(Edge.Right, val.Value.Value);
+            }
         }
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexMarginRightBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _dirty.Set(e.Entity.Index, true);
+        if (!_nodes.HasValue(e.Entity.Index))
+        {
+            _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode();
+        }
         if (e.Entity.TryGetBehavior<FlexMarginRightBehavior>(out var val))
         {
-            _nodes[e.Entity.Index]!.StyleSetMargin(Edge.Right, val.Value.Value);
+            if (_nodes.TryGetValue(e.Entity.Index, out var node))
+            {
+                node!.StyleSetMargin(Edge.Right, val.Value.Value);
+            }
         }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexMarginRightBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        _nodes[e.Entity.Index]!.StyleSetMargin(Edge.Right, float.NaN);
+        _dirty.Set(e.Entity.Index, true);
+        if (!_nodes.HasValue(e.Entity.Index))
+        {
+            _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode();
+        }
+        if (_nodes.TryGetValue(e.Entity.Index, out var node))
+        {
+            node!.StyleSetMargin(Edge.Right, float.NaN);
+        }
     }
 
     // MarginTop
     public void OnEvent(BehaviorAddedEvent<FlexMarginTopBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _dirty.Set(e.Entity.Index, true);
+        if (!_nodes.HasValue(e.Entity.Index))
+        {
+            _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode();
+        }
         if (e.Entity.TryGetBehavior<FlexMarginTopBehavior>(out var val))
         {
-            _nodes[e.Entity.Index]!.StyleSetMargin(Edge.Top, val.Value.Value);
+            if (_nodes.TryGetValue(e.Entity.Index, out var node))
+            {
+                node!.StyleSetMargin(Edge.Top, val.Value.Value);
+            }
         }
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexMarginTopBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _dirty.Set(e.Entity.Index, true);
+        if (!_nodes.HasValue(e.Entity.Index))
+        {
+            _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode();
+        }
         if (e.Entity.TryGetBehavior<FlexMarginTopBehavior>(out var val))
         {
-            _nodes[e.Entity.Index]!.StyleSetMargin(Edge.Top, val.Value.Value);
+            if (_nodes.TryGetValue(e.Entity.Index, out var node))
+            {
+                node!.StyleSetMargin(Edge.Top, val.Value.Value);
+            }
         }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexMarginTopBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        _nodes[e.Entity.Index]!.StyleSetMargin(Edge.Top, float.NaN);
+        _dirty.Set(e.Entity.Index, true);
+        if (!_nodes.HasValue(e.Entity.Index))
+        {
+            _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode();
+        }
+        if (_nodes.TryGetValue(e.Entity.Index, out var node))
+        {
+            node!.StyleSetMargin(Edge.Top, float.NaN);
+        }
     }
 
     // MarginBottom
     public void OnEvent(BehaviorAddedEvent<FlexMarginBottomBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _dirty.Set(e.Entity.Index, true);
+        if (!_nodes.HasValue(e.Entity.Index))
+        {
+            _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode();
+        }
         if (e.Entity.TryGetBehavior<FlexMarginBottomBehavior>(out var val))
         {
-            _nodes[e.Entity.Index]!.StyleSetMargin(Edge.Bottom, val.Value.Value);
+            if (_nodes.TryGetValue(e.Entity.Index, out var node))
+            {
+                node!.StyleSetMargin(Edge.Bottom, val.Value.Value);
+            }
         }
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexMarginBottomBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _dirty.Set(e.Entity.Index, true);
+        if (!_nodes.HasValue(e.Entity.Index))
+        {
+            _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode();
+        }
         if (e.Entity.TryGetBehavior<FlexMarginBottomBehavior>(out var val))
         {
-            _nodes[e.Entity.Index]!.StyleSetMargin(Edge.Bottom, val.Value.Value);
+            if (_nodes.TryGetValue(e.Entity.Index, out var node))
+            {
+                node!.StyleSetMargin(Edge.Bottom, val.Value.Value);
+            }
         }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexMarginBottomBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        _nodes[e.Entity.Index]!.StyleSetMargin(Edge.Bottom, float.NaN);
+        _dirty.Set(e.Entity.Index, true);
+        if (!_nodes.HasValue(e.Entity.Index))
+        {
+            _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode();
+        }
+        if (_nodes.TryGetValue(e.Entity.Index, out var node))
+        {
+            node!.StyleSetMargin(Edge.Bottom, float.NaN);
+        }
     }
 }

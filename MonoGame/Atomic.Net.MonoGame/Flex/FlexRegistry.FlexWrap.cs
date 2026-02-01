@@ -10,28 +10,46 @@ public partial class FlexRegistry :
 {
     public void OnEvent(BehaviorAddedEvent<FlexWrapBehavior> e)
     {
-        _dirty[e.Entity.Index.ToInt()] = true;
-        _nodes[e.Entity.Index.ToInt()] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _dirty.Set(e.Entity.Index.ToInt(), true);
+        if (!_nodes.HasValue(e.Entity.Index.ToInt()))
+        {
+            _nodes[e.Entity.Index.ToInt()] = FlexLayoutSharp.Flex.CreateDefaultNode();
+        }
         if (e.Entity.TryGetBehavior<FlexWrapBehavior>(out var wrap))
         {
-            _nodes[e.Entity.Index.ToInt()]!.StyleSetFlexWrap(wrap.Value.Value);
+            if (_nodes.TryGetValue(e.Entity.Index.ToInt(), out var node))
+            {
+                node!.StyleSetFlexWrap(wrap.Value.Value);
+            }
         }
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexWrapBehavior> e)
     {
-        _dirty[e.Entity.Index.ToInt()] = true;
-        _nodes[e.Entity.Index.ToInt()] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _dirty.Set(e.Entity.Index.ToInt(), true);
+        if (!_nodes.HasValue(e.Entity.Index.ToInt()))
+        {
+            _nodes[e.Entity.Index.ToInt()] = FlexLayoutSharp.Flex.CreateDefaultNode();
+        }
         if (e.Entity.TryGetBehavior<FlexWrapBehavior>(out var wrap))
         {
-            _nodes[e.Entity.Index.ToInt()]!.StyleSetFlexWrap(wrap.Value.Value);
+            if (_nodes.TryGetValue(e.Entity.Index.ToInt(), out var node))
+            {
+                node!.StyleSetFlexWrap(wrap.Value.Value);
+            }
         }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexWrapBehavior> e)
     {
-        _dirty[e.Entity.Index.ToInt()] = true;
-        _nodes[e.Entity.Index.ToInt()] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        _nodes[e.Entity.Index.ToInt()]!.StyleSetFlexWrap(default);
+        _dirty.Set(e.Entity.Index.ToInt(), true);
+        if (!_nodes.HasValue(e.Entity.Index.ToInt()))
+        {
+            _nodes[e.Entity.Index.ToInt()] = FlexLayoutSharp.Flex.CreateDefaultNode();
+        }
+        if (_nodes.TryGetValue(e.Entity.Index.ToInt(), out var node))
+        {
+            node!.StyleSetFlexWrap(default);
+        }
     }
 }

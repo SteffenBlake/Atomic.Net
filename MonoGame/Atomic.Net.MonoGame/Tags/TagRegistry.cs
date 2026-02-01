@@ -30,7 +30,7 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
     public static TagRegistry Instance { get; private set; } = null!;
 
     // Tag name → entities with that tag (one-to-many)
-    private readonly Dictionary<string, SparseArray<bool>> _tagToEntities = new(Constants.MaxEntities / 64);
+    private readonly Dictionary<string, PartitionedSparseArray<bool>> _tagToEntities = new();
 
     /// <summary>
     /// Attempts to resolve all entities with the given tag.
@@ -39,7 +39,7 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
     public bool TryResolve(
         string tag,
         [NotNullWhen(true)]
-        out SparseArray<bool>? entities
+        out PartitionedSparseArray<bool>? entities
     )
     {
         var normalizedTag = tag.ToLower();
@@ -132,7 +132,10 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
             // Ensure tag-to-entities set exists
             if (!_tagToEntities.TryGetValue(tag, out var entitySet))
             {
-                entitySet = new SparseArray<bool>(Constants.MaxEntities);
+                entitySet = new PartitionedSparseArray<bool>(
+                    Constants.MaxGlobalEntities,
+                    Constants.MaxSceneEntities
+                );
                 _tagToEntities[tag] = entitySet;
             }
             

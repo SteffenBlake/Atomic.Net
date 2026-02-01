@@ -30,8 +30,11 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
     public static SceneLoader Instance { get; private set; } = null!;
     
-    // Pre-allocated SparseArray for PersistToDiskBehavior queue (zero-alloc scene loading)
-    private readonly SparseArray<PersistToDiskBehavior> _persistToDiskQueue = new(Constants.MaxEntities);
+    // Pre-allocated PartitionedSparseArray for PersistToDiskBehavior queue (zero-alloc scene loading)
+    private readonly PartitionedSparseArray<PersistToDiskBehavior> _persistToDiskQueue = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
 
     /// <summary>
     /// Loads a game scene from JSON file.

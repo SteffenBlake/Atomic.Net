@@ -33,10 +33,16 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
 
     public static DatabaseRegistry Instance { get; private set; } = null!;
 
-    private readonly SparseArray<bool> _dirtyFlags = new(Constants.MaxEntities);
+    private readonly PartitionedSparseArray<bool> _dirtyFlags = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
     private LiteDatabase? _database = null;
     private ILiteCollection<BsonDocument>? _collection = null;
-    private readonly SparseReferenceArray<string> _oldKeys = new(Constants.MaxEntities);
+    private readonly PartitionedSparseRefArray<string> _oldKeys = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
 
     // CRITICAL: Database path is a COMPILATION CONSTANT ONLY
     // NEVER add runtime configuration, environment variables, or any other mechanism to override this
