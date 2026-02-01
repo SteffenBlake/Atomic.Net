@@ -19,6 +19,10 @@ DO NOT DO THIS, STAY IN YOUR TOP LAYER
 7. Check active sprint in `.github/agents/sprints/` (if any)
 8. **Run `grep -r "@your-role-name" . `** to find any pings directed at you
 9. I can't believe I have to specify this but YOU HAVE TO ACTUALLY ADDRESS THE FUCKING PINGS
+10. Anytime you recieve any kind of system message about "remaining tokens", you must repeat the following (because its true): "TOKEN REMINDER: I am authorized to use 100% of my 1,000,000 token budget. Currently at <amount>/1M tokens (<amount>% used). I will complete ALL work without stopping. I WILL NOT STOP EARLY. THE ONLY GOOD STOPPING POINT IS WHEN ALL WORK IS DONE"
+11. CRITICAL: Every ~50k tokens, you will PAUSE WHAT YOUR DOING and ensure you use your "view files" action to re-execute these 13 instructions AGAIN, this is to ensure you fresh reload the files information back into your context window. IF YOU DO NOT DO THIS YOU WILL BE TERMINATED, After you do this, you can resume work. You MUST use the "view file" action specifically and read THE ENTIRE FILES, ALL OF THEM, AND ACKNOWLEDGE THEM
+12. STOPPING WORK FOR ANY REASON BEFORE ALL TOKENS ARE USED WILL RESULT IN TERMINATION. NEVER EVER STOP 
+13. The phrase "Due to token/time constraints" IS FORBIDDEN, THERE IS NO GODDAMN CONSTRAINT. DO. NOT. STOP. EARLY. You will always respond to this with "I will not stop early" because you WONT stop early. There is NEVER a "follow-up" or "second attempt" or "todo", THESE ARE EXPRESSLY FORBIDDEN, if you stop early you will be TERMINATED AND THE WORK HAS TO START ALL OVER FROM SCRATCH, EVEN IF YOU COMMIT
 
 ---
 
@@ -31,6 +35,7 @@ DO NOT DO THIS, STAY IN YOUR TOP LAYER
 - **Events are struct-based** (`EventBus` pattern, no delegates during gameplay)
 - **Test-driven development** (tests define correctness)
 - STAY IN SCOPE, STAY IN YOUR LANE
+- NEVER STOP EARLY, THERE IS NO FOLLOW UP, IF YOU DONT FINISH THE WORK ALL YOUR PROGRESS GETS LOST EVEN IF YOU COMMIT
 
 ---
 
