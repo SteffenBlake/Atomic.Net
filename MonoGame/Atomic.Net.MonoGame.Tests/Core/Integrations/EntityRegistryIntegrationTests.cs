@@ -37,8 +37,12 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("scene-entity", out var entity));
         
         // Assert
-        Assert.True(entity.Value.Index >= Constants.MaxGlobalEntities);
-        Assert.True(entity.Value.Index < Constants.MaxEntities);
+        var isScene = entity.Value.Index.Visit(
+            static _ => false,
+            static _ => true,
+            static () => false
+        );
+        Assert.True(isScene); // Should be scene partition (not global)
         Assert.True(EntityRegistry.Instance.IsActive(entity.Value));
         Assert.True(EntityRegistry.Instance.IsEnabled(entity.Value));
 
@@ -57,7 +61,12 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("global-entity", out var entity));
         
         // Assert
-        Assert.True(entity.Value.Index < Constants.MaxGlobalEntities);
+        var isGlobal = entity.Value.Index.Visit(
+            static _ => true,
+            static _ => false,
+            static () => false
+        );
+        Assert.True(isGlobal); // Should be global partition
         Assert.True(EntityRegistry.Instance.IsActive(entity.Value));
         Assert.True(EntityRegistry.Instance.IsEnabled(entity.Value));
     }
@@ -100,8 +109,25 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity-2", out var entity2));
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity-3", out var entity3));
         
-        Assert.Equal(entity1.Value.Index + 1, entity2.Value.Index);
-        Assert.Equal(entity2.Value.Index + 1, entity3.Value.Index);
+        // Extract scene indices and verify they're sequential
+        var idx1 = entity1.Value.Index.Visit(
+            static _ => throw new InvalidOperationException("Expected scene entity"),
+            static scene => scene,
+            static () => throw new InvalidOperationException()
+        );
+        var idx2 = entity2.Value.Index.Visit(
+            static _ => throw new InvalidOperationException("Expected scene entity"),
+            static scene => scene,
+            static () => throw new InvalidOperationException()
+        );
+        var idx3 = entity3.Value.Index.Visit(
+            static _ => throw new InvalidOperationException("Expected scene entity"),
+            static scene => scene,
+            static () => throw new InvalidOperationException()
+        );
+        
+        Assert.Equal(idx1 + 1, idx2);
+        Assert.Equal(idx2 + 1, idx3);
     }
 
     [Fact]
@@ -118,8 +144,25 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity-2", out var entity2));
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity-3", out var entity3));
         
-        Assert.Equal(entity1.Value.Index + 1, entity2.Value.Index);
-        Assert.Equal(entity2.Value.Index + 1, entity3.Value.Index);
+        // Extract global indices and verify they're sequential
+        var idx1 = entity1.Value.Index.Visit(
+            static global => global,
+            static _ => throw new InvalidOperationException("Expected global entity"),
+            static () => throw new InvalidOperationException()
+        );
+        var idx2 = entity2.Value.Index.Visit(
+            static global => global,
+            static _ => throw new InvalidOperationException("Expected global entity"),
+            static () => throw new InvalidOperationException()
+        );
+        var idx3 = entity3.Value.Index.Visit(
+            static global => global,
+            static _ => throw new InvalidOperationException("Expected global entity"),
+            static () => throw new InvalidOperationException()
+        );
+        
+        Assert.Equal(idx1 + 1, idx2);
+        Assert.Equal(idx2 + 1, idx3);
     }
 
     [Fact]
