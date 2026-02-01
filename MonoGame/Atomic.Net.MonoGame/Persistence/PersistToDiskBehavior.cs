@@ -11,10 +11,6 @@ namespace Atomic.Net.MonoGame.Persistence;
 public readonly record struct PersistToDiskBehavior(string Key) : 
     IBehavior<PersistToDiskBehavior>
 {
-    public static PersistToDiskBehavior CreateFor(Entity entity)
-    {
-        // #test-architect CreateFor requires a key parameter, so we return an empty default
-        // The key must be provided when setting the behavior via SetBehavior
         return new PersistToDiskBehavior(string.Empty);
     }
 }

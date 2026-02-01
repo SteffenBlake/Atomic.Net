@@ -10,7 +10,7 @@ namespace Atomic.Net.MonoGame.Properties;
 /// Properties are stored as an immutable dictionary with case-insensitive keys.
 /// </summary>
 [JsonConverter(typeof(PropertiesBehaviorConverter))]
-public readonly record struct PropertiesBehavior : IBehavior<PropertiesBehavior>
+public readonly record struct PropertiesBehavior
 {
     // senior-dev: ImmutableDictionary allocation is approved (following TagsBehavior pattern)
     // This is a load-time allocation, not a gameplay allocation
@@ -20,10 +20,5 @@ public readonly record struct PropertiesBehavior : IBehavior<PropertiesBehavior>
     {
         init => _properties = value;
         get => _properties ?? new(8, StringComparer.OrdinalIgnoreCase);
-    }
-    
-    public static PropertiesBehavior CreateFor(Entity entity)
-    {
-        return new PropertiesBehavior();
     }
 }

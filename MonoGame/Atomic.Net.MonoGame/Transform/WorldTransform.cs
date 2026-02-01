@@ -16,9 +16,5 @@ public struct WorldTransformBehavior : IBehavior<WorldTransformBehavior>
         Value = Matrix.Identity;
     }
 
-    public static WorldTransformBehavior CreateFor(Entity entity)
-    {
-        return new WorldTransformBehavior();
-    }
 }
 

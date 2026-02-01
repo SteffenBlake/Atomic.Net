@@ -6,7 +6,7 @@ using Atomic.Net.MonoGame.BED;
 namespace Atomic.Net.MonoGame.Tests.BED.Units;
 
 // Test behavior for testing - mutable struct
-public struct TestBehavior : IBehavior<TestBehavior>
+public struct TestBehavior
 {
     public int Value;
     

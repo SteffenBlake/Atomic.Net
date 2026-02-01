@@ -6,14 +6,10 @@ using Atomic.Net.MonoGame.BED;
 namespace Atomic.Net.MonoGame.Tests.BED.Integrations;
 
 // Test behavior for testing - mutable struct
-public struct TestBehaviorIntegration : IBehavior<TestBehaviorIntegration>
+public struct TestBehaviorIntegration
 {
     public int Value;
     
-    public static TestBehaviorIntegration CreateFor(Entity entity)
-    {
-        return new TestBehaviorIntegration { Value = 0 };
-    }
 }
 
 [Collection("NonParallel")]

@@ -11,8 +11,4 @@ namespace Atomic.Net.MonoGame.Ids;
 [JsonConverter(typeof(IdBehaviorConverter))]
 public readonly record struct IdBehavior(string Id) : IBehavior<IdBehavior>
 {
-    public static IdBehavior CreateFor(Entity entity)
-    {
-        return new IdBehavior(string.Empty);
-    }
 }

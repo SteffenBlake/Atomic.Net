@@ -9,7 +9,7 @@ namespace Atomic.Net.MonoGame.Transform;
 /// <summary>
 /// Stores all transform inputs: position, rotation, scale, anchor.
 /// </summary>
-public readonly struct TransformBehavior : IBehavior<TransformBehavior>
+public readonly struct TransformBehavior
 {
     private readonly Vector3? _position;
 
@@ -46,10 +46,5 @@ public readonly struct TransformBehavior : IBehavior<TransformBehavior>
     {
         init => _anchor = value;
         get => _anchor ?? Vector3.Zero;
-    }
-
-    public static TransformBehavior CreateFor(Entity entity)
-    {
-        return new TransformBehavior();
     }
 }
