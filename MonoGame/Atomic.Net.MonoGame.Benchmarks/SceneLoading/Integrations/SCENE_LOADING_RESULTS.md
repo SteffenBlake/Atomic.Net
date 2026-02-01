@@ -76,8 +76,8 @@ At 60 FPS (16.67ms/frame), scenes >500 entities will cause frame drops during lo
 Async parsing helps but doesn't eliminate the issue - chunked spawning is needed for large scenes.
 
 ## Benchmark Implementation
-- **Location**: `MonoGame/Atomic.Net.MonoGame.Benchmarks/Scenes/Integrations/SceneLoadingBenchmark.cs`
-- **Fixture**: `MonoGame/Atomic.Net.MonoGame.Benchmarks/Scenes/Fixtures/large-scene.json`
+- **Location**: `MonoGame/Atomic.Net.MonoGame.Benchmarks/SceneLoading/Integrations/SceneLoadingBenchmark.cs`
+- **Fixture**: `MonoGame/Atomic.Net.MonoGame.Benchmarks/SceneLoading/Fixtures/large-scene.json`
 - **Type**: Integration benchmark (tests full scene loading pipeline)
 
 ## Raw BenchmarkDotNet Output

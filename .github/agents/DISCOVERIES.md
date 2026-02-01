@@ -23,7 +23,7 @@ This file documents significant performance findings backed by benchmarks. Only 
 2. For scenes >500 entities (>26ms), consider chunked spawning across frames
 3. Prioritize essential entities first, defer decorative entities
 
-**Benchmark:** `MonoGame/Atomic.Net.MonoGame.Benchmarks/Scenes/Integrations/SceneLoadingBenchmark.cs`
+**Benchmark:** `MonoGame/Atomic.Net.MonoGame.Benchmarks/SceneLoading/Integrations/SceneLoadingBenchmark.cs`
 
 ---
 

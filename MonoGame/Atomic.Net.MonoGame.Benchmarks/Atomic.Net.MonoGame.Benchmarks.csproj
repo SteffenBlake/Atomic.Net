@@ -28,7 +28,7 @@
     <None Update="SequenceDriver\Fixtures\*.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Scenes\Fixtures\*.json">
+    <None Update="SceneLoading\Fixtures\*.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

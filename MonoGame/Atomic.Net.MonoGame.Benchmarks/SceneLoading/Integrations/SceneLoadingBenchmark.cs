@@ -15,7 +15,7 @@ using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Hierarchy;
 using Atomic.Net.MonoGame.Selectors;
 
-namespace Atomic.Net.MonoGame.Benchmarks.Scenes.Integrations;
+namespace Atomic.Net.MonoGame.Benchmarks.SceneLoading.Integrations;
 
 /// <summary>
 /// Integration benchmark for scene loading performance breakdown.
@@ -25,12 +25,22 @@ namespace Atomic.Net.MonoGame.Benchmarks.Scenes.Integrations;
 [MemoryDiagnoser]
 public class SceneLoadingBenchmark
 {
-    private const string ScenePath = "Scenes/Fixtures/large-scene.json";
+    private const string ScenePath = "SceneLoading/Fixtures/large-scene.json";
     private string _jsonText = "";
+    private JsonScene _scene = null!;
+    
+    private static readonly JsonSerializerOptions _serializerOptions = new(JsonSerializerOptions.Web)
+    {
+        RespectRequiredConstructorParameters = true
+    };
     
     [GlobalSetup]
     public void Setup()
     {
+        // Initialize the Atomic system FIRST (required for JSON deserialization)
+        AtomicSystem.Initialize();
+        EventBus<InitializeEvent>.Push(new());
+        
         // Ensure scene file exists and is loaded
         if (!File.Exists(ScenePath))
         {
@@ -40,9 +50,8 @@ public class SceneLoadingBenchmark
         // Pre-load JSON text for parsing benchmarks
         _jsonText = File.ReadAllText(ScenePath);
         
-        // Initialize the Atomic system for entity spawning benchmarks
-        AtomicSystem.Initialize();
-        EventBus<InitializeEvent>.Push(new());
+        // Pre-parse scene object for entity spawning benchmarks
+        _scene = JsonSerializer.Deserialize<JsonScene>(_jsonText, _serializerOptions) ?? new();
     }
 
     [GlobalCleanup]
@@ -70,12 +79,7 @@ public class SceneLoadingBenchmark
         var jsonText = File.ReadAllText(ScenePath);
         
         // Parse JSON into JsonScene object
-        var serializerOptions = new JsonSerializerOptions(JsonSerializerOptions.Web)
-        {
-            RespectRequiredConstructorParameters = true
-        };
-        
-        var scene = JsonSerializer.Deserialize<JsonScene>(jsonText, serializerOptions);
+        var scene = JsonSerializer.Deserialize<JsonScene>(jsonText, _serializerOptions);
         
         return scene;
     }
@@ -88,22 +92,10 @@ public class SceneLoadingBenchmark
     [Benchmark]
     public int EntitySpawning_Only()
     {
-        // Parse JSON (not measured - this is pre-setup)
-        var serializerOptions = new JsonSerializerOptions(JsonSerializerOptions.Web)
-        {
-            RespectRequiredConstructorParameters = true
-        };
-        var scene = JsonSerializer.Deserialize<JsonScene>(_jsonText, serializerOptions);
-        
-        if (scene == null)
-        {
-            return 0;
-        }
-        
-        // START measuring entity spawning work
+        // Use pre-parsed scene object from Setup() - deserialization is NOT measured here
         var entityCount = 0;
         
-        foreach (var jsonEntity in scene.Entities)
+        foreach (var jsonEntity in _scene.Entities)
         {
             var entity = EntityRegistry.Instance.Activate();
             jsonEntity.WriteToEntity(entity);
@@ -127,13 +119,8 @@ public class SceneLoadingBenchmark
         // This simulates the full LoadSceneInternal workflow
         
         // Step 1: Parse JSON
-        var serializerOptions = new JsonSerializerOptions(JsonSerializerOptions.Web)
-        {
-            RespectRequiredConstructorParameters = true
-        };
-        
         var jsonText = File.ReadAllText(ScenePath);
-        var scene = JsonSerializer.Deserialize<JsonScene>(jsonText, serializerOptions);
+        var scene = JsonSerializer.Deserialize<JsonScene>(jsonText, _serializerOptions);
         
         if (scene == null)
         {

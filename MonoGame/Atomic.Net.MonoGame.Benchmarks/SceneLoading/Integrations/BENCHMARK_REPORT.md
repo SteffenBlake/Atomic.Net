@@ -148,23 +148,10 @@ The discovery provides actionable guidance for async scene loading implementatio
 
 ## Artifacts
 
-1. **Benchmark Code**: `MonoGame/Atomic.Net.MonoGame.Benchmarks/Scenes/Integrations/SceneLoadingBenchmark.cs`
-2. **Test Fixture**: `MonoGame/Atomic.Net.MonoGame.Benchmarks/Scenes/Fixtures/large-scene.json` (1000 entities, 729 KB)
-3. **Detailed Results**: `MonoGame/Atomic.Net.MonoGame.Benchmarks/Scenes/Integrations/SCENE_LOADING_RESULTS.md`
+1. **Benchmark Code**: `MonoGame/Atomic.Net.MonoGame.Benchmarks/SceneLoading/Integrations/SceneLoadingBenchmark.cs`
+2. **Test Fixture**: `MonoGame/Atomic.Net.MonoGame.Benchmarks/SceneLoading/Fixtures/large-scene.json` (1000 entities, 729 KB)
+3. **Detailed Results**: `MonoGame/Atomic.Net.MonoGame.Benchmarks/SceneLoading/Integrations/SCENE_LOADING_RESULTS.md`
 4. **Discovery Entry**: `.github/agents/DISCOVERIES.md` (Scene Loading section)
-
----
-
-## Additional Notes
-
-### Namespace Conflict Fix
-As part of this work, fixed namespace conflicts in existing benchmarks:
-- `RulesDriver/SparsePoisonBenchmark.cs`
-- `SequenceDriver/SparsePoisonSequenceBenchmark.cs`
-
-Issue: Creating `Atomic.Net.MonoGame.Benchmarks.Scenes` namespace conflicted with `using Atomic.Net.MonoGame.Scenes`.
-
-Solution: Changed `Scenes.RulesDriver.Instance` to `global::Atomic.Net.MonoGame.Scenes.RulesDriver.Instance` for full qualification.
 
 ---
 
