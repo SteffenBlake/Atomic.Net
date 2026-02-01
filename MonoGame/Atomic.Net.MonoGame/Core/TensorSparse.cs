@@ -5,9 +5,9 @@ namespace Atomic.Net.MonoGame.Core;
 
 public static class TensorSparse
 {
-    private readonly static byte[] _cacheLeft = new byte[Constants.MaxEntities];
-    private readonly static byte[] _cacheRight = new byte[Constants.MaxEntities];
-    private readonly static byte[] _cacheResult = new byte[Constants.MaxEntities];
+    private readonly static byte[] _cacheLeft = new byte[(int)(Constants.MaxGlobalEntities + Constants.MaxSceneEntities)];
+    private readonly static byte[] _cacheRight = new byte[(int)(Constants.MaxGlobalEntities + Constants.MaxSceneEntities)];
+    private readonly static byte[] _cacheResult = new byte[(int)(Constants.MaxGlobalEntities + Constants.MaxSceneEntities)];
 
 
     /// <summary>
@@ -25,7 +25,7 @@ public static class TensorSparse
 
         TensorPrimitives.BitwiseAnd(_cacheLeft, _cacheRight, _cacheResult);
 
-        for(ushort n = 0; n < Constants.MaxEntities; n++)
+        for(ushort n = 0; n < left.Capacity; n++)
         {
             if (_cacheResult[n] == 1)
             {
@@ -49,13 +49,51 @@ public static class TensorSparse
 
         TensorPrimitives.BitwiseOr(_cacheLeft, _cacheRight, _cacheResult);
 
-        for(ushort n = 0; n < Constants.MaxEntities; n++)
+        for(ushort n = 0; n < left.Capacity; n++)
         {
             if (_cacheResult[n] == 1)
             {
                 result.Set(n, true);
             }
         }
+    }
+
+    /// <summary>
+    /// Bitwise SIMD ANDs together 2 partitioned sparse arrays, and writes
+    /// the values out the a result array.
+    ///
+    /// NOTE this does NOT clear the result array before hand, so old values will persist
+    /// </summary>
+    public static void And(
+        PartitionedSparseArray<bool> left, 
+        PartitionedSparseArray<bool> right, 
+        PartitionedSparseArray<bool> result
+    )
+    {
+        // Process global partition
+        And(left.Global, right.Global, result.Global);
+        
+        // Process scene partition
+        And(left.Scene, right.Scene, result.Scene);
+    }
+
+    /// <summary>
+    /// Bitwise SIMD ORs together 2 partitioned sparse arrays, and writes
+    /// the values out the a result array.
+    ///
+    /// NOTE this does NOT clear the result array before hand, so old values will persist
+    /// </summary>
+    public static void Or(
+        PartitionedSparseArray<bool> left, 
+        PartitionedSparseArray<bool> right, 
+        PartitionedSparseArray<bool> result
+    )
+    {
+        // Process global partition
+        Or(left.Global, right.Global, result.Global);
+        
+        // Process scene partition
+        Or(left.Scene, right.Scene, result.Scene);
     }
 }
 

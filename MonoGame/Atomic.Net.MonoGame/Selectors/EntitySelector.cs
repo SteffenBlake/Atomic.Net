@@ -33,7 +33,7 @@ public partial class EntitySelector
         );
     }
 
-    public SparseArray<bool> Matches => Visit(
+    public PartitionedSparseArray<bool> Matches => Visit(
         static union => union.Matches,
         static id => id.Matches,
         static tag => tag.Matches,

@@ -7,7 +7,10 @@ public class CollisionEnterEntitySelector(
     int hashcode, EntitySelector? prior = null
 )
 {
-    public readonly SparseArray<bool> Matches = new(Constants.MaxEntities);
+    public readonly PartitionedSparseArray<bool> Matches = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
 
     private bool _dirty = true;
     
@@ -46,7 +49,8 @@ public class CollisionEnterEntitySelector(
             
             // senior-dev: In Stage 1, we just clear matches and return
             // Collision registry will be implemented in Stage 2
-            Matches.Clear();
+            Matches.Global.Clear();
+            Matches.Scene.Clear();
         }
 
         return shouldRecalc;

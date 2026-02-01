@@ -7,7 +7,10 @@ public class UnionEntitySelector(
     int hashcode, List<EntitySelector> children
 )
 {
-    public readonly SparseArray<bool> Matches = new(Constants.MaxEntities);
+    public readonly PartitionedSparseArray<bool> Matches = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
 
     public override int GetHashCode() => hashcode;
 
@@ -41,7 +44,8 @@ public class UnionEntitySelector(
 
         if (shouldRecalc)
         {
-            Matches.Clear();
+            Matches.Global.Clear();
+            Matches.Scene.Clear();
 
             foreach(var child in children)
             {

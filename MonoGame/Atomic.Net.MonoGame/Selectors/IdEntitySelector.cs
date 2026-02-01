@@ -8,7 +8,10 @@ public class IdEntitySelector(
     int hashcode, string id, EntitySelector? prior = null
 )
 {
-    public readonly SparseArray<bool> Matches = new(Constants.MaxEntities);
+    public readonly PartitionedSparseArray<bool> Matches = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
 
     private bool _dirty = true;
     
@@ -42,7 +45,9 @@ public class IdEntitySelector(
 
         if (shouldRecalc)
         {
-            Matches.Clear();
+            Matches.Global.Clear();
+            Matches.Scene.Clear();
+            
             if (EntityIdRegistry.Instance.TryResolve(id, out var match))
             {
                 var priorMatches = prior?.Matches.HasValue(match.Value.Index) ?? true;
