@@ -66,108 +66,134 @@ public sealed class TransformRegistry :
         const int maxIterations = 100;
         for(var iterations = 1; iterations <= maxIterations; iterations++)
         {
-            foreach(var (entityIndex, _) in _dirty)
+            // Process global entities
+            foreach(var (entityIndex, _) in _dirty.Global)
             {
-                var entity = EntityRegistry.Instance[entityIndex];
-
-                // Skip if any ancestor is dirty on FIRST iteration only - they will mark us dirty again after they process
-                if (iterations == 1 && HasDirtyAncestor(entity))
-                {
-                    continue;
-                }
-
-                if (!BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var _transform))
-                {
-                    continue;
-                }
-
-                var anchor = _transform.Value.Anchor;
-                var scale = _transform.Value.Scale;
-                var rotation = _transform.Value.Rotation;
-                var position = _transform.Value.Position;
-
-                Vector3.Multiply(ref anchor, -1, out _localAnchorNegV);
-
-                Matrix.CreateTranslation(ref _localAnchorNegV, out _localAnchorNeg);
-                Matrix.CreateScale(ref scale, out _localScale);
-                Matrix.CreateFromQuaternion(ref rotation, out _localRotation);
-                Matrix.CreateTranslation(ref anchor, out _localAnchor);
-                Matrix.CreateTranslation(ref position, out _localpos);
-
-                // ========================================================================
-                // DISCOVERY: Transform Matrix Multiplication Order (Sprint 001 - Jan 2026)
-                // ========================================================================
-                // 
-                // This matrix order is CORRECT for MonoGame/XNA hierarchical transforms:
-                //   (-Anchor) * Scale * Rotation * Anchor * Position
-                //
-                // When anchor is zero (default), this simplifies to:
-                //   Scale * Rotation * Position
-                //
-                // WHY THIS ORDER MATTERS:
-                // For a parent at position (100,0,0) rotated 90° with child at local (50,0,0):
-                //   ✓ CORRECT: Rotate child (50,0,0) → (0,50,0), add parent pos → (100,50,0)
-                //   ✗ WRONG:   Translate first then rotate → nonsensical positioning
-                //
-                // CRITICAL LESSON: When position is zero, Rotation*Translation(0,0,0) equals
-                // Translation(0,0,0)*Rotation (both are just the rotation matrix). This can
-                // hide matrix order bugs! Always test with NON-ZERO values.
-                //
-                // INVESTIGATION: During Sprint 001, integration tests appeared to fail due to
-                // "matrix order bug". Investigation revealed the Transform system was CORRECT.
-                // The test expectations were wrong (they expected Position*Rotation instead of
-                // Rotation*Position). Fixed by correcting 2 test expectations, no production
-                // code changes needed.
-                //
-                // See: /TRANSFORM_TEST_INVESTIGATION.md for detailed analysis
-                // See: .github/agents/DISCOVERIES.md for discovery entry
-                // ========================================================================
-                Matrix.Multiply(ref _localAnchorNeg, ref _localScale, out _localTransform);
-                Matrix.Multiply(ref _localTransform, ref _localRotation, out _localTransform);
-                Matrix.Multiply(ref _localTransform, ref _localAnchor, out _localTransform);
-                Matrix.Multiply(ref _localTransform, ref _localpos, out _localTransform);
-
-                // Get parent world transform
-                Matrix parentWorldTransform = Matrix.Identity;
-                if (entity.TryGetParent(out var _parent))
-                {
-                    if (_parent.Value.TryGetBehavior<WorldTransformBehavior>(out var _parentWorld))
-                    {
-                        parentWorldTransform = _parentWorld.Value.Value;
-                    }
-                }
-
-                var worldTransform = _localTransform * parentWorldTransform;
-                // Update world transform behavior
-                entity.SetBehavior<WorldTransformBehavior, Matrix>(
-                    in worldTransform,
-                    static (ref readonly input, ref wt) => wt.Value = input
-                );
-
-                // Use GetChildrenArray for allocation-free iteration
-                var childrenArray = HierarchyRegistry.Instance.GetChildrenArray(entityIndex);
-                if (childrenArray != null)
-                {
-                    foreach (var (childIndex, _) in childrenArray)
-                    {
-                        _nextDirty.Set(childIndex, true);
-                    }
-                }
-
-                _worldTransformUpdated.Set(entityIndex, true);
+                ProcessDirtyEntity((ushort)entityIndex, iterations);
+            }
+            
+            // Process scene entities
+            foreach(var (entityIndex, _) in _dirty.Scene)
+            {
+                ProcessDirtyEntity((uint)entityIndex, iterations);
             }
 
-            if (_nextDirty.Count <= 0)
+            if (_nextDirty.Global.Count == 0 && _nextDirty.Scene.Count == 0)
             {
                 break;
             }
 
-            _dirty.Clear();
+            _dirty.Global.Clear();
+            _dirty.Scene.Clear();
             (_dirty, _nextDirty) = (_nextDirty, _dirty);
         }
 
         // Fire bulk events
         FireBulkEvents();
+    }
+
+    private void ProcessDirtyEntity(PartitionIndex entityIndex, int iteration)
+    {
+        var entity = EntityRegistry.Instance[entityIndex];
+
+        // Skip if any ancestor is dirty on FIRST iteration only - they will mark us dirty again after they process
+        if (iteration == 1 && HasDirtyAncestor(entity))
+        {
+            return;
+        }
+
+        if (!BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var _transform))
+        {
+            return;
+        }
+
+        var anchor = _transform.Value.Anchor;
+        var scale = _transform.Value.Scale;
+        var rotation = _transform.Value.Rotation;
+        var position = _transform.Value.Position;
+
+        Vector3.Multiply(ref anchor, -1, out _localAnchorNegV);
+
+        Matrix.CreateTranslation(ref _localAnchorNegV, out _localAnchorNeg);
+        Matrix.CreateScale(ref scale, out _localScale);
+        Matrix.CreateFromQuaternion(ref rotation, out _localRotation);
+        Matrix.CreateTranslation(ref anchor, out _localAnchor);
+        Matrix.CreateTranslation(ref position, out _localpos);
+
+        // ========================================================================
+        // DISCOVERY: Transform Matrix Multiplication Order (Sprint 001 - Jan 2026)
+        // ========================================================================
+        // 
+        // This matrix order is CORRECT for MonoGame/XNA hierarchical transforms:
+        //   (-Anchor) * Scale * Rotation * Anchor * Position
+        //
+        // When anchor is zero (default), this simplifies to:
+        //   Scale * Rotation * Position
+        //
+        // WHY THIS ORDER MATTERS:
+        // For a parent at position (100,0,0) rotated 90° with child at local (50,0,0):
+        //   ✓ CORRECT: Rotate child (50,0,0) → (0,50,0), add parent pos → (100,50,0)
+        //   ✗ WRONG:   Translate first then rotate → nonsensical positioning
+        //
+        // CRITICAL LESSON: When position is zero, Rotation*Translation(0,0,0) equals
+        // Translation(0,0,0)*Rotation (both are just the rotation matrix). This can
+        // hide matrix order bugs! Always test with NON-ZERO values.
+        //
+        // INVESTIGATION: During Sprint 001, integration tests appeared to fail due to
+        // "matrix order bug". Investigation revealed the Transform system was CORRECT.
+        // The test expectations were wrong (they expected Position*Rotation instead of
+        // Rotation*Position). Fixed by correcting 2 test expectations, no production
+        // code changes needed.
+        //
+        // See: /TRANSFORM_TEST_INVESTIGATION.md for detailed analysis
+        // See: .github/agents/DISCOVERIES.md for discovery entry
+        // ========================================================================
+        Matrix.Multiply(ref _localAnchorNeg, ref _localScale, out _localTransform);
+        Matrix.Multiply(ref _localTransform, ref _localRotation, out _localTransform);
+        Matrix.Multiply(ref _localTransform, ref _localAnchor, out _localTransform);
+        Matrix.Multiply(ref _localTransform, ref _localpos, out _localTransform);
+
+        // Get parent world transform
+        Matrix parentWorldTransform = Matrix.Identity;
+        if (entity.TryGetParent(out var _parent))
+        {
+            if (_parent.Value.TryGetBehavior<WorldTransformBehavior>(out var _parentWorld))
+            {
+                parentWorldTransform = _parentWorld.Value.Value;
+            }
+        }
+
+        var worldTransform = _localTransform * parentWorldTransform;
+        // Update world transform behavior
+        entity.SetBehavior<WorldTransformBehavior, Matrix>(
+            in worldTransform,
+            static (ref readonly input, ref wt) => wt.Value = input
+        );
+
+        // Use GetChildrenArray for allocation-free iteration
+        var childrenArray = HierarchyRegistry.Instance.GetChildrenArray(entityIndex);
+        if (childrenArray != null)
+        {
+            // Children are in same partition as parent
+            if (entityIndex.TryMatch(out ushort? _))
+            {
+                // Global parent with global children
+                foreach (var (childIndex, _) in childrenArray)
+                {
+                    _nextDirty.Set((ushort)childIndex, true);
+                }
+            }
+            else
+            {
+                // Scene parent with scene children
+                foreach (var (childIndex, _) in childrenArray)
+                {
+                    _nextDirty.Set((uint)childIndex, true);
+                }
+            }
+        }
+
+        _worldTransformUpdated.Set(entityIndex, true);
     }
 
     private bool HasDirtyAncestor(Entity entity)
@@ -186,13 +212,20 @@ public sealed class TransformRegistry :
 
     private void FireBulkEvents()
     {
-        foreach (var (index, _) in _worldTransformUpdated)
+        foreach (var (index, _) in _worldTransformUpdated.Global)
         {
-            var entity = EntityRegistry.Instance[index];
+            var entity = EntityRegistry.Instance[(ushort)index];
+            EventBus<PostBehaviorUpdatedEvent<WorldTransformBehavior>>.Push(new(entity));
+        }
+        
+        foreach (var (index, _) in _worldTransformUpdated.Scene)
+        {
+            var entity = EntityRegistry.Instance[(uint)index];
             EventBus<PostBehaviorUpdatedEvent<WorldTransformBehavior>>.Push(new(entity));
         }
 
-        _worldTransformUpdated.Clear();
+        _worldTransformUpdated.Global.Clear();
+        _worldTransformUpdated.Scene.Clear();
     }
 
     private void MarkDirty(Entity entity)

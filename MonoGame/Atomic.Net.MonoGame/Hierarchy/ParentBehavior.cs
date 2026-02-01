@@ -13,10 +13,20 @@ public readonly record struct ParentBehavior(EntitySelector ParentSelector)
         out Entity? parent
     )
     {
-        var enumerator = ParentSelector.Matches.GetEnumerator();
-        if (enumerator.MoveNext())
+        // Check global partition first
+        var globalEnumerator = ParentSelector.Matches.Global.GetEnumerator();
+        if (globalEnumerator.MoveNext())
         {
-            var parentIndex = enumerator.Current.Index;
+            var parentIndex = (ushort)globalEnumerator.Current.Index;
+            parent = EntityRegistry.Instance[parentIndex];
+            return true;
+        }
+        
+        // Then check scene partition
+        var sceneEnumerator = ParentSelector.Matches.Scene.GetEnumerator();
+        if (sceneEnumerator.MoveNext())
+        {
+            var parentIndex = (uint)sceneEnumerator.Current.Index;
             parent = EntityRegistry.Instance[parentIndex];
             return true;
         }

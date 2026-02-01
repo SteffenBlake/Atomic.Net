@@ -28,24 +28,37 @@ public partial class FlexRegistry :
 
     public static FlexRegistry Instance { get; private set; } = null!;
 
-    private readonly Node?[] _nodes = new Node?[Constants.MaxEntities];
-    private readonly bool[] _dirty = new bool[Constants.MaxEntities];
+    private readonly PartitionedSparseRefArray<Node> _nodes = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
+    private readonly PartitionedSparseArray<bool> _dirty = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
 
     public void Recalculate()
     {
-        for (ushort i = 0; i < Constants.MaxEntities; i++)
+        // Recalculate global partition
+        foreach (var (index, _) in _dirty.Global)
         {
-            RecalculateNode(i);
+            RecalculateNode((ushort)index);
+        }
+        
+        // Recalculate scene partition
+        foreach (var (index, _) in _dirty.Scene)
+        {
+            RecalculateNode((uint)index);
         }
     }
 
-    private void RecalculateNode(ushort index)
+    private void RecalculateNode(PartitionIndex index)
     {
-        if (!_dirty[index])
+        if (!_dirty.HasValue(index))
         {
             return;
         }
-        _dirty[index] = false;
+        _dirty.Remove(index);
         
 
         // Check if we have a flex parent, if so run on that instead
@@ -68,7 +81,10 @@ public partial class FlexRegistry :
             return;
         }
 
-        _nodes[index]!.CalculateLayout(float.NaN, float.NaN, Direction.Inherit);
+        if (_nodes.TryGetValue(index, out var node))
+        {
+            node!.CalculateLayout(float.NaN, float.NaN, Direction.Inherit);
+        }
 
         UpdateFlexBehavior(root, 0, 0);
     }
