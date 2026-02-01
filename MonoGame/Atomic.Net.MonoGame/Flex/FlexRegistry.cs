@@ -160,7 +160,7 @@ public partial class FlexRegistry :
         // Special case, because this node isnt even a flex anymore
         if (e.Entity.TryGetParent(out var parent))
         {
-            _dirty[parent.Value.Index] = true;
+            _dirty.Set(parent.Value.Index, true);
         }
     }
 

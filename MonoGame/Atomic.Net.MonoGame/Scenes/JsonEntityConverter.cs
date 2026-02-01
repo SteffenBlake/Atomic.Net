@@ -29,7 +29,7 @@ public static class JsonEntityConverter
     {
         var entityObj = new JsonObject
         {
-            ["_index"] = entity.Index
+            ["_index"] = entity.Index.ToJsonValue()
         };
 
         if (entity.TryGetBehavior<IdBehavior>(out var idBehavior))

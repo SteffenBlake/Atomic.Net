@@ -61,7 +61,7 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     /// No-op if IsEnabled is false (during scene load).
     /// </summary>
     /// <param name="entityIndex">Index of the entity to mark dirty.</param>
-    public void MarkDirty(ushort entityIndex)
+    public void MarkDirty(PartitionIndex entityIndex)
     {
         // CRITICAL: NEVER bypass this IsEnabled check
         // IsEnabled controls dirty tracking globally - when false, NO entities should be marked dirty

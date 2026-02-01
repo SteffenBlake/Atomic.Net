@@ -27,6 +27,7 @@ public sealed class PartitionedSparseArray<T>(ushort globalCapacity, uint sceneC
     {
         get
         {
+            // senior-dev: Can't use static lambda here because we capture Global/Scene
             return index.Visit(
                 global => Global[global],
                 scene => Scene[(ushort)scene],
@@ -40,6 +41,7 @@ public sealed class PartitionedSparseArray<T>(ushort globalCapacity, uint sceneC
     /// </summary>
     public void Set(PartitionIndex index, T value)
     {
+        // senior-dev: Can't use static lambda here because we capture Global/Scene and value
         index.Visit(
             global => { Global.Set(global, value); return 0; },
             scene => { Scene.Set((ushort)scene, value); return 0; },
@@ -52,19 +54,32 @@ public sealed class PartitionedSparseArray<T>(ushort globalCapacity, uint sceneC
     /// </summary>
     public SparseRef<T> GetMut(PartitionIndex index)
     {
-        if (index.TryMatch(out ushort? globalVal) && globalVal.HasValue)
+        // senior-dev: Visit pattern with ref returns causes type inference issues
+        // Use if-else pattern with Visit for type checking instead
+        var isGlobal = index.Visit(
+            static global => true,
+            static scene => false,
+            static () => false
+        );
+        
+        if (isGlobal)
         {
-            ushort global = globalVal.Value;
-            ushort global = globalVal.Value;
-            return Global.GetMut(global);
+            var globalIndex = index.Visit(
+                static global => global,
+                static scene => throw new InvalidOperationException(),
+                static () => throw new InvalidOperationException()
+            );
+            return Global.GetMut(globalIndex);
         }
-        if (index.TryMatch(out uint? sceneVal) && sceneVal.HasValue)
+        else
         {
-            ushort scene = (ushort)sceneVal.Value;
-            ushort scene = (ushort)sceneVal.Value;
-            return Scene.GetMut(scene);
+            var sceneIndex = index.Visit(
+                static global => throw new InvalidOperationException(),
+                static scene => (ushort)scene,
+                static () => throw new InvalidOperationException()
+            );
+            return Scene.GetMut(sceneIndex);
         }
-        throw new InvalidOperationException("Invalid PartitionIndex state");
     }
 
     /// <summary>
@@ -72,6 +87,7 @@ public sealed class PartitionedSparseArray<T>(ushort globalCapacity, uint sceneC
     /// </summary>
     public bool Remove(PartitionIndex index)
     {
+        // senior-dev: Can't use static lambda here because we capture Global/Scene
         return index.Visit(
             global => Global.Remove(global),
             scene => Scene.Remove((ushort)scene),
@@ -81,26 +97,28 @@ public sealed class PartitionedSparseArray<T>(ushort globalCapacity, uint sceneC
 
     /// <summary>
     /// Tries to get a value at the given partition index.
+    /// Uses tuple return pattern since Visit doesn't support out parameters in lambdas.
     /// </summary>
     public bool TryGetValue(
         PartitionIndex index,
         [NotNullWhen(true)] out T? value
     )
     {
-        if (index.TryMatch(out ushort? globalVal) && globalVal.HasValue)
-        {
-            ushort global = globalVal.Value;
-            ushort global = globalVal.Value;
-            return Global.TryGetValue(global, out value);
-        }
-        if (index.TryMatch(out uint? sceneVal) && sceneVal.HasValue)
-        {
-            ushort scene = (ushort)sceneVal.Value;
-            ushort scene = (ushort)sceneVal.Value;
-            return Scene.TryGetValue(scene, out value);
-        }
-        value = default;
-        return false;
+        // senior-dev: Can't use static lambda here because we capture Global/Scene
+        // Also can't capture out parameter in lambda, so use tuple return
+        var (found, val) = index.Visit(
+            global => {
+                var success = Global.TryGetValue(global, out var v);
+                return (success, v);
+            },
+            scene => {
+                var success = Scene.TryGetValue((ushort)scene, out var v);
+                return (success, v);
+            },
+            () => (false, default(T?))
+        );
+        value = val;
+        return found;
     }
 
     /// <summary>
@@ -108,6 +126,7 @@ public sealed class PartitionedSparseArray<T>(ushort globalCapacity, uint sceneC
     /// </summary>
     public bool HasValue(PartitionIndex index)
     {
+        // senior-dev: Can't use static lambda here because we capture Global/Scene
         return index.Visit(
             global => Global.HasValue(global),
             scene => Scene.HasValue((ushort)scene),

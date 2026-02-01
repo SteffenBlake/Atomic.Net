@@ -175,7 +175,13 @@ public sealed class TransformRegistry :
         if (childrenArray != null)
         {
             // Children are in same partition as parent
-            if (entityIndex.TryMatch(out ushort? _))
+            var isGlobal = entityIndex.Visit(
+                global => true,
+                scene => false,
+                () => false
+            );
+            
+            if (isGlobal)
             {
                 // Global parent with global children
                 foreach (var (childIndex, _) in childrenArray)
