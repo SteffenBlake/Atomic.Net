@@ -40,6 +40,10 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     );
     private uint _nextSceneIndex = 0;
     private ushort _nextGlobalIndex = 0;
+    
+    // Pre-allocated lists for zero-allocation event handlers
+    private readonly List<Entity> _tempSceneEntityList = new((int)Constants.MaxSceneEntities);
+    private readonly List<Entity> _tempAllEntityList = new((int)Constants.MaxSceneEntities + Constants.MaxGlobalEntities);
 
     public Entity this[PartitionIndex index]
     {
@@ -232,11 +236,15 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     public void OnEvent(ResetEvent _)
     {
         // Deactivate only scene entities - iterate over scene partition
-        var sceneEntities = _active.Scene
-            .Select(a => _sceneEntities[a.Index])
-            .ToList();
+        // Use pre-allocated list to avoid allocations during reset
+        _tempSceneEntityList.Clear();
+        
+        foreach (var (index, _) in _active.Scene)
+        {
+            _tempSceneEntityList.Add(_sceneEntities[index]);
+        }
 
-        foreach (var entity in sceneEntities)
+        foreach (var entity in _tempSceneEntityList)
         {
             Deactivate(entity);
         }
@@ -251,18 +259,19 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     public void OnEvent(ShutdownEvent e)
     {
         // Deactivate all entities (both global and scene)
-        var allEntities = new List<Entity>();
+        // Use pre-allocated list to avoid allocations during shutdown
+        _tempAllEntityList.Clear();
         
         foreach (var (index, _) in _active.Global)
         {
-            allEntities.Add(_globalEntities[index]);
+            _tempAllEntityList.Add(_globalEntities[index]);
         }
         foreach (var (index, _) in _active.Scene)
         {
-            allEntities.Add(_sceneEntities[index]);
+            _tempAllEntityList.Add(_sceneEntities[index]);
         }
 
-        foreach (var entity in allEntities)
+        foreach (var entity in _tempAllEntityList)
         {
             Deactivate(entity);
         }

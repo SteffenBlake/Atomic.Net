@@ -133,4 +133,9 @@ public sealed class PartitionedSparseArray<T>(ushort globalCapacity, uint sceneC
             () => false
         );
     }
+    
+    /// <summary>
+    /// Gets the total count of elements across both partitions.
+    /// </summary>
+    public int Count => Global.Count + Scene.Count;
 }
