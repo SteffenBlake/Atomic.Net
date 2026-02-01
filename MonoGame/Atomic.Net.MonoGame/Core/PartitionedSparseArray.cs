@@ -54,11 +54,13 @@ public sealed class PartitionedSparseArray<T>(ushort globalCapacity, uint sceneC
     {
         if (index.TryMatch(out ushort? globalVal) && globalVal.HasValue)
         {
-            return Global.GetMut(globalVal.Value);
+            ushort global = globalVal.Value;
+            return Global.GetMut(global);
         }
         if (index.TryMatch(out uint? sceneVal) && sceneVal.HasValue)
         {
-            return Scene.GetMut((ushort)sceneVal.Value);
+            ushort scene = (ushort)sceneVal.Value;
+            return Scene.GetMut(scene);
         }
         throw new InvalidOperationException("Invalid PartitionIndex state");
     }
@@ -85,11 +87,13 @@ public sealed class PartitionedSparseArray<T>(ushort globalCapacity, uint sceneC
     {
         if (index.TryMatch(out ushort? globalVal) && globalVal.HasValue)
         {
-            return Global.TryGetValue(globalVal.Value, out value);
+            ushort global = globalVal.Value;
+            return Global.TryGetValue(global, out value);
         }
         if (index.TryMatch(out uint? sceneVal) && sceneVal.HasValue)
         {
-            return Scene.TryGetValue((ushort)sceneVal.Value, out value);
+            ushort scene = (ushort)sceneVal.Value;
+            return Scene.TryGetValue(scene, out value);
         }
         value = default;
         return false;

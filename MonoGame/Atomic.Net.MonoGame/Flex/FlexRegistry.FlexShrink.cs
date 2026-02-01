@@ -10,28 +10,28 @@ public partial class FlexRegistry :
 {
     public void OnEvent(BehaviorAddedEvent<FlexShrinkBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _dirty.Set(e.Entity.Index, true);
+        if (!_nodes.HasValue(e.Entity.Index)) { _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode(); }
         if (e.Entity.TryGetBehavior<FlexShrinkBehavior>(out var shrink))
         {
-            _nodes[e.Entity.Index]!.StyleSetFlexShrink(shrink.Value.Value);
+            if (_nodes.TryGetValue(e.Entity.Index, out var node)) { node!.StyleSetFlexShrink(shrink.Value.Value); }
         }
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexShrinkBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _dirty.Set(e.Entity.Index, true);
+        if (!_nodes.HasValue(e.Entity.Index)) { _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode(); }
         if (e.Entity.TryGetBehavior<FlexShrinkBehavior>(out var shrink))
         {
-            _nodes[e.Entity.Index]!.StyleSetFlexShrink(shrink.Value.Value);
+            if (_nodes.TryGetValue(e.Entity.Index, out var node)) { node!.StyleSetFlexShrink(shrink.Value.Value); }
         }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexShrinkBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        _nodes[e.Entity.Index]!.StyleSetFlexShrink(float.NaN);
+        _dirty.Set(e.Entity.Index, true);
+        if (!_nodes.HasValue(e.Entity.Index)) { _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode(); }
+        if (_nodes.TryGetValue(e.Entity.Index, out var node)) { node!.StyleSetFlexShrink(float.NaN); }
     }
 }

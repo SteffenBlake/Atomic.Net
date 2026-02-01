@@ -10,28 +10,28 @@ public partial class FlexRegistry :
 {
     public void OnEvent(BehaviorAddedEvent<FlexDirectionBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _dirty.Set(e.Entity.Index, true);
+        if (!_nodes.HasValue(e.Entity.Index)) { _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode(); }
         if (e.Entity.TryGetBehavior<FlexDirectionBehavior>(out var flexDirection))
         {
-            _nodes[e.Entity.Index]!.StyleSetFlexDirection(flexDirection.Value.Value);
+            if (_nodes.TryGetValue(e.Entity.Index, out var node)) { node!.StyleSetFlexDirection(flexDirection.Value.Value); }
         }
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexDirectionBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _dirty.Set(e.Entity.Index, true);
+        if (!_nodes.HasValue(e.Entity.Index)) { _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode(); }
         if (e.Entity.TryGetBehavior<FlexDirectionBehavior>(out var flexDirection))
         {
-            _nodes[e.Entity.Index]!.StyleSetFlexDirection(flexDirection.Value.Value);
+            if (_nodes.TryGetValue(e.Entity.Index, out var node)) { node!.StyleSetFlexDirection(flexDirection.Value.Value); }
         }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexDirectionBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        _nodes[e.Entity.Index]!.StyleSetFlexDirection(default);
+        _dirty.Set(e.Entity.Index, true);
+        if (!_nodes.HasValue(e.Entity.Index)) { _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode(); }
+        if (_nodes.TryGetValue(e.Entity.Index, out var node)) { node!.StyleSetFlexDirection(default); }
     }
 }
