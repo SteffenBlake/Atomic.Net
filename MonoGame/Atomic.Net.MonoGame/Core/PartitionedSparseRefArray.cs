@@ -54,10 +54,12 @@ public sealed class PartitionedSparseRefArray<T>(ushort globalCapacity, uint sce
         if (index.TryMatch(out ushort? globalVal) && globalVal.HasValue)
         {
             ushort global = globalVal.Value;
+            ushort global = globalVal.Value;
             return Global.TryGetValue(global, out value);
         }
         if (index.TryMatch(out uint? sceneVal) && sceneVal.HasValue)
         {
+            ushort scene = (ushort)sceneVal.Value;
             ushort scene = (ushort)sceneVal.Value;
             return Scene.TryGetValue(scene, out value);
         }

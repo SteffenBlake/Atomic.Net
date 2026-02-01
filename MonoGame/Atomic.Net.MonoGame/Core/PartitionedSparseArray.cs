@@ -55,10 +55,12 @@ public sealed class PartitionedSparseArray<T>(ushort globalCapacity, uint sceneC
         if (index.TryMatch(out ushort? globalVal) && globalVal.HasValue)
         {
             ushort global = globalVal.Value;
+            ushort global = globalVal.Value;
             return Global.GetMut(global);
         }
         if (index.TryMatch(out uint? sceneVal) && sceneVal.HasValue)
         {
+            ushort scene = (ushort)sceneVal.Value;
             ushort scene = (ushort)sceneVal.Value;
             return Scene.GetMut(scene);
         }
@@ -88,10 +90,12 @@ public sealed class PartitionedSparseArray<T>(ushort globalCapacity, uint sceneC
         if (index.TryMatch(out ushort? globalVal) && globalVal.HasValue)
         {
             ushort global = globalVal.Value;
+            ushort global = globalVal.Value;
             return Global.TryGetValue(global, out value);
         }
         if (index.TryMatch(out uint? sceneVal) && sceneVal.HasValue)
         {
+            ushort scene = (ushort)sceneVal.Value;
             ushort scene = (ushort)sceneVal.Value;
             return Scene.TryGetValue(scene, out value);
         }
