@@ -11,4 +11,4 @@ InvocationCount=1  UnrollFactor=1
 ```
 | Method              | Mean     | Error   | StdDev  | Gen0       | Gen1      | Allocated |
 |-------------------- |---------:|--------:|--------:|-----------:|----------:|----------:|
-| RunPoisonSimulation | 589.3 ms | 4.67 ms | 4.37 ms | 27000.0000 | 4000.0000 |  297.5 MB |
+| RunPoisonSimulation | 331.9 ms | 6.61 ms | 9.26 ms | 21000.0000 | 3000.0000 | 231.45 MB |
