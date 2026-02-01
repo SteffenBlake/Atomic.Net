@@ -24,7 +24,7 @@ public sealed class SequenceStopCmdDriver : ISingleton<SequenceStopCmdDriver>
     /// </summary>
     /// <param name="entityIndex">The entity index.</param>
     /// <param name="sequenceId">The sequence ID to stop.</param>
-    public void Execute(ushort entityIndex, string sequenceId)
+    public void Execute(PartitionIndex entityIndex, string sequenceId)
     {
         // Resolve sequence ID to index
         if (!SequenceRegistry.Instance.TryResolveById(sequenceId, out var sequenceIndex))

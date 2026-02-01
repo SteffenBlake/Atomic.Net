@@ -114,7 +114,8 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         // An "outer" calling system will be in charge of calling this
         
         // Clear pre-allocated PersistToDiskBehavior queue (zero-alloc)
-        _persistToDiskQueue.Clear();
+        _persistToDiskQueue.Global.Clear();
+        _persistToDiskQueue.Scene.Clear();
         
         foreach (var jsonEntity in scene.Entities)
         {
@@ -137,9 +138,22 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         // CRITICAL: Apply PersistToDiskBehavior LAST (after Parent and all other behaviors)
         // This order prevents DB loads from overwriting scene construction
         // Future maintainers: DO NOT change this order without understanding infinite loop prevention
-        foreach (var (entityIndex, persistToDisk) in _persistToDiskQueue)
+        
+        // Process global partition
+        foreach (var (entityIndex, persistToDisk) in _persistToDiskQueue.Global)
         {
-            var entity = EntityRegistry.Instance[entityIndex];
+            var entity = EntityRegistry.Instance[(ushort)entityIndex];
+            var input = persistToDisk;
+            entity.SetBehavior<PersistToDiskBehavior, PersistToDiskBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+        
+        // Process scene partition
+        foreach (var (entityIndex, persistToDisk) in _persistToDiskQueue.Scene)
+        {
+            var entity = EntityRegistry.Instance[(uint)entityIndex];
             var input = persistToDisk;
             entity.SetBehavior<PersistToDiskBehavior, PersistToDiskBehavior>(
                 in input,
@@ -148,7 +162,8 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         }
         
         // Clear queue for next scene load (zero-alloc)
-        _persistToDiskQueue.Clear();
+        _persistToDiskQueue.Global.Clear();
+        _persistToDiskQueue.Scene.Clear();
         
         // senior-dev: Load rules into RuleRegistry (must be before selector recalc)
         LoadRules(scene, useGlobalPartition);

@@ -24,7 +24,7 @@ public sealed class SequenceResetCmdDriver : ISingleton<SequenceResetCmdDriver>
     /// </summary>
     /// <param name="entityIndex">The entity index.</param>
     /// <param name="sequenceId">The sequence ID to reset.</param>
-    public void Execute(ushort entityIndex, string sequenceId)
+    public void Execute(PartitionIndex entityIndex, string sequenceId)
     {
         // Resolve sequence ID to index
         if (!SequenceRegistry.Instance.TryResolveById(sequenceId, out var sequenceIndex))

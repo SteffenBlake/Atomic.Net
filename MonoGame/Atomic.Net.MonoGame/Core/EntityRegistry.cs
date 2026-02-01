@@ -45,13 +45,13 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     {
         get
         {
-            if (index.TryMatch(out ushort? global))
+            if (index.TryMatch(out ushort? globalNullable) && globalNullable.HasValue)
             {
-                return _globalEntities[global.Value];
+                return _globalEntities[globalNullable.Value];
             }
-            if (index.TryMatch(out uint? scene))
+            if (index.TryMatch(out uint? sceneNullable) && sceneNullable.HasValue)
             {
-                return _sceneEntities[scene.Value];
+                return _sceneEntities[sceneNullable.Value];
             }
             throw new InvalidOperationException("Invalid PartitionIndex state");
         }

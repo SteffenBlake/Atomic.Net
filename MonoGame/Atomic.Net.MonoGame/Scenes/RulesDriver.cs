@@ -44,7 +44,14 @@ public sealed class RulesDriver :
     /// <param name="deltaTime">Time elapsed since last frame in seconds</param>
     public void RunFrame(float deltaTime)
     {
-        foreach (var (_, rule) in RuleRegistry.Instance.Rules)
+        // Process global rules
+        foreach (var (_, rule) in RuleRegistry.Instance.Rules.Global)
+        {
+            ProcessRule(rule, deltaTime);
+        }
+        
+        // Process scene rules
+        foreach (var (_, rule) in RuleRegistry.Instance.Rules.Scene)
         {
             ProcessRule(rule, deltaTime);
         }
@@ -102,13 +109,22 @@ public sealed class RulesDriver :
     /// <summary>
     /// Serializes entities that match the selector into a JsonArray.
     /// </summary>
-    private void BuildEntitiesArray(SparseArray<bool> selectorMatches)
+    private void BuildEntitiesArray(PartitionedSparseArray<bool> selectorMatches)
     {
         var entities = (JsonArray)_ruleContext["entities"]!;
         entities.Clear();
-        foreach (var (entityIndex, _) in selectorMatches)
+        
+        // Add global entities
+        foreach (var (entityIndex, _) in selectorMatches.Global)
         {
-            var entity = EntityRegistry.Instance[entityIndex];
+            var entity = EntityRegistry.Instance[(ushort)entityIndex];
+            entities.Add(JsonEntityConverter.Read(entity));
+        }
+        
+        // Add scene entities
+        foreach (var (entityIndex, _) in selectorMatches.Scene)
+        {
+            var entity = EntityRegistry.Instance[(uint)entityIndex];
             entities.Add(JsonEntityConverter.Read(entity));
         }
     }
@@ -147,7 +163,7 @@ public sealed class RulesDriver :
     /// <summary>
     /// Writes changes from a mutated JsonNode entity back to the real Entity.
     /// </summary>
-    private static void WriteEntityChanges(JsonNode jsonEntity, ushort entityIndex)
+    private static void WriteEntityChanges(JsonNode jsonEntity, PartitionIndex entityIndex)
     {
         var entity = EntityRegistry.Instance[entityIndex];
         if (!entity.Active)
