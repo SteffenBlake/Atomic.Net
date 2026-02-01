@@ -123,14 +123,11 @@ With 2 Seperate sparse arrays the enumeration in Reset can be made way simpler, 
 - No major changes to public API (entity indices auto-route to correct partition)
 - Handles `PreEntityDeactivatedEvent` without partition awareness
 
-**8. Update `MonoGame/Atomic.Net.MonoGame/BED/RefBehaviorRegistry.cs`**
-- NOTE: check if this is even used anywhere, we can probably delete it
-- NOTE: if this can be deleted, I believe we can delete the IBehavior interface and the constraints on it, and remove the `CreateFor` function off every behavior (all of that was used by the RefBehaviorRegistry and I think its not even used by anything now)
-- If they can be deleted, delete them, consider it in scope
-- If they ARE still in use somewhere (which I doubt), then... :
-- Replace `SparseArray<TBehavior> _behaviors` with `PartitionedSparseArray<TBehavior> _behaviors`
-- No changes to public API (entity indices auto-route to correct partition)
-- Handles `PreEntityDeactivatedEvent` without partition awareness
+**8. DELETE `MonoGame/Atomic.Net.MonoGame/BED/RefBehaviorRegistry.cs`**
+- NOTE: this can be deleted. You can also delete IBehavior, remove the CreateFor method off all entities, everything that was involved RefBehaviorRegistry is not actually used, only BehaviorRegistry is used
+- Yes, IBehavior CAN be deleted, it is an old remnant from the RefBehaviorRegistry
+- Yes, remove CreateFor off all behaviors
+- Yes, remove the IBehavior constraints off anything that has them (leave the struct constraint tho)
 
 **9. Update `MonoGame/Atomic.Net.MonoGame/Scenes/RuleRegistry.cs`**
 - Replace `SparseArray<JsonRule> _rules` with `PartitionedSparseArray<JsonRule> _rules`
