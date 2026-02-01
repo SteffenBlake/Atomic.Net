@@ -4,9 +4,9 @@
 
 ### What We're Building
 - Split all partitioned systems (Entities, Behaviors, Rules, Sequences) from using a single large sparse array into two separate physical sparse arrays: one for global partition, one for scene partition
-- Introduce a `PartitionIndex` variant type (`ushort` for global, `int` for scene) to enforce type safety at compile time
+- Introduce a `PartitionIndex` variant type (`ushort` for global, `uint` for scene) to enforce type safety at compile time
 - Introduce a `PartitionedSparseArray<T>` wrapper that accepts `PartitionIndex` and internally routes to the correct underlying array
-- Update all constants to reflect the new partition split (remove combined capacity constants like `MaxEntities`, replace with `MaxGlobalEntities` (ushort) and `MaxSceneEntities` (int))
+- Update all constants to reflect the new partition split (remove combined capacity constants like `MaxEntities`, replace with `MaxGlobalEntities` (ushort) and `MaxSceneEntities` (uint))
 
 ### Why Now?
 - Async scene loading (next sprint) requires thread-safe architecture — shared sparse arrays create threading risks
@@ -21,14 +21,14 @@
 - Public APIs remain clean — callers use `registry[entity.Index]` without needing to know about partitions
 - `ResetEvent` clears only scene partition in O(1) operation
 - All existing tests pass with zero behavioral changes
-- Constants updated everywhere: `MaxGlobalX` (ushort), `MaxSceneX` (int), no combined `MaxX` constants
+- Constants updated everywhere: `MaxGlobalX` (ushort), `MaxSceneX` (uint), no combined `MaxX` constants
 - Zero gameplay allocations (refactor only changes structure, not allocation behavior)
 - Partitioned Sparse Array exposes both of its sparse arrays for access and enumeration, counting, etc (just expose the sparse arrays as public properties)
 
 ### Constraints
 - Partition routing must be hidden inside `PartitionedSparseArray` — 99% of code should not see `Visit` or `TryMatch` patterns
-- Global partition indices: `ushort` (0-255 by default)
-- Scene partition indices: `int` (0-based, capacity 8192 by default)
+- Global partition indices: `ushort`
+- Scene partition indices: `uint`
 - No pointer references, indices only
 - Must support all existing partition behaviors (global persists through `ResetEvent`, scene clears)
 
@@ -37,7 +37,7 @@
 **Before (current):**
 ```csharp
 // Single array, implicit partition logic
-SparseArray<Entity> _entities = new(8192);
+SparseArray<Entity> _entities = new(capacity: 8192);
 Entity entity = _entities[index]; // Is this global or scene? You have to remember.
 ```
 
@@ -46,7 +46,7 @@ Entity entity = _entities[index]; // Is this global or scene? You have to rememb
 // Two arrays, explicit partition via variant type
 PartitionedSparseArray<Entity> _entities = new(
     Constants.MaxGlobalEntities,  // ushort: 256
-    Constants.MaxSceneEntities     // int: 8192
+    Constants.MaxSceneEntities     // uint: 8192
 );
 Entity entity = _entities[partitionIndex]; // PartitionIndex routes correctly, caller doesn't care
 ```
@@ -64,29 +64,31 @@ With 2 Seperate sparse arrays the enumeration in Reset can be made way simpler, 
 #### New Core Files
 
 **1. `MonoGame/Atomic.Net.MonoGame/Core/PartitionIndex.cs`**
-- Variant type with two cases: `ushort` (global) and `int` (scene)
+- Variant type with two cases: `ushort` (global) and `uint` (scene)
 - Provides type-safe compile-time distinction between partition types
-- Implicit conversion operators from `ushort` (global) and `int` (scene) for ergonomic usage
+- Implicit conversion operators from `ushort` (global) and `uint` (scene) for ergonomic usage
 - Zero-allocation struct-based design
 
 **2. `MonoGame/Atomic.Net.MonoGame/Core/PartitionedSparseArray.cs`**
 - Generic wrapper over two underlying `SparseArray<T>` instances
-- Primary constructor: `PartitionedSparseArray(int globalCapacity, int sceneCapacity)`
+- Primary constructor: `PartitionedSparseArray(ushort globalCapacity, uint sceneCapacity)`
 - Public readonly fields exposing both sparse arrays:
   - `public readonly SparseArray<T> Global` - for direct access/enumeration of global partition
   - `public readonly SparseArray<T> Scene` - for direct access/enumeration of scene partition
-- Indexer accepts `PartitionIndex` and routes to correct underlying array using `.Visit()` pattern
-- All `SparseArray<T>` methods exposed: `Set`, `GetMut`, `Remove`, `TryGetValue`, `HasValue`, `TryPop`
-- Routing logic stays internal — callers never see `Visit` or `TryMatch`
+- Indexer accepts `PartitionIndex` and routes to correct underlying array using `.TryMatch()` pattern (Visit would closure)
+- Routing logic stays internal
 
 **3. `MonoGame/Atomic.Net.MonoGame/Core/PartitionedSparseRefArray.cs`**
 - Same as PartitionedSparseArray but for `SparseReferenceArray<T>` (used by SequenceDriver)
-- Primary constructor: `PartitionedSparseRefArray(int globalCapacity, int sceneCapacity)`
-- Public readonly fields: `Global` and `Scene` of type `SparseReferenceArray<T>`
-- Routing via `PartitionIndex` variant
+- Primary constructor: `PartitionedSparseRefArray(ushort globalCapacity, uint sceneCapacity)`
+- Public readonly fields exposing both sparse arrays:
+  - `public readonly SparseArray<T> Global` - for direct access/enumeration of global partition
+  - `public readonly SparseArray<T> Scene` - for direct access/enumeration of scene partition
+- Indexer accepts `PartitionIndex` and routes to correct underlying array using `.TryMatch()` pattern (Visit would closure)
+- Routing logic stays internal
 
 **4. Update `MonoGame/Atomic.Net.MonoGame/Core/SparseArray.cs`**
-- Update existing `ushort capacity` constructor to accept `int capacity` instead
+- Update existing `ushort capacity` constructor to accept `int capacity` instead (Yes, PartitionedSparseArray will pass in a ushort to become int here)
 - All internal arrays sized based on capacity parameter
 - Minimal changes — just support larger capacity values via `int`
 
@@ -95,13 +97,13 @@ With 2 Seperate sparse arrays the enumeration in Reset can be made way simpler, 
 - Replace with partition-specific constants:
   - **Entities:**
     - `MaxGlobalEntities` (ushort, default 256) — already exists
-    - `MaxSceneEntities` (int, default 8192) — NEW
+    - `MaxSceneEntities` (uint, default 8192) — NEW
   - **Rules:**
     - `MaxGlobalRules` (ushort, default 128) — already exists
-    - `MaxSceneRules` (int, default 1024) — NEW
+    - `MaxSceneRules` (uint, default 1024) — NEW
   - **Sequences:**
     - `MaxGlobalSequences` (ushort, default 256) — already exists  
-    - `MaxSceneSequences` (int, default 512) — NEW
+    - `MaxSceneSequences` (uint, default 512) — NEW
 - Add preprocessor directive support for compile-time overrides (same pattern as existing constants)
 
 #### Registry Updates
@@ -109,40 +111,46 @@ With 2 Seperate sparse arrays the enumeration in Reset can be made way simpler, 
 **6. Update `MonoGame/Atomic.Net.MonoGame/Core/EntityRegistry.cs`**
 - Replace `SparseArray<bool> _active` with `PartitionedSparseArray<bool> _active`
 - Replace `SparseArray<bool> _enabled` with `PartitionedSparseArray<bool> _enabled`
-- Update allocators: `_nextGlobalIndex` remains `ushort`, `_nextSceneIndex` becomes `int`
-- `Activate()` returns scene entity with `int` scene index
-- `ActivateGlobal()` returns global entity with `ushort` global index
+- Update allocators: `_nextGlobalIndex` remains `ushort`, `_nextSceneIndex` becomes `uint`
+- `Activate()` returns scene entity with `uint` based scene index (implicit cast to a PartitionIndex)
+- `ActivateGlobal()` returns global entity with `ushort` global index  (implicit cast to a PartitionIndex)
 - `ResetEvent` handler: replace loop with `_active.Scene.Clear()` and `_enabled.Scene.Clear()`
 - `ShutdownEvent` handler: replace manual loop with clearing both partitions
 - Entity lookup remains index-based (array of pre-allocated Entity structs)
 
 **7. Update `MonoGame/Atomic.Net.MonoGame/BED/BehaviorRegistry.cs`**
 - Replace `SparseArray<TBehavior> _behaviors` with `PartitionedSparseArray<TBehavior> _behaviors`
-- No changes to public API (entity indices auto-route to correct partition)
+- No major changes to public API (entity indices auto-route to correct partition)
 - Handles `PreEntityDeactivatedEvent` without partition awareness
 
 **8. Update `MonoGame/Atomic.Net.MonoGame/BED/RefBehaviorRegistry.cs`**
+- NOTE: check if this is even used anywhere, we can probably delete it
+- NOTE: if this can be deleted, I believe we can delete the IBehavior interface and the constraints on it, and remove the `CreateFor` function off every behavior (all of that was used by the RefBehaviorRegistry and I think its not even used by anything now)
+- If they can be deleted, delete them, consider it in scope
+- If they ARE still in use somewhere (which I doubt), then... :
 - Replace `SparseArray<TBehavior> _behaviors` with `PartitionedSparseArray<TBehavior> _behaviors`
 - No changes to public API (entity indices auto-route to correct partition)
 - Handles `PreEntityDeactivatedEvent` without partition awareness
 
 **9. Update `MonoGame/Atomic.Net.MonoGame/Scenes/RuleRegistry.cs`**
 - Replace `SparseArray<JsonRule> _rules` with `PartitionedSparseArray<JsonRule> _rules`
-- Update allocators: `_nextGlobalRuleIndex` remains `ushort`, `_nextSceneRuleIndex` becomes `int`
+- Update allocators: `_nextGlobalRuleIndex` remains `ushort`, `_nextSceneRuleIndex` becomes `uint`
 - `ResetEvent` handler: replace loop with `_rules.Scene.Clear()`
 - `ShutdownEvent` handler: replace loop with clearing both partitions
 - Keep `Rules` public property exposing `PartitionedSparseArray<JsonRule>` for tests
 
 **10. Update `MonoGame/Atomic.Net.MonoGame/Sequencing/SequenceRegistry.cs`**
 - Replace `SparseArray<JsonSequence> _sequences` with `PartitionedSparseArray<JsonSequence> _sequences`
-- Update allocators: `_nextGlobalSequenceIndex` remains `ushort`, `_nextSceneSequenceIndex` becomes `int`
+- Update allocators: `_nextGlobalSequenceIndex` remains `ushort`, `_nextSceneSequenceIndex` becomes `uint`
 - `ResetEvent` handler: replace loop with direct iteration over `_sequences.Scene` + `_sequences.Scene.Clear()`
 - `ShutdownEvent` handler: replace loop with clearing both partitions + `_idToIndex.Clear()`
+- _idToIndex needs to map to a PartitionIndex now
 - Keep `Sequences` public property exposing `PartitionedSparseArray<JsonSequence>` for tests
 
 **11. Update `MonoGame/Atomic.Net.MonoGame/Sequencing/SequenceDriver.cs`**
-- Replace `SparseReferenceArray<SparseArray<SequenceState>> _activeSequences` with `PartitionedSparseRefArray<SparseArray<SequenceState>> _activeSequences`
-- No changes to public API (entity indices auto-route to correct partition)
+- Replace `SparseReferenceArray<SparseArray<SequenceState>> _activeSequences` with `PartitionedSparseRefArray<PartitionedSparseArray<SequenceState>> _activeSequences`
+- No major changes to public API (entity indices should auto-route to correct partition)
+- Some functions may need to use a PartitionIndex now instead of just ushort here (_index cant be passed as its Variant type into being set as a JsonNode, you will probably need to put a .ToJsonValue() function on PartitionIndex and use Visit on it to convert its "inner" types to a JsonValue
 
 **12. Update `MonoGame/Atomic.Net.MonoGame/Selectors/*EntitySelector.cs`**
 - Replace `SparseArray<bool> Matches` with `PartitionedSparseArray<bool> Matches` in all selector implementations
@@ -153,9 +161,7 @@ With 2 Seperate sparse arrays the enumeration in Reset can be made way simpler, 
 
 **13. Update `MonoGame/Atomic.Net.MonoGame/Core/Entity.cs`**
 - Change `Index` property type from `ushort` to `PartitionIndex`
-- Keep internal `ushort _index` field for backward compatibility
-- `Index` property logic: `if (_index < Constants.MaxGlobalEntities) return (ushort)_index; else return (int)(_index - Constants.MaxGlobalEntities);`
-- Maintain all existing properties/methods unchanged
+- Maintain all existing properties/methods
 
 ### Integration Points
 
@@ -200,41 +206,28 @@ public sealed class SparseArray<T>(int capacity) where T : struct
 
 **PartitionedSparseArray<T> Structure:**
 ```csharp
-public sealed class PartitionedSparseArray<T>(int globalCapacity, int sceneCapacity) 
+public sealed class PartitionedSparseArray<T>(ushort globalCapacity, uint sceneCapacity) 
     where T : struct
 {
     public readonly SparseArray<T> Global = new(globalCapacity);
     public readonly SparseArray<T> Scene = new(sceneCapacity);
+
+    // CRITICAL: We cant use .Visit on any of these methods below because it will closure, which is not okay
+    // MUST use TryMatch
+    public T this[PartitionIndex index]
+    {
+        ...
+    }
     
-    public T this[PartitionIndex index] => index.Visit(
-        global => Global[global],
-        scene => Scene[scene]
-    );
+    public void Set(PartitionIndex index, T value) => ...
     
-    public void Set(PartitionIndex index, T value) => index.Visit(
-        global => Global.Set(global, value),
-        scene => Scene.Set(scene, value)
-    );
+    public SparseRef<T> GetMut(PartitionIndex index) => ...
     
-    public SparseRef<T> GetMut(PartitionIndex index) => index.Visit(
-        global => Global.GetMut(global),
-        scene => Scene.GetMut(scene)
-    );
+    public bool Remove(PartitionIndex index) => ...
     
-    public bool Remove(PartitionIndex index) => index.Visit(
-        global => Global.Remove(global),
-        scene => Scene.Remove(scene)
-    );
+    public bool TryGetValue(PartitionIndex index, out T? value) => ...
     
-    public bool TryGetValue(PartitionIndex index, out T? value) => index.Visit(
-        global => Global.TryGetValue(global, out value),
-        scene => Scene.TryGetValue(scene, out value)
-    );
-    
-    public bool HasValue(PartitionIndex index) => index.Visit(
-        global => Global.HasValue(global),
-        scene => Scene.HasValue(scene)
-    );
+    public bool HasValue(PartitionIndex index) => ...
 }
 ```
 
@@ -243,7 +236,9 @@ public sealed class PartitionedSparseArray<T>(int globalCapacity, int sceneCapac
 [Variant]
 public readonly partial struct PartitionIndex
 {
-    static partial void VariantOf(ushort global, int scene);
+    static partial void VariantOf(ushort global, uint scene);
+
+    public AsJsonValue() ...
 }
 ```
 
@@ -265,5 +260,3 @@ public readonly partial struct PartitionIndex
 - [ ] Update `Sequencing/SequenceDriver.cs` to use `PartitionedSparseRefArray`
 - [ ] Update all `Selectors/*EntitySelector.cs` to use `PartitionedSparseArray<bool>`
 - [ ] Run all existing tests to verify zero behavioral changes
-- [ ] @benchmarker: Verify `PartitionIndex` variant routing has no measurable overhead vs direct array access
-- [ ] @benchmarker: Verify `ResetEvent` performance improvement (expect 10-100x speedup for scene clearing)
