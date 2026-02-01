@@ -27,17 +27,11 @@ public sealed class PartitionedSparseArray<T>(ushort globalCapacity, uint sceneC
     {
         get
         {
-            if (index.TryMatch(out ushort? globalVal) && globalVal.HasValue)
-            {
-                var global = global;
-                return Global[global];
-            }
-            if (index.TryMatch(out uint? sceneVal) && sceneVal.HasValue)
-            {
-                var scene = scene;
-                return Scene[(ushort)scene];
-            }
-            throw new InvalidOperationException("Invalid PartitionIndex state");
+            return index.Visit(
+                global => Global[global],
+                scene => Scene[(ushort)scene],
+                () => throw new InvalidOperationException("Invalid PartitionIndex state")
+            );
         }
     }
 
@@ -46,19 +40,11 @@ public sealed class PartitionedSparseArray<T>(ushort globalCapacity, uint sceneC
     /// </summary>
     public void Set(PartitionIndex index, T value)
     {
-        if (index.TryMatch(out ushort? globalVal) && globalVal.HasValue)
-        {
-            var global = global;
-            Global.Set(global, value);
-            return;
-        }
-        if (index.TryMatch(out uint? sceneVal) && sceneVal.HasValue)
-        {
-            var scene = scene;
-            Scene.Set((ushort)scene, value);
-            return;
-        }
-        throw new InvalidOperationException("Invalid PartitionIndex state");
+        index.Visit(
+            global => { Global.Set(global, value); return 0; },
+            scene => { Scene.Set((ushort)scene, value); return 0; },
+            () => throw new InvalidOperationException("Invalid PartitionIndex state")
+        );
     }
 
     /// <summary>
@@ -68,11 +54,11 @@ public sealed class PartitionedSparseArray<T>(ushort globalCapacity, uint sceneC
     {
         if (index.TryMatch(out ushort? globalVal) && globalVal.HasValue)
         {
-            return Global.GetMut(global);
+            return Global.GetMut(globalVal.Value);
         }
         if (index.TryMatch(out uint? sceneVal) && sceneVal.HasValue)
         {
-            return Scene.GetMut((ushort)scene);
+            return Scene.GetMut((ushort)sceneVal.Value);
         }
         throw new InvalidOperationException("Invalid PartitionIndex state");
     }
@@ -82,15 +68,11 @@ public sealed class PartitionedSparseArray<T>(ushort globalCapacity, uint sceneC
     /// </summary>
     public bool Remove(PartitionIndex index)
     {
-        if (index.TryMatch(out ushort? globalVal) && globalVal.HasValue)
-        {
-            return Global.Remove(global);
-        }
-        if (index.TryMatch(out uint? sceneVal) && sceneVal.HasValue)
-        {
-            return Scene.Remove((ushort)scene);
-        }
-        throw new InvalidOperationException("Invalid PartitionIndex state");
+        return index.Visit(
+            global => Global.Remove(global),
+            scene => Scene.Remove((ushort)scene),
+            () => throw new InvalidOperationException("Invalid PartitionIndex state")
+        );
     }
 
     /// <summary>
@@ -103,13 +85,13 @@ public sealed class PartitionedSparseArray<T>(ushort globalCapacity, uint sceneC
     {
         if (index.TryMatch(out ushort? globalVal) && globalVal.HasValue)
         {
-            return Global.TryGetValue(global, out value);
+            return Global.TryGetValue(globalVal.Value, out value);
         }
         if (index.TryMatch(out uint? sceneVal) && sceneVal.HasValue)
         {
-            return Scene.TryGetValue((ushort)scene, out value);
+            return Scene.TryGetValue((ushort)sceneVal.Value, out value);
         }
-        value = null;
+        value = default;
         return false;
     }
 
@@ -118,14 +100,10 @@ public sealed class PartitionedSparseArray<T>(ushort globalCapacity, uint sceneC
     /// </summary>
     public bool HasValue(PartitionIndex index)
     {
-        if (index.TryMatch(out ushort? globalVal) && globalVal.HasValue)
-        {
-            return Global.HasValue(global);
-        }
-        if (index.TryMatch(out uint? sceneVal) && sceneVal.HasValue)
-        {
-            return Scene.HasValue((ushort)scene);
-        }
-        return false;
+        return index.Visit(
+            global => Global.HasValue(global),
+            scene => Scene.HasValue((ushort)scene),
+            () => false
+        );
     }
 }

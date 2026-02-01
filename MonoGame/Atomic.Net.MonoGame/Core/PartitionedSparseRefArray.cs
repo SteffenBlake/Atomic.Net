@@ -27,29 +27,19 @@ public sealed class PartitionedSparseRefArray<T>(ushort globalCapacity, uint sce
     {
         get
         {
-            if (index.TryMatch(out ushort? globalVal) && globalVal.HasValue)
-            {
-                return Global[global];
-            }
-            if (index.TryMatch(out uint? sceneVal) && sceneVal.HasValue)
-            {
-                return Scene[(ushort)scene];
-            }
-            throw new InvalidOperationException("Invalid PartitionIndex state");
+            return index.Visit(
+                global => Global[global],
+                scene => Scene[(ushort)scene],
+                () => throw new InvalidOperationException("Invalid PartitionIndex state")
+            );
         }
         set
         {
-            if (index.TryMatch(out ushort? globalVal) && globalVal.HasValue)
-            {
-                Global[global] = value;
-                return;
-            }
-            if (index.TryMatch(out uint? sceneVal) && sceneVal.HasValue)
-            {
-                Scene[(ushort)scene] = value;
-                return;
-            }
-            throw new InvalidOperationException("Invalid PartitionIndex state");
+            index.Visit(
+                global => { Global[global] = value; return 0; },
+                scene => { Scene[(ushort)scene] = value; return 0; },
+                () => throw new InvalidOperationException("Invalid PartitionIndex state")
+            );
         }
     }
 
@@ -63,13 +53,13 @@ public sealed class PartitionedSparseRefArray<T>(ushort globalCapacity, uint sce
     {
         if (index.TryMatch(out ushort? globalVal) && globalVal.HasValue)
         {
-            return Global.TryGetValue(global, out value);
+            return Global.TryGetValue(globalVal.Value, out value);
         }
         if (index.TryMatch(out uint? sceneVal) && sceneVal.HasValue)
         {
-            return Scene.TryGetValue((ushort)scene, out value);
+            return Scene.TryGetValue((ushort)sceneVal.Value, out value);
         }
-        value = null;
+        value = default;
         return false;
     }
 
@@ -78,15 +68,11 @@ public sealed class PartitionedSparseRefArray<T>(ushort globalCapacity, uint sce
     /// </summary>
     public bool HasValue(PartitionIndex index)
     {
-        if (index.TryMatch(out ushort? globalVal) && globalVal.HasValue)
-        {
-            return Global.HasValue(global);
-        }
-        if (index.TryMatch(out uint? sceneVal) && sceneVal.HasValue)
-        {
-            return Scene.HasValue((ushort)scene);
-        }
-        return false;
+        return index.Visit(
+            global => Global.HasValue(global),
+            scene => Scene.HasValue((ushort)scene),
+            () => false
+        );
     }
 
     /// <summary>
@@ -94,14 +80,10 @@ public sealed class PartitionedSparseRefArray<T>(ushort globalCapacity, uint sce
     /// </summary>
     public bool Remove(PartitionIndex index)
     {
-        if (index.TryMatch(out ushort? globalVal) && globalVal.HasValue)
-        {
-            return Global.Remove(global);
-        }
-        if (index.TryMatch(out uint? sceneVal) && sceneVal.HasValue)
-        {
-            return Scene.Remove((ushort)scene);
-        }
-        return false;
+        return index.Visit(
+            global => Global.Remove(global),
+            scene => Scene.Remove((ushort)scene),
+            () => false
+        );
     }
 }

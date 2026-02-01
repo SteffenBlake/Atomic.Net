@@ -16,132 +16,84 @@ public partial class FlexRegistry :
     // Width
     public void OnEvent(BehaviorAddedEvent<FlexWidthBehavior> e)
     {
-        _dirty.Set(e.Entity.Index.ToInt(), true);
-        if (!_nodes.HasValue(e.Entity.Index.ToInt()))
-        {
-            _nodes[e.Entity.Index.ToInt()] = FlexLayoutSharp.Flex.CreateDefaultNode();
-        }
+        _dirty[e.Entity.Index] = true;
+        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
         if (e.Entity.TryGetBehavior<FlexWidthBehavior>(out var val))
         {
             if (val.Value.Percent)
             {
-                if (_nodes.TryGetValue(e.Entity.Index.ToInt(), out var node))
-                {
-                    node!.StyleSetWidthPercent(val.Value.Value);
-                }
+                _nodes[e.Entity.Index]!.StyleSetWidthPercent(val.Value.Value);
             }
             else
             {
-                if (_nodes.TryGetValue(e.Entity.Index.ToInt(), out var node))
-                {
-                    node!.StyleSetWidth(val.Value.Value);
-                }
+                _nodes[e.Entity.Index]!.StyleSetWidth(val.Value.Value);
             }
         }
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexWidthBehavior> e)
     {
-        _dirty.Set(e.Entity.Index.ToInt(), true);
-        if (!_nodes.HasValue(e.Entity.Index.ToInt()))
-        {
-            _nodes[e.Entity.Index.ToInt()] = FlexLayoutSharp.Flex.CreateDefaultNode();
-        }
+        _dirty[e.Entity.Index] = true;
+        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
         if (e.Entity.TryGetBehavior<FlexWidthBehavior>(out var val))
         {
             if (val.Value.Percent)
             {
-                if (_nodes.TryGetValue(e.Entity.Index.ToInt(), out var node))
-                {
-                    node!.StyleSetWidthPercent(val.Value.Value);
-                }
+                _nodes[e.Entity.Index]!.StyleSetWidthPercent(val.Value.Value);
             }
             else
             {
-                if (_nodes.TryGetValue(e.Entity.Index.ToInt(), out var node))
-                {
-                    node!.StyleSetWidth(val.Value.Value);
-                }
+                _nodes[e.Entity.Index]!.StyleSetWidth(val.Value.Value);
             }
         }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexWidthBehavior> e)
     {
-        _dirty.Set(e.Entity.Index.ToInt(), true);
-        if (!_nodes.HasValue(e.Entity.Index.ToInt()))
-        {
-            _nodes[e.Entity.Index.ToInt()] = FlexLayoutSharp.Flex.CreateDefaultNode();
-        }
-        if (_nodes.TryGetValue(e.Entity.Index.ToInt(), out var node))
-        {
-            node!.StyleSetWidth(float.NaN);
-        }
+        _dirty[e.Entity.Index] = true;
+        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _nodes[e.Entity.Index]!.StyleSetWidth(float.NaN);
     }
 
     // Height
     public void OnEvent(BehaviorAddedEvent<FlexHeightBehavior> e)
     {
-        _dirty.Set(e.Entity.Index.ToInt(), true);
-        if (!_nodes.HasValue(e.Entity.Index.ToInt()))
-        {
-            _nodes[e.Entity.Index.ToInt()] = FlexLayoutSharp.Flex.CreateDefaultNode();
-        }
+        _dirty[e.Entity.Index] = true;
+        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
         if (e.Entity.TryGetBehavior<FlexHeightBehavior>(out var val))
         {
             if (val.Value.Percent)
             {
-                if (_nodes.TryGetValue(e.Entity.Index.ToInt(), out var node))
-                {
-                    node!.StyleSetHeightPercent(val.Value.Value);
-                }
+                _nodes[e.Entity.Index]!.StyleSetHeightPercent(val.Value.Value);
             }
             else
             {
-                if (_nodes.TryGetValue(e.Entity.Index.ToInt(), out var node))
-                {
-                    node!.StyleSetHeight(val.Value.Value);
-                }
+                _nodes[e.Entity.Index]!.StyleSetHeight(val.Value.Value);
             }
         }
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexHeightBehavior> e)
     {
-        _dirty.Set(e.Entity.Index.ToInt(), true);
-        if (!_nodes.HasValue(e.Entity.Index.ToInt()))
-        {
-            _nodes[e.Entity.Index.ToInt()] = FlexLayoutSharp.Flex.CreateDefaultNode();
-        }
+        _dirty[e.Entity.Index] = true;
+        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
         if (e.Entity.TryGetBehavior<FlexHeightBehavior>(out var val))
         {
             if (val.Value.Percent)
             {
-                if (_nodes.TryGetValue(e.Entity.Index.ToInt(), out var node))
-                {
-                    node!.StyleSetHeightPercent(val.Value.Value);
-                }
+                _nodes[e.Entity.Index]!.StyleSetHeightPercent(val.Value.Value);
             }
             else
             {
-                if (_nodes.TryGetValue(e.Entity.Index.ToInt(), out var node))
-                {
-                    node!.StyleSetHeight(val.Value.Value);
-                }
+                _nodes[e.Entity.Index]!.StyleSetHeight(val.Value.Value);
             }
         }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexHeightBehavior> e)
     {
-        _dirty.Set(e.Entity.Index.ToInt(), true);
-        if (!_nodes.HasValue(e.Entity.Index.ToInt()))
-        {
-            _nodes[e.Entity.Index.ToInt()] = FlexLayoutSharp.Flex.CreateDefaultNode();
-        }
-        if (_nodes.TryGetValue(e.Entity.Index.ToInt(), out var node))
-        {
-            node!.StyleSetHeight(float.NaN);
-        }
+        _dirty[e.Entity.Index] = true;
+        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _nodes[e.Entity.Index]!.StyleSetHeight(float.NaN);
     }
 }
