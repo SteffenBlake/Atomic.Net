@@ -299,7 +299,7 @@ public static class JsonEntityConverter
             }
         }
 
-        if (entityObj.TryGetPropertyValue("properties", out var propertiesNode) && 
+        if (entityObj.TryGetPropertyValue("properties", out var propertiesNode) &&
             propertiesNode is JsonObject propertiesObj)
         {
             foreach (var kvp in propertiesObj)
@@ -344,128 +344,139 @@ public static class JsonEntityConverter
             }
         }
 
-        TrySetStruct<float, TransformBehavior>(
-            entity,
-            entityObj["transform"]?["position"]?["x"],
-            static (ref readonly _x, ref b) => b = b with
+        if (entityObj["transform"] is JsonNode transform)
+        {
+            if (transform["position"] is JsonNode position)
             {
-                Position = b.Position with { X = _x }
-            }
-        );
+                TrySetStruct<float, TransformBehavior>(
+                    entity,
+                    position["x"],
+                    static (ref readonly _x, ref b) => b = b with
+                    {
+                        Position = b.Position with { X = _x }
+                    }
+                );
 
-        TrySetStruct<float, TransformBehavior>(
-            entity,
-            entityObj["transform"]?["position"]?["y"],
-            static (ref readonly _y, ref b) => b = b with
+                TrySetStruct<float, TransformBehavior>(
+                    entity,
+                    position["y"],
+                    static (ref readonly _y, ref b) => b = b with
+                    {
+                        Position = b.Position with { Y = _y }
+                    }
+                );
+
+                TrySetStruct<float, TransformBehavior>(
+                    entity,
+                    position["z"],
+                    static (ref readonly _z, ref b) => b = b with
+                    {
+                        Position = b.Position with { Z = _z }
+                    }
+                );
+            }
+
+            if (transform["rotation"] is JsonNode rotation)
             {
-                Position = b.Position with { Y = _y }
-            }
-        );
+                TrySetStruct<float, TransformBehavior>(
+                    entity,
+                    rotation["x"],
+                    static (ref readonly _x, ref b) => b = b with
+                    {
+                        Rotation = b.Rotation with { X = _x }
+                    }
+                );
 
-        TrySetStruct<float, TransformBehavior>(
-            entity,
-            entityObj["transform"]?["position"]?["z"],
-            static (ref readonly _z, ref b) => b = b with
+                TrySetStruct<float, TransformBehavior>(
+                    entity,
+                    rotation["y"],
+                    static (ref readonly _y, ref b) => b = b with
+                    {
+                        Rotation = b.Rotation with { Y = _y }
+                    }
+                );
+
+                TrySetStruct<float, TransformBehavior>(
+                    entity,
+                    rotation["z"],
+                    static (ref readonly _z, ref b) => b = b with
+                    {
+                        Rotation = b.Rotation with { Z = _z }
+                    }
+                );
+
+                TrySetStruct<float, TransformBehavior>(
+                    entity,
+                    rotation["w"],
+                    static (ref readonly _w, ref b) => b = b with
+                    {
+                        Rotation = b.Rotation with { W = _w }
+                    }
+                );
+            }
+
+            if (transform["scale"] is JsonNode scale)
             {
-                Position = b.Position with { Z = _z }
-            }
-        );
+                TrySetStruct<float, TransformBehavior>(
+                    entity,
+                    scale["x"],
+                    static (ref readonly _x, ref b) => b = b with
+                    {
+                        Scale = b.Scale with { X = _x }
+                    }
+                );
 
-        TrySetStruct<float, TransformBehavior>(
-            entity,
-            entityObj["transform"]?["rotation"]?["x"],
-            static (ref readonly _x, ref b) => b = b with
+                TrySetStruct<float, TransformBehavior>(
+                    entity,
+                    scale["y"],
+                    static (ref readonly _y, ref b) => b = b with
+                    {
+                        Scale = b.Scale with { Y = _y }
+                    }
+                );
+
+                TrySetStruct<float, TransformBehavior>(
+                    entity,
+                    scale["z"],
+                    static (ref readonly _z, ref b) => b = b with
+                    {
+                        Scale = b.Scale with { Z = _z }
+                    }
+                );
+            }
+
+            if (transform["anchor"] is JsonNode anchor)
             {
-                Rotation = b.Rotation with { X = _x }
-            }
-        );
+                TrySetStruct<float, TransformBehavior>(
+                    entity,
+                    anchor["x"],
+                    static (ref readonly _x, ref b) => b = b with
+                    {
+                        Anchor = b.Anchor with { X = _x }
+                    }
+                );
 
-        TrySetStruct<float, TransformBehavior>(
-            entity,
-            entityObj["transform"]?["rotation"]?["y"],
-            static (ref readonly _y, ref b) => b = b with
-            {
-                Rotation = b.Rotation with { Y = _y }
-            }
-        );
+                TrySetStruct<float, TransformBehavior>(
+                    entity,
+                    anchor["y"],
+                    static (ref readonly _y, ref b) => b = b with
+                    {
+                        Anchor = b.Anchor with { Y = _y }
+                    }
+                );
 
-        TrySetStruct<float, TransformBehavior>(
-            entity,
-            entityObj["transform"]?["rotation"]?["z"],
-            static (ref readonly _z, ref b) => b = b with
-            {
-                Rotation = b.Rotation with { Z = _z }
+                TrySetStruct<float, TransformBehavior>(
+                    entity,
+                    anchor["z"],
+                    static (ref readonly _z, ref b) => b = b with
+                    {
+                        Anchor = b.Anchor with { Z = _z }
+                    }
+                );
             }
-        );
+        }
 
-        TrySetStruct<float, TransformBehavior>(
-            entity,
-            entityObj["transform"]?["rotation"]?["w"],
-            static (ref readonly _w, ref b) => b = b with
-            {
-                Rotation = b.Rotation with { W = _w }
-            }
-        );
-
-        TrySetStruct<float, TransformBehavior>(
-            entity,
-            entityObj["transform"]?["scale"]?["x"],
-            static (ref readonly _x, ref b) => b = b with
-            {
-                Scale = b.Scale with { X = _x }
-            }
-        );
-
-        TrySetStruct<float, TransformBehavior>(
-            entity,
-            entityObj["transform"]?["scale"]?["y"],
-            static (ref readonly _y, ref b) => b = b with
-            {
-                Scale = b.Scale with { Y = _y }
-            }
-        );
-
-        TrySetStruct<float, TransformBehavior>(
-            entity,
-            entityObj["transform"]?["scale"]?["z"],
-            static (ref readonly _z, ref b) => b = b with
-            {
-                Scale = b.Scale with { Z = _z }
-            }
-        );
-
-        TrySetStruct<float, TransformBehavior>(
-            entity,
-            entityObj["transform"]?["anchor"]?["x"],
-            static (ref readonly _x, ref b) => b = b with
-            {
-                Anchor = b.Anchor with { X = _x }
-            }
-        );
-
-        TrySetStruct<float, TransformBehavior>(
-            entity,
-            entityObj["transform"]?["anchor"]?["y"],
-            static (ref readonly _y, ref b) => b = b with
-            {
-                Anchor = b.Anchor with { Y = _y }
-            }
-        );
-
-        TrySetStruct<float, TransformBehavior>(
-            entity,
-            entityObj["transform"]?["anchor"]?["z"],
-            static (ref readonly _z, ref b) => b = b with
-            {
-                Anchor = b.Anchor with { Z = _z }
-            }
-        );
-
-        TrySetEntitySelector<ParentBehavior>(
-            entity,
-            entityObj["parent"],
-            static (ref readonly _selector, ref b) => b = new ParentBehavior(_selector)
-        );
+        TrySetEntitySelector(entity, entityObj);
 
         TrySetEnum<Align, FlexAlignItemsBehavior>(
             entity,
@@ -537,23 +548,47 @@ public static class JsonEntityConverter
                     b = new FlexZOverride(_zOverride)
         );
 
-        TrySetStruct<float, FlexHeightBehavior>(
-            entity,
-            entityObj["flexHeight"]?["value"],
-            static (ref readonly _value, ref b) => b = b with
-            {
-                Value = _value
-            }
-        );
+        if (entityObj["flexHeight"] is JsonNode flexHeight)
+        {
+            TrySetStruct<float, FlexHeightBehavior>(
+                entity,
+                flexHeight["value"],
+                static (ref readonly _value, ref b) => b = b with
+                {
+                    Value = _value
+                }
+            );
 
-        TrySetStruct<bool, FlexHeightBehavior>(
-            entity,
-            entityObj["flexHeight"]?["percent"],
-            static (ref readonly _percent, ref b) => b = b with
-            {
-                Percent = _percent
-            }
-        );
+            TrySetStruct<bool, FlexHeightBehavior>(
+                entity,
+                flexHeight["percent"],
+                static (ref readonly _percent, ref b) => b = b with
+                {
+                    Percent = _percent
+                }
+            );
+        }
+
+        if (entityObj["flexWidth"] is JsonNode flexWidth)
+        {
+            TrySetStruct<float, FlexWidthBehavior>(
+                entity,
+                flexWidth["value"],
+                static (ref readonly _value, ref b) => b = b with
+                {
+                    Value = _value
+                }
+            );
+
+            TrySetStruct<bool, FlexWidthBehavior>(
+                entity,
+                flexWidth["percent"],
+                static (ref readonly _percent, ref b) => b = b with
+                {
+                    Percent = _percent
+                }
+            );
+        }
 
         TrySetEnum<Justify, FlexJustifyContentBehavior>(
             entity,
@@ -565,154 +600,148 @@ public static class JsonEntityConverter
         TrySetStruct<float, FlexMarginBottomBehavior>(
             entity,
             entityObj["flexMarginBottom"],
-            static (ref readonly _marginBottom, ref b) => 
+            static (ref readonly _marginBottom, ref b) =>
                 b = new FlexMarginBottomBehavior(_marginBottom)
         );
 
         TrySetStruct<float, FlexMarginLeftBehavior>(
             entity,
             entityObj["flexMarginLeft"],
-            static (ref readonly _marginLeft, ref b) => 
+            static (ref readonly _marginLeft, ref b) =>
                 b = new FlexMarginLeftBehavior(_marginLeft)
         );
 
         TrySetStruct<float, FlexMarginRightBehavior>(
             entity,
             entityObj["flexMarginRight"],
-            static (ref readonly _marginRight, ref b) => 
+            static (ref readonly _marginRight, ref b) =>
                 b = new FlexMarginRightBehavior(_marginRight)
         );
 
         TrySetStruct<float, FlexMarginTopBehavior>(
             entity,
             entityObj["flexMarginTop"],
-            static (ref readonly _marginTop, ref b) => 
+            static (ref readonly _marginTop, ref b) =>
                 b = new FlexMarginTopBehavior(_marginTop)
         );
 
         TrySetStruct<float, FlexPaddingBottomBehavior>(
             entity,
             entityObj["flexPaddingBottom"],
-            static (ref readonly _paddingBottom, ref b) => 
+            static (ref readonly _paddingBottom, ref b) =>
                 b = new FlexPaddingBottomBehavior(_paddingBottom)
         );
 
         TrySetStruct<float, FlexPaddingLeftBehavior>(
             entity,
             entityObj["flexPaddingLeft"],
-            static (ref readonly _paddingLeft, ref b) => 
+            static (ref readonly _paddingLeft, ref b) =>
                 b = new FlexPaddingLeftBehavior(_paddingLeft)
         );
 
         TrySetStruct<float, FlexPaddingRightBehavior>(
             entity,
             entityObj["flexPaddingRight"],
-            static (ref readonly _paddingRight, ref b) => 
+            static (ref readonly _paddingRight, ref b) =>
                 b = new FlexPaddingRightBehavior(_paddingRight)
         );
 
         TrySetStruct<float, FlexPaddingTopBehavior>(
             entity,
             entityObj["flexPaddingTop"],
-            static (ref readonly _paddingTop, ref b) => 
+            static (ref readonly _paddingTop, ref b) =>
                 b = new FlexPaddingTopBehavior(_paddingTop)
         );
 
-        TrySetStruct<float, FlexPositionBottomBehavior>(
-            entity,
-            entityObj["flexPositionBottom"]?["value"],
-            static (ref readonly _value, ref b) => b = b with
-            {
-                Value = _value
-            }
-        );
+        if (entityObj["flexPositionBottom"] is JsonNode flexPositionBottom)
+        {
+            TrySetStruct<float, FlexPositionBottomBehavior>(
+                entity,
+                flexPositionBottom["value"],
+                static (ref readonly _value, ref b) => b = b with
+                {
+                    Value = _value
+                }
+            );
 
-        TrySetStruct<bool, FlexPositionBottomBehavior>(
-            entity,
-            entityObj["flexPositionBottom"]?["percent"],
-            static (ref readonly _percent, ref b) => b = b with
-            {
-                Percent = _percent
-            }
-        );
+            TrySetStruct<bool, FlexPositionBottomBehavior>(
+                entity,
+                flexPositionBottom["percent"],
+                static (ref readonly _percent, ref b) => b = b with
+                {
+                    Percent = _percent
+                }
+            );
+        }
 
-        TrySetStruct<float, FlexPositionLeftBehavior>(
-            entity,
-            entityObj["flexPositionLeft"]?["value"],
-            static (ref readonly _value, ref b) => b = b with
-            {
-                Value = _value
-            }
-        );
+        if (entityObj["flexPositionLeft"] is JsonNode flexPositionLeft)
+        {
+            TrySetStruct<float, FlexPositionLeftBehavior>(
+                entity,
+                flexPositionLeft["value"],
+                static (ref readonly _value, ref b) => b = b with
+                {
+                    Value = _value
+                }
+            );
 
-        TrySetStruct<bool, FlexPositionLeftBehavior>(
-            entity,
-            entityObj["flexPositionLeft"]?["percent"],
-            static (ref readonly _percent, ref b) => b = b with
-            {
-                Percent = _percent
-            }
-        );
+            TrySetStruct<bool, FlexPositionLeftBehavior>(
+                entity,
+                flexPositionLeft["percent"],
+                static (ref readonly _percent, ref b) => b = b with
+                {
+                    Percent = _percent
+                }
+            );
+        }
 
-        TrySetStruct<float, FlexPositionRightBehavior>(
-            entity,
-            entityObj["flexPositionRight"]?["value"],
-            static (ref readonly _value, ref b) => b = b with
-            {
-                Value = _value
-            }
-        );
+        if (entityObj["flexPositionRight"] is JsonNode flexPositionRight)
+        {
+            TrySetStruct<float, FlexPositionRightBehavior>(
+                entity,
+                flexPositionRight["value"],
+                static (ref readonly _value, ref b) => b = b with
+                {
+                    Value = _value
+                }
+            );
 
-        TrySetStruct<bool, FlexPositionRightBehavior>(
-            entity,
-            entityObj["flexPositionRight"]?["percent"],
-            static (ref readonly _percent, ref b) => b = b with
-            {
-                Percent = _percent
-            }
-        );
+            TrySetStruct<bool, FlexPositionRightBehavior>(
+                entity,
+                flexPositionRight["percent"],
+                static (ref readonly _percent, ref b) => b = b with
+                {
+                    Percent = _percent
+                }
+            );
+        }
 
-        TrySetStruct<float, FlexPositionTopBehavior>(
-            entity,
-            entityObj["flexPositionTop"]?["value"],
-            static (ref readonly _value, ref b) => b = b with
-            {
-                Value = _value
-            }
-        );
+        if (entityObj["flexPositionTop"] is JsonNode flexPositionTop)
+        {
+            TrySetStruct<float, FlexPositionTopBehavior>(
+                entity,
+                flexPositionTop["value"],
+                static (ref readonly _value, ref b) => b = b with
+                {
+                    Value = _value
+                }
+            );
 
-        TrySetStruct<bool, FlexPositionTopBehavior>(
-            entity,
-            entityObj["flexPositionTop"]?["percent"],
-            static (ref readonly _percent, ref b) => b = b with
-            {
-                Percent = _percent
-            }
-        );
+            TrySetStruct<bool, FlexPositionTopBehavior>(
+                entity,
+                flexPositionTop["percent"],
+                static (ref readonly _percent, ref b) => b = b with
+                {
+                    Percent = _percent
+                }
+            );
+        }
 
         TrySetEnum<PositionType, FlexPositionTypeBehavior>(
             entity,
             entityObj["flexPositionType"],
             static (ref readonly _flexPositionType, ref b) =>
                 b = new FlexPositionTypeBehavior(_flexPositionType)
-        );
-
-        TrySetStruct<float, FlexWidthBehavior>(
-            entity,
-            entityObj["flexWidth"]?["value"],
-            static (ref readonly _value, ref b) => b = b with
-            {
-                Value = _value
-            }
-        );
-
-        TrySetStruct<bool, FlexWidthBehavior>(
-            entity,
-            entityObj["flexWidth"]?["percent"],
-            static (ref readonly _percent, ref b) => b = b with
-            {
-                Percent = _percent
-            }
         );
     }
 
@@ -748,22 +777,21 @@ public static class JsonEntityConverter
         entity.SetBehavior(in value, mutate);
     }
 
-    private static void TrySetEntitySelector<TBehavior>(
+    private static void TrySetEntitySelector(
         Entity entity,
-        JsonNode? node,
-        RefInAction<TBehavior, EntitySelector> mutate
+        JsonObject entityObj
     )
-        where TBehavior : struct
     {
-        if (node == null)
+        var parentNode = entityObj["parent"];
+        if (parentNode == null)
         {
             return;
         }
 
-        if (node is not JsonValue jsonValue)
+        if (parentNode is not JsonValue jsonValue)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Unable to deserialize node to expected type, node was not a value type. Path:'{node?.GetPath()}'"
+                $"Unable to deserialize node to expected type, node was not a value type. Path:'{parentNode?.GetPath()}'"
             ));
             return;
         }
@@ -771,7 +799,7 @@ public static class JsonEntityConverter
         if (!jsonValue.TryGetValue<string>(out var selectorString))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Unable to deserialize node to expected type. Path:'{node?.GetPath()}' ExpectedType:'EntitySelector' Actual:'{node?.GetValueKind()}'"
+                $"Unable to deserialize node to expected type. Path:'{parentNode?.GetPath()}' ExpectedType:'EntitySelector' Actual:'{parentNode?.GetValueKind()}'"
             ));
             return;
         }
@@ -779,12 +807,15 @@ public static class JsonEntityConverter
         if (!SelectorRegistry.Instance.TryParse(selectorString, out var selector))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Unable to parse EntitySelector. Path:'{node?.GetPath()}' Value:'{selectorString}'"
+                $"Unable to parse EntitySelector. Path:'{parentNode?.GetPath()}' Value:'{selectorString}'"
             ));
             return;
         }
 
-        entity.SetBehavior(in selector, mutate);
+        entity.SetBehavior<ParentBehavior, EntitySelector>(
+            in selector,
+            static (ref readonly _selector, ref b) => b = new ParentBehavior(_selector)
+        );
     }
 
     private static void TrySetEnum<TEnum, TBehavior>(
