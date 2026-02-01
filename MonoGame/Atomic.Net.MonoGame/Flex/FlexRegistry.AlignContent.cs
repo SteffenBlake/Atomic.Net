@@ -11,27 +11,45 @@ public partial class FlexRegistry :
     public void OnEvent(BehaviorAddedEvent<AlignContentBehavior> e)
     {
         _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.HasValue(e.Entity.Index)) { _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode(); }
+        
+        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
+        {
+            node = FlexLayoutSharp.Flex.CreateDefaultNode();
+            _nodes[e.Entity.Index] = node;
+        }
+        
         if (e.Entity.TryGetBehavior<AlignContentBehavior>(out var alignContent))
         {
-            if (_nodes.TryGetValue(e.Entity.Index, out var node)) { node!.StyleSetAlignContent(alignContent.Value.Value); }
+            node.StyleSetAlignContent(alignContent.Value.Value);
         }
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<AlignContentBehavior> e)
     {
         _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.HasValue(e.Entity.Index)) { _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode(); }
+        
+        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
+        {
+            node = FlexLayoutSharp.Flex.CreateDefaultNode();
+            _nodes[e.Entity.Index] = node;
+        }
+        
         if (e.Entity.TryGetBehavior<AlignContentBehavior>(out var alignContent))
         {
-            if (_nodes.TryGetValue(e.Entity.Index, out var node)) { node!.StyleSetAlignContent(alignContent.Value.Value); }
+            node.StyleSetAlignContent(alignContent.Value.Value);
         }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<AlignContentBehavior> e)
     {
         _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.HasValue(e.Entity.Index)) { _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode(); }
-        if (_nodes.TryGetValue(e.Entity.Index, out var node)) { node!.StyleSetAlignContent(default); }
+        
+        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
+        {
+            node = FlexLayoutSharp.Flex.CreateDefaultNode();
+            _nodes[e.Entity.Index] = node;
+        }
+        
+        node.StyleSetAlignContent(default);
     }
 }

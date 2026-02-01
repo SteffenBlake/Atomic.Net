@@ -239,34 +239,52 @@ public static class JsonNodeExtensions
 
         try
         {
+            // Guard clause: must be JsonValue
+            if (indexNode is not JsonValue jsonValue)
+            {
+                EventBus<ErrorEvent>.Push(new ErrorEvent("Entity _index must be a numeric value"));
+                entityIndex = null;
+                return false;
+            }
+
             // Try to read as ushort (global partition)
-            if (indexNode is JsonValue jsonValue && jsonValue.TryGetValue<ushort>(out var ushortValue))
+            if (jsonValue.TryGetValue<ushort>(out var ushortValue))
             {
-                entityIndex = (PartitionIndex)ushortValue;
-                return true;
-            }
-
-            // Try to read as uint (scene partition)
-            if (indexNode is JsonValue jsonValue2 && jsonValue2.TryGetValue<uint>(out var uintValue))
-            {
-                entityIndex = (PartitionIndex)uintValue;
-                return true;
-            }
-
-            // Fallback: try as int and decide based on value
-            var indexValue = indexNode.GetValue<int>();
-            if (indexValue < 0)
-            {
+                // Implicit conversion from ushort to PartitionIndex (per DISCOVERIES.md)
+                if (ushortValue < Constants.MaxGlobalEntities)
+                {
+                    entityIndex = ushortValue;
+                    return true;
+                }
                 EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Entity _index {indexValue} is negative"
+                    $"Entity _index {ushortValue} exceeds MaxGlobalEntities ({Constants.MaxGlobalEntities})"
                 ));
                 entityIndex = null;
                 return false;
             }
 
-            // Assume scene partition for positive values
-            entityIndex = (PartitionIndex)(uint)indexValue;
-            return true;
+            // Try to read as uint (scene partition)
+            if (jsonValue.TryGetValue<uint>(out var uintValue))
+            {
+                // Implicit conversion from uint to PartitionIndex (per DISCOVERIES.md)
+                if (uintValue < Constants.MaxSceneEntities)
+                {
+                    entityIndex = uintValue;
+                    return true;
+                }
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Entity _index {uintValue} exceeds MaxSceneEntities ({Constants.MaxSceneEntities})"
+                ));
+                entityIndex = null;
+                return false;
+            }
+
+            // Couldn't parse as ushort or uint
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Entity _index could not be parsed as ushort or uint"
+            ));
+            entityIndex = null;
+            return false;
         }
         catch (Exception ex)
         {

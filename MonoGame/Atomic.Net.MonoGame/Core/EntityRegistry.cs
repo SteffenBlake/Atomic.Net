@@ -49,11 +49,17 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     {
         get
         {
-            return index.Visit(
-                global => _globalEntities[global],
-                scene => _sceneEntities[scene],
-                () => throw new InvalidOperationException("Invalid PartitionIndex state")
-            );
+            if (index.TryMatch(out ushort globalIdx))
+            {
+                var idx = globalIdx;
+                return _globalEntities[idx];
+            }
+            if (index.TryMatch(out uint sceneIdx))
+            {
+                var idx = sceneIdx;
+                return _sceneEntities[idx];
+            }
+            throw new InvalidOperationException("Invalid PartitionIndex state");
         }
     }
 
@@ -66,15 +72,16 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
         for (uint offset = 0; offset < Constants.MaxSceneEntities; offset++)
         {
             uint i = (_nextSceneIndex + offset) % Constants.MaxSceneEntities;
-            PartitionIndex sceneIndex = i;
+            ushort sceneIndex = (ushort)i;
             
-            if (_active.HasValue(sceneIndex))
+            // Direct access to Scene array for scene-specific logic (performance)
+            if (_active.Scene.HasValue(sceneIndex))
             {
                 continue;
             }
 
-            _active.Set(sceneIndex, true);
-            _enabled.Set(sceneIndex, true);
+            _active.Scene.Set(sceneIndex, true);
+            _enabled.Scene.Set(sceneIndex, true);
             _nextSceneIndex = (i + 1) % Constants.MaxSceneEntities;
 
             return _sceneEntities[i];
@@ -92,15 +99,15 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
         for (ushort offset = 0; offset < Constants.MaxGlobalEntities; offset++)
         {
             ushort i = (ushort)((_nextGlobalIndex + offset) % Constants.MaxGlobalEntities);
-            PartitionIndex globalIndex = i;
             
-            if (_active.HasValue(globalIndex))
+            // Direct access to Global array for global-specific logic (performance)
+            if (_active.Global.HasValue(i))
             {
                 continue;
             }
 
-            _active.Set(globalIndex, true);
-            _enabled.Set(globalIndex, true);
+            _active.Global.Set(i, true);
+            _enabled.Global.Set(i, true);
             _nextGlobalIndex = (ushort)((i + 1) % Constants.MaxGlobalEntities);
 
             return _globalEntities[i];
@@ -199,34 +206,82 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
         _active.HasValue(entity.Index) && _enabled.HasValue(entity.Index);
     
     /// <summary>
-    /// Get an iterator over active entities.
+    /// Get an iterator over active global entities.
     /// </summary>
-    /// <returns>An enumerable of active entities.</returns>
-    public IEnumerable<Entity> GetActiveEntities()
+    /// <returns>An enumerable of active global entities.</returns>
+    public IEnumerable<Entity> GetActiveGlobalEntities()
     {
         foreach (var (index, _) in _active.Global)
         {
             yield return _globalEntities[index];
         }
+    }
+    
+    /// <summary>
+    /// Get an iterator over active scene entities.
+    /// </summary>
+    /// <returns>An enumerable of active scene entities.</returns>
+    public IEnumerable<Entity> GetActiveSceneEntities()
+    {
         foreach (var (index, _) in _active.Scene)
         {
             yield return _sceneEntities[index];
         }
     }
+    
+    /// <summary>
+    /// Get an iterator over all active entities (both global and scene).
+    /// </summary>
+    /// <returns>An enumerable of active entities.</returns>
+    public IEnumerable<Entity> GetActiveEntities()
+    {
+        foreach (var entity in GetActiveGlobalEntities())
+        {
+            yield return entity;
+        }
+        foreach (var entity in GetActiveSceneEntities())
+        {
+            yield return entity;
+        }
+    }
 
     /// <summary>
-    /// Get an iterator over enabled entities.
+    /// Get an iterator over enabled global entities.
     /// </summary>
-    /// <returns>An enumerable of enabled entities.</returns>
-    public IEnumerable<Entity> GetEnabledEntities()
+    /// <returns>An enumerable of enabled global entities.</returns>
+    public IEnumerable<Entity> GetEnabledGlobalEntities()
     {
         foreach (var (index, _) in _enabled.Global)
         {
             yield return _globalEntities[index];
         }
+    }
+    
+    /// <summary>
+    /// Get an iterator over enabled scene entities.
+    /// </summary>
+    /// <returns>An enumerable of enabled scene entities.</returns>
+    public IEnumerable<Entity> GetEnabledSceneEntities()
+    {
         foreach (var (index, _) in _enabled.Scene)
         {
             yield return _sceneEntities[index];
+        }
+    }
+    
+    /// <summary>
+    /// Get an iterator over all enabled entities (both global and scene).
+    /// </summary>
+    /// <returns>An enumerable of enabled entities.</returns>
+    public IEnumerable<Entity> GetEnabledEntities()
+    {
+        foreach (var entity in GetEnabledGlobalEntities())
+        {
+            yield return entity;
+        }
+        foreach (var entity in GetEnabledSceneEntities())
+        {
+            yield return entity;
         }
     }
 

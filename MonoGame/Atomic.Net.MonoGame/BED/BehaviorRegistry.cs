@@ -185,18 +185,42 @@ public class BehaviorRegistry<TBehavior> :
     }
 
     /// <summary>
-    /// Iterator over active behaviors (entity + behavior).
+    /// Iterator over active global behaviors (entity + behavior).
     /// </summary>
-    /// <returns>An enumerable of active entity-behavior pairs.</returns>
-    public IEnumerable<(Entity Entity, TBehavior Behavior)> GetActiveBehaviors()
+    /// <returns>An enumerable of active global entity-behavior pairs.</returns>
+    public IEnumerable<(Entity Entity, TBehavior Behavior)> GetActiveGlobalBehaviors()
     {
         foreach (var (index, behavior) in _behaviors.Global)
         {
             yield return (EntityRegistry.Instance[(ushort)index], behavior);
         }
+    }
+    
+    /// <summary>
+    /// Iterator over active scene behaviors (entity + behavior).
+    /// </summary>
+    /// <returns>An enumerable of active scene entity-behavior pairs.</returns>
+    public IEnumerable<(Entity Entity, TBehavior Behavior)> GetActiveSceneBehaviors()
+    {
         foreach (var (index, behavior) in _behaviors.Scene)
         {
             yield return (EntityRegistry.Instance[(uint)index], behavior);
+        }
+    }
+    
+    /// <summary>
+    /// Iterator over all active behaviors (entity + behavior, both global and scene).
+    /// </summary>
+    /// <returns>An enumerable of active entity-behavior pairs.</returns>
+    public IEnumerable<(Entity Entity, TBehavior Behavior)> GetActiveBehaviors()
+    {
+        foreach (var pair in GetActiveGlobalBehaviors())
+        {
+            yield return pair;
+        }
+        foreach (var pair in GetActiveSceneBehaviors())
+        {
+            yield return pair;
         }
     }
 

@@ -3,14 +3,14 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Atomic.Net.MonoGame.Core;
 
-public sealed class SparseArray<T>(int capacity) : IEnumerable<(ushort Index, T Value)>
+public sealed class SparseArray<T>(uint capacity) : IEnumerable<(ushort Index, T Value)>
     where T: struct
 {
     private readonly T[] _sparse = new T[capacity];
-    private readonly int[] _denseIndices = [.. Enumerable.Repeat(-1, capacity)];
-    private readonly List<(ushort SparseIndex, T Value)> _dense = new(capacity);
+    private readonly int[] _denseIndices = [.. Enumerable.Repeat(-1, (int)capacity)];
+    private readonly List<(ushort SparseIndex, T Value)> _dense = new((int)capacity);
 
-    public int Capacity => capacity;
+    public uint Capacity => capacity;
 
     public T this[ushort index]
     {
