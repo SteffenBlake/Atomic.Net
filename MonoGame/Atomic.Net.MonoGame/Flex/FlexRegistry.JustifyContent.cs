@@ -10,28 +10,28 @@ public partial class FlexRegistry :
 {
     public void OnEvent(BehaviorAddedEvent<FlexJustifyContentBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _dirty[e.Entity.Index.ToInt()] = true;
+        _nodes[e.Entity.Index.ToInt()] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
         if (e.Entity.TryGetBehavior<FlexJustifyContentBehavior>(out var justify))
         {
-            _nodes[e.Entity.Index]!.StyleSetJustifyContent(justify.Value.Value);
+            _nodes[e.Entity.Index.ToInt()]!.StyleSetJustifyContent(justify.Value.Value);
         }
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexJustifyContentBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _dirty[e.Entity.Index.ToInt()] = true;
+        _nodes[e.Entity.Index.ToInt()] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
         if (e.Entity.TryGetBehavior<FlexJustifyContentBehavior>(out var justify))
         {
-            _nodes[e.Entity.Index]!.StyleSetJustifyContent(justify.Value.Value);
+            _nodes[e.Entity.Index.ToInt()]!.StyleSetJustifyContent(justify.Value.Value);
         }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexJustifyContentBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        _nodes[e.Entity.Index]!.StyleSetJustifyContent(default);
+        _dirty[e.Entity.Index.ToInt()] = true;
+        _nodes[e.Entity.Index.ToInt()] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _nodes[e.Entity.Index.ToInt()]!.StyleSetJustifyContent(default);
     }
 }

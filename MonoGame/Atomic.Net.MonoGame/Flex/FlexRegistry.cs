@@ -134,13 +134,13 @@ public partial class FlexRegistry :
 
     public void OnEvent(BehaviorAddedEvent<FlexBehavior> e)
     {
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        _dirty[e.Entity.Index] = true;
+        _nodes[e.Entity.Index.ToInt()] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _dirty[e.Entity.Index.ToInt()] = true;
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexBehavior> e)
     {
-        _nodes[e.Entity.Index] = null;
+        _nodes[e.Entity.Index.ToInt()] = null;
         // Special case, because this node isnt even a flex anymore
         if (e.Entity.TryGetParent(out var parent))
         {
@@ -150,25 +150,25 @@ public partial class FlexRegistry :
 
     public void OnEvent(EntityEnabledEvent e)
     {
-        var node = _nodes[e.Entity.Index];
+        var node = _nodes[e.Entity.Index.ToInt()];
         if(node == null)
         {
             return;
         }
 
-        _dirty[e.Entity.Index] = true;
+        _dirty[e.Entity.Index.ToInt()] = true;
         node.StyleSetDisplay(Display.Flex);
     }
 
     public void OnEvent(EntityDisabledEvent e)
     {
-        var node = _nodes[e.Entity.Index];
+        var node = _nodes[e.Entity.Index.ToInt()];
         if(node == null)
         {
             return;
         }
 
-        _dirty[e.Entity.Index] = true;
+        _dirty[e.Entity.Index.ToInt()] = true;
         node.StyleSetDisplay(Display.None);
     }
 

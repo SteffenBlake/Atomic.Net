@@ -10,28 +10,28 @@ public partial class FlexRegistry :
 {
     public void OnEvent(BehaviorAddedEvent<FlexAlignSelfBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _dirty[e.Entity.Index.ToInt()] = true;
+        _nodes[e.Entity.Index.ToInt()] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
         if (e.Entity.TryGetBehavior<FlexAlignSelfBehavior>(out var alignSelf))
         {
-            _nodes[e.Entity.Index]!.StyleSetAlignSelf(alignSelf.Value.Value);
+            _nodes[e.Entity.Index.ToInt()]!.StyleSetAlignSelf(alignSelf.Value.Value);
         }
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexAlignSelfBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _dirty[e.Entity.Index.ToInt()] = true;
+        _nodes[e.Entity.Index.ToInt()] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
         if (e.Entity.TryGetBehavior<FlexAlignSelfBehavior>(out var alignSelf))
         {
-            _nodes[e.Entity.Index]!.StyleSetAlignSelf(alignSelf.Value.Value);
+            _nodes[e.Entity.Index.ToInt()]!.StyleSetAlignSelf(alignSelf.Value.Value);
         }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexAlignSelfBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        _nodes[e.Entity.Index]!.StyleSetAlignSelf(default);
+        _dirty[e.Entity.Index.ToInt()] = true;
+        _nodes[e.Entity.Index.ToInt()] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        _nodes[e.Entity.Index.ToInt()]!.StyleSetAlignSelf(default);
     }
 }
