@@ -80,7 +80,13 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
         var root = EntityRegistry.Instance.GetSceneRoot();
         
         // Assert
-        Assert.Equal(Constants.MaxGlobalEntities, root.Index);
+        // Scene root should be index 0 in the scene partition
+        var sceneIndex = root.Index.Visit(
+            static _ => throw new InvalidOperationException("Expected scene entity"),
+            static scene => scene,
+            static () => throw new InvalidOperationException()
+        );
+        Assert.Equal(0u, sceneIndex);
     }
 
     [Fact]

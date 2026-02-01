@@ -96,7 +96,10 @@ public partial class FlexRegistry :
             return;
         }
 
-        var node = _nodes[e.Index]!;
+        if (!_nodes.TryGetValue(e.Index, out var node) || node == null)
+        {
+            return;
+        }
 
         var paddingLeft = parentLeft + node.LayoutGetLeft();
         var paddingTop = parentTop + node.LayoutGetTop();
@@ -168,8 +171,7 @@ public partial class FlexRegistry :
 
     public void OnEvent(EntityEnabledEvent e)
     {
-        var node = _nodes[e.Entity.Index];
-        if(node == null)
+        if (!_nodes.TryGetValue(e.Entity.Index, out var node) || node == null)
         {
             return;
         }
@@ -180,8 +182,7 @@ public partial class FlexRegistry :
 
     public void OnEvent(EntityDisabledEvent e)
     {
-        var node = _nodes[e.Entity.Index];
-        if(node == null)
+        if (!_nodes.TryGetValue(e.Entity.Index, out var node) || node == null)
         {
             return;
         }

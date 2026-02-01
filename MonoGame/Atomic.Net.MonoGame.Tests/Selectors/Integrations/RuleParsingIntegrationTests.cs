@@ -42,14 +42,21 @@ public sealed class RuleParsingIntegrationTests : IDisposable
 
         // Assert
         // test-architect: Verify exactly 1 rule was loaded
-        var rules = RuleRegistry.Instance.Rules.ToList();
+        var rules = new List<(ushort Index, JsonRule Value, bool IsGlobal)>();
+        foreach (var item in RuleRegistry.Instance.Rules.Global)
+        {
+            rules.Add((item.Index, item.Value, true));
+        }
+        foreach (var item in RuleRegistry.Instance.Rules.Scene)
+        {
+            rules.Add(((ushort)item.Index, item.Value, false));
+        }
         Assert.Single(rules);
         
         var rule = rules[0].Value;
         
-        // test-architect: Verify rule is in scene partition (index >= MaxGlobalRules)
-        Assert.True(rules[0].Index >= Constants.MaxGlobalRules, 
-            $"Rule should be in scene partition (>= {Constants.MaxGlobalRules})");
+        // test-architect: Verify rule is in scene partition
+        Assert.False(rules[0].IsGlobal, "Rule should be in scene partition");
         
         // test-architect: Verify FROM selector is #poisoned
         Assert.True(rule.From.TryMatch(out TagEntitySelector? tagSelector), "From should be TagEntitySelector");
@@ -76,7 +83,15 @@ public sealed class RuleParsingIntegrationTests : IDisposable
 
         // Assert
         // test-architect: Verify exactly 1 rule was loaded
-        var rules = RuleRegistry.Instance.Rules.ToList();
+        var rules = new List<(ushort Index, JsonRule Value)>();
+        foreach (var item in RuleRegistry.Instance.Rules.Global)
+        {
+            rules.Add(item);
+        }
+        foreach (var item in RuleRegistry.Instance.Rules.Scene)
+        {
+            rules.Add(((ushort)item.Index, item.Value));
+        }
         Assert.Single(rules);
         
         var rule = rules[0].Value;
@@ -126,7 +141,15 @@ public sealed class RuleParsingIntegrationTests : IDisposable
 
         // Assert
         // test-architect: Verify exactly 1 rule was loaded (empty entities array is valid)
-        var rules = RuleRegistry.Instance.Rules.ToList();
+        var rules = new List<(ushort Index, JsonRule Value)>();
+        foreach (var item in RuleRegistry.Instance.Rules.Global)
+        {
+            rules.Add(item);
+        }
+        foreach (var item in RuleRegistry.Instance.Rules.Scene)
+        {
+            rules.Add(((ushort)item.Index, item.Value));
+        }
         Assert.Single(rules);
         
         var rule = rules[0].Value;
@@ -148,13 +171,20 @@ public sealed class RuleParsingIntegrationTests : IDisposable
 
         // Assert
         // test-architect: Verify exactly 2 rules were loaded
-        var rules = RuleRegistry.Instance.Rules.ToList();
+        var rules = new List<(ushort Index, JsonRule Value, bool IsGlobal)>();
+        foreach (var item in RuleRegistry.Instance.Rules.Global)
+        {
+            rules.Add((item.Index, item.Value, true));
+        }
+        foreach (var item in RuleRegistry.Instance.Rules.Scene)
+        {
+            rules.Add(((ushort)item.Index, item.Value, false));
+        }
         Assert.Equal(2, rules.Count);
         
         // test-architect: Verify both rules are in scene partition
         Assert.All(rules, rule => 
-            Assert.True(rule.Index >= Constants.MaxGlobalRules, 
-                $"Rule {rule.Index} should be in scene partition"));
+            Assert.False(rule.IsGlobal, "Rule should be in scene partition"));
         
         // test-architect: Verify rules have correct selectors (#poisoned and #burning)
         var selector1 = rules[0].Value.From.ToString();
@@ -216,7 +246,15 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         Assert.Empty(_errorListener.ReceivedEvents);
         
         // test-architect: No rules should be loaded (scene has no rules section)
-        var rules = RuleRegistry.Instance.Rules.ToList();
+        var rules = new List<(ushort Index, JsonRule Value)>();
+        foreach (var item in RuleRegistry.Instance.Rules.Global)
+        {
+            rules.Add(item);
+        }
+        foreach (var item in RuleRegistry.Instance.Rules.Scene)
+        {
+            rules.Add(((ushort)item.Index, item.Value));
+        }
         Assert.Empty(rules);
     }
 
@@ -231,7 +269,15 @@ public sealed class RuleParsingIntegrationTests : IDisposable
 
         // Assert
         // test-architect: Verify exactly 1 rule was loaded
-        var rules = RuleRegistry.Instance.Rules.ToList();
+        var rules = new List<(ushort Index, JsonRule Value)>();
+        foreach (var item in RuleRegistry.Instance.Rules.Global)
+        {
+            rules.Add(item);
+        }
+        foreach (var item in RuleRegistry.Instance.Rules.Scene)
+        {
+            rules.Add(((ushort)item.Index, item.Value));
+        }
         Assert.Single(rules);
         
         var rule = rules[0].Value;
@@ -252,7 +298,15 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(sceneScenePath);
         
         // test-architect: Verify we have 3 total rules (1 global + 2 scene)
-        var rulesBeforeReset = RuleRegistry.Instance.Rules.ToList();
+        var rulesBeforeReset = new List<(ushort Index, JsonRule Value)>();
+        foreach (var item in RuleRegistry.Instance.Rules.Global)
+        {
+            rulesBeforeReset.Add(item);
+        }
+        foreach (var item in RuleRegistry.Instance.Rules.Scene)
+        {
+            rulesBeforeReset.Add(((ushort)item.Index, item.Value));
+        }
         Assert.Equal(3, rulesBeforeReset.Count);
 
         // Act
@@ -260,7 +314,15 @@ public sealed class RuleParsingIntegrationTests : IDisposable
 
         // Assert
         // test-architect: After reset, only global rule should remain
-        var rulesAfterReset = RuleRegistry.Instance.Rules.ToList();
+        var rulesAfterReset = new List<(ushort Index, JsonRule Value)>();
+        foreach (var item in RuleRegistry.Instance.Rules.Global)
+        {
+            rulesAfterReset.Add(item);
+        }
+        foreach (var item in RuleRegistry.Instance.Rules.Scene)
+        {
+            rulesAfterReset.Add(((ushort)item.Index, item.Value));
+        }
         Assert.Single(rulesAfterReset);
         
         // test-architect: Remaining rule should be in global partition
@@ -279,7 +341,15 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(sceneScenePath);
         
         // test-architect: Verify we have 3 total rules (1 global + 2 scene)
-        var rulesBeforeShutdown = RuleRegistry.Instance.Rules.ToList();
+        var rulesBeforeShutdown = new List<(ushort Index, JsonRule Value)>();
+        foreach (var item in RuleRegistry.Instance.Rules.Global)
+        {
+            rulesBeforeShutdown.Add(item);
+        }
+        foreach (var item in RuleRegistry.Instance.Rules.Scene)
+        {
+            rulesBeforeShutdown.Add(((ushort)item.Index, item.Value));
+        }
         Assert.Equal(3, rulesBeforeShutdown.Count);
 
         // Act
@@ -287,7 +357,15 @@ public sealed class RuleParsingIntegrationTests : IDisposable
 
         // Assert
         // test-architect: After shutdown, all rules should be cleared
-        var rulesAfterShutdown = RuleRegistry.Instance.Rules.ToList();
+        var rulesAfterShutdown = new List<(ushort Index, JsonRule Value)>();
+        foreach (var item in RuleRegistry.Instance.Rules.Global)
+        {
+            rulesAfterShutdown.Add(item);
+        }
+        foreach (var item in RuleRegistry.Instance.Rules.Scene)
+        {
+            rulesAfterShutdown.Add(((ushort)item.Index, item.Value));
+        }
         Assert.Empty(rulesAfterShutdown);
     }
 
@@ -300,12 +378,28 @@ public sealed class RuleParsingIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scene1Path);
-        var rulesAfterFirstScene = RuleRegistry.Instance.Rules.ToList();
+        var rulesAfterFirstScene = new List<(ushort Index, JsonRule Value)>();
+        foreach (var item in RuleRegistry.Instance.Rules.Global)
+        {
+            rulesAfterFirstScene.Add(item);
+        }
+        foreach (var item in RuleRegistry.Instance.Rules.Scene)
+        {
+            rulesAfterFirstScene.Add(((ushort)item.Index, item.Value));
+        }
         
         EventBus<ResetEvent>.Push(new()); // Clear scene rules
         
         SceneLoader.Instance.LoadGameScene(scene2Path);
-        var rulesAfterSecondScene = RuleRegistry.Instance.Rules.ToList();
+        var rulesAfterSecondScene = new List<(ushort Index, JsonRule Value)>();
+        foreach (var item in RuleRegistry.Instance.Rules.Global)
+        {
+            rulesAfterSecondScene.Add(item);
+        }
+        foreach (var item in RuleRegistry.Instance.Rules.Scene)
+        {
+            rulesAfterSecondScene.Add(((ushort)item.Index, item.Value));
+        }
 
         // Assert
         // test-architect: First scene should load 1 rule
