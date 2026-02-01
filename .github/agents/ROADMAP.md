@@ -67,7 +67,12 @@ This should HEAVILY be cooked on to really hash out a very performance approach.
 - [x] TagBehavior needs to be implemented with TagRegistry, and it has to be wired up to properly work with the tag EntitySelector and be tracked in the SelectorRegistry
 
 ### Time-Based Logic
-- [ ] Can script sequences over time (animations, transitions, cutscenes)
+- [x] Can script sequences over time (animations, transitions, cutscenes)
+
+---
+
+### Scene management
+- [ ] Ability to switch between Scenes, with loading scene active between. Loading of a new scene should be non blocking, allowing the loading scene to actually render and have frames while loading occurs
 
 ---
 
