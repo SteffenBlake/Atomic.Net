@@ -176,9 +176,9 @@ public sealed class TransformRegistry :
         {
             // Children are in same partition as parent
             var isGlobal = entityIndex.Visit(
-                global => true,
-                scene => false,
-                () => false
+                static global => true,
+                static scene => false,
+                static () => false
             );
             
             if (isGlobal)

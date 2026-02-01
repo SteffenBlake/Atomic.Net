@@ -31,12 +31,22 @@ public class PropertyValueConverter : JsonConverter<PropertyValue>
         Utf8JsonWriter writer, PropertyValue value, JsonSerializerOptions options
     )
     {
-        value.Visit(
-            s => JsonSerializer.Serialize(writer, s, options),
-            f => JsonSerializer.Serialize(writer, f, options),
-            b => JsonSerializer.Serialize(writer, b, options),
-            writer.WriteNullValue
-        );
+        if (value.TryMatch(out string s))
+        {
+            JsonSerializer.Serialize(writer, s, options);
+        }
+        else if (value.TryMatch(out float f))
+        {
+            JsonSerializer.Serialize(writer, f, options);
+        }
+        else if (value.TryMatch(out bool b))
+        {
+            JsonSerializer.Serialize(writer, b, options);
+        }
+        else
+        {
+            writer.WriteNullValue();
+        }
     }
 }
 

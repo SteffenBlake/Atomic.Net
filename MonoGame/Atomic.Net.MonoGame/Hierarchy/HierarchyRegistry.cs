@@ -457,12 +457,20 @@ public class HierarchyRegistry :
         // Note: GetChildrenArray returns a snapshot, safe to iterate and modify
         foreach (var (childIdx, _) in ownChildren)
         {
-            // senior-dev: Can't use static lambdas here because they capture childIdx
-            Entity child = e.Entity.Index.Visit(
-                _ => EntityRegistry.Instance[(ushort)childIdx],
-                _ => EntityRegistry.Instance[(uint)childIdx],
-                () => throw new InvalidOperationException()
-            );
+            // Use TryMatch to avoid closure allocation
+            Entity child;
+            if (e.Entity.Index.TryMatch(out ushort globalIdx))
+            {
+                child = EntityRegistry.Instance[(ushort)childIdx];
+            }
+            else if (e.Entity.Index.TryMatch(out uint sceneIdx))
+            {
+                child = EntityRegistry.Instance[(uint)childIdx];
+            }
+            else
+            {
+                throw new InvalidOperationException("Invalid PartitionIndex state");
+            }
             
             // Only remove if child is still active
             if (child.Active)
