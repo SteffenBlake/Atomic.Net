@@ -5,6 +5,28 @@ This file documents significant performance findings backed by benchmarks. Only 
 
 ---
 
+## Scene Loading: Entity Spawning Dominates (~63% of Total Time)
+
+**Problem:** Need to understand if async scene loading provides meaningful parallelism or if entity spawning blocks the main thread.
+
+**Solution:** Benchmark shows JSON parsing takes ~36.6% of load time, entity spawning takes ~63.4%
+
+**Performance Breakdown (1000-entity scene):**
+- **JSON Parsing**: 19.18 ms (36.6% of total) - Can run on background thread
+- **Entity Spawning**: 33.26 ms (63.4% of total) - MUST run on main thread
+- **Total**: ~52.44 ms
+
+**Key Insight:** Even with async JSON parsing, the main thread still blocks for ~33ms during entity spawning. Async parsing provides MODERATE benefit (~36% reduction in blocking), but doesn't eliminate loading pauses.
+
+**Recommendations:**
+1. Async JSON parsing saves ~19ms per 1000 entities (worth implementing)
+2. For scenes >500 entities (>26ms), consider chunked spawning across frames
+3. Prioritize essential entities first, defer decorative entities
+
+**Benchmark:** `MonoGame/Atomic.Net.MonoGame.Benchmarks/SceneLoading/Integrations/SceneLoadingBenchmark.cs`
+
+---
+
 
 ## Transform Matrix Order (Sprint 001)
 **Discovery**: MonoGame transform order is `(-Anchor)*Scale*Rotation*Anchor*Position`. Tests with position=0 hide order bugs (both orders give same result). Always test with non-zero values.

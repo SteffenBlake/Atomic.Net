@@ -92,7 +92,7 @@ public class SparsePoisonSequenceBenchmark
         for (int i = 0; i < IterationCount; i++)
         {
             SelectorRegistry.Instance.Recalc();
-            Scenes.RulesDriver.Instance.RunFrame(DeltaTime);
+            global::Atomic.Net.MonoGame.Scenes.RulesDriver.Instance.RunFrame(DeltaTime);
             Sequencing.SequenceDriver.Instance.RunFrame(DeltaTime);
         }
     }

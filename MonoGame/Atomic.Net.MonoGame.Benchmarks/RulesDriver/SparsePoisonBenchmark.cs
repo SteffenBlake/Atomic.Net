@@ -86,7 +86,7 @@ public class SparsePoisonBenchmark
         // Simulates ~1.67 seconds of gameplay (100 frames at 60 FPS)
         for (int i = 0; i < IterationCount; i++)
         {
-            Scenes.RulesDriver.Instance.RunFrame(DeltaTime);
+            global::Atomic.Net.MonoGame.Scenes.RulesDriver.Instance.RunFrame(DeltaTime);
         }
     }
 }
