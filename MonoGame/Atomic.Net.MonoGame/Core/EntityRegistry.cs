@@ -20,55 +20,71 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
 
     public static EntityRegistry Instance { get; private set; } = null!;
 
-    private readonly Entity[] _entities = [.. 
-        Enumerable.Range(0, Constants.MaxEntities - 1)
+    private readonly Entity[] _globalEntities = [.. 
+        Enumerable.Range(0, Constants.MaxGlobalEntities)
         .Select(index => new Entity((ushort)index))
     ];
 
-    private readonly SparseArray<bool> _active = new(Constants.MaxEntities);
-    private readonly SparseArray<bool> _enabled = new(Constants.MaxEntities);
-    private ushort _nextSceneIndex = Constants.MaxGlobalEntities;
+    private readonly Entity[] _sceneEntities = [.. 
+        Enumerable.Range(0, (int)Constants.MaxSceneEntities)
+        .Select(index => new Entity((uint)index))
+    ];
+
+    private readonly PartitionedSparseArray<bool> _active = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
+    private readonly PartitionedSparseArray<bool> _enabled = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
+    private uint _nextSceneIndex = 0;
     private ushort _nextGlobalIndex = 0;
 
-    public Entity this[ushort index]
+    public Entity this[PartitionIndex index]
     {
         get
         {
-            return _entities[index];
+            if (index.TryMatch(out ushort? global))
+            {
+                return _globalEntities[global.Value];
+            }
+            if (index.TryMatch(out uint? scene))
+            {
+                return _sceneEntities[scene.Value];
+            }
+            throw new InvalidOperationException("Invalid PartitionIndex state");
         }
     }
 
     /// <summary>
-    /// Activate the next available scene entity (index greater than or equal to MaxGlobalEntities).
+    /// Activate the next available scene entity.
     /// </summary>
     /// <returns>The activated entity.</returns>
     public Entity Activate()
     {
-        for (ushort offset = 0; offset < Constants.MaxEntities - Constants.MaxGlobalEntities; offset++)
+        for (uint offset = 0; offset < Constants.MaxSceneEntities; offset++)
         {
-            ushort i = GetNextSceneIndex(offset);
+            uint i = (_nextSceneIndex + offset) % Constants.MaxSceneEntities;
+            PartitionIndex sceneIndex = i;
             
-            if (_active[i])
+            if (_active.HasValue(sceneIndex))
             {
                 continue;
             }
 
-            _active.Set(i, true);
-            _enabled.Set(i, true);
-            _nextSceneIndex = (ushort)(i + 1);
-            if (_nextSceneIndex >= Constants.MaxEntities)
-            {
-                _nextSceneIndex = Constants.MaxGlobalEntities;
-            }
+            _active.Set(sceneIndex, true);
+            _enabled.Set(sceneIndex, true);
+            _nextSceneIndex = (i + 1) % Constants.MaxSceneEntities;
 
-            return new(i);
+            return _sceneEntities[i];
         }
 
-        throw new InvalidOperationException("MaxEntities (scene partition) reached");
+        throw new InvalidOperationException("MaxSceneEntities reached");
     }
 
     /// <summary>
-    /// Activate the next available global entity (index less than MaxGlobalEntities).
+    /// Activate the next available global entity.
     /// </summary>
     /// <returns>The activated entity.</returns>
     public Entity ActivateGlobal()
@@ -76,40 +92,34 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
         for (ushort offset = 0; offset < Constants.MaxGlobalEntities; offset++)
         {
             ushort i = (ushort)((_nextGlobalIndex + offset) % Constants.MaxGlobalEntities);
+            PartitionIndex globalIndex = i;
             
-            if (_active[i])
+            if (_active.HasValue(globalIndex))
             {
                 continue;
             }
 
-            _active.Set(i, true);
-            _enabled.Set(i, true);
+            _active.Set(globalIndex, true);
+            _enabled.Set(globalIndex, true);
             _nextGlobalIndex = (ushort)((i + 1) % Constants.MaxGlobalEntities);
 
-            return new(i);
+            return _globalEntities[i];
         }
 
         throw new InvalidOperationException("MaxGlobalEntities reached");
     }
 
-    private ushort GetNextSceneIndex(ushort offset)
-    {
-        return (ushort)(Constants.MaxGlobalEntities + 
-            ((_nextSceneIndex - Constants.MaxGlobalEntities + offset) % 
-            (Constants.MaxEntities - Constants.MaxGlobalEntities)));
-    }
-
     /// <summary>
-    /// Get the first scene entity (index MaxGlobalEntities).
+    /// Get the first scene entity (index 0 in scene partition).
     /// </summary>
     /// <returns>The scene root entity.</returns>
-    public Entity GetSceneRoot() => _entities[Constants.MaxGlobalEntities];
+    public Entity GetSceneRoot() => _sceneEntities[0];
 
     /// <summary>
-    /// Get the first global entity (index 0).
+    /// Get the first global entity (index 0 in global partition).
     /// </summary>
     /// <returns>The global root entity.</returns>
-    public Entity GetGlobalRoot() => _entities[0];
+    public Entity GetGlobalRoot() => _globalEntities[0];
 
     /// <summary>
     /// Deactivate an entity by index.
@@ -131,7 +141,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     /// <summary>
     /// Enable an entity by index.
     /// </summary>
-    /// <param name="entityIndex">The entity index.</param>
+    /// <param name="entity">The entity.</param>
     public void Enable(Entity entity)
     {
         // Check if already enabled
@@ -143,20 +153,18 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
         if(!_active.HasValue(entity.Index))
         {
             throw new InvalidOperationException(
-                $"Tried to enable an entity that doesnt exist, index:{entity.Index}"
+                $"Tried to enable an entity that doesnt exist"
             );
         }
 
         _enabled.Set(entity.Index, true);
-        EventBus<EntityEnabledEvent>.Push(
-            new(_entities[entity.Index])
-        );
+        EventBus<EntityEnabledEvent>.Push(new(entity));
     }
 
     /// <summary>
     /// Disable an entity by index.
     /// </summary>
-    /// <param name="entityIndex">The entity index.</param>
+    /// <param name="entity">The entity.</param>
     public void Disable(Entity entity)
     {
         // Check if already disabled
@@ -168,13 +176,11 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
         if(!_active.HasValue(entity.Index))
         {
             throw new InvalidOperationException(
-                $"Tried to disable an entity that doesnt exist, index:{entity.Index}"
+                $"Tried to disable an entity that doesnt exist"
             );
         }
 
-        EventBus<EntityDisabledEvent>.Push(
-            new(_entities[entity.Index])
-        );
+        EventBus<EntityDisabledEvent>.Push(new(entity));
     }
 
     /// <summary>
@@ -196,25 +202,42 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     /// Get an iterator over active entities.
     /// </summary>
     /// <returns>An enumerable of active entities.</returns>
-    public IEnumerable<Entity> GetActiveEntities() => _active
-        .Select(a => _entities[a.Index]);
+    public IEnumerable<Entity> GetActiveEntities()
+    {
+        foreach (var (index, _) in _active.Global)
+        {
+            yield return _globalEntities[index];
+        }
+        foreach (var (index, _) in _active.Scene)
+        {
+            yield return _sceneEntities[index];
+        }
+    }
 
     /// <summary>
-    /// Get an iterator over active entities.
+    /// Get an iterator over enabled entities.
     /// </summary>
-    /// <returns>An enumerable of active entities.</returns>
-    public IEnumerable<Entity> GetEnabledEntities() => _enabled
-        .Select(e => _entities[e.Index]);
+    /// <returns>An enumerable of enabled entities.</returns>
+    public IEnumerable<Entity> GetEnabledEntities()
+    {
+        foreach (var (index, _) in _enabled.Global)
+        {
+            yield return _globalEntities[index];
+        }
+        foreach (var (index, _) in _enabled.Scene)
+        {
+            yield return _sceneEntities[index];
+        }
+    }
 
     /// <summary>
     /// Handle reset event by deactivating only scene entities.
     /// </summary>
     public void OnEvent(ResetEvent _)
     {
-        // Deactivate only scene entities (indices >= MaxGlobalEntities)
-        var sceneEntities = _active
-            .Where(static a => a.Index >= Constants.MaxGlobalEntities)
-            .Select(a => _entities[a.Index])
+        // Deactivate only scene entities - iterate over scene partition
+        var sceneEntities = _active.Scene
+            .Select(a => _sceneEntities[a.Index])
             .ToList();
 
         foreach (var entity in sceneEntities)
@@ -222,7 +245,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
             Deactivate(entity);
         }
 
-        _nextSceneIndex = Constants.MaxGlobalEntities;
+        _nextSceneIndex = 0;
     }
 
     /// <summary>
@@ -231,17 +254,24 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     /// </summary>
     public void OnEvent(ShutdownEvent e)
     {
-        // Deactivate all entities
-        var sceneEntities = _active
-            .Select(a => _entities[a.Index])
-            .ToList();
+        // Deactivate all entities (both global and scene)
+        var allEntities = new List<Entity>();
+        
+        foreach (var (index, _) in _active.Global)
+        {
+            allEntities.Add(_globalEntities[index]);
+        }
+        foreach (var (index, _) in _active.Scene)
+        {
+            allEntities.Add(_sceneEntities[index]);
+        }
 
-        foreach (var entity in sceneEntities)
+        foreach (var entity in allEntities)
         {
             Deactivate(entity);
         }
 
-        _nextSceneIndex = Constants.MaxGlobalEntities;
+        _nextSceneIndex = 0;
         _nextGlobalIndex = 0;
     }
 }

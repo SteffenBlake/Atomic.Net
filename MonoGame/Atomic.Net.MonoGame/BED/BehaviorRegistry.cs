@@ -34,7 +34,10 @@ public class BehaviorRegistry<TBehavior> :
         EventBus<PreEntityDeactivatedEvent>.Register(this);
     }
 
-    private readonly SparseArray<TBehavior> _behaviors = new(Constants.MaxEntities);
+    private readonly PartitionedSparseArray<TBehavior> _behaviors = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
 
     /// <summary>
     /// Sets or replaces a regular (non-backed) behavior.
@@ -157,7 +160,7 @@ public class BehaviorRegistry<TBehavior> :
     /// <param name="behavior">The behavior instance.</param>
     /// <returns>True if the behavior exists and is active.</returns>
     public bool TryGetBehavior(
-        ushort entityIndex, 
+        PartitionIndex entityIndex, 
         [NotNullWhen(true)]
         out TBehavior? behavior
     )
@@ -185,12 +188,17 @@ public class BehaviorRegistry<TBehavior> :
     /// Iterator over active behaviors (entity + behavior).
     /// </summary>
     /// <returns>An enumerable of active entity-behavior pairs.</returns>
-    public IEnumerable<(Entity Entity, TBehavior Behavior)> GetActiveBehaviors() => 
-        _behaviors
-        .Select(a => (
-            EntityRegistry.Instance[a.Index],
-            a.Value
-        ));
+    public IEnumerable<(Entity Entity, TBehavior Behavior)> GetActiveBehaviors()
+    {
+        foreach (var (index, behavior) in _behaviors.Global)
+        {
+            yield return (EntityRegistry.Instance[(ushort)index], behavior);
+        }
+        foreach (var (index, behavior) in _behaviors.Scene)
+        {
+            yield return (EntityRegistry.Instance[(uint)index], behavior);
+        }
+    }
 
     /// <summary>
     /// Handles entity deactivation by removing its behavior.

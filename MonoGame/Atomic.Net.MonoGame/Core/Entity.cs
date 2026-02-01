@@ -6,12 +6,12 @@ namespace Atomic.Net.MonoGame.Core;
 /// Lightweight entity handle.
 /// </summary>
 /// <param name="index">The entity index.</param>
-public readonly struct Entity(ushort index)
+public readonly struct Entity(PartitionIndex index)
 {
     /// <summary>
     /// The entity index.
     /// </summary>
-    public readonly ushort Index = index;
+    public readonly PartitionIndex Index = index;
 
     /// <summary>
     /// Indicates whether the entity is active.
