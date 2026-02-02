@@ -244,25 +244,24 @@ public static class JsonNodeExtensions
             return false;
         }
 
-        // JSON might serialize ushort as int/uint, so try larger types first
-        if (!jsonValue.TryGetValue<uint>(out var uintValue))
+        // Global partition uses ushort indices
+        if (!jsonValue.TryGetValue<ushort>(out var ushortValue))
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent("Entity _index could not be parsed as number"));
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Entity _index could not be parsed as ushort (global partition)"));
             entityIndex = null;
             return false;
         }
 
-        if (uintValue >= Constants.MaxGlobalEntities)
+        if (ushortValue >= Constants.MaxGlobalEntities)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Entity _index {uintValue} exceeds MaxGlobalEntities ({Constants.MaxGlobalEntities})"
+                $"Entity _index {ushortValue} exceeds MaxGlobalEntities ({Constants.MaxGlobalEntities})"
             ));
             entityIndex = null;
             return false;
         }
 
-        // Convert to ushort for global partition
-        entityIndex = (ushort)uintValue;
+        entityIndex = ushortValue;
         return true;
     }
 
@@ -314,30 +313,5 @@ public static class JsonNodeExtensions
 
         entityIndex = uintValue;
         return true;
-    }
-
-    /// <summary>
-    /// Tries to extract the _index property from entity JSON.
-    /// This method tries both global and scene partitions and returns whichever succeeds.
-    /// Prefer using TryGetGlobalEntityIndex or TryGetSceneEntityIndex when you know the partition.
-    /// </summary>
-    public static bool TryGetEntityIndex(
-        this JsonNode entityJson,
-        [NotNullWhen(true)] out PartitionIndex? entityIndex
-    )
-    {
-        // Try global first (ushort)
-        if (TryGetGlobalEntityIndex(entityJson, out entityIndex))
-        {
-            return true;
-        }
-
-        // Then try scene (uint)
-        if (TryGetSceneEntityIndex(entityJson, out entityIndex))
-        {
-            return true;
-        }
-
-        return false;
     }
 }

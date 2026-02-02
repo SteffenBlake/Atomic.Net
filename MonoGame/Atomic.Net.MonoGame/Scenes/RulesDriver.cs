@@ -99,8 +99,25 @@ public sealed class RulesDriver :
             rule.Do.Execute(entityJsonNode, _ruleContext);
             
             // Write mutations back to real entity (sequence commands don't mutate, only MutCommand does)
-            if (entityJsonNode.TryGetEntityIndex(out var entityIndex))
+            if (entityJsonNode is JsonObject entityObj &&
+                entityObj.TryGetPropertyValue("_partition", out var partitionNode) &&
+                partitionNode?.GetValue<string>() is string partition)
             {
+                PartitionIndex? entityIndex;
+                if (partition == "global")
+                {
+                    if (!entityJsonNode.TryGetGlobalEntityIndex(out entityIndex))
+                    {
+                        return;
+                    }
+                }
+                else // "scene"
+                {
+                    if (!entityJsonNode.TryGetSceneEntityIndex(out entityIndex))
+                    {
+                        return;
+                    }
+                }
                 WriteEntityChanges(entityJsonNode, entityIndex.Value);
             }
         }
@@ -118,14 +135,20 @@ public sealed class RulesDriver :
         foreach (var (entityIndex, _) in selectorMatches.Global)
         {
             var entity = EntityRegistry.Instance[(ushort)entityIndex];
-            entities.Add(JsonEntityConverter.Read(entity));
+            var jsonNode = JsonEntityConverter.Read(entity);
+            // Track partition for deserialization
+            ((JsonObject)jsonNode)["_partition"] = "global";
+            entities.Add(jsonNode);
         }
         
         // Add scene entities
         foreach (var (entityIndex, _) in selectorMatches.Scene)
         {
             var entity = EntityRegistry.Instance[(uint)entityIndex];
-            entities.Add(JsonEntityConverter.Read(entity));
+            var jsonNode = JsonEntityConverter.Read(entity);
+            // Track partition for deserialization
+            ((JsonObject)jsonNode)["_partition"] = "scene";
+            entities.Add(jsonNode);
         }
     }
 
