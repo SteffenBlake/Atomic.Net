@@ -159,9 +159,7 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexBehavior> e)
     {
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type
-        _nodes[e.Entity.Index] = null;
-#pragma warning restore CS8625
+        _nodes.Remove(e.Entity.Index);
         // Special case, because this node isnt even a flex anymore
         if (e.Entity.TryGetParent(out var parent))
         {

@@ -11,27 +11,39 @@ public partial class FlexRegistry :
     public void OnEvent(BehaviorAddedEvent<FlexJustifyContentBehavior> e)
     {
         _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.HasValue(e.Entity.Index)) { _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode(); }
+        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
+        {
+            node = FlexLayoutSharp.Flex.CreateDefaultNode();
+            _nodes[e.Entity.Index] = node;
+        }
         if (e.Entity.TryGetBehavior<FlexJustifyContentBehavior>(out var justify))
         {
-            if (_nodes.TryGetValue(e.Entity.Index, out var node)) { node!.StyleSetJustifyContent(justify.Value.Value); }
+            node.StyleSetJustifyContent(justify.Value.Value);
         }
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexJustifyContentBehavior> e)
     {
         _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.HasValue(e.Entity.Index)) { _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode(); }
+        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
+        {
+            node = FlexLayoutSharp.Flex.CreateDefaultNode();
+            _nodes[e.Entity.Index] = node;
+        }
         if (e.Entity.TryGetBehavior<FlexJustifyContentBehavior>(out var justify))
         {
-            if (_nodes.TryGetValue(e.Entity.Index, out var node)) { node!.StyleSetJustifyContent(justify.Value.Value); }
+            node.StyleSetJustifyContent(justify.Value.Value);
         }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexJustifyContentBehavior> e)
     {
         _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.HasValue(e.Entity.Index)) { _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode(); }
-        if (_nodes.TryGetValue(e.Entity.Index, out var node)) { node!.StyleSetJustifyContent(default); }
+        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
+        {
+            node = FlexLayoutSharp.Flex.CreateDefaultNode();
+            _nodes[e.Entity.Index] = node;
+        }
+        node.StyleSetJustifyContent(default);
     }
 }

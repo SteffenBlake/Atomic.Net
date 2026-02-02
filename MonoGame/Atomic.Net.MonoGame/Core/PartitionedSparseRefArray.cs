@@ -29,13 +29,11 @@ public sealed class PartitionedSparseRefArray<T>(ushort globalCapacity, uint sce
         {
             if (index.TryMatch(out ushort globalIdx))
             {
-                var idx = globalIdx;
-                return Global[idx];
+                return Global[globalIdx];
             }
             if (index.TryMatch(out uint sceneIdx))
             {
-                var idx = (ushort)sceneIdx;
-                return Scene[idx];
+                return Scene[sceneIdx];
             }
             throw new InvalidOperationException("Invalid PartitionIndex state");
         }
@@ -43,14 +41,12 @@ public sealed class PartitionedSparseRefArray<T>(ushort globalCapacity, uint sce
         {
             if (index.TryMatch(out ushort globalIdx))
             {
-                var idx = globalIdx;
-                Global[idx] = value;
+                Global[globalIdx] = value;
                 return;
             }
             if (index.TryMatch(out uint sceneIdx))
             {
-                var idx = (ushort)sceneIdx;
-                Scene[idx] = value;
+                Scene[sceneIdx] = value;
                 return;
             }
             throw new InvalidOperationException("Invalid PartitionIndex state");
@@ -67,13 +63,11 @@ public sealed class PartitionedSparseRefArray<T>(ushort globalCapacity, uint sce
     {
         if (index.TryMatch(out ushort globalIdx))
         {
-            var idx = globalIdx;
-            return Global.TryGetValue(idx, out value);
+            return Global.TryGetValue(globalIdx, out value);
         }
         if (index.TryMatch(out uint sceneIdx))
         {
-            var idx = (ushort)sceneIdx;
-            return Scene.TryGetValue(idx, out value);
+            return Scene.TryGetValue(sceneIdx, out value);
         }
         value = null;
         return false;
@@ -86,13 +80,11 @@ public sealed class PartitionedSparseRefArray<T>(ushort globalCapacity, uint sce
     {
         if (index.TryMatch(out ushort globalIdx))
         {
-            var idx = globalIdx;
-            return Global.HasValue(idx);
+            return Global.HasValue(globalIdx);
         }
         if (index.TryMatch(out uint sceneIdx))
         {
-            var idx = (ushort)sceneIdx;
-            return Scene.HasValue(idx);
+            return Scene.HasValue(sceneIdx);
         }
         return false;
     }
@@ -104,13 +96,11 @@ public sealed class PartitionedSparseRefArray<T>(ushort globalCapacity, uint sce
     {
         if (index.TryMatch(out ushort globalIdx))
         {
-            var idx = globalIdx;
-            return Global.Remove(idx);
+            return Global.Remove(globalIdx);
         }
         if (index.TryMatch(out uint sceneIdx))
         {
-            var idx = (ushort)sceneIdx;
-            return Scene.Remove(idx);
+            return Scene.Remove(sceneIdx);
         }
         return false;
     }

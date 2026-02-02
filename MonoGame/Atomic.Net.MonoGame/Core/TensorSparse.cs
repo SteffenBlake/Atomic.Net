@@ -25,7 +25,7 @@ public static class TensorSparse
 
         TensorPrimitives.BitwiseAnd(_cacheLeft, _cacheRight, _cacheResult);
 
-        for(ushort n = 0; n < left.Capacity; n++)
+        for(uint n = 0; n < left.Capacity; n++)
         {
             if (_cacheResult[n] == 1)
             {
@@ -49,7 +49,7 @@ public static class TensorSparse
 
         TensorPrimitives.BitwiseOr(_cacheLeft, _cacheRight, _cacheResult);
 
-        for(ushort n = 0; n < left.Capacity; n++)
+        for(uint n = 0; n < left.Capacity; n++)
         {
             if (_cacheResult[n] == 1)
             {

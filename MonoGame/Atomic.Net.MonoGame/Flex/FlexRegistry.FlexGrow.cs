@@ -11,27 +11,39 @@ public partial class FlexRegistry :
     public void OnEvent(BehaviorAddedEvent<FlexGrowBehavior> e)
     {
         _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.HasValue(e.Entity.Index)) { _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode(); }
+        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
+        {
+            node = FlexLayoutSharp.Flex.CreateDefaultNode();
+            _nodes[e.Entity.Index] = node;
+        }
         if (e.Entity.TryGetBehavior<FlexGrowBehavior>(out var grow))
         {
-            if (_nodes.TryGetValue(e.Entity.Index, out var node)) { node!.StyleSetFlexGrow(grow.Value.Value); }
+            node.StyleSetFlexGrow(grow.Value.Value);
         }
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexGrowBehavior> e)
     {
         _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.HasValue(e.Entity.Index)) { _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode(); }
+        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
+        {
+            node = FlexLayoutSharp.Flex.CreateDefaultNode();
+            _nodes[e.Entity.Index] = node;
+        }
         if (e.Entity.TryGetBehavior<FlexGrowBehavior>(out var grow))
         {
-            if (_nodes.TryGetValue(e.Entity.Index, out var node)) { node!.StyleSetFlexGrow(grow.Value.Value); }
+            node.StyleSetFlexGrow(grow.Value.Value);
         }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexGrowBehavior> e)
     {
         _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.HasValue(e.Entity.Index)) { _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode(); }
-        if (_nodes.TryGetValue(e.Entity.Index, out var node)) { node!.StyleSetFlexGrow(float.NaN); }
+        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
+        {
+            node = FlexLayoutSharp.Flex.CreateDefaultNode();
+            _nodes[e.Entity.Index] = node;
+        }
+        node.StyleSetFlexGrow(float.NaN);
     }
 }

@@ -51,13 +51,11 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
         {
             if (index.TryMatch(out ushort globalIdx))
             {
-                var idx = globalIdx;
-                return _globalEntities[idx];
+                return _globalEntities[globalIdx];
             }
             if (index.TryMatch(out uint sceneIdx))
             {
-                var idx = sceneIdx;
-                return _sceneEntities[idx];
+                return _sceneEntities[sceneIdx];
             }
             throw new InvalidOperationException("Invalid PartitionIndex state");
         }

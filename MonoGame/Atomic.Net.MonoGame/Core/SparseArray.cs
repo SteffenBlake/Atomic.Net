@@ -3,16 +3,16 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Atomic.Net.MonoGame.Core;
 
-public sealed class SparseArray<T>(uint capacity) : IEnumerable<(ushort Index, T Value)>
+public sealed class SparseArray<T>(uint capacity) : IEnumerable<(uint Index, T Value)>
     where T: struct
 {
     private readonly T[] _sparse = new T[capacity];
     private readonly int[] _denseIndices = [.. Enumerable.Repeat(-1, (int)capacity)];
-    private readonly List<(ushort SparseIndex, T Value)> _dense = new((int)capacity);
+    private readonly List<(uint SparseIndex, T Value)> _dense = new((int)capacity);
 
     public uint Capacity => capacity;
 
-    public T this[ushort index]
+    public T this[uint index]
     {
         get
         {
@@ -23,7 +23,7 @@ public sealed class SparseArray<T>(uint capacity) : IEnumerable<(ushort Index, T
     public T[] Values => _sparse;
 
     public bool TryGetValue(
-        ushort index, 
+        uint index, 
         [NotNullWhen(true)]
         out T? value
     )
@@ -39,12 +39,12 @@ public sealed class SparseArray<T>(uint capacity) : IEnumerable<(ushort Index, T
 
     public int Count => _dense.Count;
 
-    public bool HasValue(ushort index) => _denseIndices[index] >= 0;
+    public bool HasValue(uint index) => _denseIndices[index] >= 0;
 
     /// <summary>
     /// Sets a value at the given index.
     /// </summary>
-    public void Set(ushort index, T value)
+    public void Set(uint index, T value)
     {
         var denseIndex = _denseIndices[index];
         if (denseIndex < 0)
@@ -67,7 +67,7 @@ public sealed class SparseArray<T>(uint capacity) : IEnumerable<(ushort Index, T
     /// If the value doesn't exist, it will be created with default(T).
     /// Returns a SparseRef that must be disposed to sync changes back to the dense array.
     /// </summary>
-    public SparseRef<T> GetMut(ushort index)
+    public SparseRef<T> GetMut(uint index)
     {
         if (_denseIndices[index] < 0)
         {
@@ -83,7 +83,7 @@ public sealed class SparseArray<T>(uint capacity) : IEnumerable<(ushort Index, T
     /// <summary>
     /// Syncs the sparse value at the given index back to the dense array.
     /// </summary>
-    internal void SyncDense(ushort index)
+    internal void SyncDense(uint index)
     {
         var denseIndex = _denseIndices[index];
         if (denseIndex < 0)
@@ -93,7 +93,7 @@ public sealed class SparseArray<T>(uint capacity) : IEnumerable<(ushort Index, T
         _dense[denseIndex] = (index, _sparse[index]);
     }
 
-    public bool Remove(ushort index)
+    public bool Remove(uint index)
     {
         // Lookup where this index lives in the dense array
         var denseIndex = _denseIndices[index];
@@ -120,7 +120,7 @@ public sealed class SparseArray<T>(uint capacity) : IEnumerable<(ushort Index, T
         [NotNullWhen(true)]
         out T? value,
         [NotNullWhen(true)]
-        out ushort? index
+        out uint? index
     )
     {
         if (_dense.Count == 0)
@@ -156,7 +156,7 @@ public sealed class SparseArray<T>(uint capacity) : IEnumerable<(ushort Index, T
 
     public Enumerator GetEnumerator() => new(this);
 
-    IEnumerator<(ushort Index, T Value)> IEnumerable<(ushort Index, T Value)>.GetEnumerator()
+    IEnumerator<(uint Index, T Value)> IEnumerable<(uint Index, T Value)>.GetEnumerator()
     {
         return _dense.GetEnumerator();
     }
@@ -171,7 +171,7 @@ public sealed class SparseArray<T>(uint capacity) : IEnumerable<(ushort Index, T
     /// </summary>
     public struct Enumerator
     {
-        private readonly List<(ushort SparseIndex, T Value)> _dense;
+        private readonly List<(uint SparseIndex, T Value)> _dense;
         private int _index;
 
         internal Enumerator(SparseArray<T> array)
@@ -180,7 +180,7 @@ public sealed class SparseArray<T>(uint capacity) : IEnumerable<(ushort Index, T
             _index = -1;
         }
 
-        public readonly (ushort Index, T Value) Current => _dense[_index];
+        public readonly (uint Index, T Value) Current => _dense[_index];
 
         public bool MoveNext()
         {

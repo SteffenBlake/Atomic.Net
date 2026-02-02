@@ -42,7 +42,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
 
         // Assert
         // test-architect: Verify exactly 1 rule was loaded
-        var rules = new List<(ushort Index, JsonRule Value, bool IsGlobal)>();
+        var rules = new List<(uint Index, JsonRule Value, bool IsGlobal)>();
         foreach (var item in RuleRegistry.Instance.Rules.Global)
         {
             rules.Add((item.Index, item.Value, true));
@@ -83,7 +83,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
 
         // Assert
         // test-architect: Verify exactly 1 rule was loaded
-        var rules = new List<(ushort Index, JsonRule Value)>();
+        var rules = new List<(uint Index, JsonRule Value)>();
         foreach (var item in RuleRegistry.Instance.Rules.Global)
         {
             rules.Add(item);
@@ -141,7 +141,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
 
         // Assert
         // test-architect: Verify exactly 1 rule was loaded (empty entities array is valid)
-        var rules = new List<(ushort Index, JsonRule Value)>();
+        var rules = new List<(uint Index, JsonRule Value)>();
         foreach (var item in RuleRegistry.Instance.Rules.Global)
         {
             rules.Add(item);
@@ -171,7 +171,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
 
         // Assert
         // test-architect: Verify exactly 2 rules were loaded
-        var rules = new List<(ushort Index, JsonRule Value, bool IsGlobal)>();
+        var rules = new List<(uint Index, JsonRule Value, bool IsGlobal)>();
         foreach (var item in RuleRegistry.Instance.Rules.Global)
         {
             rules.Add((item.Index, item.Value, true));
@@ -246,7 +246,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         Assert.Empty(_errorListener.ReceivedEvents);
         
         // test-architect: No rules should be loaded (scene has no rules section)
-        var rules = new List<(ushort Index, JsonRule Value)>();
+        var rules = new List<(uint Index, JsonRule Value)>();
         foreach (var item in RuleRegistry.Instance.Rules.Global)
         {
             rules.Add(item);
@@ -269,7 +269,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
 
         // Assert
         // test-architect: Verify exactly 1 rule was loaded
-        var rules = new List<(ushort Index, JsonRule Value)>();
+        var rules = new List<(uint Index, JsonRule Value)>();
         foreach (var item in RuleRegistry.Instance.Rules.Global)
         {
             rules.Add(item);
@@ -298,7 +298,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(sceneScenePath);
         
         // test-architect: Verify we have 3 total rules (1 global + 2 scene)
-        var rulesBeforeReset = new List<(ushort Index, JsonRule Value)>();
+        var rulesBeforeReset = new List<(uint Index, JsonRule Value)>();
         foreach (var item in RuleRegistry.Instance.Rules.Global)
         {
             rulesBeforeReset.Add(item);
@@ -314,7 +314,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
 
         // Assert
         // test-architect: After reset, only global rule should remain
-        var rulesAfterReset = new List<(ushort Index, JsonRule Value)>();
+        var rulesAfterReset = new List<(uint Index, JsonRule Value)>();
         foreach (var item in RuleRegistry.Instance.Rules.Global)
         {
             rulesAfterReset.Add(item);
@@ -341,7 +341,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(sceneScenePath);
         
         // test-architect: Verify we have 3 total rules (1 global + 2 scene)
-        var rulesBeforeShutdown = new List<(ushort Index, JsonRule Value)>();
+        var rulesBeforeShutdown = new List<(uint Index, JsonRule Value)>();
         foreach (var item in RuleRegistry.Instance.Rules.Global)
         {
             rulesBeforeShutdown.Add(item);
@@ -357,7 +357,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
 
         // Assert
         // test-architect: After shutdown, all rules should be cleared
-        var rulesAfterShutdown = new List<(ushort Index, JsonRule Value)>();
+        var rulesAfterShutdown = new List<(uint Index, JsonRule Value)>();
         foreach (var item in RuleRegistry.Instance.Rules.Global)
         {
             rulesAfterShutdown.Add(item);
@@ -378,7 +378,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
 
         // Act
         SceneLoader.Instance.LoadGameScene(scene1Path);
-        var rulesAfterFirstScene = new List<(ushort Index, JsonRule Value)>();
+        var rulesAfterFirstScene = new List<(uint Index, JsonRule Value)>();
         foreach (var item in RuleRegistry.Instance.Rules.Global)
         {
             rulesAfterFirstScene.Add(item);
@@ -391,7 +391,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         EventBus<ResetEvent>.Push(new()); // Clear scene rules
         
         SceneLoader.Instance.LoadGameScene(scene2Path);
-        var rulesAfterSecondScene = new List<(ushort Index, JsonRule Value)>();
+        var rulesAfterSecondScene = new List<(uint Index, JsonRule Value)>();
         foreach (var item in RuleRegistry.Instance.Rules.Global)
         {
             rulesAfterSecondScene.Add(item);

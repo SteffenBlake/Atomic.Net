@@ -10,19 +10,31 @@ public partial class FlexRegistry :
 {
     public void OnEvent(BehaviorAddedEvent<FlexZOverride> e)
     {
-        if (!_nodes.HasValue(e.Entity.Index)) { _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode(); }
+        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
+        {
+            node = FlexLayoutSharp.Flex.CreateDefaultNode();
+            _nodes[e.Entity.Index] = node;
+        }
         _dirty.Set(e.Entity.Index, true);
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexZOverride> e)
     {
-        if (!_nodes.HasValue(e.Entity.Index)) { _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode(); }
+        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
+        {
+            node = FlexLayoutSharp.Flex.CreateDefaultNode();
+            _nodes[e.Entity.Index] = node;
+        }
         _dirty.Set(e.Entity.Index, true);
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexZOverride> e)
     {
-        if (!_nodes.HasValue(e.Entity.Index)) { _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode(); }
+        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
+        {
+            node = FlexLayoutSharp.Flex.CreateDefaultNode();
+            _nodes[e.Entity.Index] = node;
+        }
         _dirty.Set(e.Entity.Index, true);
     }
 }

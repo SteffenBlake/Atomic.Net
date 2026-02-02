@@ -4,11 +4,11 @@ namespace Atomic.Net.MonoGame.Core;
 /// Provides scoped mutable access to a value in a span.
 /// Disposing invokes the provided callback.
 /// </summary>
-public ref struct SparseRef<T>(Span<T> span, ushort index, SparseArray<T> owner)
+public ref struct SparseRef<T>(Span<T> span, uint index, SparseArray<T> owner)
     where T : struct
 {
     private readonly Span<T> _span = span;
-    private readonly ushort _index = index;
+    private readonly uint _index = index;
     private bool _disposed;
 
     public readonly ref T Value
@@ -19,7 +19,7 @@ public ref struct SparseRef<T>(Span<T> span, ushort index, SparseArray<T> owner)
             {
                 throw new ObjectDisposedException(nameof(SparseRef<>));
             }
-            return ref _span[_index];
+            return ref _span[(int)_index];
         }
     }
 
