@@ -99,11 +99,13 @@ public sealed class RulesDriver :
             rule.Do.Execute(entityJsonNode, _ruleContext);
             
             // Write mutations back to real entity (sequence commands don't mutate, only MutCommand does)
+            // @senior-dev: Do not bake this in, this is a breaking change to the json and that was not approved. This should be tracked in the C# code, `isGlobal` should just be a bool you add to `ProcessRule(...)`
             if (entityJsonNode is JsonObject entityObj &&
                 entityObj.TryGetPropertyValue("_partition", out var partitionNode) &&
                 partitionNode?.GetValue<string>() is string partition)
             {
                 PartitionIndex? entityIndex;
+                // @senior-dev: You will now add a `TryGetEntityIndex(bool isGlobal, out PartitionIndex? index)` function (beside TryGetGlobalEntityIndex and TryGetSceneEntityIndex) that handles this smoothly so you dont need to make a non init value above.
                 if (partition == "global")
                 {
                     if (!entityJsonNode.TryGetGlobalEntityIndex(out entityIndex))
