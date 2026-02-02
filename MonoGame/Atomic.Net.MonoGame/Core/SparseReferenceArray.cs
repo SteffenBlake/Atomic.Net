@@ -3,14 +3,25 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Atomic.Net.MonoGame.Core;
 
-public sealed class SparseReferenceArray<T>(uint capacity) : IEnumerable<(uint Index, T Value)>
+public sealed class SparseReferenceArray<T> : IEnumerable<(uint Index, T Value)>
     where T : class
 {
-    private readonly T?[] _sparse = new T?[capacity];
-    private readonly int[] _denseIndices = [.. Enumerable.Repeat(-1, (int)capacity)];
-    private readonly List<(uint SparseIndex, T Value)> _dense = new((int)capacity);
+    private readonly T?[] _sparse;
+    private readonly int[] _denseIndices;
+    private readonly List<(uint SparseIndex, T Value)> _dense;
+    
+    public uint Capacity { get; }
 
-    public uint Capacity => capacity;
+    public SparseReferenceArray(uint capacity)
+    {
+        Capacity = capacity;
+        _sparse = new T?[capacity];
+        _denseIndices = new int[capacity];
+        _dense = new List<(uint, T)>((int)capacity);
+        
+        // Initialize all dense indices to -1 (sentinel for "not set")
+        Array.Fill(_denseIndices, -1);
+    }
 
     public T this[uint index]
     {

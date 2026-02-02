@@ -5,9 +5,9 @@ namespace Atomic.Net.MonoGame.Core;
 
 public static class TensorSparse
 {
-    private readonly static byte[] _cacheLeft = new byte[(int)(Constants.MaxGlobalEntities + Constants.MaxSceneEntities)];
-    private readonly static byte[] _cacheRight = new byte[(int)(Constants.MaxGlobalEntities + Constants.MaxSceneEntities)];
-    private readonly static byte[] _cacheResult = new byte[(int)(Constants.MaxGlobalEntities + Constants.MaxSceneEntities)];
+    private readonly static byte[] _cacheLeft = new byte[Constants.MaxSceneEntities];
+    private readonly static byte[] _cacheRight = new byte[Constants.MaxSceneEntities];
+    private readonly static byte[] _cacheResult = new byte[Constants.MaxSceneEntities];
 
 
     /// <summary>
