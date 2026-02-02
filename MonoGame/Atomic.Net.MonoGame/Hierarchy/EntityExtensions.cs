@@ -74,6 +74,7 @@ public static class HierarchyEntityExtensions
     {
         if (child.TryGetBehavior<ParentBehavior>(out var parentBehavior))
         {
+            // @senior-dev: Instead of passing the entire child object in, you should just pass in an isGlobal bool, fix this
             return parentBehavior.Value.TryFindParent(child, out parent);
         }
 
