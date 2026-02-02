@@ -14,6 +14,11 @@ public readonly partial struct PartitionIndex
     static partial void VariantOf(ushort global, uint scene);
 
     /// <summary>
+    /// Returns true if this index is in the global partition.
+    /// </summary>
+    public bool IsGlobal => TryMatch(out ushort _);
+
+    /// <summary>
     /// Converts the partition index to a JsonValue for serialization.
     /// </summary>
     public JsonValue ToJsonValue()

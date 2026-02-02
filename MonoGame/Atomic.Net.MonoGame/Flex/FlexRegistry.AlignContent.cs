@@ -1,8 +1,6 @@
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
 
-// @senior-dev: you fixed migrating logic in this file to use EnsureDirtyNode(e.Entity.Index);
-
 namespace Atomic.Net.MonoGame.Flex;
 
 public partial class FlexRegistry : 

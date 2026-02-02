@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Scenes;
@@ -29,47 +30,48 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
     private uint _nextSceneRuleIndex = 0;
     private ushort _nextGlobalRuleIndex = 0;
 
-    // @senior-dev: Change this to:
-    // bool TryActivate(JsonRule rule, [NotNullWhen(true)] out PartitionIndex? index) ...
-
     /// <summary>
-    /// Activate the next available scene rule.
+    /// Tries to activate the next available scene rule.
     /// </summary>
     /// <param name="rule">The rule to activate.</param>
-    /// <returns>The partition index of the activated rule, or null on error.</returns>
-    public PartitionIndex? Activate(JsonRule rule)
+    /// <param name="index">The partition index of the activated rule, or null on error.</param>
+    /// <returns>True if rule was activated successfully, false if capacity exceeded.</returns>
+    public bool TryActivate(JsonRule rule, [NotNullWhen(true)] out PartitionIndex? index)
     {
-        // senior-dev: Allocate from scene partition
+        // Allocate from scene partition
         if (_nextSceneRuleIndex >= Constants.MaxSceneRules)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Scene rule capacity exceeded"));
-            return null;
+            index = null;
+            return false;
         }
 
-        var index = _nextSceneRuleIndex++;
-        PartitionIndex sceneIndex = index;
-        Rules.Set(sceneIndex, rule);
-        return sceneIndex;
+        var sceneIdx = _nextSceneRuleIndex++;
+        index = sceneIdx;
+        Rules.Set(index.Value, rule);
+        return true;
     }
 
     /// <summary>
-    /// Activate the next available global rule.
+    /// Tries to activate the next available global rule.
     /// </summary>
     /// <param name="rule">The rule to activate.</param>
-    /// <returns>The partition index of the activated rule, or null on error.</returns>
-    public PartitionIndex? ActivateGlobal(JsonRule rule)
+    /// <param name="index">The partition index of the activated rule, or null on error.</param>
+    /// <returns>True if rule was activated successfully, false if capacity exceeded.</returns>
+    public bool TryActivateGlobal(JsonRule rule, [NotNullWhen(true)] out PartitionIndex? index)
     {
-        // senior-dev: Allocate from global partition
+        // Allocate from global partition
         if (_nextGlobalRuleIndex >= Constants.MaxGlobalRules)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Global rule capacity exceeded"));
-            return null;
+            index = null;
+            return false;
         }
 
-        var index = _nextGlobalRuleIndex++;
-        PartitionIndex globalIndex = index;
-        Rules.Set(globalIndex, rule);
-        return globalIndex;
+        var globalIdx = _nextGlobalRuleIndex++;
+        index = globalIdx;
+        Rules.Set(index.Value, rule);
+        return true;
     }
 
     /// <summary>

@@ -25,6 +25,11 @@ public readonly struct Entity(PartitionIndex index)
     public bool Enabled => EntityRegistry.Instance.IsEnabled(this);
 
     /// <summary>
+    /// Returns true if this entity is in the global partition.
+    /// </summary>
+    public bool IsGlobal() => Index.IsGlobal;
+
+    /// <summary>
     /// Deactivates this entity.
     /// </summary>
     public void Deactivate() => EntityRegistry.Instance.Deactivate(this);

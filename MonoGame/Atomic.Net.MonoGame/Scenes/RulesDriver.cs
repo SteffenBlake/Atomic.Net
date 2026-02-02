@@ -25,6 +25,9 @@ public sealed class RulesDriver :
         ["index"] = -1
     };
 
+    // Track which partition each entity in the entities array belongs to (parallel to _ruleContext["entities"])
+    private readonly List<bool> _entityPartitions = new();
+
     internal static void Initialize()
     {
         if (Instance != null)
@@ -98,49 +101,33 @@ public sealed class RulesDriver :
             // Execute the scene command on this entity
             rule.Do.Execute(entityJsonNode, _ruleContext);
             
-            // Write mutations back to real entity (sequence commands don't mutate, only MutCommand does)
-            // @senior-dev: Do not bake this in, this is a breaking change to the json and that was not approved. This should be tracked in the C# code, `isGlobal` should just be a bool you add to `ProcessRule(...)`
-            if (entityJsonNode is JsonObject entityObj &&
-                entityObj.TryGetPropertyValue("_partition", out var partitionNode) &&
-                partitionNode?.GetValue<string>() is string partition)
+            // Write mutations back to real entity using partition tracked in C# code
+            bool isGlobal = _entityPartitions[i];
+            if (!entityJsonNode.TryGetEntityIndex(isGlobal, out var entityIndex))
             {
-                PartitionIndex? entityIndex;
-                // @senior-dev: You will now add a `TryGetEntityIndex(bool isGlobal, out PartitionIndex? index)` function (beside TryGetGlobalEntityIndex and TryGetSceneEntityIndex) that handles this smoothly so you dont need to make a non init value above.
-                if (partition == "global")
-                {
-                    if (!entityJsonNode.TryGetGlobalEntityIndex(out entityIndex))
-                    {
-                        return;
-                    }
-                }
-                else // "scene"
-                {
-                    if (!entityJsonNode.TryGetSceneEntityIndex(out entityIndex))
-                    {
-                        return;
-                    }
-                }
-                WriteEntityChanges(entityJsonNode, entityIndex.Value);
+                return;
             }
+            WriteEntityChanges(entityJsonNode, entityIndex.Value);
         }
     }
 
     /// <summary>
     /// Serializes entities that match the selector into a JsonArray.
+    /// Partition metadata is tracked separately in _entityPartitions list (not in JSON).
     /// </summary>
     private void BuildEntitiesArray(PartitionedSparseArray<bool> selectorMatches)
     {
         var entities = (JsonArray)_ruleContext["entities"]!;
         entities.Clear();
+        _entityPartitions.Clear();
         
         // Add global entities
         foreach (var (entityIndex, _) in selectorMatches.Global)
         {
             var entity = EntityRegistry.Instance[(ushort)entityIndex];
             var jsonNode = JsonEntityConverter.Read(entity);
-            // Track partition for deserialization
-            ((JsonObject)jsonNode)["_partition"] = "global";
             entities.Add(jsonNode);
+            _entityPartitions.Add(true); // Track as global partition
         }
         
         // Add scene entities
@@ -148,9 +135,8 @@ public sealed class RulesDriver :
         {
             var entity = EntityRegistry.Instance[(uint)entityIndex];
             var jsonNode = JsonEntityConverter.Read(entity);
-            // Track partition for deserialization
-            ((JsonObject)jsonNode)["_partition"] = "scene";
             entities.Add(jsonNode);
+            _entityPartitions.Add(false); // Track as scene partition
         }
     }
 

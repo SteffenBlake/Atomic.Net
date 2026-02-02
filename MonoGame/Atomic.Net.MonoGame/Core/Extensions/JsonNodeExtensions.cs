@@ -314,4 +314,19 @@ public static class JsonNodeExtensions
         entityIndex = uintValue;
         return true;
     }
+
+    /// <summary>
+    /// Tries to extract the _index property from entity JSON based on partition type.
+    /// Routes to TryGetGlobalEntityIndex or TryGetSceneEntityIndex based on isGlobal flag.
+    /// </summary>
+    public static bool TryGetEntityIndex(
+        this JsonNode entityJson,
+        bool isGlobal,
+        [NotNullWhen(true)] out PartitionIndex? entityIndex
+    )
+    {
+        return isGlobal
+            ? entityJson.TryGetGlobalEntityIndex(out entityIndex)
+            : entityJson.TryGetSceneEntityIndex(out entityIndex);
+    }
 }
