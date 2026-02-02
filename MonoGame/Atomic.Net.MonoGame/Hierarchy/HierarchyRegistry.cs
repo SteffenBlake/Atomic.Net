@@ -170,6 +170,8 @@ public class HierarchyRegistry :
         _childToParentLookup.Remove(child.Index);
     }
 
+    // @senior-dev: Simplify this function below to just call TryGetChildren
+
     /// <summary>
     /// Retrieves all child entities of the specified parent.
     /// </summary>
@@ -213,6 +215,8 @@ public class HierarchyRegistry :
         }
     }
 
+    // @senior-dev: You made TryGetChildrenArray but failed to delete this function, it must be deleted now, only TryGetChildrenArray should remain and be used in the system
+
     /// <summary>
     /// Gets the child sparse array for a parent, or null if no children exist.
     /// Allows allocation-free iteration of child indices.
@@ -221,7 +225,6 @@ public class HierarchyRegistry :
     /// <returns>The sparse array of children, or null if no children.</returns>
     public SparseArray<bool>? GetChildrenArray(PartitionIndex parentIndex)
     {
-        // @senior-dev: Once again, TryMatch here
         var parentGlobal = parentIndex.Visit(
             static global => (ushort?)global,
             static scene => (ushort?)null,
@@ -234,7 +237,6 @@ public class HierarchyRegistry :
                 ? children : null;
         }
 
-        // @senior-dev: and here as well..
         var parentScene = parentIndex.Visit(
             static global => (ushort?)null,
             static scene => (ushort?)scene,
