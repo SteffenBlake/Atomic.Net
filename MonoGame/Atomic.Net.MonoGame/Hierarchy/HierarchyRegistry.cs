@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Ids;
@@ -37,7 +38,7 @@ public class HierarchyRegistry :
 
     // Scene parents with scene children only
     private readonly SparseReferenceArray<SparseArray<bool>> _sceneParentToChildren 
-        = new((int)Constants.MaxSceneEntities);
+        = new(Constants.MaxSceneEntities);
 
     // Track dirty children who need parent resolution during Recalc
     private readonly PartitionedSparseArray<bool> _dirtyChildren = new(
@@ -107,20 +108,15 @@ public class HierarchyRegistry :
         else
         {
             // Both are scene
-            var parentScene = parent.Index.Visit(
-                static _ => throw new InvalidOperationException(),
-                static scene => (ushort)scene,
-                static () => throw new InvalidOperationException()
-            );
-            var childScene = child.Index.Visit(
-                static _ => throw new InvalidOperationException(),
-                static scene => (ushort)scene,
-                static () => throw new InvalidOperationException()
-            );
+            if (!parent.Index.TryMatch(out uint parentScene) ||
+                !child.Index.TryMatch(out uint childScene))
+            {
+                throw new InvalidOperationException("Both parent and child must be scene entities");
+            }
             
             if (!_sceneParentToChildren.HasValue(parentScene))
             {
-                _sceneParentToChildren[parentScene] = new SparseArray<bool>((int)Constants.MaxSceneEntities);
+                _sceneParentToChildren[parentScene] = new SparseArray<bool>(Constants.MaxSceneEntities);
             }
             _sceneParentToChildren[parentScene].Set(childScene, true);
         }
@@ -133,44 +129,35 @@ public class HierarchyRegistry :
     /// </summary>
     /// <param name="parent">The parent entity.</param>
     /// <param name="child">The child entity to remove.</param>
+    /// <summary>
+    /// Removes tracking of a child entity from the specified parent.
+    /// </summary>
+    /// <param name="parent">The parent entity.</param>
+    /// <param name="child">The child entity to remove.</param>
     public void UntrackChild(Entity parent, Entity child)
     {
-        var parentGlobal = parent.Index.Visit(
-            static global => (ushort?)global,
-            static scene => (ushort?)null,
-            static () => (ushort?)null
-        );
-        
-        if (parentGlobal.HasValue)
+        if (parent.Index.TryMatch(out ushort parentGlobal))
         {
-            if (_globalParentToChildren.TryGetValue(parentGlobal.Value, out var children))
+            if (_globalParentToChildren.TryGetValue(parentGlobal, out var children))
             {
-                var childGlobal = child.Index.Visit(
-                    static global => global,
-                    static _ => throw new InvalidOperationException("Child must be in same partition as parent"),
-                    static () => throw new InvalidOperationException()
-                );
+                if (!child.Index.TryMatch(out ushort childGlobal))
+                {
+                    throw new InvalidOperationException("Child must be in same partition as parent");
+                }
                 
-                _ = children.Remove(childGlobal);
+                children.Remove(childGlobal);
             }
         }
-        else
+        else if (parent.Index.TryMatch(out uint parentScene))
         {
-            var parentScene = parent.Index.Visit(
-                static _ => throw new InvalidOperationException(),
-                static scene => (ushort)scene,
-                static () => throw new InvalidOperationException()
-            );
-            
             if (_sceneParentToChildren.TryGetValue(parentScene, out var children))
             {
-                var childScene = child.Index.Visit(
-                    static _ => throw new InvalidOperationException("Child must be in same partition as parent"),
-                    static scene => (ushort)scene,
-                    static () => throw new InvalidOperationException()
-                );
+                if (!child.Index.TryMatch(out uint childScene))
+                {
+                    throw new InvalidOperationException("Child must be in same partition as parent");
+                }
                 
-                _ = children.Remove(childScene);
+                children.Remove(childScene);
             }
         }
         
@@ -251,6 +238,32 @@ public class HierarchyRegistry :
         }
         
         return null;
+    }
+    
+    /// <summary>
+    /// Tries to get the children array for the specified parent.
+    /// </summary>
+    /// <param name="parentIndex">The parent entity index.</param>
+    /// <param name="children">The sparse array of child indices, if found.</param>
+    /// <returns>True if the parent has children; otherwise, false.</returns>
+    private bool TryGetChildrenArray(
+        PartitionIndex parentIndex,
+        [NotNullWhen(true)]
+        out SparseArray<bool>? children
+    )
+    {
+        if (parentIndex.TryMatch(out ushort parentGlobal))
+        {
+            return _globalParentToChildren.TryGetValue(parentGlobal, out children);
+        }
+        
+        if (parentIndex.TryMatch(out uint parentScene))
+        {
+            return _sceneParentToChildren.TryGetValue(parentScene, out children);
+        }
+        
+        children = null;
+        return false;
     }
 
     /// <summary>
@@ -344,10 +357,10 @@ public class HierarchyRegistry :
         }
         
         // Get the child's ParentBehavior (may have been removed)
-        if (!BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(child, out var behavior))
+        if (!child.TryGetBehavior<ParentBehavior>(out var behavior))
         {
             // ParentBehavior was removed - clean up old parent if we tracked one
-            if (_oldParentLookup.TryGetValue(childIndex, out var oldParentIdx) && oldParentIdx.HasValue)
+            if (_oldParentLookup.TryGetValue(childIndex, out var oldParentIdx))
             {
                 UntrackChild(EntityRegistry.Instance[oldParentIdx.Value], child);
                 _oldParentLookup.Remove(childIndex);
@@ -367,7 +380,7 @@ public class HierarchyRegistry :
         }
         
         // Clean up old parent relationship if one was tracked
-        if (_oldParentLookup.TryGetValue(childIndex, out var oldParentIndex) && oldParentIndex.HasValue)
+        if (_oldParentLookup.TryGetValue(childIndex, out var oldParentIndex))
         {
             var oldParent = EntityRegistry.Instance[oldParentIndex.Value];
             
@@ -441,7 +454,7 @@ public class HierarchyRegistry :
         _oldParentLookup.Remove(e.Entity.Index);
         
         // If this entity is a child, remove it from its parent's child list (O(1) lookup)
-        if (_childToParentLookup.TryGetValue(e.Entity.Index, out var parentIdx) && parentIdx.HasValue)
+        if (_childToParentLookup.TryGetValue(e.Entity.Index, out var parentIdx))
         {
             UntrackChild(EntityRegistry.Instance[parentIdx.Value], e.Entity);
         }
