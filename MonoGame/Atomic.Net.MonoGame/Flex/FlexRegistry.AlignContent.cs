@@ -3,6 +3,10 @@ using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Flex;
 
+// @senior-dev: You still need to migrate this file to use 
+// var node = EnsureDirtyNode(e.Entity.Index);
+// Syntax. Fix it.
+
 public partial class FlexRegistry : 
     IEventHandler<BehaviorAddedEvent<AlignContentBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<AlignContentBehavior>>,
