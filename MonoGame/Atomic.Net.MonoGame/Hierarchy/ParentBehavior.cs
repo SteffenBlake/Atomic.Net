@@ -9,15 +9,20 @@ namespace Atomic.Net.MonoGame.Hierarchy;
 public readonly record struct ParentBehavior(EntitySelector ParentSelector)
 {
     public bool TryFindParent(
+        Entity child,
         [NotNullWhen(true)]
         out Entity? parent
     )
     {
+        // senior-dev: Must check both partitions because selector may match either
+        // The TrackChild validation will ensure parent and child are in same partition
+        
         // Check global partition first
         var globalEnumerator = ParentSelector.Matches.Global.GetEnumerator();
         if (globalEnumerator.MoveNext())
         {
-            var parentIndex = (ushort)globalEnumerator.Current.Index;
+            // Global sparse array uses uint indices, but PartitionIndex needs ushort for global
+            ushort parentIndex = (ushort)globalEnumerator.Current.Index;
             parent = EntityRegistry.Instance[parentIndex];
             return true;
         }
@@ -26,7 +31,8 @@ public readonly record struct ParentBehavior(EntitySelector ParentSelector)
         var sceneEnumerator = ParentSelector.Matches.Scene.GetEnumerator();
         if (sceneEnumerator.MoveNext())
         {
-            var parentIndex = (uint)sceneEnumerator.Current.Index;
+            // Scene sparse array uses uint indices, PartitionIndex also uses uint for scene
+            uint parentIndex = sceneEnumerator.Current.Index;
             parent = EntityRegistry.Instance[parentIndex];
             return true;
         }

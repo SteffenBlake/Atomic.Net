@@ -215,10 +215,10 @@ public static class JsonNodeExtensions
     }
 
     /// <summary>
-    /// Tries to extract the _index property from entity JSON.
-    /// Entity index is ushort, but JsonLogic may serialize as int.
+    /// Tries to extract the _index property from entity JSON as a global partition index.
+    /// Use this when you know the entity is from the global partition.
     /// </summary>
-    public static bool TryGetEntityIndex(
+    public static bool TryGetGlobalEntityIndex(
         this JsonNode entityJson,
         [NotNullWhen(true)] out PartitionIndex? entityIndex
     )
@@ -237,60 +237,107 @@ public static class JsonNodeExtensions
             return false;
         }
 
-        try
+        if (indexNode is not JsonValue jsonValue)
         {
-            // Guard clause: must be JsonValue
-            if (indexNode is not JsonValue jsonValue)
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent("Entity _index must be a numeric value"));
-                entityIndex = null;
-                return false;
-            }
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Entity _index must be a numeric value"));
+            entityIndex = null;
+            return false;
+        }
 
-            // Try to read as ushort (global partition)
-            if (jsonValue.TryGetValue<ushort>(out var ushortValue))
-            {
-                // Implicit conversion from ushort to PartitionIndex (per DISCOVERIES.md)
-                if (ushortValue < Constants.MaxGlobalEntities)
-                {
-                    entityIndex = ushortValue;
-                    return true;
-                }
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Entity _index {ushortValue} exceeds MaxGlobalEntities ({Constants.MaxGlobalEntities})"
-                ));
-                entityIndex = null;
-                return false;
-            }
+        // JSON might serialize ushort as int/uint, so try larger types first
+        if (!jsonValue.TryGetValue<uint>(out var uintValue))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Entity _index could not be parsed as number"));
+            entityIndex = null;
+            return false;
+        }
 
-            // Try to read as uint (scene partition)
-            if (jsonValue.TryGetValue<uint>(out var uintValue))
-            {
-                // Implicit conversion from uint to PartitionIndex (per DISCOVERIES.md)
-                if (uintValue < Constants.MaxSceneEntities)
-                {
-                    entityIndex = uintValue;
-                    return true;
-                }
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Entity _index {uintValue} exceeds MaxSceneEntities ({Constants.MaxSceneEntities})"
-                ));
-                entityIndex = null;
-                return false;
-            }
-
-            // Couldn't parse as ushort or uint
+        if (uintValue >= Constants.MaxGlobalEntities)
+        {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
-                $"Entity _index could not be parsed as ushort or uint"
+                $"Entity _index {uintValue} exceeds MaxGlobalEntities ({Constants.MaxGlobalEntities})"
             ));
             entityIndex = null;
             return false;
         }
-        catch (Exception ex)
+
+        // Convert to ushort for global partition
+        entityIndex = (ushort)uintValue;
+        return true;
+    }
+
+    /// <summary>
+    /// Tries to extract the _index property from entity JSON as a scene partition index.
+    /// Use this when you know the entity is from the scene partition.
+    /// </summary>
+    public static bool TryGetSceneEntityIndex(
+        this JsonNode entityJson,
+        [NotNullWhen(true)] out PartitionIndex? entityIndex
+    )
+    {
+        if (entityJson is not JsonObject entityObj)
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Failed to parse _index: {ex.Message}"));
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Entity JSON is not a JsonObject"));
             entityIndex = null;
             return false;
         }
+
+        if (!entityObj.TryGetPropertyValue("_index", out var indexNode) || indexNode == null)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Entity missing _index property"));
+            entityIndex = null;
+            return false;
+        }
+
+        if (indexNode is not JsonValue jsonValue)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Entity _index must be a numeric value"));
+            entityIndex = null;
+            return false;
+        }
+
+        if (!jsonValue.TryGetValue<uint>(out var uintValue))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Entity _index could not be parsed as uint (scene partition)"));
+            entityIndex = null;
+            return false;
+        }
+
+        if (uintValue >= Constants.MaxSceneEntities)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Entity _index {uintValue} exceeds MaxSceneEntities ({Constants.MaxSceneEntities})"
+            ));
+            entityIndex = null;
+            return false;
+        }
+
+        entityIndex = uintValue;
+        return true;
+    }
+
+    /// <summary>
+    /// Tries to extract the _index property from entity JSON.
+    /// This method tries both global and scene partitions and returns whichever succeeds.
+    /// Prefer using TryGetGlobalEntityIndex or TryGetSceneEntityIndex when you know the partition.
+    /// </summary>
+    public static bool TryGetEntityIndex(
+        this JsonNode entityJson,
+        [NotNullWhen(true)] out PartitionIndex? entityIndex
+    )
+    {
+        // Try global first (ushort)
+        if (TryGetGlobalEntityIndex(entityJson, out entityIndex))
+        {
+            return true;
+        }
+
+        // Then try scene (uint)
+        if (TryGetSceneEntityIndex(entityJson, out entityIndex))
+        {
+            return true;
+        }
+
+        return false;
     }
 }

@@ -356,7 +356,7 @@ public class HierarchyRegistry :
         }
         
         // Try to resolve the new parent using the selector
-        var hasNewParent = behavior.Value.TryFindParent(out var newParent);
+        var hasNewParent = behavior.Value.TryFindParent(child, out var newParent);
         
         // Fire error event if parent selector doesn't resolve
         if (!hasNewParent && child.TryGetBehavior<IdBehavior>(out var idBehavior))
@@ -408,7 +408,7 @@ public class HierarchyRegistry :
         // Store old parent index for cleanup during Recalc
         if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(e.Entity, out var oldBehavior))
         {
-            if (oldBehavior.Value.TryFindParent(out var oldParent))
+            if (oldBehavior.Value.TryFindParent(e.Entity, out var oldParent))
             {
                 _oldParentLookup.Set(e.Entity.Index, oldParent.Value.Index);
             }
@@ -426,7 +426,7 @@ public class HierarchyRegistry :
         // Store old parent for cleanup, mark dirty so Recalc processes removal
         if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(e.Entity, out var behavior))
         {
-            if (behavior.Value.TryFindParent(out var parent))
+            if (behavior.Value.TryFindParent(e.Entity, out var parent))
             {
                 _oldParentLookup.Set(e.Entity.Index, parent.Value.Index);
             }
