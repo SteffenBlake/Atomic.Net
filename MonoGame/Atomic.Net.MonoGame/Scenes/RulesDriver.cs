@@ -26,7 +26,9 @@ public sealed class RulesDriver :
     };
 
     // Track which partition each entity in the entities array belongs to (parallel to _ruleContext["entities"])
-    private readonly List<bool> _entityPartitions = new();
+    // Pre-allocated array to prevent runtime allocations during gameplay
+    private readonly bool[] _entityPartitions = new bool[Constants.MaxGlobalEntities + (int)Constants.MaxSceneEntities];
+    private int _entityCount = 0;
 
     internal static void Initialize()
     {
@@ -113,13 +115,13 @@ public sealed class RulesDriver :
 
     /// <summary>
     /// Serializes entities that match the selector into a JsonArray.
-    /// Partition metadata is tracked separately in _entityPartitions list (not in JSON).
+    /// Partition metadata is tracked separately in _entityPartitions array (not in JSON).
     /// </summary>
     private void BuildEntitiesArray(PartitionedSparseArray<bool> selectorMatches)
     {
         var entities = (JsonArray)_ruleContext["entities"]!;
         entities.Clear();
-        _entityPartitions.Clear();
+        _entityCount = 0;
         
         // Add global entities
         foreach (var (entityIndex, _) in selectorMatches.Global)
@@ -127,7 +129,7 @@ public sealed class RulesDriver :
             var entity = EntityRegistry.Instance[(ushort)entityIndex];
             var jsonNode = JsonEntityConverter.Read(entity);
             entities.Add(jsonNode);
-            _entityPartitions.Add(true); // Track as global partition
+            _entityPartitions[_entityCount++] = true; // Track as global partition
         }
         
         // Add scene entities
@@ -136,7 +138,7 @@ public sealed class RulesDriver :
             var entity = EntityRegistry.Instance[(uint)entityIndex];
             var jsonNode = JsonEntityConverter.Read(entity);
             entities.Add(jsonNode);
-            _entityPartitions.Add(false); // Track as scene partition
+            _entityPartitions[_entityCount++] = false; // Track as scene partition
         }
     }
 

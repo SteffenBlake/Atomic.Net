@@ -14,14 +14,17 @@ public readonly record struct ParentBehavior(EntitySelector ParentSelector)
         out Entity? parent
     )
     {
+        // Cache IsGlobal result to avoid duplicate calls
+        bool isGlobal = child.IsGlobal();
+        
         // Pick enumerator based on child's partition - parent must be in same partition
-        var enumerator = child.IsGlobal() ?
+        var enumerator = isGlobal ?
             ParentSelector.Matches.Global.GetEnumerator() :
             ParentSelector.Matches.Scene.GetEnumerator();
 
         if (enumerator.MoveNext())
         {
-            if (child.IsGlobal())
+            if (isGlobal)
             {
                 ushort parentIndex = (ushort)enumerator.Current.Index;
                 parent = EntityRegistry.Instance[parentIndex];

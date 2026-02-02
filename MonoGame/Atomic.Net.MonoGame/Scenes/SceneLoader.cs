@@ -192,13 +192,22 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         foreach (var rule in scene.Rules)
         {
             // Allocate to appropriate partition based on loader method
+            // ErrorEvents are pushed internally if capacity is exceeded
             if (useGlobalPartition)
             {
-                RuleRegistry.Instance.TryActivateGlobal(rule, out _);
+                if (!RuleRegistry.Instance.TryActivateGlobal(rule, out _))
+                {
+                    // Rule activation failed (capacity exceeded) - ErrorEvent already pushed
+                    // Continue loading other rules rather than failing entire scene
+                }
             }
             else
             {
-                RuleRegistry.Instance.TryActivate(rule, out _);
+                if (!RuleRegistry.Instance.TryActivate(rule, out _))
+                {
+                    // Rule activation failed (capacity exceeded) - ErrorEvent already pushed
+                    // Continue loading other rules rather than failing entire scene
+                }
             }
         }
     }
