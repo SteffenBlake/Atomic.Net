@@ -29,6 +29,9 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
     private uint _nextSceneRuleIndex = 0;
     private ushort _nextGlobalRuleIndex = 0;
 
+    // @senior-dev: Change this to:
+    // bool TryActivate(JsonRule rule, [NotNullWhen(true)] out PartitionIndex? index) ...
+
     /// <summary>
     /// Activate the next available scene rule.
     /// </summary>
