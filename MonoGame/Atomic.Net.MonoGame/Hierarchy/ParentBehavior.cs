@@ -14,27 +14,28 @@ public readonly record struct ParentBehavior(EntitySelector ParentSelector)
         out Entity? parent
     )
     {
-        // senior-dev: Must check both partitions because selector may match either
-        // The TrackChild validation will ensure parent and child are in same partition
-        
-        // Check global partition first
-        var globalEnumerator = ParentSelector.Matches.Global.GetEnumerator();
-        if (globalEnumerator.MoveNext())
+        // Pick enumerator based on child's partition - parent must be in same partition
+        if (child.Index.TryMatch(out ushort _))
         {
-            // Global sparse array uses uint indices, but PartitionIndex needs ushort for global
-            ushort parentIndex = (ushort)globalEnumerator.Current.Index;
-            parent = EntityRegistry.Instance[parentIndex];
-            return true;
+            // Child is global, so parent must be global
+            var enumerator = ParentSelector.Matches.Global.GetEnumerator();
+            if (enumerator.MoveNext())
+            {
+                ushort parentIndex = (ushort)enumerator.Current.Index;
+                parent = EntityRegistry.Instance[parentIndex];
+                return true;
+            }
         }
-        
-        // Then check scene partition
-        var sceneEnumerator = ParentSelector.Matches.Scene.GetEnumerator();
-        if (sceneEnumerator.MoveNext())
+        else if (child.Index.TryMatch(out uint _))
         {
-            // Scene sparse array uses uint indices, PartitionIndex also uses uint for scene
-            uint parentIndex = sceneEnumerator.Current.Index;
-            parent = EntityRegistry.Instance[parentIndex];
-            return true;
+            // Child is scene, so parent must be scene
+            var enumerator = ParentSelector.Matches.Scene.GetEnumerator();
+            if (enumerator.MoveNext())
+            {
+                uint parentIndex = enumerator.Current.Index;
+                parent = EntityRegistry.Instance[parentIndex];
+                return true;
+            }
         }
 
         parent = default;

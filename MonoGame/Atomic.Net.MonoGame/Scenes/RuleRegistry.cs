@@ -22,17 +22,12 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
 
     public static RuleRegistry Instance { get; private set; } = null!;
 
-    private readonly PartitionedSparseArray<JsonRule> _rules = new(
+    public readonly PartitionedSparseArray<JsonRule> Rules = new(
         Constants.MaxGlobalRules,
         Constants.MaxSceneRules
     );
     private uint _nextSceneRuleIndex = 0;
     private ushort _nextGlobalRuleIndex = 0;
-
-    /// <summary>
-    /// Public accessor for rules PartitionedSparseArray for iteration and testing.
-    /// </summary>
-    public PartitionedSparseArray<JsonRule> Rules => _rules;
 
     /// <summary>
     /// Activate the next available scene rule.
@@ -50,7 +45,7 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
 
         var index = _nextSceneRuleIndex++;
         PartitionIndex sceneIndex = index;
-        _rules.Set(sceneIndex, rule);
+        Rules.Set(sceneIndex, rule);
         return sceneIndex;
     }
 
@@ -70,7 +65,7 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
 
         var index = _nextGlobalRuleIndex++;
         PartitionIndex globalIndex = index;
-        _rules.Set(globalIndex, rule);
+        Rules.Set(globalIndex, rule);
         return globalIndex;
     }
 
@@ -80,7 +75,7 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
     public void OnEvent(ResetEvent _)
     {
         // senior-dev: Clear scene partition with O(1) operation
-        _rules.Scene.Clear();
+        Rules.Scene.Clear();
 
         // senior-dev: Reset scene index allocator
         _nextSceneRuleIndex = 0;
@@ -93,8 +88,8 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
     public void OnEvent(ShutdownEvent _)
     {
         // senior-dev: Clear all partitions
-        _rules.Global.Clear();
-        _rules.Scene.Clear();
+        Rules.Global.Clear();
+        Rules.Scene.Clear();
 
         // senior-dev: Reset both index allocators
         _nextGlobalRuleIndex = 0;

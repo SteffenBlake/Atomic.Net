@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Sequencing;
@@ -52,28 +53,32 @@ public class SequenceRegistry :
     }
 
     /// <summary>
-    /// Activate the next available scene sequence.
+    /// Tries to activate the next available scene sequence.
     /// </summary>
     /// <param name="sequence">The sequence to activate.</param>
-    /// <returns>The partition index of the activated sequence, or null on error.</returns>
-    public PartitionIndex? Activate(JsonSequence sequence)
+    /// <param name="index">The partition index of the activated sequence, if successful.</param>
+    /// <returns>True if activation succeeded; false otherwise.</returns>
+    public bool TryActivate(JsonSequence sequence, [NotNullWhen(true)] out PartitionIndex? index)
     {
         if (string.IsNullOrWhiteSpace(sequence.Id))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Sequence ID cannot be null or empty"));
-            return null;
+            index = null;
+            return false;
         }
 
         // Validate sequence steps
         if (!ValidateSequence(sequence))
         {
-            return null;
+            index = null;
+            return false;
         }
 
         if (_nextSceneSequenceIndex >= Constants.MaxSceneSequences)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Scene sequence capacity exceeded"));
-            return null;
+            index = null;
+            return false;
         }
 
         // Check for duplicate ID in scene partition
@@ -82,39 +87,45 @@ public class SequenceRegistry :
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Sequence with ID '{sequence.Id}' already exists"
             ));
-            return null;
+            index = null;
+            return false;
         }
 
-        var index = _nextSceneSequenceIndex++;
-        PartitionIndex sceneIndex = index;
+        var seqIndex = _nextSceneSequenceIndex++;
+        PartitionIndex sceneIndex = seqIndex;
         _sequences.Set(sceneIndex, sequence);
         _idToIndex[sequence.Id] = sceneIndex;
-        return sceneIndex;
+        index = sceneIndex;
+        return true;
     }
 
     /// <summary>
-    /// Activate the next available global sequence.
+    /// Tries to activate the next available global sequence.
     /// </summary>
     /// <param name="sequence">The sequence to activate.</param>
-    /// <returns>The partition index of the activated sequence, or null on error.</returns>
-    public PartitionIndex? ActivateGlobal(JsonSequence sequence)
+    /// <param name="index">The partition index of the activated sequence, if successful.</param>
+    /// <returns>True if activation succeeded; false otherwise.</returns>
+    public bool TryActivateGlobal(JsonSequence sequence, [NotNullWhen(true)] out PartitionIndex? index)
     {
         if (string.IsNullOrWhiteSpace(sequence.Id))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Sequence ID cannot be null or empty"));
-            return null;
+            index = null;
+            return false;
         }
 
         // Validate sequence steps
         if (!ValidateSequence(sequence))
         {
-            return null;
+            index = null;
+            return false;
         }
 
         if (_nextGlobalSequenceIndex >= Constants.MaxGlobalSequences)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Global sequence capacity exceeded"));
-            return null;
+            index = null;
+            return false;
         }
 
         // Check for duplicate ID in global partition
@@ -123,14 +134,16 @@ public class SequenceRegistry :
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Sequence with ID '{sequence.Id}' already exists"
             ));
-            return null;
+            index = null;
+            return false;
         }
 
-        var index = _nextGlobalSequenceIndex++;
-        PartitionIndex globalIndex = index;
+        var seqIndex = _nextGlobalSequenceIndex++;
+        PartitionIndex globalIndex = seqIndex;
         _sequences.Set(globalIndex, sequence);
         _idToIndex[sequence.Id] = globalIndex;
-        return globalIndex;
+        index = globalIndex;
+        return true;
     }
 
     /// <summary>

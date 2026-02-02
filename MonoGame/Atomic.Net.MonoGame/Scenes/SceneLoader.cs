@@ -219,11 +219,11 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
             // senior-dev: Allocate to appropriate partition based on loader method
             if (useGlobalPartition)
             {
-                SequenceRegistry.Instance.ActivateGlobal(sequence);
+                SequenceRegistry.Instance.TryActivateGlobal(sequence, out _);
             }
             else
             {
-                SequenceRegistry.Instance.Activate(sequence);
+                SequenceRegistry.Instance.TryActivate(sequence, out _);
             }
         }
     }
