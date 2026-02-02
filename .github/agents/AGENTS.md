@@ -341,4 +341,21 @@ There is a huge massive codebase of already existing example code, read it and f
 - **SIMD-friendly data layout:** Use `SparseArray` for cache-friendly iteration
 - **Event-driven, not polling:** Use `EventBus<T>` for decoupled systems
 
+## SparseArray Index Type Conversion
+
+- `SparseArray<T>` uses `uint` for all indices (both capacity and enumeration)
+- Global partition sparse arrays have capacity 0-255, enumerate uint 0-255
+- Scene partition sparse arrays have capacity 0-8191, enumerate uint 0-8191
+- When converting SparseArray indices to PartitionIndex:
+  - Global: cast `uint` to `ushort` (safe since max is 256)
+  - Scene: use `uint` directly
+- Example for global partition enumeration:
+  ```csharp
+  foreach (var (idx, value) in globalSparseArray)
+  {
+      PartitionIndex partitionIdx = (ushort)idx; // Cast uint to ushort for global
+      // use partitionIdx...
+  }
+  ```
+
 GO READ `.github/agents/DISCOVERIES.md` FOR CRITICAL FINDINGS FROM PREVIOUS BENCHMARKS
