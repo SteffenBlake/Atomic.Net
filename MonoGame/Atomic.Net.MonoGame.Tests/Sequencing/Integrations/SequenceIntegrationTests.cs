@@ -412,7 +412,7 @@ public sealed class SequenceIntegrationTests : IDisposable
         }
         
         // Assert: All entities with poisonStacks should now have stacks <= 0
-        foreach (var entity in EntityRegistry.Instance.GetActiveEntities())
+        foreach (var entity in EntityRegistry.Instance.GetActiveGlobalEntities().Concat(EntityRegistry.Instance.GetActiveSceneEntities()))
         {
             if (entity.TryGetBehavior<PropertiesBehavior>(out var props))
             {

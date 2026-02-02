@@ -22,12 +22,12 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
 
     private readonly Entity[] _globalEntities = [.. 
         Enumerable.Range(0, Constants.MaxGlobalEntities)
-        .Select(index => new Entity((ushort)index))
+        .Select(static index => new Entity((ushort)index))
     ];
 
     private readonly Entity[] _sceneEntities = [.. 
         Enumerable.Range(0, (int)Constants.MaxSceneEntities)
-        .Select(index => new Entity((uint)index))
+        .Select(static index => new Entity((uint)index))
     ];
 
     private readonly PartitionedSparseArray<bool> _active = new(
@@ -227,22 +227,6 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
         }
     }
     
-    /// <summary>
-    /// Get an iterator over all active entities (both global and scene).
-    /// </summary>
-    /// <returns>An enumerable of active entities.</returns>
-    public IEnumerable<Entity> GetActiveEntities()
-    {
-        foreach (var entity in GetActiveGlobalEntities())
-        {
-            yield return entity;
-        }
-        foreach (var entity in GetActiveSceneEntities())
-        {
-            yield return entity;
-        }
-    }
-
     /// <summary>
     /// Get an iterator over enabled global entities.
     /// </summary>

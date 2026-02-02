@@ -354,7 +354,7 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
         EntityRegistry.Instance.Deactivate(entity2.Value);
         
         // Act
-        var activeEntities = EntityRegistry.Instance.GetActiveEntities().ToList();
+        var activeEntities = EntityRegistry.Instance.GetActiveGlobalEntities().Concat(EntityRegistry.Instance.GetActiveSceneEntities()).ToList();
         
         // Assert
         Assert.Contains(entity1.Value, activeEntities);

@@ -98,7 +98,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
         EventBus<ShutdownEvent>.Push(new());
         
         // Assert: All entities should be deactivated
-        var activeEntities = EntityRegistry.Instance.GetActiveEntities().ToList();
+        var activeEntities = EntityRegistry.Instance.GetActiveGlobalEntities().Concat(EntityRegistry.Instance.GetActiveSceneEntities()).ToList();
         Assert.Empty(activeEntities);
         
         // test-architect: Verify database still contains the entity by restarting systems

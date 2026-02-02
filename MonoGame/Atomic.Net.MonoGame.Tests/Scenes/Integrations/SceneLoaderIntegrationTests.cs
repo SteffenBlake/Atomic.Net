@@ -39,7 +39,7 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
 
         // Assert
-        var activeEntities = EntityRegistry.Instance.GetActiveEntities().ToList();
+        var activeEntities = EntityRegistry.Instance.GetActiveGlobalEntities().Concat(EntityRegistry.Instance.GetActiveSceneEntities()).ToList();
         
         // test-architect: Should spawn 2 entities (root-container, menu-button)
         Assert.True(activeEntities.Count >= 2, $"Expected at least 2 entities, got {activeEntities.Count}");
@@ -66,7 +66,7 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGlobalScene(scenePath);
 
         // Assert
-        var activeEntities = EntityRegistry.Instance.GetActiveEntities().ToList();
+        var activeEntities = EntityRegistry.Instance.GetActiveGlobalEntities().Concat(EntityRegistry.Instance.GetActiveSceneEntities()).ToList();
         
         // test-architect: Should spawn 2 entities (root-container, menu-button)
         Assert.True(activeEntities.Count >= 2, $"Expected at least 2 entities, got {activeEntities.Count}");
@@ -223,7 +223,7 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         Assert.NotEqual(default, errorEvent);
         
         // test-architect: No entities should be spawned
-        var activeEntities = EntityRegistry.Instance.GetActiveEntities().ToList();
+        var activeEntities = EntityRegistry.Instance.GetActiveGlobalEntities().Concat(EntityRegistry.Instance.GetActiveSceneEntities()).ToList();
         Assert.Empty(activeEntities);
     }
 
@@ -245,7 +245,7 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         Assert.NotEqual(default, errorEvent);
         
         // test-architect: No entities should be spawned
-        var activeEntities = EntityRegistry.Instance.GetActiveEntities().ToList();
+        var activeEntities = EntityRegistry.Instance.GetActiveGlobalEntities().Concat(EntityRegistry.Instance.GetActiveSceneEntities()).ToList();
         Assert.Empty(activeEntities);
     }
 
