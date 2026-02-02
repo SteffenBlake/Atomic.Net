@@ -14,6 +14,13 @@ public readonly record struct ParentBehavior(EntitySelector ParentSelector)
         out Entity? parent
     )
     {
+        // @senior-dev: Add a shorthand .IsGlobal property on PartitionIndex, and then also add a .IsGlobal extension method on entity as well that just calls PartitionIndex.IsGlobal
+        // This code below should be as simple as:
+        // var enumerator = child.IsGlobal ? 
+        //     ParentSelector.Matches.Global.GetEnumerator() : 
+        //     ParentSelector.Matches.Scene.GetEnumerator();
+        // Fix the duplicate logic
+        
         // Pick enumerator based on child's partition - parent must be in same partition
         if (child.Index.TryMatch(out ushort _))
         {
