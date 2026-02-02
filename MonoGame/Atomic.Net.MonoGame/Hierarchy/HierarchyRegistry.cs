@@ -68,6 +68,8 @@ public class HierarchyRegistry :
     /// <param name="child">The child entity to add.</param>
     public void TrackChild(Entity parent, Entity child)
     {
+        // @senior-dev: Use TryMatch on this logic below
+
         // Both must be global or both must be scene
         // Use Visit to extract partition type and value safely
         var parentGlobal = parent.Index.Visit(
@@ -111,6 +113,8 @@ public class HierarchyRegistry :
             if (!parent.Index.TryMatch(out uint parentScene) ||
                 !child.Index.TryMatch(out uint childScene))
             {
+                // @senior-dev: We dont throw exceptions, we push Error Events, you need to spend more time looking at the whole codebase
+                // Before you put in code like this, even a cursory look would have shown you this would break a lot of our established patterns
                 throw new InvalidOperationException("Both parent and child must be scene entities");
             }
             
@@ -142,6 +146,7 @@ public class HierarchyRegistry :
             {
                 if (!child.Index.TryMatch(out ushort childGlobal))
                 {
+                    // @senior-dev: Same issue here, fix this
                     throw new InvalidOperationException("Child must be in same partition as parent");
                 }
                 
@@ -154,6 +159,7 @@ public class HierarchyRegistry :
             {
                 if (!child.Index.TryMatch(out uint childScene))
                 {
+                    // @senior-dev: Same problem here, fix this as well
                     throw new InvalidOperationException("Child must be in same partition as parent");
                 }
                 
@@ -171,12 +177,13 @@ public class HierarchyRegistry :
     /// <returns>An enumerable of child entities belonging to the parent.</returns>
     public IEnumerable<Entity> GetChildren(Entity parent)
     {
+        // @senior-dev: Use TryMatch on this logic below, fix this
         var parentGlobal = parent.Index.Visit(
             static global => (ushort?)global,
             static scene => (ushort?)null,
             static () => (ushort?)null
         );
-        
+        // @senior-dev: Use TryMatch to make this much simpler logic, since TryMatch returns a bool
         if (parentGlobal.HasValue)
         {
             if (_globalParentToChildren.TryGetValue(parentGlobal.Value, out var children))
@@ -189,6 +196,7 @@ public class HierarchyRegistry :
         }
         else
         {
+            // @senior-dev: Use TryMatch on this logic below, fix this
             var parentScene = parent.Index.Visit(
                 static _ => throw new InvalidOperationException(),
                 static scene => (ushort)scene,
@@ -213,6 +221,7 @@ public class HierarchyRegistry :
     /// <returns>The sparse array of children, or null if no children.</returns>
     public SparseArray<bool>? GetChildrenArray(PartitionIndex parentIndex)
     {
+        // @senior-dev: Once again, TryMatch here
         var parentGlobal = parentIndex.Visit(
             static global => (ushort?)global,
             static scene => (ushort?)null,
@@ -224,7 +233,8 @@ public class HierarchyRegistry :
             return _globalParentToChildren.TryGetValue(parentGlobal.Value, out var children) 
                 ? children : null;
         }
-        
+
+        // @senior-dev: and here as well..
         var parentScene = parentIndex.Visit(
             static global => (ushort?)null,
             static scene => (ushort?)scene,
@@ -281,6 +291,7 @@ public class HierarchyRegistry :
         }
         
         // Extract the raw index from child based on partition
+        // @senior-dev: and here as well..
         var childGlobal = child.Index.Visit(
             static global => (ushort?)global,
             static scene => (ushort?)null,
@@ -290,7 +301,8 @@ public class HierarchyRegistry :
         {
             return children.HasValue(childGlobal.Value);
         }
-        
+
+        // @senior-dev: And here too...
         var childScene = child.Index.Visit(
             static global => (ushort?)null,
             static scene => (ushort?)scene,
@@ -471,6 +483,8 @@ public class HierarchyRegistry :
         foreach (var (childIdx, _) in ownChildren)
         {
             // Use TryMatch to avoid closure allocation
+
+            // @senior-dev: This is where you would want to use .IsGlobal on Entity
             Entity child;
             if (e.Entity.Index.TryMatch(out ushort globalIdx))
             {
@@ -488,6 +502,7 @@ public class HierarchyRegistry :
             // Only remove if child is still active
             if (child.Active)
             {
+                // @senior-dev: Use the extension method, this should be child.RemoveBehavior
                 BehaviorRegistry<ParentBehavior>.Instance.Remove(child);
             }
         }
