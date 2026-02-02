@@ -36,6 +36,21 @@ public partial class FlexRegistry :
         Constants.MaxGlobalEntities,
         Constants.MaxSceneEntities
     );
+    
+    /// <summary>
+    /// Ensures a flex node exists for the entity and marks it dirty.
+    /// Returns the node for further configuration.
+    /// </summary>
+    protected Node EnsureDirtyNode(PartitionIndex index)
+    {
+        _dirty.Set(index, true);
+        if (!_nodes.TryGetValue(index, out var node))
+        {
+            node = FlexLayoutSharp.Flex.CreateDefaultNode();
+            _nodes[index] = node;
+        }
+        return node;
+    }
 
     public void Recalculate()
     {
@@ -96,7 +111,7 @@ public partial class FlexRegistry :
             return;
         }
 
-        if (!_nodes.TryGetValue(e.Index, out var node) || node == null)
+        if (!_nodes.TryGetValue(e.Index, out var node))
         {
             return;
         }

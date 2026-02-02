@@ -16,12 +16,7 @@ public partial class FlexRegistry :
     // Width
     public void OnEvent(BehaviorAddedEvent<FlexWidthBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexWidthBehavior>(out var val))
         {
             if (val.Value.Percent)
@@ -37,12 +32,7 @@ public partial class FlexRegistry :
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexWidthBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexWidthBehavior>(out var val))
         {
             if (val.Value.Percent)
@@ -58,24 +48,14 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexWidthBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         node.StyleSetWidth(float.NaN);
     }
 
     // Height
     public void OnEvent(BehaviorAddedEvent<FlexHeightBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexHeightBehavior>(out var val))
         {
             if (val.Value.Percent)
@@ -91,12 +71,7 @@ public partial class FlexRegistry :
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexHeightBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexHeightBehavior>(out var val))
         {
             if (val.Value.Percent)
@@ -112,12 +87,7 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexHeightBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         node.StyleSetHeight(float.NaN);
     }
 }

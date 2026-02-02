@@ -10,12 +10,7 @@ public partial class FlexRegistry :
 {
     public void OnEvent(BehaviorAddedEvent<FlexJustifyContentBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexJustifyContentBehavior>(out var justify))
         {
             node.StyleSetJustifyContent(justify.Value.Value);
@@ -24,12 +19,7 @@ public partial class FlexRegistry :
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexJustifyContentBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexJustifyContentBehavior>(out var justify))
         {
             node.StyleSetJustifyContent(justify.Value.Value);
@@ -38,12 +28,7 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexJustifyContentBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         node.StyleSetJustifyContent(default);
     }
 }

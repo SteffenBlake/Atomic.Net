@@ -25,12 +25,7 @@ public partial class FlexRegistry :
     // MarginLeft
     public void OnEvent(BehaviorAddedEvent<FlexMarginLeftBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexMarginLeftBehavior>(out var val))
         {
             node.StyleSetMargin(Edge.Left, val.Value.Value);
@@ -39,12 +34,7 @@ public partial class FlexRegistry :
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexMarginLeftBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexMarginLeftBehavior>(out var val))
         {
             node.StyleSetMargin(Edge.Left, val.Value.Value);
@@ -53,24 +43,14 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexMarginLeftBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         node.StyleSetMargin(Edge.Left, float.NaN);
     }
 
     // MarginRight
     public void OnEvent(BehaviorAddedEvent<FlexMarginRightBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexMarginRightBehavior>(out var val))
         {
             node.StyleSetMargin(Edge.Right, val.Value.Value);
@@ -79,12 +59,7 @@ public partial class FlexRegistry :
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexMarginRightBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexMarginRightBehavior>(out var val))
         {
             node.StyleSetMargin(Edge.Right, val.Value.Value);
@@ -93,24 +68,14 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexMarginRightBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         node.StyleSetMargin(Edge.Right, float.NaN);
     }
 
     // MarginTop
     public void OnEvent(BehaviorAddedEvent<FlexMarginTopBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexMarginTopBehavior>(out var val))
         {
             node.StyleSetMargin(Edge.Top, val.Value.Value);
@@ -119,12 +84,7 @@ public partial class FlexRegistry :
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexMarginTopBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexMarginTopBehavior>(out var val))
         {
             node.StyleSetMargin(Edge.Top, val.Value.Value);
@@ -133,24 +93,14 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexMarginTopBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         node.StyleSetMargin(Edge.Top, float.NaN);
     }
 
     // MarginBottom
     public void OnEvent(BehaviorAddedEvent<FlexMarginBottomBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexMarginBottomBehavior>(out var val))
         {
             node.StyleSetMargin(Edge.Bottom, val.Value.Value);
@@ -159,12 +109,7 @@ public partial class FlexRegistry :
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexMarginBottomBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexMarginBottomBehavior>(out var val))
         {
             node.StyleSetMargin(Edge.Bottom, val.Value.Value);
@@ -173,12 +118,7 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexMarginBottomBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         node.StyleSetMargin(Edge.Bottom, float.NaN);
     }
 }
