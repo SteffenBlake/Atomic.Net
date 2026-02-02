@@ -31,9 +31,10 @@ public class PropertyValueConverter : JsonConverter<PropertyValue>
         Utf8JsonWriter writer, PropertyValue value, JsonSerializerOptions options
     )
     {
-        if (value.TryMatch(out string s))
+        // When TryMatch returns true, the out value is guaranteed non-null (DISCOVERIES.md)
+        if (value.TryMatch(out string? s))
         {
-            JsonSerializer.Serialize(writer, s, options);
+            JsonSerializer.Serialize(writer, s!, options);
         }
         else if (value.TryMatch(out float f))
         {
