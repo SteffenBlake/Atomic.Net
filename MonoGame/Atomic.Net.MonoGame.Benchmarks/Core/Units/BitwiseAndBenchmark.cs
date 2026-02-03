@@ -166,7 +166,7 @@ public class BitwiseAndBenchmark
 
         foreach (var indexMatch in indexesA.Intersect(indexesB))
         {
-            result += indexMatch;
+            result += (int)indexMatch;
             _resultSparse.Set(indexMatch, true);
         }
 
@@ -187,7 +187,7 @@ public class BitwiseAndBenchmark
         foreach (var match in intersected)
         {
             var indexMatch = match.Index;
-            result += indexMatch;
+            result += (int)indexMatch;
             _resultSparse.Set(indexMatch, true);
         }
 
