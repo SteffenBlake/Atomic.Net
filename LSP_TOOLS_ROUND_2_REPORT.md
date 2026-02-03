@@ -469,6 +469,112 @@ Round 2 shows **significant progress** from Round 1:
 
 ---
 
+## .editorconfig Integration Testing
+
+**Question:** Does the LSP respect .editorconfig settings?
+
+**Answer:** **PARTIALLY** - Suppression works, severity changes don't.
+
+### Test Setup
+
+Starting diagnostics on TagRegistry.cs:
+```
+• Information [IDE0028]: Collection initialization can be simplified
+  Location: Line 33, Column 88 to Line 33, Column 91
+
+• Hint [IDE0005]: Using directive is unnecessary.
+  Location: Line 2, Column 1 to Line 3, Column 32
+```
+
+### Test 1: Suppress IDE0028 to "none"
+
+**Configuration Added:**
+```ini
+dotnet_diagnostic.IDE0028.severity = none
+```
+
+**Result:** ✅ **SUCCESS** - IDE0028 disappeared completely
+
+**After Restart:**
+```
+• Hint [IDE0005]: Using directive is unnecessary.
+  (IDE0028 is gone!)
+```
+
+### Test 2: Change IDE0005 severity to "error"
+
+**Configuration Added:**
+```ini
+dotnet_diagnostic.IDE0005.severity = error
+```
+
+**Result:** ❌ **FAILED** - Still shows as "Hint", not "Error"
+
+**After Restart:**
+```
+• Hint [IDE0005]: Using directive is unnecessary.
+  (Still "Hint", not "Error")
+```
+
+### Test 3: Suppress IDE0005 to "none"
+
+**Configuration Added:**
+```ini
+dotnet_diagnostic.IDE0005.severity = none
+```
+
+**Result:** ❌ **FAILED** - Still shows as "Hint"
+
+**After Restart:**
+```
+• Hint [IDE0005]: Using directive is unnecessary.
+  (Not suppressed)
+```
+
+### Test 4: Try "silent" severity
+
+**Configuration Added:**
+```ini
+dotnet_diagnostic.IDE0005.severity = silent
+```
+
+**Result:** ❌ **FAILED** - Still shows as "Hint"
+
+### Verification with dotnet format
+
+Confirmed that .editorconfig is being read:
+```bash
+$ dotnet format --verify-no-changes --verbosity diagnostic
+Project Atomic.Net.MonoGame is using configuration from '/home/runner/work/Atomic.Net/Atomic.Net/.editorconfig'.
+```
+
+The .editorconfig file IS being loaded by dotnet tooling, so the LSP should also be reading it.
+
+### Conclusions
+
+**✅ What Works:**
+- Suppressing diagnostics to `none` for some rules (IDE0028 disappeared)
+- .editorconfig file is being read by the LSP server
+
+**❌ What Doesn't Work:**
+- Changing severity levels (hint → warning → error)
+- Suppressing IDE0005 specifically (may be handled differently)
+
+**Analysis:**
+
+The LSP respects .editorconfig for *suppressing* diagnostics but appears to have its own logic for determining severity levels. Some diagnostics (like IDE0005) may have hardcoded severity that cannot be overridden, or there may be a more complex configuration hierarchy.
+
+The behavior suggests:
+1. LSP reads .editorconfig ✅
+2. Suppression (severity = none) works for some rules ✅
+3. Severity changes (hint/warning/error) don't apply ❌
+4. Some diagnostics resist configuration changes ❌
+
+**Recommendation:** Use .editorconfig to suppress unwanted diagnostics entirely, but don't rely on severity level changes.
+
+---
+
 **Report Generated:** 2026-02-03  
 **Agent:** senior-dev  
-**Status:** Testing Complete - Partial Functionality
+**Status:** Testing Complete - Partial Functionality  
+**Updated:** 2026-02-03 (Added .editorconfig testing)
