@@ -3,10 +3,6 @@ using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Flex;
 
-// @senior-dev: You still need to migrate this file to use 
-// var node = EnsureDirtyNode(e.Entity.Index);
-// Syntax. Fix it.
-
 public partial class FlexRegistry : 
     IEventHandler<BehaviorAddedEvent<AlignContentBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<AlignContentBehavior>>,
@@ -14,13 +10,7 @@ public partial class FlexRegistry :
 {
     public void OnEvent(BehaviorAddedEvent<AlignContentBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         
         if (e.Entity.TryGetBehavior<AlignContentBehavior>(out var alignContent))
         {
@@ -30,13 +20,7 @@ public partial class FlexRegistry :
 
     public void OnEvent(PostBehaviorUpdatedEvent<AlignContentBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
+        var node = EnsureDirtyNode(e.Entity.Index);
         
         if (e.Entity.TryGetBehavior<AlignContentBehavior>(out var alignContent))
         {
@@ -46,14 +30,7 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<AlignContentBehavior> e)
     {
-        _dirty.Set(e.Entity.Index, true);
-        
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[e.Entity.Index] = node;
-        }
-        
+        var node = EnsureDirtyNode(e.Entity.Index);
         node.StyleSetAlignContent(default);
     }
 }

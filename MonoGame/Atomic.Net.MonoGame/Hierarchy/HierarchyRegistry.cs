@@ -68,56 +68,39 @@ public class HierarchyRegistry :
     /// <param name="child">The child entity to add.</param>
     public void TrackChild(Entity parent, Entity child)
     {
-        // @senior-dev: Use TryMatch on this logic below
-
-        // Both must be global or both must be scene
-        // Use Visit to extract partition type and value safely
-        var parentGlobal = parent.Index.Visit(
-            static global => (ushort?)global,
-            static scene => (ushort?)null,
-            static () => (ushort?)null
-        );
-        var childGlobal = child.Index.Visit(
-            static global => (ushort?)global,
-            static scene => (ushort?)null,
-            static () => (ushort?)null
-        );
-        
-        var parentIsGlobal = parentGlobal.HasValue;
-        var childIsGlobal = childGlobal.HasValue;
-        
-        if (parentIsGlobal != childIsGlobal)
+        // Both must be global or both must be scene - use TryMatch to extract partition type
+        if (parent.Index.TryMatch(out ushort parentGlobal))
         {
-            // Cannot create parent-child relationship across partitions
-            EventBus<ErrorEvent>.Push(new ErrorEvent(
-                "Cannot create parent-child relationship across partitions (global/scene)"
-            ));
-            return;
-        }
-
-        if (parentIsGlobal)
-        {
-            // Both are global
-            if (parentGlobal.HasValue && childGlobal.HasValue)
+            // Parent is global - child must also be global
+            if (!child.Index.TryMatch(out ushort childGlobal))
             {
-                if (!_globalParentToChildren.HasValue(parentGlobal.Value))
-                {
-                    _globalParentToChildren[parentGlobal.Value] = new SparseArray<bool>(Constants.MaxGlobalEntities);
-                }
-                _globalParentToChildren[parentGlobal.Value].Set(childGlobal.Value, true);
-            }
-        }
-        else
-        {
-            // Both are scene
-            if (!parent.Index.TryMatch(out uint parentScene) ||
-                !child.Index.TryMatch(out uint childScene))
-            {
-                // @senior-dev: We dont throw exceptions, we push Error Events, you need to spend more time looking at the whole codebase
-                // Before you put in code like this, even a cursory look would have shown you this would break a lot of our established patterns
-                throw new InvalidOperationException("Both parent and child must be scene entities");
+                // Cannot create parent-child relationship across partitions
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    "Cannot create parent-child relationship across partitions (global/scene)"
+                ));
+                return;
             }
             
+            // Both are global
+            if (!_globalParentToChildren.HasValue(parentGlobal))
+            {
+                _globalParentToChildren[parentGlobal] = new SparseArray<bool>(Constants.MaxGlobalEntities);
+            }
+            _globalParentToChildren[parentGlobal].Set(childGlobal, true);
+        }
+        else if (parent.Index.TryMatch(out uint parentScene))
+        {
+            // Parent is scene - child must also be scene
+            if (!child.Index.TryMatch(out uint childScene))
+            {
+                // Cannot create parent-child relationship across partitions
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    "Cannot create parent-child relationship across partitions (global/scene)"
+                ));
+                return;
+            }
+            
+            // Both are scene
             if (!_sceneParentToChildren.HasValue(parentScene))
             {
                 _sceneParentToChildren[parentScene] = new SparseArray<bool>(Constants.MaxSceneEntities);
@@ -133,11 +116,6 @@ public class HierarchyRegistry :
     /// </summary>
     /// <param name="parent">The parent entity.</param>
     /// <param name="child">The child entity to remove.</param>
-    /// <summary>
-    /// Removes tracking of a child entity from the specified parent.
-    /// </summary>
-    /// <param name="parent">The parent entity.</param>
-    /// <param name="child">The child entity to remove.</param>
     public void UntrackChild(Entity parent, Entity child)
     {
         if (parent.Index.TryMatch(out ushort parentGlobal))
@@ -146,8 +124,11 @@ public class HierarchyRegistry :
             {
                 if (!child.Index.TryMatch(out ushort childGlobal))
                 {
-                    // @senior-dev: Same issue here, fix this
-                    throw new InvalidOperationException("Child must be in same partition as parent");
+                    // Child must be in same partition as parent
+                    EventBus<ErrorEvent>.Push(new ErrorEvent(
+                        "Child must be in same partition as parent"
+                    ));
+                    return;
                 }
                 
                 children.Remove(childGlobal);
@@ -159,8 +140,11 @@ public class HierarchyRegistry :
             {
                 if (!child.Index.TryMatch(out uint childScene))
                 {
-                    // @senior-dev: Same problem here, fix this as well
-                    throw new InvalidOperationException("Child must be in same partition as parent");
+                    // Child must be in same partition as parent
+                    EventBus<ErrorEvent>.Push(new ErrorEvent(
+                        "Child must be in same partition as parent"
+                    ));
+                    return;
                 }
                 
                 children.Remove(childScene);
@@ -170,8 +154,6 @@ public class HierarchyRegistry :
         _childToParentLookup.Remove(child.Index);
     }
 
-    // @senior-dev: Simplify this function below to just call TryGetChildren
-
     /// <summary>
     /// Retrieves all child entities of the specified parent.
     /// </summary>
@@ -179,77 +161,26 @@ public class HierarchyRegistry :
     /// <returns>An enumerable of child entities belonging to the parent.</returns>
     public IEnumerable<Entity> GetChildren(Entity parent)
     {
-        // @senior-dev: Use TryMatch on this logic below, fix this
-        var parentGlobal = parent.Index.Visit(
-            static global => (ushort?)global,
-            static scene => (ushort?)null,
-            static () => (ushort?)null
-        );
-        // @senior-dev: Use TryMatch to make this much simpler logic, since TryMatch returns a bool
-        if (parentGlobal.HasValue)
+        if (!TryGetChildrenArray(parent.Index, out var children))
         {
-            if (_globalParentToChildren.TryGetValue(parentGlobal.Value, out var children))
+            yield break;
+        }
+        
+        // Use parent's partition to determine how to construct child entities
+        if (parent.IsGlobal())
+        {
+            foreach (var (childIdx, _) in children)
             {
-                foreach (var (childIdx, _) in children)
-                {
-                    yield return EntityRegistry.Instance[(ushort)childIdx];
-                }
+                yield return EntityRegistry.Instance[(ushort)childIdx];
             }
         }
         else
         {
-            // @senior-dev: Use TryMatch on this logic below, fix this
-            var parentScene = parent.Index.Visit(
-                static _ => throw new InvalidOperationException(),
-                static scene => (ushort)scene,
-                static () => throw new InvalidOperationException()
-            );
-            
-            if (_sceneParentToChildren.TryGetValue(parentScene, out var children))
+            foreach (var (childIdx, _) in children)
             {
-                foreach (var (childIdx, _) in children)
-                {
-                    yield return EntityRegistry.Instance[(uint)childIdx];
-                }
+                yield return EntityRegistry.Instance[(uint)childIdx];
             }
         }
-    }
-
-    // @senior-dev: You made TryGetChildrenArray but failed to delete this function, it must be deleted now, only TryGetChildrenArray should remain and be used in the system
-
-    /// <summary>
-    /// Gets the child sparse array for a parent, or null if no children exist.
-    /// Allows allocation-free iteration of child indices.
-    /// </summary>
-    /// <param name="parentIndex">The parent entity index.</param>
-    /// <returns>The sparse array of children, or null if no children.</returns>
-    public SparseArray<bool>? GetChildrenArray(PartitionIndex parentIndex)
-    {
-        var parentGlobal = parentIndex.Visit(
-            static global => (ushort?)global,
-            static scene => (ushort?)null,
-            static () => (ushort?)null
-        );
-        
-        if (parentGlobal.HasValue)
-        {
-            return _globalParentToChildren.TryGetValue(parentGlobal.Value, out var children) 
-                ? children : null;
-        }
-
-        var parentScene = parentIndex.Visit(
-            static global => (ushort?)null,
-            static scene => (ushort?)scene,
-            static () => (ushort?)null
-        );
-        
-        if (parentScene.HasValue)
-        {
-            return _sceneParentToChildren.TryGetValue(parentScene.Value, out var children)
-                ? children : null;
-        }
-        
-        return null;
     }
     
     /// <summary>
@@ -258,7 +189,7 @@ public class HierarchyRegistry :
     /// <param name="parentIndex">The parent entity index.</param>
     /// <param name="children">The sparse array of child indices, if found.</param>
     /// <returns>True if the parent has children; otherwise, false.</returns>
-    private bool TryGetChildrenArray(
+    public bool TryGetChildrenArray(
         PartitionIndex parentIndex,
         [NotNullWhen(true)]
         out SparseArray<bool>? children
@@ -286,34 +217,22 @@ public class HierarchyRegistry :
     /// <returns>True if the child belongs to the parent; otherwise, false.</returns>
     public bool HasChild(Entity parent, Entity child)
     {
-        var children = GetChildrenArray(parent.Index);
-        if (children == null)
+        if (!TryGetChildrenArray(parent.Index, out var children))
         {
             return false;
         }
         
-        // Extract the raw index from child based on partition
-        // @senior-dev: and here as well..
-        var childGlobal = child.Index.Visit(
-            static global => (ushort?)global,
-            static scene => (ushort?)null,
-            static () => (ushort?)null
-        );
-        if (childGlobal.HasValue)
+        // Extract the raw index from child based on partition - use TryMatch
+        if (child.Index.TryMatch(out ushort childGlobal))
         {
-            return children.HasValue(childGlobal.Value);
+            return children.HasValue(childGlobal);
         }
 
-        // @senior-dev: And here too...
-        var childScene = child.Index.Visit(
-            static global => (ushort?)null,
-            static scene => (ushort?)scene,
-            static () => (ushort?)null
-        );
-        if (childScene.HasValue)
+        if (child.Index.TryMatch(out uint childScene))
         {
-            return children.HasValue(childScene.Value);
+            return children.HasValue(childScene);
         }
+        
         return false;
     }
 
@@ -322,8 +241,12 @@ public class HierarchyRegistry :
     /// </summary>
     public bool HasAnyChildren(Entity parent)
     {
-        var children = GetChildrenArray(parent.Index);
-        return children != null && children.Count > 0;
+        if (!TryGetChildrenArray(parent.Index, out var children))
+        {
+            return false;
+        }
+        
+        return children.Count > 0;
     }
 
     /// <summary>
@@ -383,7 +306,7 @@ public class HierarchyRegistry :
         }
         
         // Try to resolve the new parent using the selector
-        var hasNewParent = behavior.Value.TryFindParent(child, out var newParent);
+        var hasNewParent = behavior.Value.TryFindParent(child.IsGlobal(), out var newParent);
         
         // Fire error event if parent selector doesn't resolve
         if (!hasNewParent && child.TryGetBehavior<IdBehavior>(out var idBehavior))
@@ -435,7 +358,7 @@ public class HierarchyRegistry :
         // Store old parent index for cleanup during Recalc
         if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(e.Entity, out var oldBehavior))
         {
-            if (oldBehavior.Value.TryFindParent(e.Entity, out var oldParent))
+            if (oldBehavior.Value.TryFindParent(e.Entity.IsGlobal(), out var oldParent))
             {
                 _oldParentLookup.Set(e.Entity.Index, oldParent.Value.Index);
             }
@@ -453,7 +376,7 @@ public class HierarchyRegistry :
         // Store old parent for cleanup, mark dirty so Recalc processes removal
         if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(e.Entity, out var behavior))
         {
-            if (behavior.Value.TryFindParent(e.Entity, out var parent))
+            if (behavior.Value.TryFindParent(e.Entity.IsGlobal(), out var parent))
             {
                 _oldParentLookup.Set(e.Entity.Index, parent.Value.Index);
             }
@@ -474,38 +397,24 @@ public class HierarchyRegistry :
         }
         
         // If this entity is a parent, orphan all its children
-        var ownChildren = GetChildrenArray(e.Entity.Index);
-        if (ownChildren == null)
+        if (!TryGetChildrenArray(e.Entity.Index, out var ownChildren))
         {
             return;
         }
 
         // Remove ParentBehavior from all children
-        // Note: GetChildrenArray returns a snapshot, safe to iterate and modify
+        // Note: TryGetChildrenArray returns a snapshot, safe to iterate and modify
         foreach (var (childIdx, _) in ownChildren)
         {
-            // Use TryMatch to avoid closure allocation
-
-            // @senior-dev: This is where you would want to use .IsGlobal on Entity
-            Entity child;
-            if (e.Entity.Index.TryMatch(out ushort globalIdx))
-            {
-                child = EntityRegistry.Instance[(ushort)childIdx];
-            }
-            else if (e.Entity.Index.TryMatch(out uint sceneIdx))
-            {
-                child = EntityRegistry.Instance[(uint)childIdx];
-            }
-            else
-            {
-                throw new InvalidOperationException("Invalid PartitionIndex state");
-            }
+            // Use IsGlobal to determine partition
+            Entity child = e.Entity.IsGlobal() 
+                ? EntityRegistry.Instance[(ushort)childIdx]
+                : EntityRegistry.Instance[(uint)childIdx];
             
             // Only remove if child is still active
             if (child.Active)
             {
-                // @senior-dev: Use the extension method, this should be child.RemoveBehavior
-                BehaviorRegistry<ParentBehavior>.Instance.Remove(child);
+                child.RemoveBehavior<ParentBehavior>();
             }
         }
     }

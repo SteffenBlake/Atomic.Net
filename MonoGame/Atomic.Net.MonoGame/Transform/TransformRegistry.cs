@@ -170,16 +170,11 @@ public sealed class TransformRegistry :
             static (ref readonly input, ref wt) => wt.Value = input
         );
 
-        // Use GetChildrenArray for allocation-free iteration
-        var childrenArray = HierarchyRegistry.Instance.GetChildrenArray(entityIndex);
-        if (childrenArray != null)
+        // Use TryGetChildrenArray for allocation-free iteration
+        if (HierarchyRegistry.Instance.TryGetChildrenArray(entityIndex, out var childrenArray))
         {
             // Children are in same partition as parent
-            var isGlobal = entityIndex.Visit(
-                static global => true,
-                static scene => false,
-                static () => false
-            );
+            var isGlobal = entityIndex.IsGlobal;
             
             if (isGlobal)
             {

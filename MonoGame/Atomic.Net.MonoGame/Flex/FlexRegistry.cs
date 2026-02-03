@@ -79,7 +79,8 @@ public partial class FlexRegistry :
         // Check if we have a flex parent, if so run on that instead
         if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(index, out var parentBehavior))
         {
-            if (parentBehavior.Value.TryFindParent(EntityRegistry.Instance[index], out var parent))
+            var entity = EntityRegistry.Instance[index];
+            if (parentBehavior.Value.TryFindParent(entity.IsGlobal(), out var parent))
             {
                 if (parent.Value.HasBehavior<FlexBehavior>())
                 {

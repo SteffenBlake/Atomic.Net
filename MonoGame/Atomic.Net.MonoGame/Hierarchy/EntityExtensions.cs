@@ -74,8 +74,7 @@ public static class HierarchyEntityExtensions
     {
         if (child.TryGetBehavior<ParentBehavior>(out var parentBehavior))
         {
-            // @senior-dev: Instead of passing the entire child object in, you should just pass in an isGlobal bool, fix this
-            return parentBehavior.Value.TryFindParent(child, out parent);
+            return parentBehavior.Value.TryFindParent(child.IsGlobal(), out parent);
         }
 
         parent = default;
@@ -94,7 +93,7 @@ public static class HierarchyEntityExtensions
             child, out var parentBehavior
         ))
         {
-            if (parentBehavior.Value.TryFindParent(child, out var parent))
+            if (parentBehavior.Value.TryFindParent(child.IsGlobal(), out var parent))
             {
                 return parent;
             }
@@ -137,7 +136,7 @@ public static class HierarchyEntityExtensions
             return false;
         }
 
-        if (!parentBehavior.Value.TryFindParent(child, out var located))
+        if (!parentBehavior.Value.TryFindParent(child.IsGlobal(), out var located))
         {
             return false;
         }
