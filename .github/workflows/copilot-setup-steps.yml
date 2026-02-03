@@ -60,6 +60,10 @@ jobs:
           which Microsoft.CodeAnalysis.LanguageServer
           ls -la $HOME/.local/lib/Microsoft.CodeAnalysis.LanguageServer/
 
+      # Create log directory for Roslyn LSP
+      - name: Create Roslyn LSP log directory
+        run: mkdir -p $HOME/.local/var/log/roslyn-lsp
+
       # Create the cclsp configuration file
       - name: Create cclsp configuration
         run: |
@@ -69,7 +73,14 @@ jobs:
             "servers": [
               {
                 "extensions": ["cs", "csx"],
-                "command": ["Microsoft.CodeAnalysis.LanguageServer"],
+                "command": [
+                  "Microsoft.CodeAnalysis.LanguageServer",
+                  "--stdio",
+                  "--logLevel",
+                  "Information",
+                  "--extensionLogDirectory",
+                  "$HOME/.local/var/log/roslyn-lsp"
+                ],
                 "rootDir": "."
               }
             ]
