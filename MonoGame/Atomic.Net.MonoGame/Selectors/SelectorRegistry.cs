@@ -34,22 +34,23 @@ public class SelectorRegistry :
     }
 
     // Lookups for fast locating "full" selector by their Prior+Self hashcode 
-    private readonly Dictionary<int, UnionEntitySelector> _unionSelectorRegistry = new(Constants.MaxEntities / 64);
-    private readonly Dictionary<int, IdEntitySelector> _idSelectorRegistry = new(Constants.MaxEntities / 64);
-    private readonly Dictionary<int, TagEntitySelector> _tagSelectorRegistry = new(Constants.MaxEntities / 64);
-    private readonly Dictionary<int, CollisionEnterEntitySelector> _enterSelectorRegistry = new(Constants.MaxEntities / 64);
-    private readonly Dictionary<int, CollisionExitEntitySelector> _exitSelectorRegistry = new(Constants.MaxEntities / 64);
+    // Sized for both partitions combined, divided by typical selector reuse factor
+    private readonly Dictionary<int, UnionEntitySelector> _unionSelectorRegistry = new((Constants.MaxGlobalEntities + (int)Constants.MaxSceneEntities) / 64);
+    private readonly Dictionary<int, IdEntitySelector> _idSelectorRegistry = new((Constants.MaxGlobalEntities + (int)Constants.MaxSceneEntities) / 64);
+    private readonly Dictionary<int, TagEntitySelector> _tagSelectorRegistry = new((Constants.MaxGlobalEntities + (int)Constants.MaxSceneEntities) / 64);
+    private readonly Dictionary<int, CollisionEnterEntitySelector> _enterSelectorRegistry = new((Constants.MaxGlobalEntities + (int)Constants.MaxSceneEntities) / 64);
+    private readonly Dictionary<int, CollisionExitEntitySelector> _exitSelectorRegistry = new((Constants.MaxGlobalEntities + (int)Constants.MaxSceneEntities) / 64);
 
     // Lookup for @Id => IdEntitySelector (for tagging dirty)
-    private readonly Dictionary<string, IdEntitySelector> _idSelectorLookup = new(Constants.MaxEntities / 64);
+    private readonly Dictionary<string, IdEntitySelector> _idSelectorLookup = new((Constants.MaxGlobalEntities + (int)Constants.MaxSceneEntities) / 64);
 
     // Lookup for @Tag => IdEntitySelector (for tagging dirty)
-    private readonly Dictionary<string, TagEntitySelector> _tagSelectorLookup = new(Constants.MaxEntities / 64);
+    private readonly Dictionary<string, TagEntitySelector> _tagSelectorLookup = new((Constants.MaxGlobalEntities + (int)Constants.MaxSceneEntities) / 64);
 
     // Track root selectors (final parsed results) for bulk Recalc
     // senior-dev: Only track the final "root" nodes from TryParse to avoid recalculating
     // the same sub-nodes multiple times. Each root recursively recalcs its children.
-    private readonly HashSet<EntitySelector> _rootSelectors = new(Constants.MaxEntities / 64);
+    private readonly HashSet<EntitySelector> _rootSelectors = new((Constants.MaxGlobalEntities + (int)Constants.MaxSceneEntities) / 64);
 
     // senior-dev: Pre-allocated buffer for union parts to achieve zero allocations during parsing
     private readonly List<EntitySelector> _unionPartsBuffer = new(32);

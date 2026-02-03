@@ -19,14 +19,14 @@ public class SparseArrayBenchmark
     public void Setup()
     {
         _array = new int?[Capacity];
-        _sparseArray = new SparseArray<int>((ushort)Capacity);
+        _sparseArray = new SparseArray<int>((uint)Capacity);
 
-        for (ushort i = 0; i < Capacity; i++)
+        for (uint i = 0; i < Capacity; i++)
         {
             if (_rng.NextDouble() < FillPercent)
             {
-                _array[i] = i;
-                _sparseArray.Set(i, i);
+                _array[i] = (int)i;
+                _sparseArray.Set(i, (int)i);
             }
         }
     }
@@ -57,7 +57,7 @@ public class SparseArrayBenchmark
         foreach(var (i, value) in _sparseArray)
         {
             result += value;
-            result += i;
+            result += (int)i;
         }
 
         return result;

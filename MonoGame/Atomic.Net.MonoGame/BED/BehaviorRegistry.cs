@@ -34,7 +34,10 @@ public class BehaviorRegistry<TBehavior> :
         EventBus<PreEntityDeactivatedEvent>.Register(this);
     }
 
-    private readonly SparseArray<TBehavior> _behaviors = new(Constants.MaxEntities);
+    private readonly PartitionedSparseArray<TBehavior> _behaviors = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
 
     /// <summary>
     /// Sets or replaces a regular (non-backed) behavior.
@@ -157,7 +160,7 @@ public class BehaviorRegistry<TBehavior> :
     /// <param name="behavior">The behavior instance.</param>
     /// <returns>True if the behavior exists and is active.</returns>
     public bool TryGetBehavior(
-        ushort entityIndex, 
+        PartitionIndex entityIndex, 
         [NotNullWhen(true)]
         out TBehavior? behavior
     )
@@ -182,15 +185,44 @@ public class BehaviorRegistry<TBehavior> :
     }
 
     /// <summary>
-    /// Iterator over active behaviors (entity + behavior).
+    /// Iterator over active global behaviors (entity + behavior).
+    /// </summary>
+    /// <returns>An enumerable of active global entity-behavior pairs.</returns>
+    public IEnumerable<(Entity Entity, TBehavior Behavior)> GetActiveGlobalBehaviors()
+    {
+        foreach (var (index, behavior) in _behaviors.Global)
+        {
+            yield return (EntityRegistry.Instance[(ushort)index], behavior);
+        }
+    }
+    
+    /// <summary>
+    /// Iterator over active scene behaviors (entity + behavior).
+    /// </summary>
+    /// <returns>An enumerable of active scene entity-behavior pairs.</returns>
+    public IEnumerable<(Entity Entity, TBehavior Behavior)> GetActiveSceneBehaviors()
+    {
+        foreach (var (index, behavior) in _behaviors.Scene)
+        {
+            yield return (EntityRegistry.Instance[(uint)index], behavior);
+        }
+    }
+    
+    /// <summary>
+    /// Iterator over all active behaviors (entity + behavior, both global and scene).
     /// </summary>
     /// <returns>An enumerable of active entity-behavior pairs.</returns>
-    public IEnumerable<(Entity Entity, TBehavior Behavior)> GetActiveBehaviors() => 
-        _behaviors
-        .Select(a => (
-            EntityRegistry.Instance[a.Index],
-            a.Value
-        ));
+    public IEnumerable<(Entity Entity, TBehavior Behavior)> GetActiveBehaviors()
+    {
+        foreach (var pair in GetActiveGlobalBehaviors())
+        {
+            yield return pair;
+        }
+        foreach (var pair in GetActiveSceneBehaviors())
+        {
+            yield return pair;
+        }
+    }
 
     /// <summary>
     /// Handles entity deactivation by removing its behavior.

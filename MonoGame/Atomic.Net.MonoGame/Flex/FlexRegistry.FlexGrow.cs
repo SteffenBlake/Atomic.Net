@@ -10,28 +10,25 @@ public partial class FlexRegistry :
 {
     public void OnEvent(BehaviorAddedEvent<FlexGrowBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexGrowBehavior>(out var grow))
         {
-            _nodes[e.Entity.Index]!.StyleSetFlexGrow(grow.Value.Value);
+            node.StyleSetFlexGrow(grow.Value.Value);
         }
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexGrowBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexGrowBehavior>(out var grow))
         {
-            _nodes[e.Entity.Index]!.StyleSetFlexGrow(grow.Value.Value);
+            node.StyleSetFlexGrow(grow.Value.Value);
         }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexGrowBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        _nodes[e.Entity.Index]!.StyleSetFlexGrow(float.NaN);
+        var node = EnsureDirtyNode(e.Entity.Index);
+        node.StyleSetFlexGrow(float.NaN);
     }
 }

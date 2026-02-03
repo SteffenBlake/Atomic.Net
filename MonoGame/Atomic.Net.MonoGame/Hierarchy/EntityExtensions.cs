@@ -74,7 +74,7 @@ public static class HierarchyEntityExtensions
     {
         if (child.TryGetBehavior<ParentBehavior>(out var parentBehavior))
         {
-            return parentBehavior.Value.TryFindParent(out parent);
+            return parentBehavior.Value.TryFindParent(child.IsGlobal(), out parent);
         }
 
         parent = default;
@@ -93,7 +93,7 @@ public static class HierarchyEntityExtensions
             child, out var parentBehavior
         ))
         {
-            if (parentBehavior.Value.TryFindParent(out var parent))
+            if (parentBehavior.Value.TryFindParent(child.IsGlobal(), out var parent))
             {
                 return parent;
             }
@@ -136,7 +136,7 @@ public static class HierarchyEntityExtensions
             return false;
         }
 
-        if (!parentBehavior.Value.TryFindParent(out var located))
+        if (!parentBehavior.Value.TryFindParent(child.IsGlobal(), out var located))
         {
             return false;
         }

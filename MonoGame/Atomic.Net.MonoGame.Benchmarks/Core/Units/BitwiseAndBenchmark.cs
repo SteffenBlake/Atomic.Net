@@ -95,11 +95,11 @@ public class BitwiseAndBenchmark
             // Only set in SparseArray if true (sparse storage)
             if (leftValue)
             {
-                _leftSparse.Set((ushort)i, true);
+                _leftSparse.Set((uint)i, true);
             }
             if (rightValue)
             {
-                _rightSparse.Set((ushort)i, true);
+                _rightSparse.Set((uint)i, true);
             }
         }
 
@@ -166,7 +166,7 @@ public class BitwiseAndBenchmark
 
         foreach (var indexMatch in indexesA.Intersect(indexesB))
         {
-            result += indexMatch;
+            result += (int)indexMatch;
             _resultSparse.Set(indexMatch, true);
         }
 
@@ -187,7 +187,7 @@ public class BitwiseAndBenchmark
         foreach (var match in intersected)
         {
             var indexMatch = match.Index;
-            result += indexMatch;
+            result += (int)indexMatch;
             _resultSparse.Set(indexMatch, true);
         }
 

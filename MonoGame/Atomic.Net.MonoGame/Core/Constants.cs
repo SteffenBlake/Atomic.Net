@@ -5,32 +5,32 @@ namespace Atomic.Net.MonoGame.Core;
 /// </summary>
 public static class Constants
 {
-#if MAX_ENTITIES
-    /// <summary>
-    /// Maximum number of entities supported.
-    /// </summary>
-    public const ushort MaxEntities = MAX_ENTITIES;
-#else
-    /// <summary>
-    /// Maximum number of entities supported.
-    /// </summary>
-    public const ushort MaxEntities = 8192;
-#endif
-
 #if MAX_GLOBAL_ENTITIES
     /// <summary>
-    /// Partition point between global and scene entities.
-    /// Entities with indices less than MaxGlobalEntities are global entities.
-    /// Entities with indices greater than or equal to MaxGlobalEntities are scene entities.
+    /// Maximum number of global entities supported (partition 0).
+    /// Global entities persist across scene resets.
     /// </summary>
     public const ushort MaxGlobalEntities = MAX_GLOBAL_ENTITIES;
 #else
     /// <summary>
-    /// Partition point between global and scene entities.
-    /// Entities with indices less than MaxGlobalEntities are global entities.
-    /// Entities with indices greater than or equal to MaxGlobalEntities are scene entities.
+    /// Maximum number of global entities supported (partition 0).
+    /// Global entities persist across scene resets.
     /// </summary>
     public const ushort MaxGlobalEntities = 256;
+#endif
+
+#if MAX_SCENE_ENTITIES
+    /// <summary>
+    /// Maximum number of scene entities supported (partition 1).
+    /// Scene entities are cleared on scene reset.
+    /// </summary>
+    public const uint MaxSceneEntities = MAX_SCENE_ENTITIES;
+#else
+    /// <summary>
+    /// Maximum number of scene entities supported (partition 1).
+    /// Scene entities are cleared on scene reset.
+    /// </summary>
+    public const uint MaxSceneEntities = 8192;
 #endif
 
 #if DEFAULT_ALLOC_PROPERTYBAG 
@@ -59,60 +59,60 @@ public static class Constants
     public const string DefaultPersistenceDatabasePath = "persistence.db";
 #endif
 
-#if MAX_RULES
-    /// <summary>
-    /// Maximum number of rules supported.
-    /// </summary>
-    public const ushort MaxRules = MAX_RULES;
-#else
-    /// <summary>
-    /// Maximum number of rules supported.
-    /// </summary>
-    public const ushort MaxRules = 1024;
-#endif
-
 #if MAX_GLOBAL_RULES
     /// <summary>
-    /// Partition point between global and scene rules.
-    /// Rules with indices less than MaxGlobalRules are global rules.
-    /// Rules with indices greater than or equal to MaxGlobalRules are scene rules.
+    /// Maximum number of global rules supported (partition 0).
+    /// Global rules persist across scene resets.
     /// </summary>
     public const ushort MaxGlobalRules = MAX_GLOBAL_RULES;
 #else
     /// <summary>
-    /// Partition point between global and scene rules.
-    /// Rules with indices less than MaxGlobalRules are global rules.
-    /// Rules with indices greater than or equal to MaxGlobalRules are scene rules.
+    /// Maximum number of global rules supported (partition 0).
+    /// Global rules persist across scene resets.
     /// </summary>
     public const ushort MaxGlobalRules = 128;
 #endif
 
-#if MAX_SEQUENCES
+#if MAX_SCENE_RULES
     /// <summary>
-    /// Maximum number of sequences supported.
+    /// Maximum number of scene rules supported (partition 1).
+    /// Scene rules are cleared on scene reset.
     /// </summary>
-    public const ushort MaxSequences = MAX_SEQUENCES;
+    public const uint MaxSceneRules = MAX_SCENE_RULES;
 #else
     /// <summary>
-    /// Maximum number of sequences supported.
+    /// Maximum number of scene rules supported (partition 1).
+    /// Scene rules are cleared on scene reset.
     /// </summary>
-    public const ushort MaxSequences = 512;
+    public const uint MaxSceneRules = 1024;
 #endif
 
 #if MAX_GLOBAL_SEQUENCES
     /// <summary>
-    /// Partition point between global and scene sequences.
-    /// Sequences with indices less than MaxGlobalSequences are global sequences.
-    /// Sequences with indices greater than or equal to MaxGlobalSequences are scene sequences.
+    /// Maximum number of global sequences supported (partition 0).
+    /// Global sequences persist across scene resets.
     /// </summary>
     public const ushort MaxGlobalSequences = MAX_GLOBAL_SEQUENCES;
 #else
     /// <summary>
-    /// Partition point between global and scene sequences.
-    /// Sequences with indices less than MaxGlobalSequences are global sequences.
-    /// Sequences with indices greater than or equal to MaxGlobalSequences are scene sequences.
+    /// Maximum number of global sequences supported (partition 0).
+    /// Global sequences persist across scene resets.
     /// </summary>
     public const ushort MaxGlobalSequences = 256;
+#endif
+
+#if MAX_SCENE_SEQUENCES
+    /// <summary>
+    /// Maximum number of scene sequences supported (partition 1).
+    /// Scene sequences are cleared on scene reset.
+    /// </summary>
+    public const uint MaxSceneSequences = MAX_SCENE_SEQUENCES;
+#else
+    /// <summary>
+    /// Maximum number of scene sequences supported (partition 1).
+    /// Scene sequences are cleared on scene reset.
+    /// </summary>
+    public const uint MaxSceneSequences = 512;
 #endif
 
 

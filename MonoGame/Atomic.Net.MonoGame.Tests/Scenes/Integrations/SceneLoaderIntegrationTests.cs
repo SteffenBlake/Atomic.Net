@@ -39,15 +39,21 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
 
         // Assert
-        var activeEntities = EntityRegistry.Instance.GetActiveEntities().ToList();
+        var activeEntities = EntityRegistry.Instance.GetActiveGlobalEntities().Concat(EntityRegistry.Instance.GetActiveSceneEntities()).ToList();
         
         // test-architect: Should spawn 2 entities (root-container, menu-button)
         Assert.True(activeEntities.Count >= 2, $"Expected at least 2 entities, got {activeEntities.Count}");
         
         // test-architect: All entities should be in scene partition (index >= 256)
-        Assert.All(activeEntities, entity => 
-            Assert.True(entity.Index >= Constants.MaxGlobalEntities, 
-                $"Entity {entity.Index} should be in scene partition (>= {Constants.MaxGlobalEntities})"));
+        Assert.All(activeEntities, entity =>
+        {
+            var isScene = entity.Index.Visit(
+                static _ => false,
+                static _ => true,
+                static () => false
+            );
+            Assert.True(isScene, $"Entity should be in scene partition");
+        });
     }
 
     [Fact]
@@ -60,15 +66,21 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGlobalScene(scenePath);
 
         // Assert
-        var activeEntities = EntityRegistry.Instance.GetActiveEntities().ToList();
+        var activeEntities = EntityRegistry.Instance.GetActiveGlobalEntities().Concat(EntityRegistry.Instance.GetActiveSceneEntities()).ToList();
         
         // test-architect: Should spawn 2 entities (root-container, menu-button)
         Assert.True(activeEntities.Count >= 2, $"Expected at least 2 entities, got {activeEntities.Count}");
         
         // test-architect: All entities should be in global partition (index < 256)
-        Assert.All(activeEntities, entity => 
-            Assert.True(entity.Index < Constants.MaxGlobalEntities, 
-                $"Entity {entity.Index} should be in global partition (< {Constants.MaxGlobalEntities})"));
+        Assert.All(activeEntities, entity =>
+        {
+            var isGlobal = entity.Index.Visit(
+                static _ => true,
+                static _ => false,
+                static () => false
+            );
+            Assert.True(isGlobal, $"Entity should be in global partition");
+        });
     }
 
     [Fact]
@@ -83,11 +95,21 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         // Assert
         // test-architect: Verify "root-container" can be resolved
         Assert.True(EntityIdRegistry.Instance.TryResolve("root-container", out var rootEntity), "root-container should be registered");
-        Assert.True(rootEntity.Value.Index >= Constants.MaxGlobalEntities);
+        var rootIsScene = rootEntity.Value.Index.Visit(
+            static _ => false,
+            static _ => true,
+            static () => false
+        );
+        Assert.True(rootIsScene);
 
         // test-architect: Verify "menu-button" can be resolved
         Assert.True(EntityIdRegistry.Instance.TryResolve("menu-button", out var buttonEntity), "menu-button should be registered");
-        Assert.True(buttonEntity.Value.Index >= Constants.MaxGlobalEntities);
+        var buttonIsScene = buttonEntity.Value.Index.Visit(
+            static _ => false,
+            static _ => true,
+            static () => false
+        );
+        Assert.True(buttonIsScene);
     }
 
     [Fact]
@@ -201,7 +223,7 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         Assert.NotEqual(default, errorEvent);
         
         // test-architect: No entities should be spawned
-        var activeEntities = EntityRegistry.Instance.GetActiveEntities().ToList();
+        var activeEntities = EntityRegistry.Instance.GetActiveGlobalEntities().Concat(EntityRegistry.Instance.GetActiveSceneEntities()).ToList();
         Assert.Empty(activeEntities);
     }
 
@@ -223,7 +245,7 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         Assert.NotEqual(default, errorEvent);
         
         // test-architect: No entities should be spawned
-        var activeEntities = EntityRegistry.Instance.GetActiveEntities().ToList();
+        var activeEntities = EntityRegistry.Instance.GetActiveGlobalEntities().Concat(EntityRegistry.Instance.GetActiveSceneEntities()).ToList();
         Assert.Empty(activeEntities);
     }
 

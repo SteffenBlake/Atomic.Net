@@ -10,28 +10,25 @@ public partial class FlexRegistry :
 {
     public void OnEvent(BehaviorAddedEvent<FlexDirectionBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexDirectionBehavior>(out var flexDirection))
         {
-            _nodes[e.Entity.Index]!.StyleSetFlexDirection(flexDirection.Value.Value);
+            node.StyleSetFlexDirection(flexDirection.Value.Value);
         }
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexDirectionBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexDirectionBehavior>(out var flexDirection))
         {
-            _nodes[e.Entity.Index]!.StyleSetFlexDirection(flexDirection.Value.Value);
+            node.StyleSetFlexDirection(flexDirection.Value.Value);
         }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexDirectionBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        _nodes[e.Entity.Index]!.StyleSetFlexDirection(default);
+        var node = EnsureDirtyNode(e.Entity.Index);
+        node.StyleSetFlexDirection(default);
     }
 }

@@ -25,6 +25,11 @@ public sealed class RulesDriver :
         ["index"] = -1
     };
 
+    // Track which partition each entity in the entities array belongs to (parallel to _ruleContext["entities"])
+    // Pre-allocated array to prevent runtime allocations during gameplay
+    private readonly bool[] _entityPartitions = new bool[Constants.MaxGlobalEntities + (int)Constants.MaxSceneEntities];
+    private int _entityCount = 0;
+
     internal static void Initialize()
     {
         if (Instance != null)
@@ -44,7 +49,14 @@ public sealed class RulesDriver :
     /// <param name="deltaTime">Time elapsed since last frame in seconds</param>
     public void RunFrame(float deltaTime)
     {
-        foreach (var (_, rule) in RuleRegistry.Instance.Rules)
+        // Process global rules
+        foreach (var (_, rule) in RuleRegistry.Instance.Rules.Global)
+        {
+            ProcessRule(rule, deltaTime);
+        }
+        
+        // Process scene rules
+        foreach (var (_, rule) in RuleRegistry.Instance.Rules.Scene)
         {
             ProcessRule(rule, deltaTime);
         }
@@ -91,25 +103,42 @@ public sealed class RulesDriver :
             // Execute the scene command on this entity
             rule.Do.Execute(entityJsonNode, _ruleContext);
             
-            // Write mutations back to real entity (sequence commands don't mutate, only MutCommand does)
-            if (entityJsonNode.TryGetEntityIndex(out var entityIndex))
+            // Write mutations back to real entity using partition tracked in C# code
+            bool isGlobal = _entityPartitions[i];
+            if (!entityJsonNode.TryGetEntityIndex(isGlobal, out var entityIndex))
             {
-                WriteEntityChanges(entityJsonNode, entityIndex.Value);
+                return;
             }
+            WriteEntityChanges(entityJsonNode, entityIndex.Value);
         }
     }
 
     /// <summary>
     /// Serializes entities that match the selector into a JsonArray.
+    /// Partition metadata is tracked separately in _entityPartitions array (not in JSON).
     /// </summary>
-    private void BuildEntitiesArray(SparseArray<bool> selectorMatches)
+    private void BuildEntitiesArray(PartitionedSparseArray<bool> selectorMatches)
     {
         var entities = (JsonArray)_ruleContext["entities"]!;
         entities.Clear();
-        foreach (var (entityIndex, _) in selectorMatches)
+        _entityCount = 0;
+        
+        // Add global entities
+        foreach (var (entityIndex, _) in selectorMatches.Global)
         {
-            var entity = EntityRegistry.Instance[entityIndex];
-            entities.Add(JsonEntityConverter.Read(entity));
+            var entity = EntityRegistry.Instance[(ushort)entityIndex];
+            var jsonNode = JsonEntityConverter.Read(entity);
+            entities.Add(jsonNode);
+            _entityPartitions[_entityCount++] = true; // Track as global partition
+        }
+        
+        // Add scene entities
+        foreach (var (entityIndex, _) in selectorMatches.Scene)
+        {
+            var entity = EntityRegistry.Instance[(uint)entityIndex];
+            var jsonNode = JsonEntityConverter.Read(entity);
+            entities.Add(jsonNode);
+            _entityPartitions[_entityCount++] = false; // Track as scene partition
         }
     }
 
@@ -147,7 +176,7 @@ public sealed class RulesDriver :
     /// <summary>
     /// Writes changes from a mutated JsonNode entity back to the real Entity.
     /// </summary>
-    private static void WriteEntityChanges(JsonNode jsonEntity, ushort entityIndex)
+    private static void WriteEntityChanges(JsonNode jsonEntity, PartitionIndex entityIndex)
     {
         var entity = EntityRegistry.Instance[entityIndex];
         if (!entity.Active)

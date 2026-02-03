@@ -9,10 +9,4 @@ namespace Atomic.Net.MonoGame.Ids;
 /// Enables parent references like "parent": "@player-entity".
 /// </summary>
 [JsonConverter(typeof(IdBehaviorConverter))]
-public readonly record struct IdBehavior(string Id) : IBehavior<IdBehavior>
-{
-    public static IdBehavior CreateFor(Entity entity)
-    {
-        return new IdBehavior(string.Empty);
-    }
-}
+public readonly record struct IdBehavior(string Id);

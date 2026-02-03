@@ -24,7 +24,7 @@ public sealed class SequenceStartCmdDriver : ISingleton<SequenceStartCmdDriver>
     /// </summary>
     /// <param name="entityIndex">The entity index.</param>
     /// <param name="sequenceId">The sequence ID to start.</param>
-    public void Execute(ushort entityIndex, string sequenceId)
+    public void Execute(PartitionIndex entityIndex, string sequenceId)
     {
         // Validate entity is active
         var entity = EntityRegistry.Instance[entityIndex];

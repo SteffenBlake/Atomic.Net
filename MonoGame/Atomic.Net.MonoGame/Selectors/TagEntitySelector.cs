@@ -8,7 +8,10 @@ public class TagEntitySelector(
     int hashcode, string tag, EntitySelector? prior = null
 )
 {
-    public readonly SparseArray<bool> Matches = new(Constants.MaxEntities);
+    public readonly PartitionedSparseArray<bool> Matches = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
 
     private bool _dirty = true;
 
@@ -42,7 +45,8 @@ public class TagEntitySelector(
 
         if (shouldRecalc)
         {
-            Matches.Clear();
+            Matches.Global.Clear();
+            Matches.Scene.Clear();
             
             // Resolve all entities with this tag from TagRegistry
             if (TagRegistry.Instance.TryResolve(tag, out var tagMatches))
@@ -55,9 +59,13 @@ public class TagEntitySelector(
                 else
                 {
                     // No prior selector, copy all tag matches
-                    foreach (var (entityIndex, _) in tagMatches)
+                    foreach (var (entityIndex, _) in tagMatches.Global)
                     {
-                        Matches.Set(entityIndex, true);
+                        Matches.Set((ushort)entityIndex, true);
+                    }
+                    foreach (var (entityIndex, _) in tagMatches.Scene)
+                    {
+                        Matches.Set((uint)entityIndex, true);
                     }
                 }
             }

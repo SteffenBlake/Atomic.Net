@@ -9,15 +9,28 @@ namespace Atomic.Net.MonoGame.Hierarchy;
 public readonly record struct ParentBehavior(EntitySelector ParentSelector)
 {
     public bool TryFindParent(
+        bool isGlobal,
         [NotNullWhen(true)]
         out Entity? parent
     )
     {
-        var enumerator = ParentSelector.Matches.GetEnumerator();
+        // Pick enumerator based on child's partition - parent must be in same partition
+        var enumerator = isGlobal ?
+            ParentSelector.Matches.Global.GetEnumerator() :
+            ParentSelector.Matches.Scene.GetEnumerator();
+
         if (enumerator.MoveNext())
         {
-            var parentIndex = enumerator.Current.Index;
-            parent = EntityRegistry.Instance[parentIndex];
+            if (isGlobal)
+            {
+                ushort parentIndex = (ushort)enumerator.Current.Index;
+                parent = EntityRegistry.Instance[parentIndex];
+            }
+            else
+            {
+                uint parentIndex = enumerator.Current.Index;
+                parent = EntityRegistry.Instance[parentIndex];
+            }
             return true;
         }
 

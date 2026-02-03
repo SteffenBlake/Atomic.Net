@@ -107,10 +107,18 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
 
         // Assert - Matches should be empty
         var hasAnyMatches = false;
-        foreach (var (_, _) in selector.Matches)
+        foreach (var (_, _) in selector.Matches.Global)
         {
             hasAnyMatches = true;
             break;
+        }
+        if (!hasAnyMatches)
+        {
+            foreach (var (_, _) in selector.Matches.Scene)
+            {
+                hasAnyMatches = true;
+                break;
+            }
         }
         Assert.False(hasAnyMatches);
     }
@@ -347,10 +355,18 @@ public sealed class TagEntitySelectorIntegrationTests : IDisposable
 
         // Assert - Valid selector but no matches
         var hasAnyMatches = false;
-        foreach (var (_, _) in selector.Matches)
+        foreach (var (_, _) in selector.Matches.Global)
         {
             hasAnyMatches = true;
             break;
+        }
+        if (!hasAnyMatches)
+        {
+            foreach (var (_, _) in selector.Matches.Scene)
+            {
+                hasAnyMatches = true;
+                break;
+            }
         }
         Assert.False(hasAnyMatches);
     }

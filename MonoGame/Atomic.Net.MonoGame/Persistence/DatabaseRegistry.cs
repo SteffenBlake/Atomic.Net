@@ -33,10 +33,16 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
 
     public static DatabaseRegistry Instance { get; private set; } = null!;
 
-    private readonly SparseArray<bool> _dirtyFlags = new(Constants.MaxEntities);
+    private readonly PartitionedSparseArray<bool> _dirtyFlags = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
     private LiteDatabase? _database = null;
     private ILiteCollection<BsonDocument>? _collection = null;
-    private readonly SparseReferenceArray<string> _oldKeys = new(Constants.MaxEntities);
+    private readonly PartitionedSparseRefArray<string> _oldKeys = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
 
     // CRITICAL: Database path is a COMPILATION CONSTANT ONLY
     // NEVER add runtime configuration, environment variables, or any other mechanism to override this
@@ -55,7 +61,7 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     /// No-op if IsEnabled is false (during scene load).
     /// </summary>
     /// <param name="entityIndex">Index of the entity to mark dirty.</param>
-    public void MarkDirty(ushort entityIndex)
+    public void MarkDirty(PartitionIndex entityIndex)
     {
         // CRITICAL: NEVER bypass this IsEnabled check
         // IsEnabled controls dirty tracking globally - when false, NO entities should be marked dirty

@@ -29,10 +29,10 @@ public sealed class PropertiesRegistry : ISingleton<PropertiesRegistry>,
 
     public static PropertiesRegistry Instance { get; private set; } = null!;
 
-    private readonly Dictionary<string, SparseArray<bool>> _keyIndex = 
+    private readonly Dictionary<string, PartitionedSparseArray<bool>> _keyIndex = 
         new(Constants.DefaultAllocPropertyBag, StringComparer.OrdinalIgnoreCase);
 
-    private readonly Dictionary<string, Dictionary<PropertyValue, SparseArray<bool>>> _keyValueIndex = 
+    private readonly Dictionary<string, Dictionary<PropertyValue, PartitionedSparseArray<bool>>> _keyValueIndex = 
         new(Constants.DefaultAllocPropertyBag, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
@@ -45,7 +45,10 @@ public sealed class PropertiesRegistry : ISingleton<PropertiesRegistry>,
         {
             if (!_keyIndex.TryGetValue(key, out var keyEntities))
             {
-                keyEntities = new SparseArray<bool>(Constants.MaxEntities);
+                keyEntities = new PartitionedSparseArray<bool>(
+                    Constants.MaxGlobalEntities,
+                    Constants.MaxSceneEntities
+                );
                 _keyIndex[key] = keyEntities;
             }
             keyEntities.Set(entity.Index, true);
@@ -58,7 +61,10 @@ public sealed class PropertiesRegistry : ISingleton<PropertiesRegistry>,
 
             if (!valueDict.TryGetValue(value, out var valueEntities))
             {
-                valueEntities = new SparseArray<bool>(Constants.MaxEntities);
+                valueEntities = new PartitionedSparseArray<bool>(
+                    Constants.MaxGlobalEntities,
+                    Constants.MaxSceneEntities
+                );
                 valueDict[value] = valueEntities;
             }
             valueEntities.Set(entity.Index, true);
@@ -95,10 +101,18 @@ public sealed class PropertiesRegistry : ISingleton<PropertiesRegistry>,
     {
         if (!_keyIndex.TryGetValue(key, out var keyEntities))
         {
-            return [];
+            yield break;
         }
 
-        return keyEntities.Select(static e => EntityRegistry.Instance[e.Index]);
+        // Iterate over both partitions
+        foreach (var (idx, _) in keyEntities.Global)
+        {
+            yield return EntityRegistry.Instance[(ushort)idx];
+        }
+        foreach (var (idx, _) in keyEntities.Scene)
+        {
+            yield return EntityRegistry.Instance[(uint)idx];
+        }
     }
 
     /// <summary>
@@ -108,15 +122,23 @@ public sealed class PropertiesRegistry : ISingleton<PropertiesRegistry>,
     {
         if (!_keyValueIndex.TryGetValue(key, out var valueDict))
         {
-            return [];
+            yield break;
         }
 
         if (!valueDict.TryGetValue(value, out var valueEntities))
         {
-            return [];
+            yield break;
         }
 
-        return valueEntities.Select(static e => EntityRegistry.Instance[e.Index]);
+        // Iterate over both partitions
+        foreach (var (idx, _) in valueEntities.Global)
+        {
+            yield return EntityRegistry.Instance[(ushort)idx];
+        }
+        foreach (var (idx, _) in valueEntities.Scene)
+        {
+            yield return EntityRegistry.Instance[(uint)idx];
+        }
     }
 
     public void OnEvent(InitializeEvent _)

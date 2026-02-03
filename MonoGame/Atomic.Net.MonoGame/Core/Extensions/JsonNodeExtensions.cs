@@ -215,12 +215,12 @@ public static class JsonNodeExtensions
     }
 
     /// <summary>
-    /// Tries to extract the _index property from entity JSON.
-    /// Entity index is ushort, but JsonLogic may serialize as int.
+    /// Tries to extract the _index property from entity JSON as a global partition index.
+    /// Use this when you know the entity is from the global partition.
     /// </summary>
-    public static bool TryGetEntityIndex(
+    public static bool TryGetGlobalEntityIndex(
         this JsonNode entityJson,
-        [NotNullWhen(true)] out ushort? entityIndex
+        [NotNullWhen(true)] out PartitionIndex? entityIndex
     )
     {
         if (entityJson is not JsonObject entityObj)
@@ -237,33 +237,96 @@ public static class JsonNodeExtensions
             return false;
         }
 
-        try
+        if (indexNode is not JsonValue jsonValue)
         {
-            // Entity index is ushort, but JsonLogic may serialize as int
-            if (indexNode is JsonValue jsonValue && jsonValue.TryGetValue<ushort>(out var ushortValue))
-            {
-                entityIndex = ushortValue;
-                return true;
-            }
-
-            var indexValue = indexNode.GetValue<int>();
-            if (indexValue < 0 || indexValue >= Constants.MaxEntities)
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Entity _index {indexValue} out of bounds (max: {Constants.MaxEntities})"
-                ));
-                entityIndex = null;
-                return false;
-            }
-
-            entityIndex = (ushort)indexValue;
-            return true;
-        }
-        catch (Exception ex)
-        {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Failed to parse _index: {ex.Message}"));
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Entity _index must be a numeric value"));
             entityIndex = null;
             return false;
         }
+
+        // Global partition uses ushort indices
+        if (!jsonValue.TryGetValue<ushort>(out var ushortValue))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Entity _index could not be parsed as ushort (global partition)"));
+            entityIndex = null;
+            return false;
+        }
+
+        if (ushortValue >= Constants.MaxGlobalEntities)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Entity _index {ushortValue} exceeds MaxGlobalEntities ({Constants.MaxGlobalEntities})"
+            ));
+            entityIndex = null;
+            return false;
+        }
+
+        entityIndex = ushortValue;
+        return true;
+    }
+
+    /// <summary>
+    /// Tries to extract the _index property from entity JSON as a scene partition index.
+    /// Use this when you know the entity is from the scene partition.
+    /// </summary>
+    public static bool TryGetSceneEntityIndex(
+        this JsonNode entityJson,
+        [NotNullWhen(true)] out PartitionIndex? entityIndex
+    )
+    {
+        if (entityJson is not JsonObject entityObj)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Entity JSON is not a JsonObject"));
+            entityIndex = null;
+            return false;
+        }
+
+        if (!entityObj.TryGetPropertyValue("_index", out var indexNode) || indexNode == null)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Entity missing _index property"));
+            entityIndex = null;
+            return false;
+        }
+
+        if (indexNode is not JsonValue jsonValue)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Entity _index must be a numeric value"));
+            entityIndex = null;
+            return false;
+        }
+
+        if (!jsonValue.TryGetValue<uint>(out var uintValue))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Entity _index could not be parsed as uint (scene partition)"));
+            entityIndex = null;
+            return false;
+        }
+
+        if (uintValue >= Constants.MaxSceneEntities)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Entity _index {uintValue} exceeds MaxSceneEntities ({Constants.MaxSceneEntities})"
+            ));
+            entityIndex = null;
+            return false;
+        }
+
+        entityIndex = uintValue;
+        return true;
+    }
+
+    /// <summary>
+    /// Tries to extract the _index property from entity JSON based on partition type.
+    /// Routes to TryGetGlobalEntityIndex or TryGetSceneEntityIndex based on isGlobal flag.
+    /// </summary>
+    public static bool TryGetEntityIndex(
+        this JsonNode entityJson,
+        bool isGlobal,
+        [NotNullWhen(true)] out PartitionIndex? entityIndex
+    )
+    {
+        return isGlobal
+            ? entityJson.TryGetGlobalEntityIndex(out entityIndex)
+            : entityJson.TryGetSceneEntityIndex(out entityIndex);
     }
 }

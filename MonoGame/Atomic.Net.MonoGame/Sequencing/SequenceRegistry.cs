@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Sequencing;
@@ -26,18 +27,21 @@ public class SequenceRegistry :
 
     public static SequenceRegistry Instance { get; private set; } = null!;
 
-    private readonly SparseArray<JsonSequence> _sequences = new(Constants.MaxSequences);
-    private readonly Dictionary<string, ushort> _idToIndex = new(
-        Constants.MaxSequences,
+    private readonly PartitionedSparseArray<JsonSequence> _sequences = new(
+        Constants.MaxGlobalSequences,
+        Constants.MaxSceneSequences
+    );
+    private readonly Dictionary<string, PartitionIndex> _idToIndex = new(
+        (int)(Constants.MaxGlobalSequences + Constants.MaxSceneSequences),
         StringComparer.OrdinalIgnoreCase
     );
-    private ushort _nextSceneSequenceIndex = Constants.MaxGlobalSequences;
+    private uint _nextSceneSequenceIndex = 0;
     private ushort _nextGlobalSequenceIndex = 0;
 
     /// <summary>
-    /// Public accessor for sequences SparseArray for iteration and testing.
+    /// Public accessor for sequences PartitionedSparseArray for iteration and testing.
     /// </summary>
-    public SparseArray<JsonSequence> Sequences => _sequences;
+    public PartitionedSparseArray<JsonSequence> Sequences => _sequences;
 
     /// <summary>
     /// Initialize event handler - registers for other events.
@@ -49,28 +53,32 @@ public class SequenceRegistry :
     }
 
     /// <summary>
-    /// Activate the next available scene sequence (index greater than or equal to MaxGlobalSequences).
+    /// Tries to activate the next available scene sequence.
     /// </summary>
     /// <param name="sequence">The sequence to activate.</param>
-    /// <returns>The index of the activated sequence, or ushort.MaxValue on error.</returns>
-    public ushort Activate(JsonSequence sequence)
+    /// <param name="index">The partition index of the activated sequence, if successful.</param>
+    /// <returns>True if activation succeeded; false otherwise.</returns>
+    public bool TryActivate(JsonSequence sequence, [NotNullWhen(true)] out PartitionIndex? index)
     {
         if (string.IsNullOrWhiteSpace(sequence.Id))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Sequence ID cannot be null or empty"));
-            return ushort.MaxValue;
+            index = null;
+            return false;
         }
 
         // Validate sequence steps
         if (!ValidateSequence(sequence))
         {
-            return ushort.MaxValue;
+            index = null;
+            return false;
         }
 
-        if (_nextSceneSequenceIndex >= Constants.MaxSequences)
+        if (_nextSceneSequenceIndex >= Constants.MaxSceneSequences)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Scene sequence capacity exceeded"));
-            return ushort.MaxValue;
+            index = null;
+            return false;
         }
 
         // Check for duplicate ID in scene partition
@@ -79,38 +87,45 @@ public class SequenceRegistry :
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Sequence with ID '{sequence.Id}' already exists"
             ));
-            return ushort.MaxValue;
+            index = null;
+            return false;
         }
 
-        var index = _nextSceneSequenceIndex++;
-        _sequences.Set(index, sequence);
-        _idToIndex[sequence.Id] = index;
-        return index;
+        var seqIndex = _nextSceneSequenceIndex++;
+        PartitionIndex sceneIndex = seqIndex;
+        _sequences.Set(sceneIndex, sequence);
+        _idToIndex[sequence.Id] = sceneIndex;
+        index = sceneIndex;
+        return true;
     }
 
     /// <summary>
-    /// Activate the next available global sequence (index less than MaxGlobalSequences).
+    /// Tries to activate the next available global sequence.
     /// </summary>
     /// <param name="sequence">The sequence to activate.</param>
-    /// <returns>The index of the activated sequence, or ushort.MaxValue on error.</returns>
-    public ushort ActivateGlobal(JsonSequence sequence)
+    /// <param name="index">The partition index of the activated sequence, if successful.</param>
+    /// <returns>True if activation succeeded; false otherwise.</returns>
+    public bool TryActivateGlobal(JsonSequence sequence, [NotNullWhen(true)] out PartitionIndex? index)
     {
         if (string.IsNullOrWhiteSpace(sequence.Id))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Sequence ID cannot be null or empty"));
-            return ushort.MaxValue;
+            index = null;
+            return false;
         }
 
         // Validate sequence steps
         if (!ValidateSequence(sequence))
         {
-            return ushort.MaxValue;
+            index = null;
+            return false;
         }
 
         if (_nextGlobalSequenceIndex >= Constants.MaxGlobalSequences)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Global sequence capacity exceeded"));
-            return ushort.MaxValue;
+            index = null;
+            return false;
         }
 
         // Check for duplicate ID in global partition
@@ -119,13 +134,16 @@ public class SequenceRegistry :
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Sequence with ID '{sequence.Id}' already exists"
             ));
-            return ushort.MaxValue;
+            index = null;
+            return false;
         }
 
-        var index = _nextGlobalSequenceIndex++;
-        _sequences.Set(index, sequence);
-        _idToIndex[sequence.Id] = index;
-        return index;
+        var seqIndex = _nextGlobalSequenceIndex++;
+        PartitionIndex globalIndex = seqIndex;
+        _sequences.Set(globalIndex, sequence);
+        _idToIndex[sequence.Id] = globalIndex;
+        index = globalIndex;
+        return true;
     }
 
     /// <summary>
@@ -199,9 +217,14 @@ public class SequenceRegistry :
     /// <param name="id">The sequence ID.</param>
     /// <param name="index">The resolved index.</param>
     /// <returns>True if the sequence was found.</returns>
-    public bool TryResolveById(string id, out ushort index)
+    public bool TryResolveById(string id, out PartitionIndex index)
     {
-        return _idToIndex.TryGetValue(id, out index);
+        if (_idToIndex.TryGetValue(id, out index))
+        {
+            return true;
+        }
+        index = default;
+        return false;
     }
 
     /// <summary>
@@ -209,18 +232,17 @@ public class SequenceRegistry :
     /// </summary>
     public void OnEvent(ResetEvent _)
     {
-        // Clear scene partition only (>= MaxGlobalSequences)
-        for (ushort i = Constants.MaxGlobalSequences; i < Constants.MaxSequences; i++)
+        // Clear scene partition only - remove IDs from dictionary
+        foreach (var (_, sequence) in _sequences.Scene)
         {
-            if (_sequences.TryGetValue(i, out var sequence))
-            {
-                _idToIndex.Remove(sequence.Value.Id);
-                _sequences.Remove(i);
-            }
+            _idToIndex.Remove(sequence.Id);
         }
+        
+        // Clear scene partition with O(1) operation
+        _sequences.Scene.Clear();
 
         // Reset scene index allocator
-        _nextSceneSequenceIndex = Constants.MaxGlobalSequences;
+        _nextSceneSequenceIndex = 0;
     }
 
     /// <summary>
@@ -229,12 +251,13 @@ public class SequenceRegistry :
     /// </summary>
     public void OnEvent(ShutdownEvent _)
     {
-        // Clear all partitions (both global and scene)
-        _sequences.Clear();
+        // Clear all partitions
+        _sequences.Global.Clear();
+        _sequences.Scene.Clear();
         _idToIndex.Clear();
 
         // Reset both index allocators
         _nextGlobalSequenceIndex = 0;
-        _nextSceneSequenceIndex = Constants.MaxGlobalSequences;
+        _nextSceneSequenceIndex = 0;
     }
 }

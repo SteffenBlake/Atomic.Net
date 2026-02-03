@@ -10,28 +10,25 @@ public partial class FlexRegistry :
 {
     public void OnEvent(BehaviorAddedEvent<FlexWrapBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexWrapBehavior>(out var wrap))
         {
-            _nodes[e.Entity.Index]!.StyleSetFlexWrap(wrap.Value.Value);
+            node.StyleSetFlexWrap(wrap.Value.Value);
         }
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexWrapBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexWrapBehavior>(out var wrap))
         {
-            _nodes[e.Entity.Index]!.StyleSetFlexWrap(wrap.Value.Value);
+            node.StyleSetFlexWrap(wrap.Value.Value);
         }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexWrapBehavior> e)
     {
-        _dirty[e.Entity.Index] = true;
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        _nodes[e.Entity.Index]!.StyleSetFlexWrap(default);
+        var node = EnsureDirtyNode(e.Entity.Index);
+        node.StyleSetFlexWrap(default);
     }
 }

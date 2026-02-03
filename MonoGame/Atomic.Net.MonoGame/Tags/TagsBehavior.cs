@@ -9,7 +9,7 @@ namespace Atomic.Net.MonoGame.Tags;
 /// Tags are case-insensitive string labels (e.g., "enemy", "boss", "flying").
 /// </summary>
 [JsonConverter(typeof(TagsBehaviorConverter))]
-public readonly record struct TagsBehavior : IBehavior<TagsBehavior>
+public readonly record struct TagsBehavior
 {
     // senior-dev: FluentHashSet allocation is approved (following PropertiesBehavior pattern)
     // This is a load-time allocation, not a gameplay allocation
@@ -21,8 +21,4 @@ public readonly record struct TagsBehavior : IBehavior<TagsBehavior>
         get => _tags ?? new(8, StringComparer.OrdinalIgnoreCase);
     }
     
-    public static TagsBehavior CreateFor(Entity entity)
-    {
-        return new TagsBehavior();
-    }
 }

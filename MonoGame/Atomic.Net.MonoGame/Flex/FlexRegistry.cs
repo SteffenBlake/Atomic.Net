@@ -28,30 +28,59 @@ public partial class FlexRegistry :
 
     public static FlexRegistry Instance { get; private set; } = null!;
 
-    private readonly Node?[] _nodes = new Node?[Constants.MaxEntities];
-    private readonly bool[] _dirty = new bool[Constants.MaxEntities];
+    private readonly PartitionedSparseRefArray<Node> _nodes = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
+    private readonly PartitionedSparseArray<bool> _dirty = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
+    
+    /// <summary>
+    /// Ensures a flex node exists for the entity and marks it dirty.
+    /// Returns the node for further configuration.
+    /// </summary>
+    protected Node EnsureDirtyNode(PartitionIndex index)
+    {
+        _dirty.Set(index, true);
+        if (!_nodes.TryGetValue(index, out var node))
+        {
+            node = FlexLayoutSharp.Flex.CreateDefaultNode();
+            _nodes[index] = node;
+        }
+        return node;
+    }
 
     public void Recalculate()
     {
-        for (ushort i = 0; i < Constants.MaxEntities; i++)
+        // Recalculate global partition
+        foreach (var (index, _) in _dirty.Global)
         {
-            RecalculateNode(i);
+            RecalculateNode((ushort)index);
+        }
+        
+        // Recalculate scene partition
+        foreach (var (index, _) in _dirty.Scene)
+        {
+            RecalculateNode((uint)index);
         }
     }
 
-    private void RecalculateNode(ushort index)
+    private void RecalculateNode(PartitionIndex index)
     {
-        if (!_dirty[index])
+        if (!_dirty.HasValue(index))
         {
             return;
         }
-        _dirty[index] = false;
+        _dirty.Remove(index);
         
 
         // Check if we have a flex parent, if so run on that instead
         if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(index, out var parentBehavior))
         {
-            if (parentBehavior.Value.TryFindParent(out var parent))
+            var entity = EntityRegistry.Instance[index];
+            if (parentBehavior.Value.TryFindParent(entity.IsGlobal(), out var parent))
             {
                 if (parent.Value.HasBehavior<FlexBehavior>())
                 {
@@ -68,7 +97,10 @@ public partial class FlexRegistry :
             return;
         }
 
-        _nodes[index]!.CalculateLayout(float.NaN, float.NaN, Direction.Inherit);
+        if (_nodes.TryGetValue(index, out var node))
+        {
+            node!.CalculateLayout(float.NaN, float.NaN, Direction.Inherit);
+        }
 
         UpdateFlexBehavior(root, 0, 0);
     }
@@ -80,7 +112,10 @@ public partial class FlexRegistry :
             return;
         }
 
-        var node = _nodes[e.Index]!;
+        if (!_nodes.TryGetValue(e.Index, out var node))
+        {
+            return;
+        }
 
         var paddingLeft = parentLeft + node.LayoutGetLeft();
         var paddingTop = parentTop + node.LayoutGetTop();
@@ -135,40 +170,38 @@ public partial class FlexRegistry :
     public void OnEvent(BehaviorAddedEvent<FlexBehavior> e)
     {
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        _dirty[e.Entity.Index] = true;
+        _dirty.Set(e.Entity.Index, true);
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexBehavior> e)
     {
-        _nodes[e.Entity.Index] = null;
+        _nodes.Remove(e.Entity.Index);
         // Special case, because this node isnt even a flex anymore
         if (e.Entity.TryGetParent(out var parent))
         {
-            _dirty[parent.Value.Index] = true;
+            _dirty.Set(parent.Value.Index, true);
         }
     }
 
     public void OnEvent(EntityEnabledEvent e)
     {
-        var node = _nodes[e.Entity.Index];
-        if(node == null)
+        if (!_nodes.TryGetValue(e.Entity.Index, out var node) || node == null)
         {
             return;
         }
 
-        _dirty[e.Entity.Index] = true;
+        _dirty.Set(e.Entity.Index, true);
         node.StyleSetDisplay(Display.Flex);
     }
 
     public void OnEvent(EntityDisabledEvent e)
     {
-        var node = _nodes[e.Entity.Index];
-        if(node == null)
+        if (!_nodes.TryGetValue(e.Entity.Index, out var node) || node == null)
         {
             return;
         }
 
-        _dirty[e.Entity.Index] = true;
+        _dirty.Set(e.Entity.Index, true);
         node.StyleSetDisplay(Display.None);
     }
 

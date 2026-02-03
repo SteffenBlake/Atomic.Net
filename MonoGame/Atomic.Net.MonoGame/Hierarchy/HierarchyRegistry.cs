@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Ids;
@@ -31,33 +32,82 @@ public class HierarchyRegistry :
 
     public static HierarchyRegistry Instance { get; private set; } = null!;
 
-    private readonly SparseReferenceArray<SparseArray<bool>> _parentToChildLookup 
-        = new(Constants.MaxEntities);
+    // Global parents with global children only
+    private readonly SparseReferenceArray<SparseArray<bool>> _globalParentToChildren 
+        = new(Constants.MaxGlobalEntities);
+
+    // Scene parents with scene children only
+    private readonly SparseReferenceArray<SparseArray<bool>> _sceneParentToChildren 
+        = new(Constants.MaxSceneEntities);
 
     // Track dirty children who need parent resolution during Recalc
-    private readonly SparseArray<bool> _dirtyChildren = new(Constants.MaxEntities);
+    private readonly PartitionedSparseArray<bool> _dirtyChildren = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
     
     // Track old parent index during parent change (Pre->Post event)
     // This allows us to clean up the old parent's child list during Recalc
-    private readonly SparseArray<ushort> _oldParentLookup = new(Constants.MaxEntities);
+    private readonly PartitionedSparseArray<PartitionIndex> _oldParentLookup = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
     
     // Reverse lookup: child entity index -> parent entity index
     // Enables O(1) child removal on deactivation instead of O(n) parent scan
-    private readonly SparseArray<ushort> _childToParentLookup = new(Constants.MaxEntities);
+    private readonly PartitionedSparseArray<PartitionIndex> _childToParentLookup = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
 
     /// <summary>
     /// Tracks a child entity to the specified parent.
+    /// Parent and child must be in the same partition (both global or both scene).
     /// </summary>
     /// <param name="parent">The parent entity.</param>
     /// <param name="child">The child entity to add.</param>
     public void TrackChild(Entity parent, Entity child)
     {
-        if (!_parentToChildLookup.HasValue(parent.Index))
+        // Both must be global or both must be scene - use TryMatch to extract partition type
+        if (parent.Index.TryMatch(out ushort parentGlobal))
         {
-            _parentToChildLookup[parent.Index] = new SparseArray<bool>(Constants.MaxEntities);
+            // Parent is global - child must also be global
+            if (!child.Index.TryMatch(out ushort childGlobal))
+            {
+                // Cannot create parent-child relationship across partitions
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    "Cannot create parent-child relationship across partitions (global/scene)"
+                ));
+                return;
+            }
+            
+            // Both are global
+            if (!_globalParentToChildren.HasValue(parentGlobal))
+            {
+                _globalParentToChildren[parentGlobal] = new SparseArray<bool>(Constants.MaxGlobalEntities);
+            }
+            _globalParentToChildren[parentGlobal].Set(childGlobal, true);
         }
-
-        _parentToChildLookup[parent.Index].Set(child.Index, true);
+        else if (parent.Index.TryMatch(out uint parentScene))
+        {
+            // Parent is scene - child must also be scene
+            if (!child.Index.TryMatch(out uint childScene))
+            {
+                // Cannot create parent-child relationship across partitions
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    "Cannot create parent-child relationship across partitions (global/scene)"
+                ));
+                return;
+            }
+            
+            // Both are scene
+            if (!_sceneParentToChildren.HasValue(parentScene))
+            {
+                _sceneParentToChildren[parentScene] = new SparseArray<bool>(Constants.MaxSceneEntities);
+            }
+            _sceneParentToChildren[parentScene].Set(childScene, true);
+        }
+        
         _childToParentLookup.Set(child.Index, parent.Index);
     }
 
@@ -68,12 +118,39 @@ public class HierarchyRegistry :
     /// <param name="child">The child entity to remove.</param>
     public void UntrackChild(Entity parent, Entity child)
     {
-        if (!_parentToChildLookup.TryGetValue(parent.Index, out var children))
+        if (parent.Index.TryMatch(out ushort parentGlobal))
         {
-            return;
+            if (_globalParentToChildren.TryGetValue(parentGlobal, out var children))
+            {
+                if (!child.Index.TryMatch(out ushort childGlobal))
+                {
+                    // Child must be in same partition as parent
+                    EventBus<ErrorEvent>.Push(new ErrorEvent(
+                        "Child must be in same partition as parent"
+                    ));
+                    return;
+                }
+                
+                children.Remove(childGlobal);
+            }
         }
-
-        _ = children.Remove(child.Index);
+        else if (parent.Index.TryMatch(out uint parentScene))
+        {
+            if (_sceneParentToChildren.TryGetValue(parentScene, out var children))
+            {
+                if (!child.Index.TryMatch(out uint childScene))
+                {
+                    // Child must be in same partition as parent
+                    EventBus<ErrorEvent>.Push(new ErrorEvent(
+                        "Child must be in same partition as parent"
+                    ));
+                    return;
+                }
+                
+                children.Remove(childScene);
+            }
+        }
+        
         _childToParentLookup.Remove(child.Index);
     }
 
@@ -84,26 +161,52 @@ public class HierarchyRegistry :
     /// <returns>An enumerable of child entities belonging to the parent.</returns>
     public IEnumerable<Entity> GetChildren(Entity parent)
     {
-        if (!_parentToChildLookup.TryGetValue(parent.Index, out var children))
+        if (!TryGetChildrenArray(parent.Index, out var children))
         {
             yield break;
         }
-
-        foreach (var (childIdx, _) in children)
+        
+        // Use parent's partition to determine how to construct child entities
+        if (parent.IsGlobal())
         {
-            yield return EntityRegistry.Instance[childIdx];
+            foreach (var (childIdx, _) in children)
+            {
+                yield return EntityRegistry.Instance[(ushort)childIdx];
+            }
+        }
+        else
+        {
+            foreach (var (childIdx, _) in children)
+            {
+                yield return EntityRegistry.Instance[(uint)childIdx];
+            }
         }
     }
-
+    
     /// <summary>
-    /// Gets the child sparse array for a parent, or null if no children exist.
-    /// Allows allocation-free iteration of child indices.
+    /// Tries to get the children array for the specified parent.
     /// </summary>
     /// <param name="parentIndex">The parent entity index.</param>
-    /// <returns>The sparse array of children, or null if no children.</returns>
-    public SparseArray<bool>? GetChildrenArray(ushort parentIndex)
+    /// <param name="children">The sparse array of child indices, if found.</param>
+    /// <returns>True if the parent has children; otherwise, false.</returns>
+    public bool TryGetChildrenArray(
+        PartitionIndex parentIndex,
+        [NotNullWhen(true)]
+        out SparseArray<bool>? children
+    )
     {
-        return _parentToChildLookup.TryGetValue(parentIndex, out var children) ? children : null;
+        if (parentIndex.TryMatch(out ushort parentGlobal))
+        {
+            return _globalParentToChildren.TryGetValue(parentGlobal, out children);
+        }
+        
+        if (parentIndex.TryMatch(out uint parentScene))
+        {
+            return _sceneParentToChildren.TryGetValue(parentScene, out children);
+        }
+        
+        children = null;
+        return false;
     }
 
     /// <summary>
@@ -114,8 +217,23 @@ public class HierarchyRegistry :
     /// <returns>True if the child belongs to the parent; otherwise, false.</returns>
     public bool HasChild(Entity parent, Entity child)
     {
-        return _parentToChildLookup.TryGetValue(parent.Index, out var children) &&
-            children.HasValue(child.Index);
+        if (!TryGetChildrenArray(parent.Index, out var children))
+        {
+            return false;
+        }
+        
+        // Extract the raw index from child based on partition - use TryMatch
+        if (child.Index.TryMatch(out ushort childGlobal))
+        {
+            return children.HasValue(childGlobal);
+        }
+
+        if (child.Index.TryMatch(out uint childScene))
+        {
+            return children.HasValue(childScene);
+        }
+        
+        return false;
     }
 
     /// <summary>
@@ -123,8 +241,12 @@ public class HierarchyRegistry :
     /// </summary>
     public bool HasAnyChildren(Entity parent)
     {
-        return _parentToChildLookup.TryGetValue(parent.Index, out var children) &&
-            children.Count > 0;
+        if (!TryGetChildrenArray(parent.Index, out var children))
+        {
+            return false;
+        }
+        
+        return children.Count > 0;
     }
 
     /// <summary>
@@ -142,72 +264,86 @@ public class HierarchyRegistry :
     {
         // Process all dirty children and resolve their parent selectors
         // This is called AFTER SelectorRegistry.Recalc() so selectors have updated Matches
-        foreach (var (childIndex, _) in _dirtyChildren)
+        
+        // Process global partition
+        foreach (var (childIndex, _) in _dirtyChildren.Global)
         {
-            var child = EntityRegistry.Instance[childIndex];
-            
-            // Handle race condition: entity deactivated between dirty mark and Recalc
-            if (!child.Active)
+            ProcessDirtyChild((ushort)childIndex);
+        }
+        
+        // Process scene partition
+        foreach (var (childIndex, _) in _dirtyChildren.Scene)
+        {
+            ProcessDirtyChild((uint)childIndex);
+        }
+        
+        // Clear dirty flags for next frame
+        _dirtyChildren.Global.Clear();
+        _dirtyChildren.Scene.Clear();
+    }
+
+    private void ProcessDirtyChild(PartitionIndex childIndex)
+    {
+        var child = EntityRegistry.Instance[childIndex];
+        
+        // Handle race condition: entity deactivated between dirty mark and Recalc
+        if (!child.Active)
+        {
+            _oldParentLookup.Remove(childIndex);
+            return;
+        }
+        
+        // Get the child's ParentBehavior (may have been removed)
+        if (!child.TryGetBehavior<ParentBehavior>(out var behavior))
+        {
+            // ParentBehavior was removed - clean up old parent if we tracked one
+            if (_oldParentLookup.TryGetValue(childIndex, out var oldParentIdx))
             {
-                _oldParentLookup.Remove(childIndex);
-                continue;
-            }
-            
-            // Get the child's ParentBehavior (may have been removed)
-            if (!BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(child, out var behavior))
-            {
-                // ParentBehavior was removed - clean up old parent if we tracked one
-                if (_oldParentLookup.TryGetValue(childIndex, out var oldParentIdx))
-                {
-                    UntrackChild(EntityRegistry.Instance[oldParentIdx.Value], child);
-                    _oldParentLookup.Remove(childIndex);
-                }
-                continue;
-            }
-            
-            // Try to resolve the new parent using the selector
-            var hasNewParent = behavior.Value.TryFindParent(out var newParent);
-            
-            // Fire error event if parent selector doesn't resolve
-            if (!hasNewParent && child.TryGetBehavior<IdBehavior>(out var idBehavior))
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    $"Unresolved parent reference for entity '{idBehavior.Value.Id}'"
-                ));
-            }
-            
-            // Clean up old parent relationship if one was tracked
-            if (_oldParentLookup.TryGetValue(childIndex, out var oldParentIndex))
-            {
-                var oldParent = EntityRegistry.Instance[oldParentIndex.Value];
-                
-                // Only untrack/retrack if the parent actually changed
-                if (!hasNewParent || newParent!.Value.Index != oldParentIndex.Value)
-                {
-                    UntrackChild(oldParent, child);
-                    
-                    // Track new parent relationship if one was found
-                    if (hasNewParent)
-                    {
-                        TrackChild(newParent!.Value, child);
-                    }
-                }
-                // else: parent didn't change, no need to untrack/retrack
-                
+                UntrackChild(EntityRegistry.Instance[oldParentIdx.Value], child);
                 _oldParentLookup.Remove(childIndex);
             }
-            else
+            return;
+        }
+        
+        // Try to resolve the new parent using the selector
+        var hasNewParent = behavior.Value.TryFindParent(child.IsGlobal(), out var newParent);
+        
+        // Fire error event if parent selector doesn't resolve
+        if (!hasNewParent && child.TryGetBehavior<IdBehavior>(out var idBehavior))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Unresolved parent reference for entity '{idBehavior.Value.Id}'"
+            ));
+        }
+        
+        // Clean up old parent relationship if one was tracked
+        if (_oldParentLookup.TryGetValue(childIndex, out var oldParentIndex))
+        {
+            var oldParent = EntityRegistry.Instance[oldParentIndex.Value];
+            
+            // Only untrack/retrack if the parent actually changed
+            if (!hasNewParent || newParent!.Value.Index != oldParentIndex.Value)
             {
-                // No old parent tracked, just track the new one
+                UntrackChild(oldParent, child);
+                
+                // Track new parent relationship if one was found
                 if (hasNewParent)
                 {
                     TrackChild(newParent!.Value, child);
                 }
             }
+            // else: parent didn't change, no need to untrack/retrack
+            
+            _oldParentLookup.Remove(childIndex);
         }
-        
-        // Clear dirty flags for next frame
-        _dirtyChildren.Clear();
+        else
+        {
+            // No old parent tracked, just track the new one
+            if (hasNewParent)
+            {
+                TrackChild(newParent!.Value, child);
+            }
+        }
     }
 
     public void OnEvent(BehaviorAddedEvent<ParentBehavior> e)
@@ -222,7 +358,7 @@ public class HierarchyRegistry :
         // Store old parent index for cleanup during Recalc
         if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(e.Entity, out var oldBehavior))
         {
-            if (oldBehavior.Value.TryFindParent(out var oldParent))
+            if (oldBehavior.Value.TryFindParent(e.Entity.IsGlobal(), out var oldParent))
             {
                 _oldParentLookup.Set(e.Entity.Index, oldParent.Value.Index);
             }
@@ -240,7 +376,7 @@ public class HierarchyRegistry :
         // Store old parent for cleanup, mark dirty so Recalc processes removal
         if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(e.Entity, out var behavior))
         {
-            if (behavior.Value.TryFindParent(out var parent))
+            if (behavior.Value.TryFindParent(e.Entity.IsGlobal(), out var parent))
             {
                 _oldParentLookup.Set(e.Entity.Index, parent.Value.Index);
             }
@@ -261,19 +397,26 @@ public class HierarchyRegistry :
         }
         
         // If this entity is a parent, orphan all its children
-        if (!_parentToChildLookup.TryGetValue(e.Entity.Index, out var ownChildren))
+        if (!TryGetChildrenArray(e.Entity.Index, out var ownChildren))
         {
             return;
         }
 
-        while (ownChildren.TryPop(out _, out var childIndex))
+        // Remove ParentBehavior from all children
+        // Note: TryGetChildrenArray returns a snapshot, safe to iterate and modify
+        foreach (var (childIdx, _) in ownChildren)
         {
-            var child = EntityRegistry.Instance[childIndex.Value];
-            BehaviorRegistry<ParentBehavior>.Instance.Remove(child);
+            // Use IsGlobal to determine partition
+            Entity child = e.Entity.IsGlobal() 
+                ? EntityRegistry.Instance[(ushort)childIdx]
+                : EntityRegistry.Instance[(uint)childIdx];
+            
+            // Only remove if child is still active
+            if (child.Active)
+            {
+                child.RemoveBehavior<ParentBehavior>();
+            }
         }
-        
-        // Clean up the parent's child list to free memory
-        _parentToChildLookup.Remove(e.Entity.Index);
     }
 
     public void OnEvent(InitializeEvent e)

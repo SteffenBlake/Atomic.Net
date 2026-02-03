@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Scenes;
@@ -22,51 +23,55 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
 
     public static RuleRegistry Instance { get; private set; } = null!;
 
-    private readonly SparseArray<JsonRule> _rules = new(Constants.MaxRules);
-    private ushort _nextSceneRuleIndex = Constants.MaxGlobalRules;
+    public readonly PartitionedSparseArray<JsonRule> Rules = new(
+        Constants.MaxGlobalRules,
+        Constants.MaxSceneRules
+    );
+    private uint _nextSceneRuleIndex = 0;
     private ushort _nextGlobalRuleIndex = 0;
 
     /// <summary>
-    /// Public accessor for rules SparseArray for iteration and testing.
-    /// </summary>
-    public SparseArray<JsonRule> Rules => _rules;
-
-    /// <summary>
-    /// Activate the next available scene rule (index greater than or equal to MaxGlobalRules).
+    /// Tries to activate the next available scene rule.
     /// </summary>
     /// <param name="rule">The rule to activate.</param>
-    /// <returns>The index of the activated rule, or ushort.MaxValue on error.</returns>
-    public ushort Activate(JsonRule rule)
+    /// <param name="index">The partition index of the activated rule, or null on error.</param>
+    /// <returns>True if rule was activated successfully, false if capacity exceeded.</returns>
+    public bool TryActivate(JsonRule rule, [NotNullWhen(true)] out PartitionIndex? index)
     {
-        // senior-dev: Allocate from scene partition (>= MaxGlobalRules)
-        if (_nextSceneRuleIndex >= Constants.MaxRules)
+        // Allocate from scene partition
+        if (_nextSceneRuleIndex >= Constants.MaxSceneRules)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Scene rule capacity exceeded"));
-            return ushort.MaxValue;
+            index = null;
+            return false;
         }
 
-        var index = _nextSceneRuleIndex++;
-        _rules.Set(index, rule);
-        return index;
+        var sceneIdx = _nextSceneRuleIndex++;
+        index = sceneIdx;
+        Rules.Set(index.Value, rule);
+        return true;
     }
 
     /// <summary>
-    /// Activate the next available global rule (index less than MaxGlobalRules).
+    /// Tries to activate the next available global rule.
     /// </summary>
     /// <param name="rule">The rule to activate.</param>
-    /// <returns>The index of the activated rule, or ushort.MaxValue on error.</returns>
-    public ushort ActivateGlobal(JsonRule rule)
+    /// <param name="index">The partition index of the activated rule, or null on error.</param>
+    /// <returns>True if rule was activated successfully, false if capacity exceeded.</returns>
+    public bool TryActivateGlobal(JsonRule rule, [NotNullWhen(true)] out PartitionIndex? index)
     {
-        // senior-dev: Allocate from global partition (< MaxGlobalRules)
+        // Allocate from global partition
         if (_nextGlobalRuleIndex >= Constants.MaxGlobalRules)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Global rule capacity exceeded"));
-            return ushort.MaxValue;
+            index = null;
+            return false;
         }
 
-        var index = _nextGlobalRuleIndex++;
-        _rules.Set(index, rule);
-        return index;
+        var globalIdx = _nextGlobalRuleIndex++;
+        index = globalIdx;
+        Rules.Set(index.Value, rule);
+        return true;
     }
 
     /// <summary>
@@ -74,17 +79,11 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
     /// </summary>
     public void OnEvent(ResetEvent _)
     {
-        // senior-dev: Clear scene partition only (>= MaxGlobalRules)
-        for (ushort i = Constants.MaxGlobalRules; i < Constants.MaxRules; i++)
-        {
-            if (_rules.HasValue(i))
-            {
-                _rules.Remove(i);
-            }
-        }
+        // senior-dev: Clear scene partition with O(1) operation
+        Rules.Scene.Clear();
 
         // senior-dev: Reset scene index allocator
-        _nextSceneRuleIndex = Constants.MaxGlobalRules;
+        _nextSceneRuleIndex = 0;
     }
 
     /// <summary>
@@ -93,11 +92,12 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
     /// </summary>
     public void OnEvent(ShutdownEvent _)
     {
-        // senior-dev: Clear all partitions (both global and scene)
-        _rules.Clear();
+        // senior-dev: Clear all partitions
+        Rules.Global.Clear();
+        Rules.Scene.Clear();
 
         // senior-dev: Reset both index allocators
         _nextGlobalRuleIndex = 0;
-        _nextSceneRuleIndex = Constants.MaxGlobalRules;
+        _nextSceneRuleIndex = 0;
     }
 }

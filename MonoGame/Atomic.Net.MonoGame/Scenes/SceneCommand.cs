@@ -31,7 +31,7 @@ public readonly partial struct SceneCommand
         }
         else if (TryMatch(out SequenceStartCommand startCommand))
         {
-            if (!jsonEntity.TryGetEntityIndex(out var entityIndex))
+            if (!jsonEntity.TryGetSceneEntityIndex(out var entityIndex))
             {
                 return;
             }
@@ -39,7 +39,7 @@ public readonly partial struct SceneCommand
         }
         else if (TryMatch(out SequenceStopCommand stopCommand))
         {
-            if (!jsonEntity.TryGetEntityIndex(out var entityIndex))
+            if (!jsonEntity.TryGetSceneEntityIndex(out var entityIndex))
             {
                 return;
             }
@@ -47,7 +47,7 @@ public readonly partial struct SceneCommand
         }
         else if (TryMatch(out SequenceResetCommand resetCommand))
         {
-            if (!jsonEntity.TryGetEntityIndex(out var entityIndex))
+            if (!jsonEntity.TryGetSceneEntityIndex(out var entityIndex))
             {
                 return;
             }

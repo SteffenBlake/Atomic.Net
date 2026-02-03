@@ -10,19 +10,16 @@ public partial class FlexRegistry :
 {
     public void OnEvent(BehaviorAddedEvent<FlexZOverride> e)
     {
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        _dirty[e.Entity.Index] = true;
+        _ = EnsureDirtyNode(e.Entity.Index);
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<FlexZOverride> e)
     {
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        _dirty[e.Entity.Index] = true;
+        _ = EnsureDirtyNode(e.Entity.Index);
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexZOverride> e)
     {
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
-        _dirty[e.Entity.Index] = true;
+        _ = EnsureDirtyNode(e.Entity.Index);
     }
 }

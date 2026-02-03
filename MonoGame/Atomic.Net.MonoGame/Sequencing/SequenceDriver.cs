@@ -25,10 +25,9 @@ public sealed class SequenceDriver :
 
     public static SequenceDriver Instance { get; private set; } = null!;
 
-    // CRITICAL: Inner array must be sized to MaxSequences (512) because we index by
-    // global sequence index, not by entity's active sequence slot number
-    private readonly SparseReferenceArray<SparseArray<SequenceState>> _activeSequences = 
-        new(Constants.MaxEntities);
+    // CRITICAL: Inner array must be PartitionedSparseArray because sequences use PartitionIndex
+    private readonly PartitionedSparseRefArray<PartitionedSparseArray<SequenceState>> _activeSequences = 
+        new(Constants.MaxGlobalEntities, Constants.MaxSceneEntities);
 
     // Pre-allocated context objects to avoid allocations in hot path
     private readonly JsonObject _doContext = new()
@@ -50,8 +49,8 @@ public sealed class SequenceDriver :
     };
 
     // Pre-allocated lists for tracking removals (zero-alloc after init)
-    private readonly List<ushort> _sequencesToRemove = new(Constants.MaxSequences);
-    private readonly List<ushort> _entitiesToRemove = new(Constants.MaxEntities);
+    private readonly List<PartitionIndex> _sequencesToRemove = new((int)(Constants.MaxGlobalSequences + Constants.MaxSceneSequences));
+    private readonly List<PartitionIndex> _entitiesToRemove = new((int)(Constants.MaxGlobalEntities + Constants.MaxSceneEntities));
 
     /// <summary>
     /// Main entry point called per-frame to process all active sequences.
@@ -61,53 +60,16 @@ public sealed class SequenceDriver :
     {
         _entitiesToRemove.Clear();
 
-        foreach (var (entityIndex, sequenceStates) in _activeSequences)
+        // Process global entities
+        foreach (var (entityIndex, sequenceStates) in _activeSequences.Global)
         {
-            var entity = EntityRegistry.Instance[entityIndex];
-            if (!entity.Active)
-            {
-                continue;
-            }
+            ProcessEntitySequences((ushort)entityIndex, sequenceStates, deltaTime);
+        }
 
-            var entityJsonNode = JsonEntityConverter.Read(entity);
-            _sequencesToRemove.Clear();
-
-            foreach (var (sequenceIndex, sequenceState) in sequenceStates)
-            {
-                if (!SequenceRegistry.Instance.Sequences.TryGetValue(sequenceIndex, out var sequenceNullable))
-                {
-                    _sequencesToRemove.Add(sequenceIndex);
-                    continue;
-                }
-                
-                var sequence = sequenceNullable.Value;
-
-                var shouldRemove = ProcessSequence(
-                    sequenceIndex,
-                    sequence,
-                    sequenceState,
-                    deltaTime,
-                    entityJsonNode,
-                    sequenceStates
-                );
-
-                if (shouldRemove)
-                {
-                    _sequencesToRemove.Add(sequenceIndex);
-                }
-            }
-
-            foreach (var sequenceIndex in _sequencesToRemove)
-            {
-                sequenceStates.Remove(sequenceIndex);
-            }
-
-            if (sequenceStates.Count == 0)
-            {
-                _entitiesToRemove.Add(entityIndex);
-            }
-
-            JsonEntityConverter.Write(entityJsonNode, entity);
+        // Process scene entities
+        foreach (var (entityIndex, sequenceStates) in _activeSequences.Scene)
+        {
+            ProcessEntitySequences((uint)entityIndex, sequenceStates, deltaTime);
         }
 
         // Remove entities with no active sequences after iteration
@@ -117,18 +79,89 @@ public sealed class SequenceDriver :
         }
     }
 
+    private void ProcessEntitySequences(
+        PartitionIndex entityIndex, 
+        PartitionedSparseArray<SequenceState> sequenceStates, 
+        float deltaTime
+    )
+    {
+        var entity = EntityRegistry.Instance[entityIndex];
+        if (!entity.Active)
+        {
+            return;
+        }
+
+        var entityJsonNode = JsonEntityConverter.Read(entity);
+        _sequencesToRemove.Clear();
+
+        // Process global sequences
+        foreach (var (sequenceIndex, sequenceState) in sequenceStates.Global)
+        {
+            ProcessSingleSequence((ushort)sequenceIndex, sequenceState, deltaTime, entityJsonNode, sequenceStates);
+        }
+
+        // Process scene sequences
+        foreach (var (sequenceIndex, sequenceState) in sequenceStates.Scene)
+        {
+            ProcessSingleSequence((uint)sequenceIndex, sequenceState, deltaTime, entityJsonNode, sequenceStates);
+        }
+
+        foreach (var sequenceIndex in _sequencesToRemove)
+        {
+            sequenceStates.Remove(sequenceIndex);
+        }
+
+        if (sequenceStates.Global.Count == 0 && sequenceStates.Scene.Count == 0)
+        {
+            _entitiesToRemove.Add(entityIndex);
+        }
+
+        JsonEntityConverter.Write(entityJsonNode, entity);
+    }
+
+    private void ProcessSingleSequence(
+        PartitionIndex sequenceIndex,
+        SequenceState sequenceState,
+        float deltaTime,
+        JsonNode entityJsonNode,
+        PartitionedSparseArray<SequenceState> sequenceStates
+    )
+    {
+        if (!SequenceRegistry.Instance.Sequences.TryGetValue(sequenceIndex, out var sequenceNullable))
+        {
+            _sequencesToRemove.Add(sequenceIndex);
+            return;
+        }
+        
+        var sequence = sequenceNullable.Value;
+
+        var shouldRemove = ProcessSequence(
+            sequenceIndex,
+            sequence,
+            sequenceState,
+            deltaTime,
+            entityJsonNode,
+            sequenceStates
+        );
+
+        if (shouldRemove)
+        {
+            _sequencesToRemove.Add(sequenceIndex);
+        }
+    }
+
     /// <summary>
     /// Process a single sequence instance, updating its state and executing steps.
     /// Steps can complete in the same frame, with remaining time carried forward.
     /// Returns true if the sequence should be removed (completed).
     /// </summary>
     private bool ProcessSequence(
-        ushort sequenceIndex,
+        PartitionIndex sequenceIndex,
         JsonSequence sequence,
         SequenceState state,
         float deltaTime,
         JsonNode entityJsonNode,
-        SparseArray<SequenceState> sequenceStates
+        PartitionedSparseArray<SequenceState> sequenceStates
     )
     {
         var currentStepIndex = state.StepIndex;
@@ -265,12 +298,15 @@ public sealed class SequenceDriver :
     /// <summary>
     /// Start a sequence on an entity.
     /// </summary>
-    public void StartSequence(ushort entityIndex, ushort sequenceIndex)
+    public void StartSequence(PartitionIndex entityIndex, PartitionIndex sequenceIndex)
     {
         if (!_activeSequences.TryGetValue(entityIndex, out var sequenceStates))
         {
-            // CRITICAL: Size must be MaxSequences (512) because we index by global sequence index
-            sequenceStates = new SparseArray<SequenceState>(Constants.MaxSequences);
+            // CRITICAL: Size must cover both global and scene sequences
+            sequenceStates = new PartitionedSparseArray<SequenceState>(
+                Constants.MaxGlobalSequences,
+                Constants.MaxSceneSequences
+            );
             _activeSequences[entityIndex] = sequenceStates;
         }
 
@@ -285,7 +321,7 @@ public sealed class SequenceDriver :
     /// <summary>
     /// Stop a running sequence on an entity.
     /// </summary>
-    public void StopSequence(ushort entityIndex, ushort sequenceIndex)
+    public void StopSequence(PartitionIndex entityIndex, PartitionIndex sequenceIndex)
     {
         if (!_activeSequences.TryGetValue(entityIndex, out var sequenceStates))
         {
@@ -294,7 +330,7 @@ public sealed class SequenceDriver :
 
         sequenceStates.Remove(sequenceIndex);
 
-        if (sequenceStates.Count == 0)
+        if (sequenceStates.Global.Count == 0 && sequenceStates.Scene.Count == 0)
         {
             _activeSequences.Remove(entityIndex);
         }
@@ -304,11 +340,14 @@ public sealed class SequenceDriver :
     /// Reset a running sequence on an entity back to step 0.
     /// If the sequence is not running, starts it.
     /// </summary>
-    public void ResetSequence(ushort entityIndex, ushort sequenceIndex)
+    public void ResetSequence(PartitionIndex entityIndex, PartitionIndex sequenceIndex)
     {
         if (!_activeSequences.TryGetValue(entityIndex, out var sequenceStates))
         {
-            sequenceStates = new SparseArray<SequenceState>(Constants.MaxSequences);
+            sequenceStates = new PartitionedSparseArray<SequenceState>(
+                Constants.MaxGlobalSequences,
+                Constants.MaxSceneSequences
+            );
             _activeSequences[entityIndex] = sequenceStates;
         }
 
