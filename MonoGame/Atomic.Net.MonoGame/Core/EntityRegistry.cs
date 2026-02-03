@@ -70,16 +70,15 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
         for (uint offset = 0; offset < Constants.MaxSceneEntities; offset++)
         {
             uint i = (_nextSceneIndex + offset) % Constants.MaxSceneEntities;
-            ushort sceneIndex = (ushort)i;
             
             // Direct access to Scene array for scene-specific logic (performance)
-            if (_active.Scene.HasValue(sceneIndex))
+            if (_active.Scene.HasValue(i))
             {
                 continue;
             }
 
-            _active.Scene.Set(sceneIndex, true);
-            _enabled.Scene.Set(sceneIndex, true);
+            _active.Scene.Set(i, true);
+            _enabled.Scene.Set(i, true);
             _nextSceneIndex = (i + 1) % Constants.MaxSceneEntities;
 
             return _sceneEntities[i];
