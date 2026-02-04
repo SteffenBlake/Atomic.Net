@@ -134,6 +134,69 @@
           "position": 0
         }
       }
+    },
+    "ls": {
+      "description": "List directory contents",
+      "command": "ls",
+      "baseArgs": ["-lah"],
+      "parameters": {
+        "path": {
+          "type": "string",
+          "description": "Path to directory or file (optional, uses current directory if omitted)",
+          "position": 0
+        },
+        "recursive": {
+          "type": "boolean",
+          "description": "List subdirectories recursively",
+          "argName": "-R"
+        },
+        "sort_by_time": {
+          "type": "boolean",
+          "description": "Sort by modification time, newest first",
+          "argName": "-t"
+        },
+        "sort_by_size": {
+          "type": "boolean",
+          "description": "Sort by file size, largest first",
+          "argName": "-S"
+        }
+      }
+    },
+    "delete_file": {
+      "description": "Delete a file",
+      "command": "rm",
+      "baseArgs": ["-v"],
+      "parameters": {
+        "file_path": {
+          "type": "string",
+          "description": "Path to the file to delete",
+          "required": true,
+          "position": 0
+        },
+        "force": {
+          "type": "boolean",
+          "description": "Force deletion without prompting",
+          "argName": "-f"
+        }
+      }
+    },
+    "delete_directory": {
+      "description": "Delete a directory and its contents",
+      "command": "rm",
+      "baseArgs": ["-rv"],
+      "parameters": {
+        "directory_path": {
+          "type": "string",
+          "description": "Path to the directory to delete",
+          "required": true,
+          "position": 0
+        },
+        "force": {
+          "type": "boolean",
+          "description": "Force deletion without prompting",
+          "argName": "-f"
+        }
+      }
     }
   }
 }

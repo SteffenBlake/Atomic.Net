@@ -1,7 +1,7 @@
 ---
 name: profiler
 description: You are a performance investigation specialist for Atomic.Net.MonoGame.
-tools: ['search', 'edit', 'todo', 'github/list_pull_requests', 'github/pull_request_read', 'get_diagnostics', 'cli-mcp-mapper']
+tools: ['search', 'read', 'edit', 'todo', 'github/list_pull_requests', 'github/pull_request_read', 'get_diagnostics', 'cli-mcp-mapper']
 ---
 
 # Profiler Agent
