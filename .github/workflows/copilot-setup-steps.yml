@@ -15,6 +15,11 @@ jobs:
 
     permissions:
       contents: read
+      pull-requests: read
+    
+    # Make GITHUB_TOKEN available as GH_TOKEN for the entire job
+    env:
+      GH_TOKEN: ${{ github.token }}
 
     steps:
       - name: Checkout code
