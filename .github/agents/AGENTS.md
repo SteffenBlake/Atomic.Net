@@ -341,6 +341,16 @@ There is a huge massive codebase of already existing example code, read it and f
 - **SIMD-friendly data layout:** Use `SparseArray` for cache-friendly iteration
 - **Event-driven, not polling:** Use `EventBus<T>` for decoupled systems
 
+## Help! I cant find the Pull request review comments!
+Scenario: I have been tasked to address pull request comments, but I dont see where they are
+Solution: You need to use a series of MCP Tools. 
+
+1. Use git to get the branch you are on
+2. Use search_pull_requests to find the PR # associated with your branch
+3. Use pull_request_read with the get_review_comments method to get all the review comments for that PR
+
+PR Comments are not commited as markdown files or code in the Repo, the above is your best way to locate them and address them.
+
 ## SparseArray Index Type Conversion
 
 - `SparseArray<T>` uses `uint` for all indices (both capacity and enumeration)
