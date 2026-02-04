@@ -55,7 +55,6 @@ jobs:
               {
                 "extensions": ["cs", "csx"],
                 "command": [
-                  "dotnet",
                   "roslyn-language-server",
                   "--stdio",
                   "--logLevel",
@@ -88,7 +87,7 @@ jobs:
           which cli-mcp-mapper
           cat $HOME/.config/cli-mcp-mapper/commands.json
           echo "=== Roslyn ==="
-          dotnet roslyn-language-server --version 
+          roslyn-language-server --version 
 
       # Verify cclsp is ready
       - name: Verify cclsp installation
