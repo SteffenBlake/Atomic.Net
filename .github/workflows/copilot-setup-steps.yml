@@ -31,7 +31,7 @@ jobs:
 
       # Install CLI MCP Mapper
       - name: Install CLI MCP Mapper
-        run: npm install -g git+https://github.com/SteffenBlake/cli-mcp-mapper.git
+        run: npm install -g cli-mcp-mapper
 
       # Download and setup Roslyn LSP for C#
       # To update to newer version, get the url from here: https://dev.azure.com/azure-public/vside/_artifacts/feed/vs-impl/NuGet/Microsoft.CodeAnalysis.LanguageServer.linux-x64
