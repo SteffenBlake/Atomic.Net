@@ -37,6 +37,9 @@ jobs:
       # To update to newer version, get the url from here: https://dev.azure.com/azure-public/vside/_artifacts/feed/vs-impl/NuGet/Microsoft.CodeAnalysis.LanguageServer.linux-x64
 
       # Download and setup Roslyn LSP for C#
+      - name: Check dotnet version
+        run: dotnet --version
+      
       - name: Download Roslyn Language Server
         run: |
           # Download the package using the new dotnet package download command
