@@ -1,0 +1,139 @@
+{
+  "commands": {
+    "dotnet_build": {
+      "description": "Build a .NET project or solution",
+      "command": "dotnet",
+      "baseArgs": ["build"],
+      "parameters": {
+        "project_path": {
+          "type": "string",
+          "description": "Path to .csproj or .sln file (optional, uses current directory if omitted)",
+          "position": 0
+        },
+        "configuration": {
+          "type": "string",
+          "description": "Build configuration (Debug or Release)",
+          "enum": ["Debug", "Release"],
+          "argName": "--configuration"
+        },
+        "no_restore": {
+          "type": "boolean",
+          "description": "Skip restoring dependencies",
+          "argName": "--no-restore"
+        }
+      }
+    },
+    "dotnet_restore": {
+      "description": "Restore dependencies for a .NET project",
+      "command": "dotnet",
+      "baseArgs": ["restore"],
+      "parameters": {
+        "project_path": {
+          "type": "string",
+          "description": "Path to .csproj or .sln file (optional, uses current directory if omitted)",
+          "position": 0
+        }
+      }
+    },
+    "dotnet_test": {
+      "description": "Run tests for a .NET project",
+      "command": "dotnet",
+      "baseArgs": ["test", "--verbosity", "normal"],
+      "parameters": {
+        "project_path": {
+          "type": "string",
+          "description": "Path to test .csproj file (optional, uses current directory if omitted)",
+          "position": 0
+        },
+        "configuration": {
+          "type": "string",
+          "description": "Build configuration (Debug or Release)",
+          "enum": ["Debug", "Release"],
+          "argName": "--configuration"
+        },
+        "filter": {
+          "type": "string",
+          "description": "Filter expression to run specific tests (e.g., 'FullyQualifiedName~MyTest')",
+          "argName": "--filter"
+        },
+        "no_build": {
+          "type": "boolean",
+          "description": "Skip building the project before testing",
+          "argName": "--no-build"
+        }
+      }
+    },
+    "dotnet_run_benchmark": {
+      "description": "Run a BenchmarkDotNet project with optional profiling",
+      "command": "dotnet",
+      "baseArgs": ["run", "--configuration", "Release"],
+      "parameters": {
+        "project_path": {
+          "type": "string",
+          "description": "Path to benchmark .csproj file",
+          "required": true,
+          "argName": "--project"
+        },
+        "profiler": {
+          "type": "string",
+          "description": "Profiler to use (e.g., 'EP' for Event Pipe, 'ETW' for Event Tracing for Windows)",
+          "argName": "--profiler"
+        }
+      }
+    },
+    "dotnet_format": {
+      "description": "Format .NET code according to style rules",
+      "command": "dotnet",
+      "baseArgs": ["format"],
+      "parameters": {
+        "project_path": {
+          "type": "string",
+          "description": "Path to .csproj or .sln file (optional, uses current directory if omitted)",
+          "position": 0
+        },
+        "verify_no_changes": {
+          "type": "boolean",
+          "description": "Verify no formatting changes are needed (non-zero exit code if formatting required)",
+          "argName": "--verify-no-changes"
+        }
+      }
+    },
+    "git_status": {
+      "description": "Show the working tree status",
+      "command": "git",
+      "baseArgs": ["status"],
+      "parameters": {}
+    },
+    "git_diff": {
+      "description": "Show changes between commits, commit and working tree, etc",
+      "command": "git",
+      "baseArgs": ["diff"],
+      "parameters": {
+        "staged": {
+          "type": "boolean",
+          "description": "Show staged changes (--cached)",
+          "argName": "--cached"
+        }
+      }
+    },
+    "git_current_branch": {
+      "description": "Get the name of the current git branch",
+      "command": "git",
+      "baseArgs": ["branch", "--show-current"],
+      "parameters": {}
+    },
+    "git_commit": {
+      "description": "Commit all changes with a message. Stages all tracked files and commits them.",
+      "command": "git",
+      "baseArgs": ["commit", "-am"],
+      "parameters": {
+        "message": {
+          "type": "string",
+          "description": "Commit message",
+          "required": true,
+          "position": 0
+        }
+      }
+    }
+  }
+}

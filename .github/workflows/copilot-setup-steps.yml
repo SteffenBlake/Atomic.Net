@@ -29,6 +29,10 @@ jobs:
       - name: Install cclsp
         run: npm install -g cclsp@latest
 
+      # Install CLI MCP Mapper
+      - name: Install CLI MCP Mapper
+        run: npm install -g git+https://github.com/SteffenBlake/cli-mcp-mapper.git
+
       # Download and setup Roslyn LSP for C#
       # To update to newer version, get the url from here: https://dev.azure.com/azure-public/vside/_artifacts/feed/vs-impl/NuGet/Microsoft.CodeAnalysis.LanguageServer.linux-x64
       - name: Download Roslyn Language Server
@@ -86,6 +90,27 @@ jobs:
             ]
           }
           EOF
+
+      # Copy CLI commands configuration to expected location
+      - name: Setup CLI MCP Mapper configuration
+        run: |
+          mkdir -p $HOME/.config/cli-mcp-mapper
+          cp .github/commands.json $HOME/.config/cli-mcp-mapper/commands.json
+          echo "CLI MCP Mapper configuration:"
+          cat $HOME/.config/cli-mcp-mapper/commands.json
+
+      # Verify installations
+      - name: Verify installations
+        run: |
+          echo "=== cclsp ==="
+          which cclsp
+          cat $HOME/.config/claude/cclsp.json
+          echo ""
+          echo "=== cli-mcp-mapper ==="
+          which cli-mcp-mapper
+          cat $HOME/.config/cli-mcp-mapper/commands.json
+          echo "=== Roslyn ==="
+          Microsoft.CodeAnalysis.LanguageServer --version
 
       # Verify cclsp is ready
       - name: Verify cclsp installation
