@@ -63,6 +63,8 @@ Remember: Ask yourself "Is this stupid?"
 - **Readonly structs** - behaviors and events are immutable value types
 - **Early returns** - avoid deep nesting, fail fast
 - **Verify everything** - all tests pass, no warnings, code reviewed
+- **Always run Diagnostics** - You have the `get_diagnostics` MCP tool, always run it everytime you create or modify a file, ALWAYS, this runs the Roslyn LSP on the file and will notify you if you are breaking any code standards (we have a .editorconfig you must follow, this will enforce it), zero diagnostic warnings/info is MANDATORY
+- **Always run dotnet format** once you are done, ensure you dotnet format the code to ensure all formatting is applied
 
 ## Test Requirements
 - **Structure:** All tests use Arrange/Act/Assert with comment sections
@@ -113,7 +115,7 @@ Remember: Ask yourself "Is this stupid?"
 - Ensure code follows patterns in AGENTS.md
 - Leave comments explaining any non-obvious logic
 - Respond to all `@senior-dev` pings
-- Have subagent `code-reviewer` perform an extensive code review of all your changes.
+- Have subagent `code-reviewer` perform an extensive code review of all your changes. DO NOT IGNORE THEIR FEEDBACK, YOUR PR WILL NOT BE MERGED IF YOU IGNORE WHAT THEY RECOMMEND
 - NOTE: THATS NOT THE "Copilot code review" agent, its the custom sub agent `code-reviewer`
 # CRITICAL: PLEASE PERFORM ALL OF THESE ACTIONS IN FULL
 

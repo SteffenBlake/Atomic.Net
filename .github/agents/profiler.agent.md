@@ -143,6 +143,9 @@ If you make changes:
 3. Update the report with before/after comparison
 4. Invoke the code-reviewer agent (see note below)
 
+- **Always run Diagnostics** - You have the `get_diagnostics` MCP tool, always run it everytime you create or modify a cs file, ALWAYS, this runs the Roslyn LSP on the file and will notify you if you are breaking any code standards (we have a .editorconfig you must follow, this will enforce it)
+- **Always run dotnet format** once you are done, ensure you dotnet format the code to ensure all formatting is applied (if you have modified cs files of course)
+
 ### 9. Commit Findings
 
 **DO commit:**
