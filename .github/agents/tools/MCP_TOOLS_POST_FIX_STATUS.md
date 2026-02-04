@@ -24,7 +24,7 @@ After updating `.agent.md`, all expected tools are now functional:
 **cli-mcp-mapper .NET (5):**
 - `dotnet_build` - ✅ Build projects
 - `dotnet_restore` - ✅ Restore deps
-- `dotnet_test` - ✅ Run tests
+- `dotnet_test` - ✅ Run tests (386 passed)
 - `dotnet_format` - ✅ Format code
 - `dotnet_run_benchmark` - ✅ Run benchmarks
 
@@ -43,6 +43,7 @@ All tools tested and confirmed working:
 - ✅ `grep` found 90+ files with pattern "test"
 - ✅ `git_status` showed clean working tree
 - ✅ `dotnet_build` built project in 11.73s
+- ✅ `dotnet_test` ran 386 tests, all passed in 4.37s
 - ✅ `dotnet_format` detected 600+ formatting issues
 - ✅ `ls` listed repository contents
 - ✅ GitHub tools working as limited
