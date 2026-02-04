@@ -35,29 +35,37 @@ jobs:
 
       # Download and setup Roslyn LSP for C#
       # To update to newer version, get the url from here: https://dev.azure.com/azure-public/vside/_artifacts/feed/vs-impl/NuGet/Microsoft.CodeAnalysis.LanguageServer.linux-x64
+
+      # Download and setup Roslyn LSP for C#
       - name: Download Roslyn Language Server
         run: |
-          curl -L -o roslyn-lsp.zip "https://pkwvsblobprodwus2126.vsblob.vsassets.io/b-63b6279ad2f14bc3a21cdb7614e92831/AF71924619F7BFF46A18415BC4B9D5A5ACD0930AF8793BB3EB9AC3904FB5A32100.blob?sv=2019-07-07&sr=b&sig=8euPRp5LF54HcUXYiW2YCUsAIjTGua4AmPXMkCMN03k%3D&skoid=8f4a31b6-ccf8-4d83-8ff6-444a0146cdb6&sktid=33e01921-4d64-4f8c-a055-5bdaffd5e33d&skt=2026-02-03T19%3A10%3A58Z&ske=2026-02-05T20%3A10%3A58Z&sks=b&skv=2019-07-07&se=2026-02-03T23%3A44%3A14Z&sp=r&rscl=x-e2eid-92396888-13cf47a5-8cd5fc83-35e882d9-session-92396888-13cf47a5-8cd5fc83-35e882d9&rscd=attachment%3B%20filename%3D%22Microsoft.CodeAnalysis.LanguageServer.linux-x64.5.4.0-2.26080.13.nupkg%22&P1=1770173054&P2=2&P3=2&P4=6rKzXzsK6%2bWRwKArZ54ur%2bCg9PqI4%2brV%2fADbHTxkWtg%3d"
+          # Download the package using the new dotnet package download command
+          dotnet package download Microsoft.CodeAnalysis.LanguageServer.linux-x64 \
+            --source https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl/nuget/v3/index.json \
+            --output ./roslyn-packages \
+            --prerelease
 
       - name: Extract and setup Roslyn LSP
         run: |
-          # Create target directory
+          # Find the downloaded .nupkg file
+          NUPKG_FILE=$(find ./roslyn-packages -name "Microsoft.CodeAnalysis.LanguageServer.linux-x64*.nupkg" | head -1)
+          echo "Found package: $NUPKG_FILE"
+          
+          # Extract it (nupkg is a zip file)
+          unzip -q "$NUPKG_FILE" -d roslyn-temp
+          
+          # Move to target location
           mkdir -p $HOME/.local/lib
+          cp -r roslyn-temp/content/LanguageServer/linux-x64 $HOME/.local/lib/Microsoft.CodeAnalysis.LanguageServer
           
-          # Unzip the package
-          unzip roslyn-lsp.zip -d roslyn-temp
-          
-          # Move the language server to a permanent location
-          mv roslyn-temp/content/LanguageServer/linux-x64 $HOME/.local/lib/Microsoft.CodeAnalysis.LanguageServer
-          
-          # Make the executable... executable
+          # Make executable
           chmod +x $HOME/.local/lib/Microsoft.CodeAnalysis.LanguageServer/Microsoft.CodeAnalysis.LanguageServer
           
           # Symlink to PATH
           sudo ln -s $HOME/.local/lib/Microsoft.CodeAnalysis.LanguageServer/Microsoft.CodeAnalysis.LanguageServer /usr/local/bin/Microsoft.CodeAnalysis.LanguageServer
           
-          # Clean up temp files
-          rm -rf roslyn-temp roslyn-lsp.zip
+          # Clean up
+          rm -rf ./roslyn-packages roslyn-temp
 
       - name: Verify Roslyn LSP installation
         run: |
