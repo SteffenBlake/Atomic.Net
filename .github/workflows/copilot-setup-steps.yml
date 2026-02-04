@@ -29,36 +29,17 @@ jobs:
       - name: Install cclsp
         run: npm install -g cclsp@latest
 
+      # Install CLI MCP Mapper
+      - name: Install CLI MCP Mapper
+        run: npm install -g git+https://github.com/SteffenBlake/cli-mcp-mapper.git
+
       # Download and setup Roslyn LSP for C#
       # To update to newer version, get the url from here: https://dev.azure.com/azure-public/vside/_artifacts/feed/vs-impl/NuGet/Microsoft.CodeAnalysis.LanguageServer.linux-x64
+
+      # Download and setup Roslyn LSP for C#
       - name: Download Roslyn Language Server
         run: |
-          curl -L -o roslyn-lsp.zip "https://pkwvsblobprodwus2126.vsblob.vsassets.io/b-63b6279ad2f14bc3a21cdb7614e92831/AF71924619F7BFF46A18415BC4B9D5A5ACD0930AF8793BB3EB9AC3904FB5A32100.blob?sv=2019-07-07&sr=b&sig=8euPRp5LF54HcUXYiW2YCUsAIjTGua4AmPXMkCMN03k%3D&skoid=8f4a31b6-ccf8-4d83-8ff6-444a0146cdb6&sktid=33e01921-4d64-4f8c-a055-5bdaffd5e33d&skt=2026-02-03T19%3A10%3A58Z&ske=2026-02-05T20%3A10%3A58Z&sks=b&skv=2019-07-07&se=2026-02-03T23%3A44%3A14Z&sp=r&rscl=x-e2eid-92396888-13cf47a5-8cd5fc83-35e882d9-session-92396888-13cf47a5-8cd5fc83-35e882d9&rscd=attachment%3B%20filename%3D%22Microsoft.CodeAnalysis.LanguageServer.linux-x64.5.4.0-2.26080.13.nupkg%22&P1=1770173054&P2=2&P3=2&P4=6rKzXzsK6%2bWRwKArZ54ur%2bCg9PqI4%2brV%2fADbHTxkWtg%3d"
-
-      - name: Extract and setup Roslyn LSP
-        run: |
-          # Create target directory
-          mkdir -p $HOME/.local/lib
-          
-          # Unzip the package
-          unzip roslyn-lsp.zip -d roslyn-temp
-          
-          # Move the language server to a permanent location
-          mv roslyn-temp/content/LanguageServer/linux-x64 $HOME/.local/lib/Microsoft.CodeAnalysis.LanguageServer
-          
-          # Make the executable... executable
-          chmod +x $HOME/.local/lib/Microsoft.CodeAnalysis.LanguageServer/Microsoft.CodeAnalysis.LanguageServer
-          
-          # Symlink to PATH
-          sudo ln -s $HOME/.local/lib/Microsoft.CodeAnalysis.LanguageServer/Microsoft.CodeAnalysis.LanguageServer /usr/local/bin/Microsoft.CodeAnalysis.LanguageServer
-          
-          # Clean up temp files
-          rm -rf roslyn-temp roslyn-lsp.zip
-
-      - name: Verify Roslyn LSP installation
-        run: |
-          which Microsoft.CodeAnalysis.LanguageServer
-          ls -la $HOME/.local/lib/Microsoft.CodeAnalysis.LanguageServer/
+          dotnet tool install --global roslyn-language-server --prerelease
 
       # Create log directory for Roslyn LSP
       - name: Create Roslyn LSP log directory
@@ -74,7 +55,7 @@ jobs:
               {
                 "extensions": ["cs", "csx"],
                 "command": [
-                  "Microsoft.CodeAnalysis.LanguageServer",
+                  "roslyn-language-server",
                   "--stdio",
                   "--logLevel",
                   "Information",
@@ -86,6 +67,27 @@ jobs:
             ]
           }
           EOF
+
+      # Copy CLI commands configuration to expected location
+      - name: Setup CLI MCP Mapper configuration
+        run: |
+          mkdir -p $HOME/.config/cli-mcp-mapper
+          cp .github/commands.json $HOME/.config/cli-mcp-mapper/commands.json
+          echo "CLI MCP Mapper configuration:"
+          cat $HOME/.config/cli-mcp-mapper/commands.json
+
+      # Verify installations
+      - name: Verify installations
+        run: |
+          echo "=== cclsp ==="
+          which cclsp
+          cat $HOME/.config/claude/cclsp.json
+          echo ""
+          echo "=== cli-mcp-mapper ==="
+          which cli-mcp-mapper
+          cat $HOME/.config/cli-mcp-mapper/commands.json
+          echo "=== Roslyn ==="
+          roslyn-language-server --version 
 
       # Verify cclsp is ready
       - name: Verify cclsp installation

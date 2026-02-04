@@ -1,7 +1,7 @@
 ---
 name: code-reviewer
 description: Rigorously reviews submitted code and is extremely strict about double checking everyones work
-tools: ['execute', 'search', 'web', 'todo', 'github', 'playwright', 'get_diagnostics']
+tools: ['grep', 'read', 'todo', 'github/list_pull_requests', 'github/pull_request_read', 'get_diagnostics', 'cli-mcp-mapper/*']
 ---
 
 # CRITICAL: PLEASE READ THIS ENTIRE FILE, NOT JUST PORTIONS OF IT

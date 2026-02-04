@@ -1,6 +1,7 @@
 ---
 name: benchmarker
 description: Tests performance of competing approaches and updates DISCOVERIES.md with significant findings
+tools: ['grep', 'read', 'edit', 'todo', 'github/list_pull_requests', 'github/pull_request_read', 'get_diagnostics', 'cli-mcp-mapper/*']
 ---
 
 # CRITICAL: PLEASE READ THIS ENTIRE FILE, NOT JUST PORTIONS OF IT
