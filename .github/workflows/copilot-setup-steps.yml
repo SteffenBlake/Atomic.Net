@@ -37,49 +37,9 @@ jobs:
       # To update to newer version, get the url from here: https://dev.azure.com/azure-public/vside/_artifacts/feed/vs-impl/NuGet/Microsoft.CodeAnalysis.LanguageServer.linux-x64
 
       # Download and setup Roslyn LSP for C#
-      - name: Set up .NET SDK
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: '10.0.x'
-          dotnet-quality: 'preview'
-
-      - name: Check dotnet version
-        run: dotnet --version
-      
       - name: Download Roslyn Language Server
         run: |
-          # Download the package using the new dotnet package download command
-          dotnet package download Microsoft.CodeAnalysis.LanguageServer.linux-x64 \
-            --source https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl/nuget/v3/index.json \
-            --output ./roslyn-packages \
-            --prerelease
-
-      - name: Extract and setup Roslyn LSP
-        run: |
-          # Find the downloaded .nupkg file
-          NUPKG_FILE=$(find ./roslyn-packages -name "Microsoft.CodeAnalysis.LanguageServer.linux-x64*.nupkg" | head -1)
-          echo "Found package: $NUPKG_FILE"
-          
-          # Extract it (nupkg is a zip file)
-          unzip -q "$NUPKG_FILE" -d roslyn-temp
-          
-          # Move to target location
-          mkdir -p $HOME/.local/lib
-          cp -r roslyn-temp/content/LanguageServer/linux-x64 $HOME/.local/lib/Microsoft.CodeAnalysis.LanguageServer
-          
-          # Make executable
-          chmod +x $HOME/.local/lib/Microsoft.CodeAnalysis.LanguageServer/Microsoft.CodeAnalysis.LanguageServer
-          
-          # Symlink to PATH
-          sudo ln -s $HOME/.local/lib/Microsoft.CodeAnalysis.LanguageServer/Microsoft.CodeAnalysis.LanguageServer /usr/local/bin/Microsoft.CodeAnalysis.LanguageServer
-          
-          # Clean up
-          rm -rf ./roslyn-packages roslyn-temp
-
-      - name: Verify Roslyn LSP installation
-        run: |
-          which Microsoft.CodeAnalysis.LanguageServer
-          ls -la $HOME/.local/lib/Microsoft.CodeAnalysis.LanguageServer/
+          dotnet tool install --global roslyn-language-server --prerelease
 
       # Create log directory for Roslyn LSP
       - name: Create Roslyn LSP log directory
@@ -95,7 +55,8 @@ jobs:
               {
                 "extensions": ["cs", "csx"],
                 "command": [
-                  "Microsoft.CodeAnalysis.LanguageServer",
+                  "dotnet",
+                  "roslyn-language-server",
                   "--stdio",
                   "--logLevel",
                   "Information",
@@ -127,7 +88,7 @@ jobs:
           which cli-mcp-mapper
           cat $HOME/.config/cli-mcp-mapper/commands.json
           echo "=== Roslyn ==="
-          Microsoft.CodeAnalysis.LanguageServer --version
+          dotnet roslyn-language-server --version 
 
       # Verify cclsp is ready
       - name: Verify cclsp installation
