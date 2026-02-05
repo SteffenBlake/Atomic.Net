@@ -745,7 +745,7 @@ public static class JsonEntityConverter
         );
 
         // If any flex behaviors are present, ensure FlexBehavior exists
-        if (entity.HasBehavior<FlexDirectionBehavior>() ||
+        var hasFlexProperty = entity.HasBehavior<FlexDirectionBehavior>() ||
             entity.HasBehavior<FlexWidthBehavior>() ||
             entity.HasBehavior<FlexHeightBehavior>() ||
             entity.HasBehavior<FlexGrowBehavior>() ||
@@ -772,7 +772,9 @@ public static class JsonEntityConverter
             entity.HasBehavior<FlexPositionRightBehavior>() ||
             entity.HasBehavior<FlexPositionTopBehavior>() ||
             entity.HasBehavior<FlexPositionBottomBehavior>() ||
-            entity.HasBehavior<FlexZOverride>())
+            entity.HasBehavior<FlexZOverride>();
+
+        if (hasFlexProperty)
         {
             if (!entity.HasBehavior<FlexBehavior>())
             {
