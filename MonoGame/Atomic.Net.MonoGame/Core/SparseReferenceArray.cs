@@ -174,12 +174,30 @@ public sealed class SparseReferenceArray<T> : IEnumerable<(uint Index, T Value)>
 
     IEnumerator<(uint Index, T Value)> IEnumerable<(uint Index, T Value)>.GetEnumerator()
     {
-        return _dense.GetEnumerator();
+        // Thread-safe enumeration: take a snapshot under lock
+        _lock.EnterReadLock();
+        try
+        {
+            return _dense.ToList().GetEnumerator();
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
     }
 
     IEnumerator IEnumerable.GetEnumerator()
     {
-        return _dense.GetEnumerator();
+        // Thread-safe enumeration: take a snapshot under lock
+        _lock.EnterReadLock();
+        try
+        {
+            return _dense.ToList().GetEnumerator();
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
     }
 
     /// <summary>
