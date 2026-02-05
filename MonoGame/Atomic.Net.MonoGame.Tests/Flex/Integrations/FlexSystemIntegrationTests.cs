@@ -230,7 +230,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - child1 gets 1/3, child2 gets 2/3 of 300px
         Assert.True(child1.Value.TryGetBehavior<FlexBehavior>(out var child1Flex));
@@ -262,7 +262,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - child1 on first row, child2 wraps to second row
         Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1Transform));
@@ -290,7 +290,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - child2 should be before child1 (reverse order)
         Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1Transform));
@@ -314,7 +314,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - child2 should be before child1 (reverse order)
         Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1Transform));
@@ -341,7 +341,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - child should be centered horizontally in 300px container
         Assert.True(child.Value.TryGetBehavior<TransformBehavior>(out var childTransform));
@@ -363,7 +363,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - child1 at start, child2 at end
         Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1Transform));
@@ -388,7 +388,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - both children should be near the end
         Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1Transform));
@@ -417,7 +417,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child3", out var child3));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - children should have space around them
         Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1Transform));
@@ -452,7 +452,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - child should be centered vertically in 200px container
         Assert.True(child.Value.TryGetBehavior<TransformBehavior>(out var childTransform));
@@ -473,7 +473,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - child should be at bottom (Y=100) in 200px container
         Assert.True(child.Value.TryGetBehavior<TransformBehavior>(out var childTransform));
@@ -495,7 +495,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - children should be stretched to container height (200px)
         Assert.True(child1.Value.TryGetBehavior<FlexBehavior>(out var child1Flex));
@@ -523,7 +523,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - child1 at flexStart (Y=0), child2 at flexEnd (Y=150)
         Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1Transform));
@@ -554,7 +554,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("header-right", out var headerRight));
         Assert.True(EntityIdRegistry.Instance.TryResolve("content", out var content));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - header at top, content below
         AssertPositionEquals(0, 0, header.Value, "header");
@@ -580,7 +580,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("level3-bottom", out var level3Bottom));
         Assert.True(EntityIdRegistry.Instance.TryResolve("level2-right", out var level2Right));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - verify nested positioning
         AssertPositionEquals(0, 0, level1.Value, "level1");
@@ -607,7 +607,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - check border values are stored
         Assert.True(container.Value.TryGetBehavior<FlexBehavior>(out var containerFlex));
@@ -640,7 +640,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - child position should include container padding + child margin
         Assert.True(child.Value.TryGetBehavior<TransformBehavior>(out var childTransform));
@@ -669,7 +669,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child3", out var child3));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - verify spacing with padding, borders, and margins
         Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1Transform));
@@ -708,7 +708,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - child should be 50% of parent width
         // But we need to check how flex library calculates this
@@ -731,7 +731,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - child should be 50% of parent height
         Assert.True(child.Value.TryGetBehavior<FlexBehavior>(out var childFlex));
@@ -757,7 +757,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
         Assert.True(EntityIdRegistry.Instance.TryResolve("absolute-child", out var absoluteChild));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - absolute child should be at specified position
         AssertPositionEquals(50, 30, absoluteChild.Value, "absolute-child");
@@ -775,7 +775,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("regular-child", out var regularChild));
         Assert.True(EntityIdRegistry.Instance.TryResolve("absolute-child", out var absoluteChild));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - regular child follows flex flow
         AssertPositionEquals(0, 0, regularChild.Value, "regular-child");
@@ -806,7 +806,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child3", out var child3));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - verify z-indices
         Assert.True(child1.Value.TryGetBehavior<FlexBehavior>(out var child1Flex));
@@ -831,7 +831,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child3", out var child3));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - all children should have equal width (~166.67px each)
         Assert.True(child1.Value.TryGetBehavior<FlexBehavior>(out var child1Flex));
@@ -866,7 +866,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("growing-child", out var growingChild));
         Assert.True(EntityIdRegistry.Instance.TryResolve("another-fixed", out var anotherFixed));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - fixed children stay 100px, growing child fills remainder
         Assert.True(fixedChild.Value.TryGetBehavior<FlexBehavior>(out var fixedFlex));
@@ -899,7 +899,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - children should shrink to fit in 200px container
         Assert.True(child1.Value.TryGetBehavior<FlexBehavior>(out var child1Flex));
@@ -934,7 +934,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("child4", out var child4));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child5", out var child5));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - children should wrap to multiple rows
         Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1Transform));
@@ -1000,8 +1000,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("root", out var root));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
 
-        FlexRegistry.Instance.Recalculate();
-        TransformRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - root should have both flex position (0,0) and transform position (100,50)
         // Child's world position should be root transform + flex offset
@@ -1022,8 +1021,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("left-item2", out var leftItem2));
         Assert.True(EntityIdRegistry.Instance.TryResolve("right-panel", out var rightPanel));
 
-        FlexRegistry.Instance.Recalculate();
-        TransformRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - verify world positions account for both flex and transform
         // Root has transform (50, 50), flex positions children
@@ -1049,7 +1047,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - container should have flex behavior even without children
         Assert.True(
@@ -1072,7 +1070,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("single-flex", out var singleFlex));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - single root flex entity should work
         Assert.True(singleFlex.Value.HasBehavior<FlexBehavior>());
@@ -1090,7 +1088,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("disabled-container", out var container));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - disabled entities should be marked as Display.None
         // This is handled by FlexRegistry's EntityDisabledEvent handler
@@ -1112,7 +1110,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Verify initial positions
         AssertPositionEquals(0, 0, child1.Value, "child1 initially");
@@ -1128,7 +1126,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
             }
         );
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - child2 should move to accommodate child1's new width
         Assert.True(child2.Value.TryGetBehavior<TransformBehavior>(out var child2Transform));
@@ -1150,7 +1148,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Get positions after first recalculation
         Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1TransformFirst));
@@ -1159,9 +1157,9 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         var child2PosFirst = child2TransformFirst.Value.Position;
 
         // Recalculate multiple times
-        FlexRegistry.Instance.Recalculate();
-        FlexRegistry.Instance.Recalculate();
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
+        RecalculateAll();
+        RecalculateAll();
 
         // Assert - positions should be identical
         Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1TransformFinal));
