@@ -86,6 +86,7 @@ public static class AtomicSystem
 
         // Scene System
         SceneLoader.Initialize();
+        SceneManager.Initialize();
         RulesDriver.Initialize();
         SequenceDriver.Initialize();
         SequenceStartCmdDriver.Initialize();
