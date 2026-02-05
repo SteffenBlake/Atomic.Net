@@ -9,7 +9,6 @@ namespace Atomic.Net.MonoGame.Tests.POCs.Scenes;
 /// <summary>
 /// Spike test to determine if byte-level progress can be tracked during JSON scene deserialization.
 /// Tests whether JsonSerializer.DeserializeAsync reads incrementally or buffers up front.
-/// NOTE: This file should be in POCs/Scenes/ directory once that directory is created.
 /// </summary>
 [Collection("NonParallel")]
 [Trait("Category", "Unit")]
