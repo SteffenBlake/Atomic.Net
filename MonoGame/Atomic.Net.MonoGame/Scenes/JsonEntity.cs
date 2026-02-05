@@ -170,7 +170,28 @@ public class JsonEntity
             );
         }
 
-        // Apply flex behaviors
+        // FIRST: Check if ANY flex behaviors exist, and add FlexBehavior BEFORE applying properties
+        if (FlexDirection.HasValue || FlexWidth.HasValue || FlexHeight.HasValue ||
+            FlexGrow.HasValue || FlexShrink.HasValue || FlexWrap.HasValue ||
+            FlexJustifyContent.HasValue || FlexAlignItems.HasValue || FlexAlignSelf.HasValue ||
+            AlignContent.HasValue || FlexPositionType.HasValue ||
+            FlexPositionLeft.HasValue || FlexPositionRight.HasValue ||
+            FlexPositionTop.HasValue || FlexPositionBottom.HasValue ||
+            FlexMarginLeft.HasValue || FlexMarginRight.HasValue ||
+            FlexMarginTop.HasValue || FlexMarginBottom.HasValue ||
+            FlexPaddingLeft.HasValue || FlexPaddingRight.HasValue ||
+            FlexPaddingTop.HasValue || FlexPaddingBottom.HasValue ||
+            FlexBorderLeft.HasValue || FlexBorderRight.HasValue ||
+            FlexBorderTop.HasValue || FlexBorderBottom.HasValue ||
+            FlexZOverride.HasValue)
+        {
+            if (!entity.HasBehavior<FlexBehavior>())
+            {
+                entity.SetBehavior<FlexBehavior>(static (ref _) => { });
+            }
+        }
+
+        // THEN: Apply individual flex behaviors
         if (FlexDirection.HasValue)
         {
             var input = FlexDirection.Value;
@@ -421,27 +442,6 @@ public class JsonEntity
                 in input,
                 static (ref readonly _input, ref behavior) => behavior = _input
             );
-        }
-
-        // If any flex behaviors were set, ensure FlexBehavior exists
-        if (FlexDirection.HasValue || FlexWidth.HasValue || FlexHeight.HasValue ||
-            FlexGrow.HasValue || FlexShrink.HasValue || FlexWrap.HasValue ||
-            FlexJustifyContent.HasValue || FlexAlignItems.HasValue || FlexAlignSelf.HasValue ||
-            AlignContent.HasValue || FlexPositionType.HasValue ||
-            FlexPositionLeft.HasValue || FlexPositionRight.HasValue ||
-            FlexPositionTop.HasValue || FlexPositionBottom.HasValue ||
-            FlexMarginLeft.HasValue || FlexMarginRight.HasValue ||
-            FlexMarginTop.HasValue || FlexMarginBottom.HasValue ||
-            FlexPaddingLeft.HasValue || FlexPaddingRight.HasValue ||
-            FlexPaddingTop.HasValue || FlexPaddingBottom.HasValue ||
-            FlexBorderLeft.HasValue || FlexBorderRight.HasValue ||
-            FlexBorderTop.HasValue || FlexBorderBottom.HasValue ||
-            FlexZOverride.HasValue)
-        {
-            if (!entity.HasBehavior<FlexBehavior>())
-            {
-                entity.SetBehavior<FlexBehavior>(static (ref _) => { });
-            }
         }
     }
 }

@@ -56,9 +56,6 @@ public partial class FlexRegistry :
 
     public void Recalculate()
     {
-        // Rebuild flex tree hierarchy from entity parent-child relationships
-        RebuildFlexTree();
-
         // Recalculate global partition
         foreach (var (index, _) in _dirty.Global)
         {
