@@ -220,6 +220,40 @@
           "argName": "-m"
         }
       }
+    },
+    "mv": {
+      "description": "Move or rename a file or directory",
+      "command": "mv",
+      "baseArgs": [],
+      "parameters": {
+        "source": {
+          "type": "string",
+          "description": "Path to the source file or directory",
+          "required": true,
+          "position": 0
+        },
+        "destination": {
+          "type": "string",
+          "description": "Path to the destination file or directory",
+          "required": true,
+          "position": 1
+        },
+        "force": {
+          "type": "boolean",
+          "description": "Force move without prompting before overwriting",
+          "argName": "-f"
+        },
+        "no_clobber": {
+          "type": "boolean",
+          "description": "Do not overwrite an existing file",
+          "argName": "-n"
+        },
+        "verbose": {
+          "type": "boolean",
+          "description": "Print source and destination for each move",
+          "argName": "-v"
+        }
+      }
     }
   }
 }
