@@ -56,6 +56,9 @@ public partial class FlexRegistry :
 
     public void Recalculate()
     {
+        // Rebuild flex tree hierarchy from entity parent-child relationships
+        RebuildFlexTree();
+
         // Recalculate global partition
         foreach (var (index, _) in _dirty.Global)
         {
@@ -66,6 +69,75 @@ public partial class FlexRegistry :
         foreach (var (index, _) in _dirty.Scene)
         {
             RecalculateNode((uint)index);
+        }
+    }
+
+    private void RebuildFlexTree()
+    {
+        // Clear all parent-child relationships in flex nodes
+        foreach (var (index, node) in _nodes.Global)
+        {
+            if (node != null)
+            {
+                while (true)
+                {
+                    try { node.RemoveChild(node.GetChild(0)); }
+                    catch { break; }
+                }
+            }
+        }
+        foreach (var (index, node) in _nodes.Scene)
+        {
+            if (node != null)
+            {
+                while (true)
+                {
+                    try { node.RemoveChild(node.GetChild(0)); }
+                    catch { break; }
+                }
+            }
+        }
+
+        // Rebuild relationships from entity hierarchy
+        foreach (var (index, node) in _nodes.Global)
+        {
+            if (node == null) continue;
+            var entity = EntityRegistry.Instance[(ushort)index];
+            if (!entity.Active || !entity.HasBehavior<FlexBehavior>()) continue;
+
+            if (entity.TryGetParent(out var parent) && parent.Value.HasBehavior<FlexBehavior>())
+            {
+                if (_nodes.TryGetValue(parent.Value.Index, out var parentNode) && parentNode != null)
+                {
+                    var childIndex = 0;
+                    while (true)
+                    {
+                        try { _ = parentNode.GetChild(childIndex); childIndex++; }
+                        catch { break; }
+                    }
+                    parentNode.InsertChild(node, childIndex);
+                }
+            }
+        }
+        foreach (var (index, node) in _nodes.Scene)
+        {
+            if (node == null) continue;
+            var entity = EntityRegistry.Instance[(uint)index];
+            if (!entity.Active || !entity.HasBehavior<FlexBehavior>()) continue;
+
+            if (entity.TryGetParent(out var parent) && parent.Value.HasBehavior<FlexBehavior>())
+            {
+                if (_nodes.TryGetValue(parent.Value.Index, out var parentNode) && parentNode != null)
+                {
+                    var childIndex = 0;
+                    while (true)
+                    {
+                        try { _ = parentNode.GetChild(childIndex); childIndex++; }
+                        catch { break; }
+                    }
+                    parentNode.InsertChild(node, childIndex);
+                }
+            }
         }
     }
 
@@ -185,34 +257,6 @@ public partial class FlexRegistry :
         if (!e.Entity.HasBehavior<TransformBehavior>())
         {
             e.Entity.SetBehavior<TransformBehavior>(static (ref _) => { });
-        }
-
-        // Add this node to parent's flex tree if parent has FlexBehavior
-        if (e.Entity.TryGetParent(out var parent) && parent.Value.HasBehavior<FlexBehavior>())
-        {
-            if (_nodes.TryGetValue(parent.Value.Index, out var parentNode) && parentNode != null)
-            {
-                var myNode = _nodes[e.Entity.Index];
-                if (myNode != null)
-                {
-                    // Insert at end
-                    var childIndex = 0;
-                    for (int i = 0; i < 100; i++) // Max 100 children
-                    {
-                        try
-                        {
-                            _ = parentNode.GetChild(i);
-                            childIndex = i + 1;
-                        }
-                        catch
-                        {
-                            break;
-                        }
-                    }
-                    parentNode.InsertChild(myNode, childIndex);
-                    _dirty.Set(parent.Value.Index, true);
-                }
-            }
         }
     }
 
