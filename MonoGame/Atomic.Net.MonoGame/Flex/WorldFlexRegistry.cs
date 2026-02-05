@@ -106,17 +106,16 @@ public sealed class WorldFlexRegistry :
             worldPosition.Y
         );
 
-        var worldFlex = new WorldFlexBehavior
-        {
-            MarginRect = marginRect,
-            PaddingRect = paddingRect,
-            ContentRect = contentRect,
-            BorderLeft = flexBehavior.Value.BorderLeft,
-            BorderTop = flexBehavior.Value.BorderTop,
-            BorderRight = flexBehavior.Value.BorderRight,
-            BorderBottom = flexBehavior.Value.BorderBottom,
-            ZIndex = flexBehavior.Value.ZIndex
-        };
+        var worldFlex = new WorldFlexBehavior(
+            MarginRect: marginRect,
+            PaddingRect: paddingRect,
+            ContentRect: contentRect,
+            BorderLeft: flexBehavior.Value.BorderLeft,
+            BorderTop: flexBehavior.Value.BorderTop,
+            BorderRight: flexBehavior.Value.BorderRight,
+            BorderBottom: flexBehavior.Value.BorderBottom,
+            ZIndex: flexBehavior.Value.ZIndex
+        );
 
         entity.SetBehavior<WorldFlexBehavior, WorldFlexBehavior>(
             in worldFlex,

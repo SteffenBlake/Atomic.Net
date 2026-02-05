@@ -206,17 +206,16 @@ public partial class FlexRegistry :
         }
 
         // Store LOCAL flex rectangles (relative to entity's own position)
-        var helper = new FlexBehavior
-        {
-            MarginRect = new(marginLeft, marginTop, marginWidth, marginHeight),
-            PaddingRect = new(0, 0, paddingWidth, paddingHeight), // Padding rect starts at 0,0
-            ContentRect = new(contentLeft, contentTop, contentWidth, contentHeight),
-            BorderLeft = borderLeft,
-            BorderTop = borderTop,
-            BorderRight = borderRight,
-            BorderBottom = borderBottom,
-            ZIndex = truezIndex
-        };
+        var helper = new FlexBehavior(
+            MarginRect: new(marginLeft, marginTop, marginWidth, marginHeight),
+            PaddingRect: new(0, 0, paddingWidth, paddingHeight), // Padding rect starts at 0,0
+            ContentRect: new(contentLeft, contentTop, contentWidth, contentHeight),
+            BorderLeft: borderLeft,
+            BorderTop: borderTop,
+            BorderRight: borderRight,
+            BorderBottom: borderBottom,
+            ZIndex: truezIndex
+        );
 
         e.SetBehavior<FlexBehavior, FlexBehavior>(
             in helper,
