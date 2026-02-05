@@ -254,6 +254,19 @@
           "argName": "-v"
         }
       }
+    },
+    "wc": {
+      "description": "Count the number of lines in a file",
+      "command": "wc",
+      "baseArgs": ["-l"],
+      "parameters": {
+        "file_path": {
+          "type": "string",
+          "description": "Path to the file to count lines in",
+          "required": true,
+          "position": 0
+        }
+      }
     }
   }
 }
