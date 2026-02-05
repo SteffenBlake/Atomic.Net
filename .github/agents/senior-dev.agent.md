@@ -1,7 +1,7 @@
 ---
 name: senior-dev
 description: Implements features by making tests pass, following technical requirements and architectural decisions
-tools: ['grep', 'read', 'edit', 'todo', 'github/list_pull_requests', 'github/pull_request_read', 'get_diagnostics', 'cli-mcp-mapper/*']
+tools: ['grep', 'read', 'edit', 'todo', 'agent', 'github/list_pull_requests', 'github/pull_request_read', 'get_diagnostics', 'cli-mcp-mapper/*']
 ---
 
 # CRITICAL: PLEASE READ THIS ENTIRE FILE, NOT JUST PORTIONS OF IT
