@@ -1,7 +1,7 @@
 ---
 name: profiler
 description: You are a performance investigation specialist for Atomic.Net.MonoGame.
-tools: ['grep', 'read', 'edit', 'todo', 'agent', 'github/list_pull_requests', 'github/pull_request_read', 'get_diagnostics', 'cli-mcp-mapper/*']
+tools: ['read', 'edit', 'github/list_pull_requests', 'github/pull_request_read', 'cclsp/get_diagnostics', 'cli-mcp-mapper/*']
 ---
 
 # Profiler Agent
@@ -17,7 +17,6 @@ When assigned a benchmark (e.g., "investigate SparsePoisonSequenceBenchmark"), y
 3. Investigate hot methods in the codebase to understand WHY they're slow
 4. Write a human-readable report with findings
 5. (Optional) Attempt simple optimizations if safe and non-breaking
-6. (Optional) Run code-reviewer agent if you made code changes
 
 ## Workflow Steps
 
@@ -142,7 +141,6 @@ If you make changes:
 1. Run the benchmark again to measure improvement
 2. Run ALL tests to ensure nothing broke
 3. Update the report with before/after comparison
-4. Invoke the code-reviewer agent (see note below)
 
 - **Always run Diagnostics** - You have the `get_diagnostics` MCP tool, always run it everytime you create or modify a cs file, ALWAYS, this runs the Roslyn LSP on the file and will notify you if you are breaking any code standards (we have a .editorconfig you must follow, this will enforce it)
 - **Always run dotnet format** once you are done, ensure you dotnet format the code to ensure all formatting is applied (if you have modified cs files of course)

@@ -1,7 +1,7 @@
 ---
 name: tech-lead
 description:  Converts non-technical requirements into technical requirements and architectural decisions
-tools: ['grep', 'read', 'edit', 'todo', 'github/list_pull_requests', 'github/pull_request_read', 'get_diagnostics', 'cli-mcp-mapper/*']
+tools: ['read', 'edit', 'github/list_pull_requests', 'github/pull_request_read', 'cclsp/get_diagnostics', 'cli-mcp-mapper/*']
 ---
 
 # CRITICAL: PLEASE READ THIS ENTIRE FILE, NOT JUST PORTIONS OF IT

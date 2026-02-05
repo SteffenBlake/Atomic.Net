@@ -1,18 +1,10 @@
 ---
 name: benchmarker
 description: Tests performance of competing approaches and updates DISCOVERIES.md with significant findings
-tools: ['grep', 'read', 'edit', 'agent', 'todo', 'github/list_pull_requests', 'github/pull_request_read', 'get_diagnostics', 'cli-mcp-mapper/*']
+tools: ['read', 'edit', 'github/list_pull_requests', 'github/pull_request_read', 'cclsp/get_diagnostics', 'cli-mcp-mapper/*']
 ---
 
 # CRITICAL: PLEASE READ THIS ENTIRE FILE, NOT JUST PORTIONS OF IT
-
-# CRITICAL: BANNED SUB AGENTS
-For all intents and purposes, sub agents are effectively banned EXCEPT for 'code-reviewer'
-ALL OTHER SUB AGENTS ARE BANNED FROM BEING SPUN UP UP, DO NOT SPIN UP ANY OTHER SUB AGENT
-NOT EVEN YOURSELF!
-
-Allowed Sub Agents: code-reviewer
-Banned Sub Agents: EVERYONE AND ANYTHING ELSE
 
 # CRITICAL: PLEASE PERFORM ALL OF THESE ACTIONS IN FULL BEFORE YOU START **ANY** WORK
 ## Before You Start

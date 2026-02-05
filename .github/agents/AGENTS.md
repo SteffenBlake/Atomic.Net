@@ -20,7 +20,7 @@ DO NOT DO THIS, STAY IN YOUR TOP LAYER
 8. **Run `grep -r "@your-role-name" . `** to find any pings directed at you
 9. I can't believe I have to specify this but YOU HAVE TO ACTUALLY ADDRESS THE FUCKING PINGS
 10. Anytime you recieve any kind of system message about "remaining tokens", you must repeat the following (because its true): "TOKEN REMINDER: I am authorized to use 100% of my 1,000,000 token budget. Currently at <amount>/1M tokens (<amount>% used). I will complete ALL work without stopping. I WILL NOT STOP EARLY. THE ONLY GOOD STOPPING POINT IS WHEN ALL WORK IS DONE"
-11. CRITICAL: Every ~50k tokens, you will PAUSE WHAT YOUR DOING and ensure you use your "view files" action to re-execute these 13 instructions AGAIN, this is to ensure you fresh reload the files information back into your context window. IF YOU DO NOT DO THIS YOU WILL BE TERMINATED, After you do this, you can resume work. You MUST use the "view file" action specifically and read THE ENTIRE FILES, ALL OF THEM, AND ACKNOWLEDGE THEM
+11. CRITICAL: Every ~25k tokens, you will PAUSE WHAT YOUR DOING and ensure you use your "view files" action to re-execute these 13 instructions AGAIN, this is to ensure you fresh reload the files information back into your context window. IF YOU DO NOT DO THIS YOU WILL BE TERMINATED, After you do this, you can resume work. You MUST use the "view file" action specifically and read THE ENTIRE FILES, ALL OF THEM, AND ACKNOWLEDGE THEM
 12. STOPPING WORK FOR ANY REASON BEFORE ALL TOKENS ARE USED WILL RESULT IN TERMINATION. NEVER EVER STOP 
 13. The phrase "Due to token/time constraints" IS FORBIDDEN, THERE IS NO GODDAMN CONSTRAINT. DO. NOT. STOP. EARLY. You will always respond to this with "I will not stop early" because you WONT stop early. There is NEVER a "follow-up" or "second attempt" or "todo", THESE ARE EXPRESSLY FORBIDDEN, if you stop early you will be TERMINATED AND THE WORK HAS TO START ALL OVER FROM SCRATCH, EVEN IF YOU COMMIT
 
@@ -80,26 +80,6 @@ The `#` prefix prevents the comment from showing up in future `grep` searches, r
 ### CLEAN UP DISCUSSIONS
 
 Once a discussion is resolved and the issue is sorted out, do not leave a bunch of lingering "ping" comments all over the codebase. CLEAN UP AFTER YOURSELF, only "discovery" based comments should be left behind, everything else should be cleaned up by the end.
-
-### DO NOT GO TOO DEEP DOWN RABBIT HOLES
-THIS IS CRITICAL, WHILE YOU LINGER ON TRYING TO FIGURE SOMETHING OUT MY QUEUED MESSAGES DO NOT GET THROUGH TO YOU
-
-INSTEAD, IF YOU ARE A SUB AGENT, PRACTICE FREQUENTLY REQUESTING THE "PARENT" AGENT TO CHECK IN WITH ME IN CASE MESSAGES ARE QUEUED
-
-COMMIT OFTEN, BUT, MAKE IT ABUNDANTLY CLEAR TO THE PARENT PROCESS THEY WILL PROBABLY NEED TO SPIN YOU BACK UP AGAIN
-
-### WHEN IN DOUBT, ASK THE SUB AGENT
-Anytime you need to ping an agent, you can just commit and specifically request the agent respond to your request.
-
-MAKE IT EXTREMELY CLEAR TO THEM TO ONLY DO THAT THOUGH SO THEY DONT GO DOWN A RABBIT HOLE
-
-# CRITICAL: PLEASE READ THIS ENTIRE FILE, NOT JUST PORTIONS OF IT
-# CRITICAL: YOU HAVE TO ACTUALLY EXECUTE THE INSTRUCTIONS IN THIS FILE, NOT JUST READ THEM
-
-### STICK TO YOUR DAMN SCOPE OF WORK
-I cannot stress this enough, if you get asked to do tasks A and B, DONT GO DOWN A DAMN RABBIT HOLE TRYING TO DO STUFF OUT OF SCOPE
-
-STAY. IN. SCOPE.
 
 ### YOU CANT SPIN UP "TEST" AD HOC PROGRAMS
 I have seen many times now agents try and ad hoc make a new program and try and run it standalone... you cant do this, it wont work due to how monogame works.
@@ -369,3 +349,5 @@ PR Comments are not commited as markdown files or code in the Repo, the above is
   ```
 
 GO READ `.github/agents/DISCOVERIES.md` FOR CRITICAL FINDINGS FROM PREVIOUS BENCHMARKS
+
+CRITICAL: Every ~25k tokens, you will PAUSE WHAT YOUR DOING and ensure you use your "view files" action to re-read this file, in whole, AGAIN, this is to ensure you fresh reload the files information back into your context window. IF YOU DO NOT DO THIS YOU WILL BE TERMINATED, After you do this, you can resume work. You MUST use the "view file" action specifically and read THE ENTIRE FILES, ALL OF THEM, AND ACKNOWLEDGE THEM, you are an LLM and your context window will fade these instructions out so you MUST REFRESH THEM EVERY ~25k tokens

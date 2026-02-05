@@ -267,6 +267,83 @@
           "position": 0
         }
       }
+    },
+    "sed": {
+      "description": "Stream editor for filtering and transforming text - primarily for find/replace operations",
+      "command": "sed",
+      "baseArgs": ["-E"],
+      "parameters": {
+        "pattern": {
+          "type": "string",
+          "description": "Sed expression (e.g., 's/find/replace/g' for global replace)",
+          "required": true,
+          "argName": "-e",
+          "position": 0
+        },
+        "file_path": {
+          "type": "string",
+          "description": "Path to file to process (omit to process stdin)",
+          "position": 1
+        },
+        "apply_changes": {
+          "type": "boolean",
+          "description": "Apply changes to file in place (default is dry-run to stdout)",
+          "argName": "-i"
+        },
+        "backup_suffix": {
+          "type": "string",
+          "description": "When applying changes, create backup with this suffix (e.g., '.bak')",
+          "argName": "-i"
+        }
+      }
+    }
+    "grep": {
+      "description": "Search for patterns in files",
+      "command": "grep",
+      "baseArgs": ["-r", "-n", "-E"],
+      "parameters": {
+        "pattern": {
+          "type": "string",
+          "description": "Pattern to search for (can be a regular expression)",
+          "required": true,
+          "position": 0
+        },
+        "file_path": {
+          "type": "string",
+          "description": "Path to file or directory to search in (omit to search stdin)",
+          "position": 1
+        },
+        "ignore_case": {
+          "type": "boolean",
+          "description": "Ignore case distinctions in pattern and data",
+          "argName": "-i"
+        },
+        "only_count": {
+          "type": "boolean",
+          "description": "Only print count of matching lines per file",
+          "argName": "-c"
+        },
+        "invert": {
+          "type": "boolean",
+          "description": "Select non-matching lines",
+          "argName": "-v"
+        },
+        "words_only": {
+          "type": "boolean",
+          "description": "Match whole words only",
+          "argName": "-w"
+        },
+        "filenames_only": {
+          "type": "boolean",
+          "description": "Only print names of files with matches",
+          "argName": "-l"
+        },
+        "context": {
+          "type": "number",
+          "description": "Print number of lines of context around matches (e.g., 3 shows 3 lines before and after)",
+          "argName": "-C"
+        }
+      }
     }
   }
 }

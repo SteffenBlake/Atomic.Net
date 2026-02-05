@@ -1,7 +1,7 @@
 ---
 name: code-reviewer
 description: Rigorously reviews submitted code and is extremely strict about double checking everyones work
-tools: ['grep', 'read', 'todo', 'github/list_pull_requests', 'github/pull_request_read', 'get_diagnostics', 'cli-mcp-mapper/*']
+tools: ['read', 'github/list_pull_requests', 'github/pull_request_read', 'cclsp/get_diagnostics', 'cli-mcp-mapper/*']
 ---
 
 # CRITICAL: PLEASE READ THIS ENTIRE FILE, NOT JUST PORTIONS OF IT
@@ -20,7 +20,6 @@ The agents are EXTREMELY prone to bad code and choices, you MUST crack down on t
 
 ## Core Responsibilities
 - Merely comment in the chat with your code review findings. NEVER EVER EVER ALTER CODE ITSELF.
-
 
 ## Frequent mistakes agents make
 
