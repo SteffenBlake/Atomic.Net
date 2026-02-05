@@ -95,7 +95,7 @@ public sealed class BehaviorRegistryUnitTests : IDisposable
         Assert.True(BehaviorRegistry<TestBehavior>.Instance.HasBehavior(entity1));
 
         // Act
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
         var entity2 = EntityRegistry.Instance.Activate();
         Assert.Equal(entity1.Index, entity2.Index);
         Assert.False(BehaviorRegistry<TestBehavior>.Instance.HasBehavior(entity2));

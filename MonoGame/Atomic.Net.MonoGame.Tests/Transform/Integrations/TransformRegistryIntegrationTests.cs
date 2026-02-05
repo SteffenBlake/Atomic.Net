@@ -325,7 +325,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         TransformRegistry.Instance.Recalculate();
 
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity2));
@@ -354,7 +354,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
 
         TransformRegistry.Instance.Recalculate();
 
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity2));

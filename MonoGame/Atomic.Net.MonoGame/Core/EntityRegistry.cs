@@ -4,7 +4,7 @@ namespace Atomic.Net.MonoGame.Core;
 /// <summary>
 /// Central registry for entity lifecycle management.
 /// </summary>
-public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEvent>
+public class EntityRegistry : IEventHandler<ShutdownEvent>
 {
     internal static void Initialize()
     {
@@ -14,7 +14,6 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
         }
 
         Instance ??= new();
-        EventBus<ResetEvent>.Register(Instance);
         EventBus<ShutdownEvent>.Register(Instance);
     }
 
@@ -290,11 +289,6 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
         }
 
         _nextSceneIndex = 0;
-    }
-
-    public void OnEvent(ResetEvent _)
-    {
-        Reset();
     }
 
     /// <summary>

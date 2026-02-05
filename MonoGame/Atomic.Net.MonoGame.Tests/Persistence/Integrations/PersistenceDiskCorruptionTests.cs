@@ -130,7 +130,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         DatabaseRegistry.Instance.Flush();
 
         // Act: Reset and create new entity with Transform but load from disk
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         var entity2 = EntityRegistry.Instance.Activate();
         entity2.SetBehavior<TransformBehavior>(static (ref b) => b = b with
@@ -201,7 +201,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         DatabaseRegistry.Instance.Flush();
 
         // Act: Fire ResetEvent (should NOT deactivate global partition)
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         // Assert: Entity should still be active in-memory
         Assert.True(globalEntity.Active);
@@ -236,7 +236,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
         DatabaseRegistry.Instance.Flush();
 
         // Act: Fire ResetEvent (should deactivate scene partition)
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         // Assert: Entity should be deactivated in-memory
         Assert.False(sceneEntity.Active);

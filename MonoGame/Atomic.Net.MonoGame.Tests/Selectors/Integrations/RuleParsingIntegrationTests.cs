@@ -310,7 +310,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         Assert.Equal(3, rulesBeforeReset.Count);
 
         // Act
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         // Assert
         // test-architect: After reset, only global rule should remain
@@ -388,7 +388,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
             rulesAfterFirstScene.Add(((ushort)item.Index, item.Value));
         }
 
-        EventBus<ResetEvent>.Push(new()); // Clear scene rules
+        ResetDriver.Instance.Run(); // Clear scene rules
 
         SceneLoader.Instance.LoadGameScene(scene2Path);
         var rulesAfterSecondScene = new List<(uint Index, JsonRule Value)>();

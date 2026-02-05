@@ -259,7 +259,7 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("root-container", out _), "ID should be registered before reset");
 
         // Act
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         // Assert
         // test-architect: IDs should be cleared after reset
@@ -282,7 +282,7 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         );
 
         // Act: Reset and reload
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
         SceneLoader.Instance.LoadGameScene(scenePath);
 
         // Assert: Second load should work identically

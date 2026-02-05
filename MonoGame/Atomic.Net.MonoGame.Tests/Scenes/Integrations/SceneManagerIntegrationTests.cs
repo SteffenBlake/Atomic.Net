@@ -6,6 +6,7 @@ using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Properties;
 using Atomic.Net.MonoGame.Scenes;
+using Atomic.Net.MonoGame.Tests;
 
 namespace Atomic.Net.MonoGame.Tests.Scenes.Integrations;
 
@@ -18,12 +19,12 @@ namespace Atomic.Net.MonoGame.Tests.Scenes.Integrations;
 public sealed class SceneManagerIntegrationTests : IDisposable
 {
     private readonly ITestOutputHelper _output;
-    private readonly ErrorLogger _errorLogger;
+    private readonly ErrorEventLogger _errorLogger;
 
     public SceneManagerIntegrationTests(ITestOutputHelper output)
     {
         _output = output;
-        _errorLogger = new ErrorLogger(output);
+        _errorLogger = new ErrorEventLogger(output);
 
         // Arrange: Initialize systems before each test
         AtomicSystem.Initialize();
@@ -135,29 +136,5 @@ public sealed class SceneManagerIntegrationTests : IDisposable
         var entity = scene2Entities[0];
         Assert.True(entity.TryGetBehavior<PropertiesBehavior>(out var props));
         Assert.Equal("scene2", props.Value.Properties["sceneName"]);
-    }
-
-    /// <summary>
-    /// Helper class to log error events during tests.
-    /// </summary>
-    private sealed class ErrorLogger : IEventHandler<ErrorEvent>, IDisposable
-    {
-        private readonly ITestOutputHelper _output;
-
-        public ErrorLogger(ITestOutputHelper output)
-        {
-            _output = output;
-            EventBus<ErrorEvent>.Register(this);
-        }
-
-        public void OnEvent(ErrorEvent e)
-        {
-            _output.WriteLine($"[ERROR] {e.Message}");
-        }
-
-        public void Dispose()
-        {
-            EventBus<ErrorEvent>.Unregister(this);
-        }
     }
 }

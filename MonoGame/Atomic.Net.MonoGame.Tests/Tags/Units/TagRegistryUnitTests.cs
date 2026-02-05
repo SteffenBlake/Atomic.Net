@@ -324,7 +324,7 @@ public sealed class TagRegistryUnitTests : IDisposable
         );
 
         // Act - ResetEvent clears scene entities
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         // Assert - Global tag persists, scene tag cleared
         Assert.True(TagRegistry.Instance.TryResolve("enemy", out var entities));

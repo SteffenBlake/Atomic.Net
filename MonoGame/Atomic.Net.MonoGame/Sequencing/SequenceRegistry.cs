@@ -11,7 +11,6 @@ namespace Atomic.Net.MonoGame.Sequencing;
 public class SequenceRegistry :
     ISingleton<SequenceRegistry>,
     IEventHandler<InitializeEvent>,
-    IEventHandler<ResetEvent>,
     IEventHandler<ShutdownEvent>
 {
     internal static void Initialize()
@@ -48,7 +47,6 @@ public class SequenceRegistry :
     /// </summary>
     public void OnEvent(InitializeEvent e)
     {
-        EventBus<ResetEvent>.Register(this);
         EventBus<ShutdownEvent>.Register(this);
     }
 
@@ -244,14 +242,6 @@ public class SequenceRegistry :
 
         // Reset scene index allocator
         _nextSceneSequenceIndex = 0;
-    }
-
-    /// <summary>
-    /// Handle reset event by deactivating only scene sequences.
-    /// </summary>
-    public void OnEvent(ResetEvent _)
-    {
-        Reset();
     }
 
     /// <summary>

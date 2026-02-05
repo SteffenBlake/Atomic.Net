@@ -17,7 +17,6 @@ public class SelectorRegistry :
     IEventHandler<PreBehaviorUpdatedEvent<TagsBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<TagsBehavior>>,
     IEventHandler<PreBehaviorRemovedEvent<TagsBehavior>>,
-    IEventHandler<ResetEvent>,
     IEventHandler<ShutdownEvent>
 {
     public static SelectorRegistry Instance { get; private set; } = null!;
@@ -367,7 +366,6 @@ public class SelectorRegistry :
         EventBus<PreBehaviorUpdatedEvent<TagsBehavior>>.Register(Instance);
         EventBus<PostBehaviorUpdatedEvent<TagsBehavior>>.Register(Instance);
         EventBus<PreBehaviorRemovedEvent<TagsBehavior>>.Register(Instance);
-        EventBus<ResetEvent>.Register(Instance);
         EventBus<ShutdownEvent>.Register(Instance);
     }
 
@@ -382,11 +380,6 @@ public class SelectorRegistry :
         // Their IdBehaviors are removed, marking selectors dirty
         // We recalc here to update all selector Matches arrays
         Recalc();
-    }
-
-    public void OnEvent(ResetEvent _)
-    {
-        Reset();
     }
 
     public void OnEvent(ShutdownEvent _)
@@ -410,7 +403,6 @@ public class SelectorRegistry :
         EventBus<PreBehaviorUpdatedEvent<TagsBehavior>>.Unregister(Instance);
         EventBus<PostBehaviorUpdatedEvent<TagsBehavior>>.Unregister(Instance);
         EventBus<PreBehaviorRemovedEvent<TagsBehavior>>.Unregister(Instance);
-        EventBus<ResetEvent>.Unregister(Instance);
         EventBus<ShutdownEvent>.Unregister(Instance);
     }
 

@@ -7,7 +7,7 @@ namespace Atomic.Net.MonoGame.Scenes;
 /// Central registry for rule lifecycle management.
 /// Manages Global vs Scene partition allocation similar to EntityRegistry.
 /// </summary>
-public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEvent>
+public class RuleRegistry : IEventHandler<ShutdownEvent>
 {
     internal static void Initialize()
     {
@@ -17,7 +17,6 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
         }
 
         Instance ??= new();
-        EventBus<ResetEvent>.Register(Instance);
         EventBus<ShutdownEvent>.Register(Instance);
     }
 
@@ -85,14 +84,6 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
 
         // senior-dev: Reset scene index allocator
         _nextSceneRuleIndex = 0;
-    }
-
-    /// <summary>
-    /// Handle reset event by deactivating only scene rules.
-    /// </summary>
-    public void OnEvent(ResetEvent _)
-    {
-        Reset();
     }
 
     /// <summary>

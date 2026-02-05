@@ -95,7 +95,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         DatabaseRegistry.Instance.Flush();
 
         // Reset to clear in-memory state
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         // Act: Load scene (scene would have different values, but disk should override)
         var scenePath = "Persistence/Fixtures/persistent-scene.json";
@@ -193,7 +193,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         DatabaseRegistry.Instance.Flush();
 
         // Act: Reset and reload scene
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
         SceneLoader.Instance.LoadGameScene(scenePath);
 
         // Assert: Modified value should be preserved (loaded from disk, NOT scene defaults)
@@ -227,7 +227,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
         DatabaseRegistry.Instance.Flush();
 
         // Reset and try to load - should NOT find anything (no PersistToDiskBehavior)
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         // Create new entity and try to add PersistToDiskBehavior with non-existent key
         var testEntity = EntityRegistry.Instance.Activate();
@@ -258,7 +258,7 @@ public sealed class PersistenceSceneLoadingTests : IDisposable
             };
         });
         DatabaseRegistry.Instance.Flush();
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         // Act: Create new entity with DIFFERENT data, then apply same key
         // Key application should LOAD from disk (overwriting the different data)

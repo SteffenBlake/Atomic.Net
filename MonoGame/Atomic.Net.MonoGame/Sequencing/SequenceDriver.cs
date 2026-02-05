@@ -39,14 +39,14 @@ public sealed class SequenceDriver :
     private readonly JsonObject _tweenContext = new()
     {
         ["tween"] = 0.0f,
-        ["world"] = new JsonObject { ["deltaTime"] = 0.0f, ["loading"] = false, ["sceneLoadProgress"] = 1.0f },
+        ["world"] = new JsonObject { ["loading"] = false, ["sceneLoadProgress"] = 1.0f },
         ["self"] = null
     };
 
     private readonly JsonObject _repeatContext = new()
     {
         ["elapsed"] = 0.0f,
-        ["world"] = new JsonObject { ["deltaTime"] = 0.0f, ["loading"] = false, ["sceneLoadProgress"] = 1.0f },
+        ["world"] = new JsonObject { ["loading"] = false, ["sceneLoadProgress"] = 1.0f },
         ["self"] = null
     };
 

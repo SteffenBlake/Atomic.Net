@@ -60,7 +60,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
 
         // Act: Flush to write to disk, then fire ResetEvent
         DatabaseRegistry.Instance.Flush();
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         // Assert: Entity should be deactivated in-memory
         Assert.False(entity.Active);

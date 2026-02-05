@@ -207,7 +207,7 @@ public sealed class TagErrorHandlingTests : IDisposable
         var errorCount1 = errorListener1.ReceivedEvents.Count;
 
         // Reset and load clean scene
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
         var errorListener2 = new FakeEventListener<ErrorEvent>();
         SceneLoader.Instance.LoadGameScene(validScenePath);
         var errorCount2 = errorListener2.ReceivedEvents.Count;
