@@ -46,6 +46,7 @@ public static class AtomicSystem
         BehaviorRegistry<FlexPositionTopBehavior>.Initialize();
         BehaviorRegistry<FlexPositionTypeBehavior>.Initialize();
         BehaviorRegistry<FlexWidthBehavior>.Initialize();
+        BehaviorRegistry<WorldFlexBehavior>.Initialize();
 
         // Hierarchy Behaviors
         BehaviorRegistry<ParentBehavior>.Initialize();
@@ -74,6 +75,7 @@ public static class AtomicSystem
         // Registries
         EntityRegistry.Initialize();
         FlexRegistry.Initialize();
+        WorldFlexRegistry.Initialize();
         HierarchyRegistry.Initialize();
         EntityIdRegistry.Initialize();
         TagRegistry.Initialize();

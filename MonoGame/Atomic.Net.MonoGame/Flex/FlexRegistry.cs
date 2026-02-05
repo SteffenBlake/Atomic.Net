@@ -189,7 +189,10 @@ public partial class FlexRegistry :
 
     public void OnEvent(BehaviorAddedEvent<FlexBehavior> e)
     {
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        if (!_nodes.TryGetValue(e.Entity.Index, out var existingNode) || existingNode is null)
+        {
+            _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode();
+        }
         _dirty.Set(e.Entity.Index, true);
 
         // Ensure TransformBehavior exists for flex entities
