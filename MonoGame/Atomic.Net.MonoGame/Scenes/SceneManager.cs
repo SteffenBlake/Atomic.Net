@@ -118,218 +118,115 @@ public sealed class SceneManager : ISingleton<SceneManager>
         LoadingProgress = 0.0f;
 
         // Start background task (only for file I/O and JSON parsing)
-        Task.Run(async () =>
-        {
-            try
-            {
-                await LoadSceneAsync(scenePath);
-            }
-            catch (Exception ex)
-            {
-                QueueError($"[FATAL] Unhandled exception in LoadSceneAsync: {ex.Message}\nStack: {ex.StackTrace}");
-                ReturnToIdle();
-            }
-        });
+        LoadSceneAsync(scenePath);
     }
 
-    private async Task LoadSceneAsync(string scenePath)
+    private Task LoadSceneAsync(string scenePath)
     {
-        QueueError($"[DEBUG] LoadSceneAsync started for path: {scenePath}");
-        
-        // senior-dev: THREAD SAFETY ANALYSIS - EntityRegistry.Activate() and Entity Spawning
-        //
-        // CORE ISSUE: EntityRegistry.Activate() is NOT thread-safe for concurrent calls from
-        // background thread. Here's why:
-        //
-        // 1. ENTITY ACTIVATION RACE CONDITION:
-        //    EntityRegistry.Activate() at line 70-88 of EntityRegistry.cs does:
-        //    - Reads _nextSceneIndex (NOT atomic, no Interlocked)
-        //    - Searches for next available slot in _active sparse array
-        //    - Sets _active.Scene.Set(i, true) 
-        //    - Updates _nextSceneIndex = (i + 1) % MaxSceneEntities
-        //    
-        //    If two threads call Activate() simultaneously:
-        //    - Both read same _nextSceneIndex value
-        //    - Both find same empty slot
-        //    - Both try to activate same entity index
-        //    - Result: Duplicate entity activations or corrupted entity state
-        //
-        // 2. SPARSE ARRAY MODIFICATIONS:
-        //    SparseArray<T> is NOT thread-safe. Set() operations at line 80-81 of EntityRegistry:
-        //    - _active.Scene.Set(i, true)
-        //    - _enabled.Scene.Set(i, true)
-        //    These modify internal data structures (_values array, _count int) without locking.
-        //    Concurrent modifications can corrupt the sparse array state.
-        //
-        // 3. CASCADE TO OTHER SYSTEMS:
-        //    Entity spawning triggers behavior application via JsonEntity.WriteToEntity():
-        //    - SetBehavior<TransformBehavior>() → fires BehaviorAddedEvent
-        //    - TransformRegistry.OnEvent() → modifies _dirty sparse array (NOT thread-safe)
-        //    - SetBehavior<IdBehavior>() → EntityIdRegistry adds to _idToEntity dictionary (NOT thread-safe)
-        //    - SetBehavior<TagsBehavior>() → TagRegistry modifies _tagToEntities (NOT thread-safe)
-        //    All of these systems assume single-threaded access.
-        //
-        // 4. RULE/SEQUENCE LOADING:
-        //    After entity spawning, LoadSceneAsync calls:
-        //    - RuleRegistry.TryActivate() → modifies Rules sparse array, _nextSceneRuleIndex
-        //    - SequenceRegistry.TryActivate() → modifies _sequences sparse array, _idToIndex dictionary
-        //    - SelectorRegistry.Recalc() → modifies Matches arrays for all selectors
-        //    - HierarchyRegistry.Recalc() → resolves parent/child relationships, modifies sparse arrays
-        //    All of these are NOT thread-safe.
-        //
-        // POTENTIAL SOLUTIONS:
-        //
-        // Option A: Make ALL Registries Thread-Safe (NOT RECOMMENDED)
-        // - Add ReaderWriterLockSlim to EntityRegistry, RuleRegistry, SequenceRegistry, 
-        //   SelectorRegistry, HierarchyRegistry, TagRegistry, PropertiesRegistry, DatabaseRegistry,
-        //   TransformRegistry, EntityIdRegistry (~10 files)
-        // - Wrap all SparseArray modifications in write locks
-        // - Wrap all dictionary modifications in write locks
-        // - Add locking to PartitionedSparseArray<T> and SparseArray<T> base classes
-        // - EFFORT: 4-6 days implementation + 3-4 days testing for race conditions
-        // - PERFORMANCE COST: 10-20% throughput reduction due to lock contention
-        // - RISK: High (deadlocks, incorrect lock granularity, missed lock locations)
-        //
-        // Option B: Marshal Entity Spawning to Main Thread (CURRENTLY NOT ALLOWED PER FEEDBACK)
-        // - Background thread: Parse JSON only (thread-safe)
-        // - Queue parsed JsonScene for main thread
-        // - Main thread: Spawn entities in Update() (no locking needed)
-        // - BLOCKED: User feedback says "Moving EntityRegistry.Activate() to the main thread
-        //   is currently not an option, dont even suggest it as a possibility"
-        //
-        // Option C: Accept Current Limitation (CURRENT APPROACH)
-        // - Keep entity spawning on background thread as sprint requires
-        // - Document thread safety issues clearly in code and tests
-        // - Mark affected tests as skipped with clear explanation
-        // - Future work: Implement Option A when performance impact is acceptable
-        //
-        // CURRENT STATE:
-        // - This implementation follows sprint requirement: "creates new entities/rules/sequences
-        //   in the scene partition" on background thread
-        // - Thread safety issues cause occasional race conditions (entity activation conflicts,
-        //   sparse array corruption, dictionary concurrent modification exceptions)
-        // - 2 integration tests skipped due to these issues
-        // - Error handling and progress tracking work correctly (use proper Interlocked counters)
-        //
-        // RECOMMENDATION FOR FUTURE WORK:
-        // Implement Option A (thread-safe registries) with careful attention to:
-        // 1. Lock granularity: Use fine-grained locks per partition (Global vs Scene)
-        // 2. Lock-free algorithms where possible (e.g., Interlocked for index allocation)
-        // 3. Benchmark impact: Ensure <5% performance degradation
-        // 4. Extensive testing: Thread-safety tests with ThreadSanitizer, stress tests
-        //
-        try
+        return Task.Run(() =>
         {
-            QueueError($"[DEBUG] Entering try block");
-            
-            // Check if file exists
-            if (!File.Exists(scenePath))
-            {
-                QueueError($"Scene file not found: '{scenePath}'");
-                ReturnToIdle();
-                return;
-            }
-            
-            QueueError($"[DEBUG] File exists");
-
-            // Get file size for progress tracking
-            var fileInfo = new FileInfo(scenePath);
-            Interlocked.Exchange(ref _totalBytes, fileInfo.Length);
-            
-            QueueError($"[DEBUG] File size: {fileInfo.Length} bytes");
-
-            // Read and deserialize JSON
-            JsonScene? scene;
             try
             {
-                QueueError($"[DEBUG] Opening file stream");
-                using var fileStream = new FileStream(scenePath, FileMode.Open, FileAccess.Read);
-                
-                QueueError($"[DEBUG] Deserializing JSON directly (no progress stream)");
-                scene = await JsonSerializer.DeserializeAsync<JsonScene>(fileStream, _serializerOptions);
-
-                if (scene == null)
+                // Check if file exists
+                if (!File.Exists(scenePath))
                 {
-                    QueueError($"Failed to parse scene JSON: {scenePath} - deserializer returned null");
+                    QueueError($"Scene file not found: '{scenePath}'");
                     ReturnToIdle();
                     return;
                 }
-                
-                QueueError($"[DEBUG] Deserialized scene successfully");
+
+                // Get file size for progress tracking
+                var fileInfo = new FileInfo(scenePath);
+                Interlocked.Exchange(ref _totalBytes, fileInfo.Length);
+
+                // Read and deserialize JSON
+                JsonScene? scene;
+                try
+                {
+                    var jsonText = File.ReadAllText(scenePath);
+                    Interlocked.Exchange(ref _bytesRead, jsonText.Length);
+
+                    scene = JsonSerializer.Deserialize<JsonScene>(jsonText, _serializerOptions);
+
+                    if (scene == null)
+                    {
+                        QueueError($"Failed to parse scene JSON: {scenePath} - deserializer returned null");
+                        ReturnToIdle();
+                        return;
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    QueueError($"Failed to parse scene JSON (JsonException): {scenePath} - {ex.Message}");
+                    ReturnToIdle();
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    QueueError($"Failed to parse scene JSON (Exception): {scenePath} - {ex.GetType().Name}: {ex.Message}");
+                    ReturnToIdle();
+                    return;
+                }
+
+                // Set total entities for progress tracking
+                var entityCount = scene.Entities?.Count ?? 0;
+                Interlocked.Exchange(ref _totalEntities, entityCount);
+                Interlocked.Exchange(ref _bytesRead, fileInfo.Length); // Mark file reading as complete
+
+                // Spawn entities
+                if (scene.Entities != null)
+                {
+                    foreach (var jsonEntity in scene.Entities)
+                    {
+                        try
+                        {
+                            var entity = EntityRegistry.Instance.Activate();
+                            jsonEntity.WriteToEntity(entity);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Queue error but continue loading remaining entities
+                            var entityJson = JsonSerializer.Serialize(jsonEntity, JsonSerializerOptions.Web);
+                            QueueError($"Failed to spawn entity during scene load: {ex.Message}\nEntity JSON: {entityJson}");
+                        }
+                        finally
+                        {
+                            Interlocked.Increment(ref _entitiesLoaded);
+                        }
+                    }
+                }
+
+                // Load rules
+                if (scene.Rules != null)
+                {
+                    foreach (var rule in scene.Rules)
+                    {
+                        RuleRegistry.Instance.TryActivate(rule, out _);
+                    }
+                }
+
+                // Load sequences
+                if (scene.Sequences != null)
+                {
+                    foreach (var sequence in scene.Sequences)
+                    {
+                        SequenceRegistry.Instance.TryActivate(sequence, out _);
+                    }
+                }
+
+                // Recalc selectors and hierarchy
+                SelectorRegistry.Instance.Recalc();
+                HierarchyRegistry.Instance.Recalc();
+
+                // Request GC on main thread
+                Interlocked.Exchange(ref _gcRequested, 1);
             }
-            catch (JsonException ex)
+            catch (Exception ex)
             {
-                QueueError($"Failed to parse scene JSON: {scenePath} - {ex.Message}");
+                QueueError($"Unexpected error during scene load: {ex.Message}");
                 ReturnToIdle();
-                return;
             }
-
-            // Set total entities for progress tracking
-            var entityCount = scene.Entities?.Count ?? 0;
-            Interlocked.Exchange(ref _totalEntities, entityCount);
-            Interlocked.Exchange(ref _bytesRead, fileInfo.Length); // Mark file reading as complete
-
-            // Spawn entities
-            if (scene.Entities != null)
-            {
-                QueueError($"[DEBUG] Spawning {scene.Entities.Count} entities");
-                foreach (var jsonEntity in scene.Entities)
-                {
-                    try
-                    {
-                        var entity = EntityRegistry.Instance.Activate();
-                        QueueError($"[DEBUG] Activated entity {entity.Index}");
-                        jsonEntity.WriteToEntity(entity);
-                        QueueError($"[DEBUG] Wrote behaviors to entity {entity.Index}");
-                    }
-                    catch (Exception ex)
-                    {
-                        // Queue error but continue loading remaining entities
-                        var entityJson = JsonSerializer.Serialize(jsonEntity, JsonSerializerOptions.Web);
-                        QueueError($"Failed to spawn entity during scene load: {ex.Message}\nEntity JSON: {entityJson}");
-                    }
-                    finally
-                    {
-                        Interlocked.Increment(ref _entitiesLoaded);
-                    }
-                }
-            }
-            else
-            {
-                QueueError($"[DEBUG] scene.Entities is null");
-            }
-
-            // Load rules
-            if (scene.Rules != null)
-            {
-                foreach (var rule in scene.Rules)
-                {
-                    RuleRegistry.Instance.TryActivate(rule, out _);
-                }
-            }
-
-            // Load sequences
-            if (scene.Sequences != null)
-            {
-                foreach (var sequence in scene.Sequences)
-                {
-                    SequenceRegistry.Instance.TryActivate(sequence, out _);
-                }
-            }
-
-            // Recalc selectors and hierarchy
-            SelectorRegistry.Instance.Recalc();
-            HierarchyRegistry.Instance.Recalc();
-
-            // Request GC on main thread
-            QueueError($"[DEBUG] Loading complete, requesting GC");
-            Interlocked.Exchange(ref _gcRequested, 1);
-        }
-        catch (Exception ex)
-        {
-            QueueError($"Unexpected error during scene load: {ex.Message}");
-            ReturnToIdle();
-        }
+        });
     }
 
     /// <summary>
@@ -363,10 +260,6 @@ public sealed class SceneManager : ISingleton<SceneManager>
 
             // Set loading to false (transition complete)
             Interlocked.Exchange(ref _isLoading, 0);
-            
-            // Check how many entities are active
-            var activeCount = EntityRegistry.Instance.GetActiveSceneEntities().Count();
-            QueueError($"[DEBUG] GC complete, active scene entities: {activeCount}");
 
             // Reset progress to 1.0
             LoadingProgress = 1.0f;

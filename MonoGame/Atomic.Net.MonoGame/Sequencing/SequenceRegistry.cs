@@ -32,12 +32,12 @@ public class SequenceRegistry :
         Constants.MaxGlobalSequences,
         Constants.MaxSceneSequences
     );
-    
+
     // Thread-safe for async scene loading
     private readonly ConcurrentDictionary<string, PartitionIndex> _idToIndex = new(
         StringComparer.OrdinalIgnoreCase
     );
-    
+
     // Thread-safe counters for async scene loading
     private int _nextSceneSequenceIndex = 0;
     private int _nextGlobalSequenceIndex = 0;
@@ -86,7 +86,7 @@ public class SequenceRegistry :
 
         var seqIndex = (uint)Interlocked.Increment(ref _nextSceneSequenceIndex) - 1;
         PartitionIndex sceneIndex = seqIndex;
-        
+
         // Try to add to dictionary (thread-safe first-write-wins)
         if (!_idToIndex.TryAdd(sequence.Id, sceneIndex))
         {
@@ -96,7 +96,7 @@ public class SequenceRegistry :
             index = null;
             return false;
         }
-        
+
         _sequences.Set(sceneIndex, sequence);
         index = sceneIndex;
         return true;
@@ -144,7 +144,7 @@ public class SequenceRegistry :
         // Allocate next global sequence index (thread-safe)
         var seqIndex = (ushort)(Interlocked.Increment(ref _nextGlobalSequenceIndex) - 1);
         PartitionIndex globalIndex = seqIndex;
-        
+
         // Try to add to dictionary (thread-safe first-write-wins)
         if (!_idToIndex.TryAdd(sequence.Id, globalIndex))
         {

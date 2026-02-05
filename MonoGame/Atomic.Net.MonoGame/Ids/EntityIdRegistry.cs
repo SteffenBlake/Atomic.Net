@@ -140,7 +140,7 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
         {
             _idToEntity.TryRemove(id, out _);
         }
-        
+
         // Clear the scene partition
         _entityToId.Scene.Clear();
     }

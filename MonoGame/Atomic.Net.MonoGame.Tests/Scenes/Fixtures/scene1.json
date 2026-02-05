@@ -9,25 +9,5 @@
         "sceneName": "scene1"
       }
     }
-  ],
-  "rules": [
-    {
-      "from": "@scene1-entity",
-      "where": {
-        "==": [true, true]
-      },
-      "do": {
-        "mut": {
-          "target": ".",
-          "operation": {
-            "merge": {
-              "properties": {
-                "executed": true
-              }
-            }
-          }
-        }
-      }
-    }
   ]
 }

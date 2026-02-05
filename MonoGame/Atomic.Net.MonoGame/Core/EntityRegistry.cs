@@ -38,7 +38,7 @@ public class EntityRegistry : IEventHandler<ShutdownEvent>
         Constants.MaxGlobalEntities,
         Constants.MaxSceneEntities
     );
-    
+
     // Thread-safe index counters for async scene loading
     private int _nextSceneIndex = 0;
     private int _nextGlobalIndex = 0;

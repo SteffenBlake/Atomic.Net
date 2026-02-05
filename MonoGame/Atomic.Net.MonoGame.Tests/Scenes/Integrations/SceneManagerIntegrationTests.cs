@@ -43,13 +43,9 @@ public sealed class SceneManagerIntegrationTests : IDisposable
     {
         // Arrange
         var scenePath = "Scenes/Fixtures/scene1.json";
-        
-        _output.WriteLine("Test starting");
 
         // Act
         SceneManager.Instance.LoadScene(scenePath);
-        
-        _output.WriteLine($"LoadScene called, IsLoading: {SceneManager.Instance.IsLoading}");
 
         // Assert - IsLoading should be true initially
         Assert.True(SceneManager.Instance.IsLoading, "IsLoading should be true immediately after LoadScene");
@@ -58,26 +54,18 @@ public sealed class SceneManagerIntegrationTests : IDisposable
         // Wait for loading to complete (poll Update() and check IsLoading)
         var maxWait = TimeSpan.FromSeconds(5);
         var start = DateTime.UtcNow;
-        int updateCount = 0;
         while (SceneManager.Instance.IsLoading && DateTime.UtcNow - start < maxWait)
         {
             SceneManager.Instance.Update();
-            updateCount++;
             await Task.Delay(10);
         }
-        
-        _output.WriteLine($"Wait loop complete, updateCount: {updateCount}, IsLoading: {SceneManager.Instance.IsLoading}, elapsed: {DateTime.UtcNow - start}");
 
         // Assert - Loading should complete
         Assert.False(SceneManager.Instance.IsLoading, "IsLoading should be false after load completes");
         Assert.Equal(1.0f, SceneManager.Instance.LoadingProgress);
-        
-        _output.WriteLine("Calling GetActiveSceneEntities()");
 
         // Verify entity was loaded
         var activeEntities = EntityRegistry.Instance.GetActiveSceneEntities().ToList();
-        
-        _output.WriteLine($"Active entities count: {activeEntities.Count}");
         Assert.Single(activeEntities);
 
         var entity = activeEntities[0];

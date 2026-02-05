@@ -45,7 +45,7 @@ public sealed class ResetDriver : ISingleton<ResetDriver>
 
         // Reset entity ID registry (clear scene partition)
         EntityIdRegistry.Instance.Reset();
-        
+
         // Note: PropertiesRegistry, TagRegistry, TransformRegistry, and DatabaseRegistry
         // have no Reset() methods - they clean up automatically via PreBehaviorRemovedEvent
         // when scene entities are deactivated by EntityRegistry.Reset()
