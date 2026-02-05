@@ -140,7 +140,7 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
         Assert.Single(sceneParent.Value.GetChildren());
 
         // Act
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         // Assert
         Assert.False(EntityRegistry.Instance.IsActive(sceneParent.Value));
@@ -160,7 +160,7 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
         Assert.Equal(globalParent.Value.Index, parent1.Value.Index);
 
         // Act
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         // Assert
         Assert.True(EntityRegistry.Instance.IsActive(globalParent.Value));
@@ -183,7 +183,7 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
         Assert.Single(parent1.Value.GetChildren());
 
         // Act
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
         SceneLoader.Instance.LoadGameScene(scenePath);
 
         Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out var parent2));

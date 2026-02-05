@@ -1,0 +1,15 @@
+{
+  "entities": [
+    {
+      "id": "test-entity",
+      "tags": [
+        "valid-tag",
+        "",
+        "another-valid-tag"
+      ],
+      "properties": {
+        "test": "value"
+      }
+    }
+  ]
+}

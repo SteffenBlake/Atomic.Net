@@ -1,12 +1,13 @@
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.BED;
-using Atomic.Net.MonoGame.Ids;
 using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Ids;
 
 /// <summary>
 /// Singleton registry for tracking entity IDs and resolving parent references.
+/// Thread-safe using ConcurrentDictionary for async scene loading.
 /// </summary>
 public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
     IEventHandler<InitializeEvent>,
@@ -29,7 +30,8 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
 
     public static EntityIdRegistry Instance { get; private set; } = null!;
 
-    private readonly Dictionary<string, Entity> _idToEntity = new();
+    // Thread-safe for async scene loading
+    private readonly ConcurrentDictionary<string, Entity> _idToEntity = new();
     private readonly PartitionedSparseRefArray<string> _entityToId = new(
         Constants.MaxGlobalEntities,
         Constants.MaxSceneEntities
@@ -39,15 +41,15 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
     /// Attempts to register an entity with the given ID.
     /// Returns true if registered successfully (first-write-wins).
     /// Returns false if the ID is already registered.
+    /// Thread-safe for concurrent calls.
     /// </summary>
     public bool TryRegister(Entity entity, string id)
     {
-        if (_idToEntity.ContainsKey(id))
+        if (!_idToEntity.TryAdd(id, entity))
         {
             return false;
         }
 
-        _idToEntity[id] = entity;
         _entityToId[entity.Index] = id;
         return true;
     }
@@ -105,7 +107,7 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
     {
         if (_entityToId.TryGetValue(e.Entity.Index, out var id))
         {
-            _idToEntity.Remove(id);
+            _idToEntity.TryRemove(id, out _);
             _entityToId.Remove(e.Entity.Index);
         }
     }
@@ -122,8 +124,24 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
     {
         if (_entityToId.TryGetValue(e.Entity.Index, out var id))
         {
-            _idToEntity.Remove(id);
+            _idToEntity.TryRemove(id, out _);
             _entityToId.Remove(e.Entity.Index);
         }
+    }
+
+    /// <summary>
+    /// Resets scene partition by clearing only scene entity IDs.
+    /// Called by ResetDriver during scene transitions.
+    /// </summary>
+    public void Reset()
+    {
+        // Clear IDs for scene entities (thread-safe TryRemove)
+        foreach (var (index, id) in _entityToId.Scene)
+        {
+            _idToEntity.TryRemove(id, out _);
+        }
+
+        // Clear the scene partition
+        _entityToId.Scene.Clear();
     }
 }

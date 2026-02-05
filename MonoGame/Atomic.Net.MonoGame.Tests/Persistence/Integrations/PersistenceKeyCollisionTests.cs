@@ -102,7 +102,7 @@ public sealed class PersistenceKeyCollisionTests : IDisposable
         DatabaseRegistry.Instance.Flush();
 
         // Act: Simulate scene transition (reset + reload)
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         // Create new entity with same key in second "scene"
         var entity2 = EntityRegistry.Instance.Activate();

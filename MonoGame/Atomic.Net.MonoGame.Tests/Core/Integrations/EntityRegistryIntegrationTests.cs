@@ -292,7 +292,7 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
         Assert.True(EntityRegistry.Instance.IsActive(sceneEntity.Value));
 
         // Act
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         // Assert
         Assert.True(EntityRegistry.Instance.IsActive(globalEntity.Value));
@@ -309,7 +309,7 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
         var index1 = entity1.Value.Index;
 
         // Act
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("scene-entity", out var entity2));
 
@@ -328,8 +328,8 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
         var index1 = entity1.Value.Index;
         Assert.True(EntityRegistry.Instance.IsActive(entity1.Value));
 
-        // Act
-        EventBus<ResetEvent>.Push(new());
+        // Act: Fire reset event
+        ResetDriver.Instance.Run();
         Assert.False(EntityRegistry.Instance.IsActive(entity1.Value));
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("scene-entity", out var entity2));

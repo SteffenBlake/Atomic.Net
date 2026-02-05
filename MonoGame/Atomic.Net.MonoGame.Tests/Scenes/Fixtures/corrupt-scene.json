@@ -1,0 +1,8 @@
+{
+  "entities": [
+    {
+      "id": "this is not valid json
+      "missing": "quotes and commas"
+    }
+  ]
+}

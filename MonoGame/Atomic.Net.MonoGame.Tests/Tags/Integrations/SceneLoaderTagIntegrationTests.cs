@@ -291,7 +291,7 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
         Assert.True(globalTags.HasValue(globalEntity.Value.Index));
 
         // Reset
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         // Assert - Global tags persist
         Assert.True(TagRegistry.Instance.TryResolve("global-tag", out var globalTagsAfterReset));
@@ -312,7 +312,7 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
         Assert.True(enemyTags.HasValue(goblin1.Value.Index));
 
         // Reset
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         // Assert - Scene tags cleared
         if (TagRegistry.Instance.TryResolve("enemy", out var enemyTagsAfterReset))
@@ -342,7 +342,7 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin-1", out var sceneEntity));
 
         // Act - Reset
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         // Assert - Global entity still has tag, scene entity doesn't
         Assert.True(TagRegistry.Instance.TryResolve("enemy", out var enemyTags));

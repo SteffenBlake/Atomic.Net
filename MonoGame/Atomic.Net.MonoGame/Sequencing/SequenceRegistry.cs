@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using Atomic.Net.MonoGame.Core;
 
@@ -7,11 +8,11 @@ namespace Atomic.Net.MonoGame.Sequencing;
 /// Central registry for sequence lifecycle management.
 /// Manages Global vs Scene partition allocation similar to EntityRegistry and RuleRegistry.
 /// Provides dual lookup: ID → index and index → sequence.
+/// Thread-safe for async scene loading using ConcurrentDictionary and Interlocked.
 /// </summary>
 public class SequenceRegistry :
     ISingleton<SequenceRegistry>,
     IEventHandler<InitializeEvent>,
-    IEventHandler<ResetEvent>,
     IEventHandler<ShutdownEvent>
 {
     internal static void Initialize()
@@ -31,12 +32,15 @@ public class SequenceRegistry :
         Constants.MaxGlobalSequences,
         Constants.MaxSceneSequences
     );
-    private readonly Dictionary<string, PartitionIndex> _idToIndex = new(
-        (int)(Constants.MaxGlobalSequences + Constants.MaxSceneSequences),
+
+    // Thread-safe for async scene loading
+    private readonly ConcurrentDictionary<string, PartitionIndex> _idToIndex = new(
         StringComparer.OrdinalIgnoreCase
     );
-    private uint _nextSceneSequenceIndex = 0;
-    private ushort _nextGlobalSequenceIndex = 0;
+
+    // Thread-safe counters for async scene loading
+    private int _nextSceneSequenceIndex = 0;
+    private int _nextGlobalSequenceIndex = 0;
 
     /// <summary>
     /// Public accessor for sequences PartitionedSparseArray for iteration and testing.
@@ -48,7 +52,6 @@ public class SequenceRegistry :
     /// </summary>
     public void OnEvent(InitializeEvent e)
     {
-        EventBus<ResetEvent>.Register(this);
         EventBus<ShutdownEvent>.Register(this);
     }
 
@@ -74,15 +77,18 @@ public class SequenceRegistry :
             return false;
         }
 
-        if (_nextSceneSequenceIndex >= Constants.MaxSceneSequences)
+        if (Interlocked.CompareExchange(ref _nextSceneSequenceIndex, 0, 0) >= Constants.MaxSceneSequences)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Scene sequence capacity exceeded"));
             index = null;
             return false;
         }
 
-        // Check for duplicate ID in scene partition
-        if (_idToIndex.ContainsKey(sequence.Id))
+        var seqIndex = (uint)Interlocked.Increment(ref _nextSceneSequenceIndex) - 1;
+        PartitionIndex sceneIndex = seqIndex;
+
+        // Try to add to dictionary (thread-safe first-write-wins)
+        if (!_idToIndex.TryAdd(sequence.Id, sceneIndex))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent(
                 $"Sequence with ID '{sequence.Id}' already exists"
@@ -91,10 +97,7 @@ public class SequenceRegistry :
             return false;
         }
 
-        var seqIndex = _nextSceneSequenceIndex++;
-        PartitionIndex sceneIndex = seqIndex;
         _sequences.Set(sceneIndex, sequence);
-        _idToIndex[sequence.Id] = sceneIndex;
         index = sceneIndex;
         return true;
     }
@@ -138,10 +141,21 @@ public class SequenceRegistry :
             return false;
         }
 
-        var seqIndex = _nextGlobalSequenceIndex++;
+        // Allocate next global sequence index (thread-safe)
+        var seqIndex = (ushort)(Interlocked.Increment(ref _nextGlobalSequenceIndex) - 1);
         PartitionIndex globalIndex = seqIndex;
+
+        // Try to add to dictionary (thread-safe first-write-wins)
+        if (!_idToIndex.TryAdd(sequence.Id, globalIndex))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Sequence with ID '{sequence.Id}' already exists in global partition"
+            ));
+            index = null;
+            return false;
+        }
+
         _sequences.Set(globalIndex, sequence);
-        _idToIndex[sequence.Id] = globalIndex;
         index = globalIndex;
         return true;
     }
@@ -228,21 +242,22 @@ public class SequenceRegistry :
     }
 
     /// <summary>
-    /// Handle reset event by deactivating only scene sequences.
+    /// Resets scene partition by clearing only scene sequences.
+    /// Called by ResetDriver during scene transitions.
     /// </summary>
-    public void OnEvent(ResetEvent _)
+    public void Reset()
     {
         // Clear scene partition only - remove IDs from dictionary
         foreach (var (_, sequence) in _sequences.Scene)
         {
-            _idToIndex.Remove(sequence.Id);
+            _idToIndex.TryRemove(sequence.Id, out _);
         }
 
         // Clear scene partition with O(1) operation
         _sequences.Scene.Clear();
 
-        // Reset scene index allocator
-        _nextSceneSequenceIndex = 0;
+        // Reset scene index allocator (thread-safe)
+        Interlocked.Exchange(ref _nextSceneSequenceIndex, 0);
     }
 
     /// <summary>

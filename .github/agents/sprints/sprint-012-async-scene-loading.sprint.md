@@ -28,6 +28,7 @@
 - These values become `world.loading` (bool) and `world.sceneLoadProgress` (float, 0..1) for use in game logic.
 - When no loading is underway, `IsLoading` is `false` and `LoadingProgress` is `1.0`.
 - All scene transition visuals and logic should be triggered via rules/sequences by checking `world.loading`/`sceneLoadProgress` (never engine hardcoded; data-driven only).
+- NOTE: `tweenContext` and `repeatContext` should NOT have `deltaTime` in their world object - only `doContext` should have deltaTime.
 
 ### Test Strategy / Success Criteria
 - Integration tests must:

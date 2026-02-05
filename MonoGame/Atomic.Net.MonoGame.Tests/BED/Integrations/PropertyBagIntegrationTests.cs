@@ -271,7 +271,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.HasBehavior(goblin1Before.Value));
 
         // Act
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         // Assert
         // test-architect: After reset, ID registry should be cleared
@@ -298,7 +298,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         var firstIndex = goblin1First.Value.Index;
 
         // Act
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
         SceneLoader.Instance.LoadGameScene(scenePath);
 
         // Assert

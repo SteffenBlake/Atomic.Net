@@ -1,0 +1,30 @@
+{
+  "entities": [
+    {
+      "id": "test-entity",
+      "properties": {
+        "test": "value"
+      }
+    }
+  ],
+  "rules": [
+    {
+      "from": "@test-entity",
+      "where": {
+        "==": [true, true]
+      },
+      "do": {
+        "mut": {
+          "target": ".",
+          "operation": {
+            "merge": {
+              "properties": {
+                "executed": true
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

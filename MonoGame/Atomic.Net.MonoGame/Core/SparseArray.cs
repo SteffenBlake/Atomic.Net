@@ -3,12 +3,17 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Atomic.Net.MonoGame.Core;
 
+/// <summary>
+/// Thread-safe sparse array implementation using ReaderWriterLockSlim.
+/// Optimized for iteration over set values with O(1) access by index.
+/// </summary>
 public sealed class SparseArray<T> : IEnumerable<(uint Index, T Value)>
     where T : struct
 {
     private readonly T[] _sparse;
     private readonly int[] _denseIndices;
     private readonly List<(uint SparseIndex, T Value)> _dense;
+    private readonly ReaderWriterLockSlim _lock = new();
 
     public uint Capacity { get; }
 
@@ -25,10 +30,35 @@ public sealed class SparseArray<T> : IEnumerable<(uint Index, T Value)>
 
     public T this[uint index]
     {
-        get => _sparse[index];
+        get
+        {
+            _lock.EnterReadLock();
+            try
+            {
+                return _sparse[index];
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
     }
 
-    public T[] Values => _sparse;
+    public T[] Values
+    {
+        get
+        {
+            _lock.EnterReadLock();
+            try
+            {
+                return _sparse;
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
+    }
 
     public bool TryGetValue(
         uint index,
@@ -36,38 +66,79 @@ public sealed class SparseArray<T> : IEnumerable<(uint Index, T Value)>
         out T? value
     )
     {
-        if (_denseIndices[index] < 0)
+        _lock.EnterReadLock();
+        try
         {
-            value = null;
-            return false;
+            if (_denseIndices[index] < 0)
+            {
+                value = null;
+                return false;
+            }
+            value = _sparse[index];
+            return true;
         }
-        value = _sparse[index];
-        return true;
+        finally
+        {
+            _lock.ExitReadLock();
+        }
     }
 
-    public int Count => _dense.Count;
+    public int Count
+    {
+        get
+        {
+            _lock.EnterReadLock();
+            try
+            {
+                return _dense.Count;
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
+    }
 
-    public bool HasValue(uint index) => _denseIndices[index] >= 0;
+    public bool HasValue(uint index)
+    {
+        _lock.EnterReadLock();
+        try
+        {
+            return _denseIndices[index] >= 0;
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
+    }
 
     /// <summary>
     /// Sets a value at the given index.
     /// </summary>
     public void Set(uint index, T value)
     {
-        var denseIndex = _denseIndices[index];
-        if (denseIndex < 0)
+        _lock.EnterWriteLock();
+        try
         {
-            // Not set yet
-            _denseIndices[index] = _dense.Count;
-            _dense.Add((index, value));
-        }
-        else
-        {
-            // Overwrite existing value
-            _dense[denseIndex] = (index, value);
-        }
+            var denseIndex = _denseIndices[index];
+            if (denseIndex < 0)
+            {
+                // Not set yet
+                _denseIndices[index] = _dense.Count;
+                _dense.Add((index, value));
+            }
+            else
+            {
+                // Overwrite existing value
+                _dense[denseIndex] = (index, value);
+            }
 
-        _sparse[index] = value;
+            _sparse[index] = value;
+        }
+        finally
+        {
+            _lock.ExitWriteLock();
+        }
     }
 
     /// <summary>
@@ -77,15 +148,23 @@ public sealed class SparseArray<T> : IEnumerable<(uint Index, T Value)>
     /// </summary>
     public SparseRef<T> GetMut(uint index)
     {
-        if (_denseIndices[index] < 0)
+        _lock.EnterWriteLock();
+        try
         {
-            var value = default(T);
-            _denseIndices[index] = _dense.Count;
-            _dense.Add((index, value));
-            _sparse[index] = value;
-        }
+            if (_denseIndices[index] < 0)
+            {
+                var value = default(T);
+                _denseIndices[index] = _dense.Count;
+                _dense.Add((index, value));
+                _sparse[index] = value;
+            }
 
-        return new SparseRef<T>(_sparse, index, this);
+            return new SparseRef<T>(_sparse, index, this);
+        }
+        finally
+        {
+            _lock.ExitWriteLock();
+        }
     }
 
     /// <summary>
@@ -93,35 +172,51 @@ public sealed class SparseArray<T> : IEnumerable<(uint Index, T Value)>
     /// </summary>
     internal void SyncDense(uint index)
     {
-        var denseIndex = _denseIndices[index];
-        if (denseIndex < 0)
+        _lock.EnterWriteLock();
+        try
         {
-            return;
+            var denseIndex = _denseIndices[index];
+            if (denseIndex < 0)
+            {
+                return;
+            }
+            _dense[denseIndex] = (index, _sparse[index]);
         }
-        _dense[denseIndex] = (index, _sparse[index]);
+        finally
+        {
+            _lock.ExitWriteLock();
+        }
     }
 
     public bool Remove(uint index)
     {
-        // Lookup where this index lives in the dense array
-        var denseIndex = _denseIndices[index];
-        if (denseIndex < 0)
+        _lock.EnterWriteLock();
+        try
         {
-            // Not set yet
-            return false;
+            // Lookup where this index lives in the dense array
+            var denseIndex = _denseIndices[index];
+            if (denseIndex < 0)
+            {
+                // Not set yet
+                return false;
+            }
+
+            // Swap-remove: move last dense element into the removed slot
+            var last = _dense.Last();
+            _dense[denseIndex] = last;
+            _denseIndices[last.SparseIndex] = denseIndex;
+
+            // Remove the last slot and clear sparse tracking
+            _dense.RemoveAt(_dense.Count - 1);
+            _denseIndices[index] = -1;
+            _sparse[index] = default;
+
+            return true;
         }
-
-        // Swap-remove: move last dense element into the removed slot
-        var last = _dense.Last();
-        _dense[denseIndex] = last;
-        _denseIndices[last.SparseIndex] = denseIndex;
-
-        // Remove the last slot and clear sparse tracking
-        _dense.RemoveAt(_dense.Count - 1);
-        _denseIndices[index] = -1;
-        _sparse[index] = default;
-
-        return true;
+        finally
+        {
+            _lock.ExitWriteLock();
+        }
     }
 
     public bool TryPop(
@@ -131,51 +226,87 @@ public sealed class SparseArray<T> : IEnumerable<(uint Index, T Value)>
         out uint? index
     )
     {
-        if (_dense.Count == 0)
+        _lock.EnterWriteLock();
+        try
         {
-            value = null;
-            index = null;
-            return false;
+            if (_dense.Count == 0)
+            {
+                value = null;
+                index = null;
+                return false;
+            }
+
+            var lastIndex = _dense.Count - 1;
+            var (sparseIndex, val) = _dense[lastIndex];
+
+            value = val;
+            index = sparseIndex;
+
+            // Clear sparse tracking and remove from dense
+            _denseIndices[sparseIndex] = -1;
+            _sparse[sparseIndex] = default;
+            _dense.RemoveAt(lastIndex);
+
+            return true;
         }
-
-        var lastIndex = _dense.Count - 1;
-        var (sparseIndex, val) = _dense[lastIndex];
-
-        value = val;
-        index = sparseIndex;
-
-        // Clear sparse tracking and remove from dense
-        _denseIndices[sparseIndex] = -1;
-        _sparse[sparseIndex] = default;
-        _dense.RemoveAt(lastIndex);
-
-        return true;
+        finally
+        {
+            _lock.ExitWriteLock();
+        }
     }
 
     public void Clear()
     {
-        foreach (var (SparseIndex, _) in _dense)
+        _lock.EnterWriteLock();
+        try
         {
-            _sparse[SparseIndex] = default;
-            _denseIndices[SparseIndex] = -1;
+            foreach (var (SparseIndex, _) in _dense)
+            {
+                _sparse[SparseIndex] = default;
+                _denseIndices[SparseIndex] = -1;
+            }
+            _dense.Clear();
         }
-        _dense.Clear();
+        finally
+        {
+            _lock.ExitWriteLock();
+        }
     }
 
     public Enumerator GetEnumerator() => new(this);
 
     IEnumerator<(uint Index, T Value)> IEnumerable<(uint Index, T Value)>.GetEnumerator()
     {
-        return _dense.GetEnumerator();
+        // Thread-safe enumeration: take a snapshot under lock
+        _lock.EnterReadLock();
+        try
+        {
+            return _dense.ToList().GetEnumerator();
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
     }
 
     IEnumerator IEnumerable.GetEnumerator()
     {
-        return _dense.GetEnumerator();
+        // Thread-safe enumeration: take a snapshot under lock
+        _lock.EnterReadLock();
+        try
+        {
+            return _dense.ToList().GetEnumerator();
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
     }
 
     /// <summary>
     /// Struct enumerator to avoid allocation on foreach.
+    /// Note: For thread safety, prefer LINQ enumeration which uses IEnumerable interface.
+    /// This struct enumerator does NOT lock and should only be used when you know the array won't be modified.
     /// </summary>
     public struct Enumerator
     {

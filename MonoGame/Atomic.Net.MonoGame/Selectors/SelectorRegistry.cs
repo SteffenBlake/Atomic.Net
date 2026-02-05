@@ -17,7 +17,6 @@ public class SelectorRegistry :
     IEventHandler<PreBehaviorUpdatedEvent<TagsBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<TagsBehavior>>,
     IEventHandler<PreBehaviorRemovedEvent<TagsBehavior>>,
-    IEventHandler<ResetEvent>,
     IEventHandler<ShutdownEvent>
 {
     public static SelectorRegistry Instance { get; private set; } = null!;
@@ -367,11 +366,14 @@ public class SelectorRegistry :
         EventBus<PreBehaviorUpdatedEvent<TagsBehavior>>.Register(Instance);
         EventBus<PostBehaviorUpdatedEvent<TagsBehavior>>.Register(Instance);
         EventBus<PreBehaviorRemovedEvent<TagsBehavior>>.Register(Instance);
-        EventBus<ResetEvent>.Register(Instance);
         EventBus<ShutdownEvent>.Register(Instance);
     }
 
-    public void OnEvent(ResetEvent _)
+    /// <summary>
+    /// Resets scene partition by recalculating all selectors.
+    /// Called by ResetDriver during scene transitions.
+    /// </summary>
+    public void Reset()
     {
         // senior-dev: On Reset, recalc all selectors to update Matches for non-persistent entities
         // Scene entities (>= MaxGlobalEntities) are deactivated by EntityRegistry
@@ -401,7 +403,6 @@ public class SelectorRegistry :
         EventBus<PreBehaviorUpdatedEvent<TagsBehavior>>.Unregister(Instance);
         EventBus<PostBehaviorUpdatedEvent<TagsBehavior>>.Unregister(Instance);
         EventBus<PreBehaviorRemovedEvent<TagsBehavior>>.Unregister(Instance);
-        EventBus<ResetEvent>.Unregister(Instance);
         EventBus<ShutdownEvent>.Unregister(Instance);
     }
 
