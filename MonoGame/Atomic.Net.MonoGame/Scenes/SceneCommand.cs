@@ -14,7 +14,8 @@ public readonly partial struct SceneCommand
         MutCommand mut,
         SequenceStartCommand sequenceStart,
         SequenceStopCommand sequenceStop,
-        SequenceResetCommand sequenceReset
+        SequenceResetCommand sequenceReset,
+        SceneLoadCommand sceneLoad
     );
 
     /// <summary>
@@ -52,6 +53,11 @@ public readonly partial struct SceneCommand
                 return;
             }
             SequenceResetCmdDriver.Instance.Execute(entityIndex.Value, resetCommand.SequenceId);
+        }
+        else if (TryMatch(out SceneLoadCommand loadCommand))
+        {
+            // Scene load is global operation, no entity context needed
+            SceneLoadCmdDriver.Instance.Execute(loadCommand.ScenePath);
         }
     }
 }

@@ -33,6 +33,7 @@ public class SceneCommandConverter : JsonConverter<SceneCommand>
             "sequenceStart" => jsonNode.Deserialize<SequenceStartCommand>(options),
             "sequenceStop" => jsonNode.Deserialize<SequenceStopCommand>(options),
             "sequenceReset" => jsonNode.Deserialize<SequenceResetCommand>(options),
+            "sceneLoad" => jsonNode.Deserialize<SceneLoadCommand>(options),
             _ => null
         };
 
