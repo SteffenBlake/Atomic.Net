@@ -1,12 +1,8 @@
 using Atomic.Net.MonoGame.Hierarchy;
 using Atomic.Net.MonoGame.Ids;
-using Atomic.Net.MonoGame.Persistence;
-using Atomic.Net.MonoGame.Properties;
 using Atomic.Net.MonoGame.Scenes;
 using Atomic.Net.MonoGame.Selectors;
 using Atomic.Net.MonoGame.Sequencing;
-using Atomic.Net.MonoGame.Tags;
-using Atomic.Net.MonoGame.Transform;
 
 namespace Atomic.Net.MonoGame.Core;
 
@@ -30,7 +26,7 @@ public sealed class ResetDriver : ISingleton<ResetDriver>
 
     /// <summary>
     /// Resets scene partition across all registries.
-    /// Called by SceneManager on background thread during async scene loading.
+    /// Called by SceneManager on main thread before async scene loading.
     /// </summary>
     public void Run()
     {
@@ -47,19 +43,11 @@ public sealed class ResetDriver : ISingleton<ResetDriver>
         // Reset hierarchy registry (clear scene partition)
         HierarchyRegistry.Instance.Reset();
 
-        // Reset properties registry (clear scene partition)
-        PropertiesRegistry.Instance.Reset();
-
-        // Reset tags registry (clear scene partition)
-        TagRegistry.Instance.Reset();
-
-        // Reset transform registry (clear scene partition)
-        TransformRegistry.Instance.Reset();
-
-        // Reset database registry (clear scene partition)
-        DatabaseRegistry.Instance.Reset();
-
         // Reset entity ID registry (clear scene partition)
         EntityIdRegistry.Instance.Reset();
+        
+        // Note: PropertiesRegistry, TagRegistry, TransformRegistry, and DatabaseRegistry
+        // have no Reset() methods - they clean up automatically via PreBehaviorRemovedEvent
+        // when scene entities are deactivated by EntityRegistry.Reset()
     }
 }

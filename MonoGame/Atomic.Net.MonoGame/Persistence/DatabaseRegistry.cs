@@ -399,15 +399,4 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
 
         return doc != null;
     }
-
-    /// <summary>
-    /// Resets scene partition. Database records are automatically cleaned up through
-    /// behavior removal events when entities are deactivated by EntityRegistry.
-    /// Called by ResetDriver during scene transitions.
-    /// </summary>
-    public void Reset()
-    {
-        // No-op: Database records are cleaned up automatically via PreBehaviorRemovedEvent
-        // when scene entities are deactivated by EntityRegistry.Reset()
-    }
 }

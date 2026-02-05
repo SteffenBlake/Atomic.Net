@@ -254,15 +254,4 @@ public sealed class TransformRegistry :
     public void OnEvent(BehaviorAddedEvent<ParentBehavior> e) => MarkDirty(e.Entity);
     public void OnEvent(PostBehaviorUpdatedEvent<ParentBehavior> e) => MarkDirty(e.Entity);
     public void OnEvent(PreBehaviorRemovedEvent<ParentBehavior> e) => MarkDirty(e.Entity);
-
-    /// <summary>
-    /// Resets scene partition. Transforms are automatically cleaned up through
-    /// behavior removal events when entities are deactivated by EntityRegistry.
-    /// Called by ResetDriver during scene transitions.
-    /// </summary>
-    public void Reset()
-    {
-        // No-op: Transforms are cleaned up automatically via PreBehaviorRemovedEvent
-        // when scene entities are deactivated by EntityRegistry.Reset()
-    }
 }
