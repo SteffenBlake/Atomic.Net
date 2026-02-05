@@ -43,6 +43,11 @@ public partial class FlexRegistry :
         Constants.MaxSceneEntities
     );
 
+    private readonly PartitionedSparseArray<bool> _flexTreeDirty = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
+
     /// <summary>
     /// Ensures a flex node exists for the entity and marks it dirty.
     /// Returns the node for further configuration.
@@ -60,16 +65,61 @@ public partial class FlexRegistry :
 
     public void Recalculate()
     {
-        // Recalculate global partition
+        // First, update flex tree for any entities that had parent changes
+        foreach (var (index, _) in _flexTreeDirty.Global)
+        {
+            UpdateFlexTreeForEntity((ushort)index);
+        }
+        foreach (var (index, _) in _flexTreeDirty.Scene)
+        {
+            UpdateFlexTreeForEntity((uint)index);
+        }
+        _flexTreeDirty.Global.Clear();
+        _flexTreeDirty.Scene.Clear();
+
+        // Then recalculate layout for dirty nodes
         foreach (var (index, _) in _dirty.Global)
         {
             RecalculateNode((ushort)index);
         }
-
-        // Recalculate scene partition
         foreach (var (index, _) in _dirty.Scene)
         {
             RecalculateNode((uint)index);
+        }
+    }
+
+    private void UpdateFlexTreeForEntity(PartitionIndex entityIndex)
+    {
+        var entity = EntityRegistry.Instance[entityIndex];
+        
+        if (!entity.Active || !entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
+        if (!_nodes.TryGetValue(entityIndex, out var myNode) || myNode is null)
+        {
+            return;
+        }
+
+        // Remove from any current parent first (if it exists)
+        RemoveFromParentFlexTree(entity);
+
+        // Then add to new parent if it has FlexBehavior
+        if (entity.TryGetParent(out var parent) && parent.Value.HasBehavior<FlexBehavior>())
+        {
+            if (_nodes.TryGetValue(parent.Value.Index, out var parentNode) && parentNode is not null)
+            {
+                try
+                {
+                    parentNode.AddChild(myNode);
+                    _dirty.Set(parent.Value.Index, true);
+                }
+                catch
+                {
+                    // Already added or other issue - that's fine
+                }
+            }
         }
     }
 
@@ -193,43 +243,39 @@ public partial class FlexRegistry :
             _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode();
         }
         _dirty.Set(e.Entity.Index, true);
+        _flexTreeDirty.Set(e.Entity.Index, true); // Mark for flex tree update
 
         // Ensure TransformBehavior exists for flex entities
         if (!e.Entity.HasBehavior<TransformBehavior>())
         {
             e.Entity.SetBehavior<TransformBehavior>(static (ref _) => { });
         }
-
-        // Try to add to parent's flex tree (will succeed if parent already has FlexBehavior)
-        UpdateFlexTreeRelationship(e.Entity);
     }
 
     public void OnEvent(BehaviorAddedEvent<ParentBehavior> e)
     {
-        // If this entity has FlexBehavior, add it to parent's flex tree
+        // If this entity has FlexBehavior, mark for flex tree update
         if (e.Entity.HasBehavior<FlexBehavior>())
         {
-            UpdateFlexTreeRelationship(e.Entity);
+            _flexTreeDirty.Set(e.Entity.Index, true);
         }
     }
 
     public void OnEvent(PostBehaviorUpdatedEvent<ParentBehavior> e)
     {
-        // If this entity has FlexBehavior, update its position in parent's flex tree
+        // If this entity has FlexBehavior, mark for flex tree update
         if (e.Entity.HasBehavior<FlexBehavior>())
         {
-            // Remove from old parent and add to new parent
-            RemoveFromParentFlexTree(e.Entity);
-            UpdateFlexTreeRelationship(e.Entity);
+            _flexTreeDirty.Set(e.Entity.Index, true);
         }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<ParentBehavior> e)
     {
-        // Remove from parent's flex tree before parent is removed
+        // If this entity has FlexBehavior, mark for flex tree update
         if (e.Entity.HasBehavior<FlexBehavior>())
         {
-            RemoveFromParentFlexTree(e.Entity);
+            _flexTreeDirty.Set(e.Entity.Index, true);
         }
     }
 
@@ -255,69 +301,6 @@ public partial class FlexRegistry :
                     // Not in parent - that's fine
                 }
             }
-        }
-    }
-
-    private void UpdateFlexTreeRelationship(Entity entity)
-    {
-        if (!_nodes.TryGetValue(entity.Index, out var myNode) || myNode is null)
-        {
-            return;
-        }
-
-        // Only add to parent if both have FlexBehavior
-        if (!entity.TryGetParent(out var parent) || !parent.Value.HasBehavior<FlexBehavior>())
-        {
-            return;
-        }
-
-        if (!_nodes.TryGetValue(parent.Value.Index, out var parentNode) || parentNode is null)
-        {
-            return;
-        }
-
-        // Check if child is already in parent to avoid duplicate insertion
-        var maxChildren = 100; // Reasonable safety limit
-        for (var i = 0; i < maxChildren; i++)
-        {
-            try
-            {
-                if (parentNode.GetChild(i) == myNode)
-                {
-                    // Already in parent, don't re-insert
-                    return;
-                }
-            }
-            catch
-            {
-                // Reached end of children
-                break;
-            }
-        }
-
-        // Not in parent yet, insert at end
-        var childCount = 0;
-        for (var i = 0; i < maxChildren; i++)
-        {
-            try
-            {
-                _ = parentNode.GetChild(i);
-                childCount++;
-            }
-            catch
-            {
-                break;
-            }
-        }
-
-        try
-        {
-            parentNode.InsertChild(myNode, childCount);
-            _dirty.Set(parent.Value.Index, true);
-        }
-        catch
-        {
-            // Insert failed - already there or other issue
         }
     }
 
