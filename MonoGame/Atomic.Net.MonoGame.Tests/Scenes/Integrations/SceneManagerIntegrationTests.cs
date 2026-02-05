@@ -238,8 +238,9 @@ public sealed class SceneManagerIntegrationTests : IDisposable
         }
 
         // Assert - Should have error about capacity exceeded
-        // This test demonstrates the BUG: ErrorEvents pushed from background thread
-        // (by RuleRegistry.TryActivate when capacity is exceeded) don't bubble up properly
+        // This test verifies the FIX: ErrorEvents pushed from background thread
+        // (by RuleRegistry.TryActivate when capacity is exceeded) properly bubble up
+        // via BackgroundErrorHandler queue mechanism
         _output.WriteLine($"Error count: {_errorLogger.Errors.Count}");
         foreach (var error in _errorLogger.Errors)
         {
@@ -300,8 +301,9 @@ public sealed class SceneManagerIntegrationTests : IDisposable
         }
 
         // Assert - Should have error about capacity exceeded
-        // This test demonstrates the BUG: ErrorEvents pushed from background thread
-        // (by SequenceRegistry.TryActivate when capacity is exceeded) don't bubble up properly
+        // This test verifies the FIX: ErrorEvents pushed from background thread
+        // (by SequenceRegistry.TryActivate when capacity is exceeded) properly bubble up
+        // via BackgroundErrorHandler queue mechanism
         _output.WriteLine($"Error count: {_errorLogger.Errors.Count}");
         foreach (var error in _errorLogger.Errors)
         {

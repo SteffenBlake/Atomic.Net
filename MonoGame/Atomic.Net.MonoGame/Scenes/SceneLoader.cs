@@ -88,11 +88,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
         try
         {
-            // CRITICAL: Scene deserialization is ATOMIC - if ANY entity fails to deserialize
-            // (e.g., invalid tags, duplicate properties, invalid JSON), the ENTIRE scene
-            // deserialization fails and throws JsonException.
-            // This is correct behavior for background thread loading - SceneManager catches
-            // JsonException and converts it to ErrorEvent via error queue mechanism.
+            // Scene deserialization is atomic - JsonException caught and converted to ErrorEvent
             scene = JsonSerializer.Deserialize<JsonScene>(
                 jsonText, _serializerOptions
             ) ?? new();
