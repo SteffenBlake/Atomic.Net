@@ -118,11 +118,24 @@ public sealed class SceneManager : ISingleton<SceneManager>
         LoadingProgress = 0.0f;
 
         // Start background task (only for file I/O and JSON parsing)
-        Task.Run(() => LoadSceneAsync(scenePath));
+        Task.Run(async () =>
+        {
+            try
+            {
+                await LoadSceneAsync(scenePath);
+            }
+            catch (Exception ex)
+            {
+                QueueError($"[FATAL] Unhandled exception in LoadSceneAsync: {ex.Message}\nStack: {ex.StackTrace}");
+                ReturnToIdle();
+            }
+        });
     }
 
     private async Task LoadSceneAsync(string scenePath)
     {
+        QueueError($"[DEBUG] LoadSceneAsync started for path: {scenePath}");
+        
         // senior-dev: THREAD SAFETY ANALYSIS - EntityRegistry.Activate() and Entity Spawning
         //
         // CORE ISSUE: EntityRegistry.Activate() is NOT thread-safe for concurrent calls from
@@ -207,6 +220,8 @@ public sealed class SceneManager : ISingleton<SceneManager>
         //
         try
         {
+            QueueError($"[DEBUG] Entering try block");
+            
             // Check if file exists
             if (!File.Exists(scenePath))
             {
@@ -214,23 +229,24 @@ public sealed class SceneManager : ISingleton<SceneManager>
                 ReturnToIdle();
                 return;
             }
+            
+            QueueError($"[DEBUG] File exists");
 
             // Get file size for progress tracking
             var fileInfo = new FileInfo(scenePath);
             Interlocked.Exchange(ref _totalBytes, fileInfo.Length);
+            
+            QueueError($"[DEBUG] File size: {fileInfo.Length} bytes");
 
             // Read and deserialize JSON
             JsonScene? scene;
             try
             {
+                QueueError($"[DEBUG] Opening file stream");
                 using var fileStream = new FileStream(scenePath, FileMode.Open, FileAccess.Read);
-                var progress = new Progress<StreamProgressEvent>(evt =>
-                {
-                    Interlocked.Exchange(ref _bytesRead, evt.TotalBytesRead);
-                });
-
-                using var progressStream = new ProgressTrackingStream(fileStream, progress);
-                scene = await JsonSerializer.DeserializeAsync<JsonScene>(progressStream, _serializerOptions);
+                
+                QueueError($"[DEBUG] Deserializing JSON directly (no progress stream)");
+                scene = await JsonSerializer.DeserializeAsync<JsonScene>(fileStream, _serializerOptions);
 
                 if (scene == null)
                 {
@@ -238,6 +254,8 @@ public sealed class SceneManager : ISingleton<SceneManager>
                     ReturnToIdle();
                     return;
                 }
+                
+                QueueError($"[DEBUG] Deserialized scene successfully");
             }
             catch (JsonException ex)
             {
@@ -254,12 +272,15 @@ public sealed class SceneManager : ISingleton<SceneManager>
             // Spawn entities
             if (scene.Entities != null)
             {
+                QueueError($"[DEBUG] Spawning {scene.Entities.Count} entities");
                 foreach (var jsonEntity in scene.Entities)
                 {
                     try
                     {
                         var entity = EntityRegistry.Instance.Activate();
+                        QueueError($"[DEBUG] Activated entity {entity.Index}");
                         jsonEntity.WriteToEntity(entity);
+                        QueueError($"[DEBUG] Wrote behaviors to entity {entity.Index}");
                     }
                     catch (Exception ex)
                     {
@@ -272,6 +293,10 @@ public sealed class SceneManager : ISingleton<SceneManager>
                         Interlocked.Increment(ref _entitiesLoaded);
                     }
                 }
+            }
+            else
+            {
+                QueueError($"[DEBUG] scene.Entities is null");
             }
 
             // Load rules
@@ -297,6 +322,7 @@ public sealed class SceneManager : ISingleton<SceneManager>
             HierarchyRegistry.Instance.Recalc();
 
             // Request GC on main thread
+            QueueError($"[DEBUG] Loading complete, requesting GC");
             Interlocked.Exchange(ref _gcRequested, 1);
         }
         catch (Exception ex)
@@ -337,6 +363,10 @@ public sealed class SceneManager : ISingleton<SceneManager>
 
             // Set loading to false (transition complete)
             Interlocked.Exchange(ref _isLoading, 0);
+            
+            // Check how many entities are active
+            var activeCount = EntityRegistry.Instance.GetActiveSceneEntities().Count();
+            QueueError($"[DEBUG] GC complete, active scene entities: {activeCount}");
 
             // Reset progress to 1.0
             LoadingProgress = 1.0f;
