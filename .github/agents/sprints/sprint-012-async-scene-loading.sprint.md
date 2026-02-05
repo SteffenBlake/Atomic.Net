@@ -112,9 +112,9 @@ LoadingProgress = 0.66f * fileProgress + 0.33f * entityProgress;
 ```
 
 **Error Handling:**
-- File not found: Push `ErrorEvent`, set `IsLoading = false`, `LoadingProgress = 1.0`
-- JSON parse error: Push `ErrorEvent`, set `IsLoading = false`, `LoadingProgress = 1.0`
-- Exception during entity spawning: Push `ErrorEvent`, set `IsLoading = false`, `LoadingProgress = 1.0`
+- File not found: Queue `ErrorEvent` to main thread via Interlocked, set `IsLoading = false`, `LoadingProgress = 1.0`
+- JSON parse error: Queue `ErrorEvent` to main thread via Interlocked, set `IsLoading = false`, `LoadingProgress = 1.0`
+- Exception during entity spawning: Queue `ErrorEvent` to main thread via Interlocked (do NOT halt loading), continue loading remaining entities, include failing entity's JSON body in error message
 
 #### 2. SceneLoadCommand
 
@@ -152,8 +152,9 @@ public void Execute(SceneLoadCommand command)
 ```
 
 **Integration:**
-- Called from `RulesDriver` when processing `SceneLoadCommand` variant
-- Called from `SequenceDriver` when processing `SceneLoadCommand` in `do` steps
+- Called via `SceneCommand.Execute()` when processing `SceneLoadCommand` variant
+- `RulesDriver` calls `rule.Do.Execute(entityJsonNode, _ruleContext)` which dispatches to `SceneCommand.Execute()`
+- `SequenceDriver` calls `step.Do.Execute(entityJsonNode, _context)` which dispatches to `SceneCommand.Execute()`
 
 #### 4. World Context Updates
 
@@ -221,53 +222,53 @@ public void Execute(SceneLoadCommand command)
 **Technical Approach:**
 The existing `SceneLoader` performs all work synchronously. To support async loading with progress tracking, we need:
 
-1. **Chunk-based file reading:** Use `FileStream` with buffer to read file in chunks (e.g., 8KB chunks)
-   - Update `_bytesRead` after each chunk via `Interlocked.Add`
-   - This provides granular progress during file I/O
+1. **ProgressStream for file reading:** Use existing `ProgressStream` wrapper around `FileStream`
+   - Remove timestamp tracking (only report bytes read)
+   - Update `_bytesRead` via `IProgress<long>` callback
+   - Pass to `JsonSerializer.DeserializeAsync` which handles chunking automatically
 
 2. **Entity spawning on background thread:**
-   - DISCOVERY: Benchmark shows entity spawning takes ~63% of load time
-   - Must marshal entity spawning work to background thread
-   - **CRITICAL CONSTRAINT:** Many Unity/MonoGame APIs are main-thread-only
-   - **SOLUTION:** JSON parsing and deserialization can happen on background thread
-   - Entity creation (EntityRegistry.Activate) must happen on background thread as well
-   - Behavior application (SetBehavior calls) can happen on background thread
-   - **RISK:** If MonoGame textures/assets are loaded during entity spawning, this will fail
-   - **MITIGATION:** For this sprint, assume entities are data-only (no texture loading)
-   - Future work: If texture loading is needed, defer it to main thread after background work completes
+   - JSON parsing and deserialization happen on background thread via `DeserializeAsync`
+   - Entity creation (EntityRegistry.Activate) happens on background thread
+   - Behavior application (SetBehavior calls) happens on background thread
+   - **CRITICAL:** If entity spawning fails, queue ErrorEvent (with entity JSON body) to main thread, continue loading remaining entities
 
 3. **Progress tracking pattern:**
    ```csharp
    // In background thread
-   var fileStream = new FileStream(scenePath, FileMode.Open, FileAccess.Read);
+   using var fileStream = new FileStream(scenePath, FileMode.Open, FileAccess.Read);
    var totalBytes = fileStream.Length;
    Interlocked.Exchange(ref _totalBytes, totalBytes);
    
-   var buffer = new byte[8192]; // 8KB chunks
-   var bytesRead = 0L;
-   int readCount;
-   using var memoryStream = new MemoryStream();
-   while ((readCount = await fileStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+   var progress = new Progress<long>(bytesRead => 
    {
-       memoryStream.Write(buffer, 0, readCount);
-       bytesRead += readCount;
        Interlocked.Exchange(ref _bytesRead, bytesRead);
-   }
+   });
    
-   // Parse JSON
-   var jsonText = Encoding.UTF8.GetString(memoryStream.ToArray());
-   var scene = JsonSerializer.Deserialize<JsonScene>(jsonText, _serializerOptions);
+   using var progressStream = new ProgressStream(fileStream, progress);
+   var scene = await JsonSerializer.DeserializeAsync<JsonScene>(progressStream, _serializerOptions);
    
    // Set total entities
    Interlocked.Exchange(ref _totalEntities, scene.Entities.Count);
    
    // Spawn entities
-   var entitiesLoaded = 0;
    foreach (var jsonEntity in scene.Entities)
    {
-       var entity = EntityRegistry.Instance.Activate();
-       jsonEntity.WriteToEntity(entity);
-       Interlocked.Increment(ref _entitiesLoaded);
+       try
+       {
+           var entity = EntityRegistry.Instance.Activate();
+           jsonEntity.WriteToEntity(entity);
+       }
+       catch (Exception ex)
+       {
+           // Queue error to main thread (include entity JSON body)
+           QueueErrorEvent($"Failed to spawn entity: {ex.Message}\nEntity JSON: {jsonEntity.ToJsonString()}");
+           // Continue loading remaining entities
+       }
+       finally
+       {
+           Interlocked.Increment(ref _entitiesLoaded);
+       }
    }
    
    // Load rules and sequences
@@ -328,23 +329,26 @@ The existing `SceneLoader` performs all work synchronously. To support async loa
    }
    ```
 
-#### 6. Scene Partition Clearing
+#### 6. Scene Partition Clearing and ResetDriver
 
 **Existing Pattern:**
 - `EntityRegistry` responds to `ResetEvent` to clear scene partition
 - `RuleRegistry` responds to `ResetEvent` to clear scene partition
 - `SequenceRegistry` responds to `ResetEvent` to clear scene partition
+- `ResetEvent` is a temporary mock that needs to be deleted
 
 **New Requirement:**
-- SceneManager must clear scene partition before starting background load
-- **SOLUTION:** SceneManager calls `EventBus<ResetEvent>.Push(new())` on background thread
-- **RISK:** EventBus may not be thread-safe
-- **MITIGATION:** Review EventBus implementation for thread safety; if not safe, marshal ResetEvent to main thread
-- **ALTERNATIVE:** SceneManager directly calls registry clear methods (breaks encapsulation, not recommended)
+- Create `ResetDriver` singleton that directly invokes `Reset()` methods on all registries
+- All registries expose public `Reset()` method that clears scene partition only
+- SceneManager calls `ResetDriver.Instance.Run()` on background thread
+- All test files change from `EventBus<ResetEvent>.Push(new())` to `ResetDriver.Instance.Run()`
 
-**Recommended Approach:**
-- Assume EventBus is thread-safe (uses ConcurrentQueue or similar)
-- If tests reveal thread safety issues, address in EventBus implementation (out of scope for this sprint)
+**Migration Steps:**
+1. Create `ResetDriver` singleton with `Run()` method
+2. Add public `Reset()` method to `EntityRegistry`, `RuleRegistry`, `SequenceRegistry`, `SelectorRegistry`, `HierarchyRegistry`, `PropertiesRegistry`, `TagRegistry`, `TransformRegistry`, `DatabaseRegistry`
+3. `ResetDriver.Run()` calls `Reset()` on all registries in correct order
+4. Remove `ResetEvent` struct and all `IEventHandler<ResetEvent>` implementations
+5. Update all test files to use `ResetDriver.Instance.Run()` instead of `EventBus<ResetEvent>.Push(new())`
 
 #### 7. Initialization
 
@@ -359,25 +363,26 @@ The existing `SceneLoader` performs all work synchronously. To support async loa
 ### Integration Points
 
 #### Event Handling
-- `ResetEvent` → clears scene partition (EntityRegistry, RuleRegistry, SequenceRegistry)
-- `ErrorEvent` → pushed on file not found, parse error, or load failure
+- `ResetDriver.Run()` → clears scene partition (called directly on all registries)
+- `ErrorEvent` → queued to main thread via Interlocked, pushed on main thread during `Update()`
 
 #### Command Execution Flow
 1. Rule evaluates → `{ "sceneLoad": "Content/Scenes/level1.json" }` command
-2. `RulesDriver` → `SceneLoadCmdDriver.Execute(command)`
-3. `SceneLoadCmdDriver` → `SceneManager.LoadScene(scenePath)`
-4. `SceneManager` → starts background task, sets `IsLoading = true`
-5. Background task → loads scene, updates progress counters
-6. Main thread (each frame) → reads `SceneManager.IsLoading` and `LoadingProgress`
-7. Main thread → `RulesDriver` and `SequenceDriver` expose `world.loading` and `world.sceneLoadProgress`
-8. Global scene rules → check `world.loading` to show loading UI, update progress bar
-9. Background task completes → requests GC
-10. Main thread → executes GC, sets `IsLoading = false`
+2. `RulesDriver` calls `rule.Do.Execute(entityJsonNode, _ruleContext)`
+3. `SceneCommand.Execute()` matches `SceneLoadCommand` and calls `SceneLoadCmdDriver.Instance.Execute(command)`
+4. `SceneLoadCmdDriver` → `SceneManager.LoadScene(scenePath)`
+5. `SceneManager` → starts background task, sets `IsLoading = true`
+6. Background task → loads scene, updates progress counters
+7. Main thread (each frame) → reads `SceneManager.IsLoading` and `LoadingProgress`
+8. Main thread → `RulesDriver` and `SequenceDriver` expose `world.loading` and `world.sceneLoadProgress` (when `world.loading` is true)
+9. Global scene rules → check `world.loading` to show loading UI, update progress bar
+10. Background task completes → requests GC
+11. Main thread → executes GC, sets `IsLoading = false`
 
 #### Driver Integration
-- `RulesDriver.RunFrame()` must read `SceneManager.Instance.IsLoading` and `LoadingProgress` each frame
+- `RulesDriver.RunFrame()` must read `SceneManager.Instance.IsLoading` and `LoadingProgress` each frame (when `IsLoading` is true)
 - Add to `_ruleContext["world"]` as `loading` (bool) and `sceneLoadProgress` (float)
-- `SequenceDriver` must read same values and add to all step contexts
+- `SequenceDriver` must read same values and add to all step contexts (when `IsLoading` is true)
 
 ### Performance Considerations
 
@@ -393,10 +398,9 @@ The existing `SceneLoader` performs all work synchronously. To support async loa
 - `Interlocked.Exchange`, `Interlocked.Add`, `Interlocked.Increment`, `Interlocked.Read`
 
 #### Async Performance
-- **Benefit:** ~37% of load time (JSON parsing) can run on background thread (see DISCOVERIES.md)
-- **Limitation:** ~63% of load time (entity spawning) must run on main thread due to MonoGame constraints
-- **Result:** Main thread gains ~19ms per 1000 entities during file I/O phase
-- **Trade-off:** Adds async complexity for moderate benefit; justified by smooth loading UX
+- **Benefit:** 66% of load time (JSON parsing) can run on background thread (per non-technical requirements)
+- **Result:** Main thread unblocked during file I/O and deserialization phase
+- **Trade-off:** Adds async complexity; justified by smooth loading UX
 
 #### GC Strategy
 - **Forced GC after load:** Prevents GC pauses during gameplay
@@ -434,10 +438,11 @@ The existing `SceneLoader` performs all work synchronously. To support async loa
    - Act: Call `SceneManager.LoadScene(corruptPath)`
    - Assert: `ErrorEvent` pushed, `IsLoading = false`, `LoadingProgress = 1.0`
 
-5. **LoadScene_ProgressTracking_AccurateValues**
+5. **LoadScene_ProgressTracking_AccurateValues** (if possible)
    - Arrange: Scene file with known byte size and entity count
    - Act: Load scene, capture progress at multiple points
    - Assert: Progress follows formula `0.66 * fileProgress + 0.33 * entityProgress`
+   - NOTE: This test may be challenging to implement reliably; mark as "if possible"
 
 6. **LoadScene_ClearsScenePartition_BeforeLoad**
    - Arrange: Load scene1 with entities/rules/sequences
@@ -451,7 +456,7 @@ The existing `SceneLoader` performs all work synchronously. To support async loa
    - Assert: Rule correctly reads loading state and progress values
 
 **Test Fixtures:**
-- `Scenes/Fixtures/large-scene-5k.json` - 5000 entities for async load testing
+- `Scenes/Fixtures/large-scene-10k.json` - 10000+ entities for async load testing (must be large enough to ensure non-blocking behavior)
 - `Scenes/Fixtures/scene1.json` - Basic scene with entities/rules
 - `Scenes/Fixtures/scene2.json` - Different scene for transition testing
 - `Scenes/Fixtures/corrupt-scene.json` - Malformed JSON for error testing
@@ -475,18 +480,22 @@ The existing `SceneLoader` performs all work synchronously. To support async loa
 - [ ] Handle errors (file not found, parse error) with ErrorEvent and state reset
 
 ### Phase 2: Async Scene Loading Logic
-- [ ] Implement chunk-based file reading with progress tracking
+- [ ] Create `ProgressStream` wrapper (remove timestamp, only track bytes read)
+- [ ] Implement async file reading with `ProgressStream` and `JsonSerializer.DeserializeAsync`
 - [ ] Implement entity spawning on background thread with progress tracking
+- [ ] Implement error queuing mechanism (background → main thread) for entity spawn failures
 - [ ] Implement GC request mechanism (background → main thread coordination)
-- [ ] Ensure scene partition clearing before load (ResetEvent)
+- [ ] Create `ResetDriver` singleton with `Run()` method
+- [ ] Add public `Reset()` methods to all registries (EntityRegistry, RuleRegistry, SequenceRegistry, etc.)
+- [ ] Remove `ResetEvent` struct and `IEventHandler<ResetEvent>` implementations
+- [ ] Update all test files to use `ResetDriver.Instance.Run()` instead of `EventBus<ResetEvent>.Push(new())`
 
 ### Phase 3: Command Integration
 - [ ] Create `SceneLoadCommand` struct
 - [ ] Update `SceneCommand` variant to include `SceneLoadCommand`
 - [ ] Update `SceneCommandConverter` to deserialize `sceneLoad` field
 - [ ] Create `SceneLoadCmdDriver` to execute scene load command
-- [ ] Update `RulesDriver` to handle `SceneLoadCommand` variant
-- [ ] Update `SequenceDriver` to handle `SceneLoadCommand` in `do` steps
+- [ ] Update `SceneCommand.Execute()` to handle `SceneLoadCommand` variant and call `SceneLoadCmdDriver`
 
 ### Phase 4: World Context Updates
 - [ ] Update `RulesDriver._ruleContext` to include `world.loading` and `world.sceneLoadProgress`
@@ -499,12 +508,12 @@ The existing `SceneLoader` performs all work synchronously. To support async loa
 
 ### Phase 6: Testing
 - [ ] Create `SceneManagerIntegrationTests.cs` with full test suite
-- [ ] Create test fixtures: large-scene-5k.json, scene1.json, scene2.json, corrupt-scene.json, global-loading-scene.json
+- [ ] Create test fixtures: large-scene-10k.json, scene1.json, scene2.json, corrupt-scene.json, global-loading-scene.json
 - [ ] Write test: LoadScene_WithValidPath_LoadsSceneInBackground
 - [ ] Write test: LoadScene_DuringLoad_GlobalRuleExecutes (proves non-blocking)
 - [ ] Write test: LoadScene_WithFileNotFound_ReturnsToIdleState
 - [ ] Write test: LoadScene_WithCorruptJSON_ReturnsToIdleState
-- [ ] Write test: LoadScene_ProgressTracking_AccurateValues
+- [ ] Write test: LoadScene_ProgressTracking_AccurateValues (if possible)
 - [ ] Write test: LoadScene_ClearsScenePartition_BeforeLoad
 - [ ] Write test: WorldContext_ExposesLoadingState_ToRules
 
@@ -513,27 +522,28 @@ The existing `SceneLoader` performs all work synchronously. To support async loa
 ## Notes for Implementation
 
 ### Error Handling
-- All errors should push `ErrorEvent` with descriptive messages
+- All errors should queue `ErrorEvent` to main thread via Interlocked mechanism
+- ErrorEvents are pushed on main thread during `SceneManager.Update()`
 - After error, immediately set `IsLoading = false`, `LoadingProgress = 1.0`
 - File not found → "Scene file not found: '{scenePath}'"
 - JSON parse error → "Failed to parse scene JSON: {scenePath} - {exception.Message}"
-- Entity spawn error → "Failed to spawn entity during scene load: {exception.Message}"
+- Entity spawn error → "Failed to spawn entity during scene load: {exception.Message}\nEntity JSON: {jsonEntity.ToJsonString()}" (continue loading remaining entities)
 
 ### Edge Cases
 - **Concurrent LoadScene calls:** First load still in progress, second call made
   - **Solution:** Check `IsLoading` flag; if true, push `ErrorEvent` and return
-  - Alternative: Queue second load (out of scope for this sprint)
 - **LoadScene on empty/zero-entity scene:** Handle divide-by-zero in progress calculation
   - **Solution:** Check `totalEntities > 0` before dividing
 - **LoadScene canceled mid-load:** User exits game or triggers new load
   - **Solution:** Out of scope for this sprint; future work (cancellation tokens)
 
 ### Thread Safety Considerations
-- **EventBus:** Assume thread-safe (uses concurrent collections internally)
+- **ResetDriver:** Called directly on background thread; registries must be thread-safe for `Reset()` calls
 - **EntityRegistry:** Review for thread safety in `Activate()` method
   - **Risk:** SparseArray may not be thread-safe for concurrent writes
-  - **Mitigation:** If issues found, marshal entity spawning to main thread (fallback approach)
+  - **Mitigation:** Ensure thread safety; this is critical for async loading
 - **Progress counters:** Use `Interlocked` for all reads and writes
+- **Error queuing:** Use Interlocked-based queue mechanism to marshal ErrorEvents to main thread
 
 ### Alignment with Existing Patterns
 - Use `ISingleton<T>` for `SceneManager`
@@ -543,23 +553,22 @@ The existing `SceneLoader` performs all work synchronously. To support async loa
 - Reuse `EventBus<ErrorEvent>` for error reporting
 
 ### Performance Expectations
-- Loading a 1000-entity scene should block main thread for <35ms (down from ~52ms)
+- Loading a 1000-entity scene should be non-blocking for main thread during file I/O and JSON parsing
 - Main thread should be able to render frames and execute rules during file I/O phase
 - Progress should update smoothly (not jump from 0 to 1.0 instantly)
-- At least 2-3 rule executions should occur during load of large scene (5000+ entities)
+- At least 2-3 rule executions should occur during load of large scene (10000+ entities)
 
 ### Future Extensibility
 - **Cancellation support:** Add `CancellationToken` parameter to `LoadScene()` (out of scope)
-- **Scene queuing:** Queue multiple scene loads (out of scope)
 - **Streaming entity spawning:** Spawn entities incrementally over multiple frames (out of scope)
 - **Texture loading:** Defer texture/asset loading to main thread (out of scope; assume data-only entities for now)
 - **Progress callbacks:** Fire `SceneLoadProgressEvent` for UI updates (out of scope; use world context instead)
 
 ### CRITICAL: Thread Safety Verification
 Before finalizing implementation, verify that:
-1. `EntityRegistry.Activate()` is thread-safe (or can be made so)
-2. `EventBus<T>.Push()` is thread-safe (or can be made so)
-3. If either is not thread-safe, fallback to main-thread-only loading with chunked entity spawning
+1. `EntityRegistry.Activate()` is thread-safe for concurrent calls from background thread
+2. All registries' `Reset()` methods are thread-safe for calls from background thread
+3. Error queuing mechanism properly marshals ErrorEvents to main thread via Interlocked
 
 ### GC Strategy Rationale
 - **Why force GC:** Scene loading allocates JSON parsing buffers, intermediate objects
