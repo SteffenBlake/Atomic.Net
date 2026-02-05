@@ -12,7 +12,7 @@ namespace Atomic.Net.MonoGame.Tests.Tags.Units;
 public sealed class TagRegistryUnitTests : IDisposable
 {
     private readonly ErrorEventLogger _errorLogger;
-    
+
     public TagRegistryUnitTests(ITestOutputHelper output)
     {
         _errorLogger = new ErrorEventLogger(output);

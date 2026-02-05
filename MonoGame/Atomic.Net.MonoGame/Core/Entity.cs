@@ -33,7 +33,7 @@ public readonly struct Entity(PartitionIndex index)
     /// Deactivates this entity.
     /// </summary>
     public void Deactivate() => EntityRegistry.Instance.Deactivate(this);
-    
+
     /// <summary>
     /// Enables this entity.
     /// </summary>

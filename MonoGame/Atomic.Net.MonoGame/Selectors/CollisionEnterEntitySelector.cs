@@ -13,9 +13,9 @@ public class CollisionEnterEntitySelector(
     );
 
     private bool _dirty = true;
-    
+
     public override int GetHashCode() => hashcode;
-    
+
     public override string ToString()
     {
         var builder = new StringBuilder();
@@ -46,7 +46,7 @@ public class CollisionEnterEntitySelector(
             // senior-dev: Reset dirty flag even though implementation is pending
             // Stage 1: parsing only, no actual collision matching yet
             _dirty = false;
-            
+
             // senior-dev: In Stage 1, we just clear matches and return
             // Collision registry will be implemented in Stage 2
             Matches.Global.Clear();

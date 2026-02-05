@@ -35,7 +35,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
     {
         // Clean up entities and database between tests
         EventBus<ShutdownEvent>.Push(new());
-        
+
         DatabaseRegistry.Instance.Shutdown();
         if (File.Exists(_dbPath))
         {
@@ -57,7 +57,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
             behavior = behavior with { Properties = behavior.Properties.With("hp", 100f) };
         });
         DatabaseRegistry.Instance.Flush();
-        
+
         // Act: Modify entity and swap to different key
         entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
@@ -68,10 +68,10 @@ public sealed class PersistenceKeySwapTests : IDisposable
             behavior = new PersistToDiskBehavior("save-slot-2");
         });
         DatabaseRegistry.Instance.Flush();
-        
+
         // test-architect: Current state (HP=75) should write to "save-slot-2"
         // Old "save-slot-1" should still exist in DB with HP=100
-        
+
         // Assert: Verify save-slot-2 has current state (75)
         var slot2Entity = EntityRegistry.Instance.Activate();
         slot2Entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
@@ -81,7 +81,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(slot2Entity, out var slot2Props));
         Assert.NotNull(slot2Props.Value.Properties);
         Assert.Equal(75f, slot2Props.Value.Properties["hp"]);
-        
+
         // test-architect: Verify save-slot-1 still has original state (100) - orphaned
         var slot1Entity = EntityRegistry.Instance.Activate();
         slot1Entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
@@ -91,13 +91,13 @@ public sealed class PersistenceKeySwapTests : IDisposable
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(slot1Entity, out var slot1Props));
         Assert.NotNull(slot1Props.Value.Properties);
         Assert.Equal(100f, slot1Props.Value.Properties["hp"]);
-        
+
         // Act: Swap back to save-slot-1
         entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("save-slot-1");
         });
-        
+
         // Assert: Entity should load HP=100 from save-slot-1
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity, out var reloadedProps));
         Assert.NotNull(reloadedProps.Value.Properties);
@@ -113,31 +113,31 @@ public sealed class PersistenceKeySwapTests : IDisposable
         {
             behavior = behavior with { Properties = behavior.Properties.With("data", "final") };
         });
-        
+
         // Act: Rapidly swap between multiple keys in same frame
         entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("rapid-1");
         });
-        
+
         entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("rapid-2");
         });
-        
+
         entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("rapid-3");
         });
-      
+
         entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("rapid-4");
         });
-        
+
         // test-architect: Flush should write final state to final key
         DatabaseRegistry.Instance.Flush();
-        
+
         // Assert: Final key should have final state
         var rapid4Entity = EntityRegistry.Instance.Activate();
         rapid4Entity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
@@ -147,7 +147,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(rapid4Entity, out var props));
         Assert.NotNull(props.Value.Properties);
         Assert.Equal("final", props.Value.Properties["data"]);
-        
+
         // test-architect: FINDING: Rapid swaps in same frame may result in only the final
         // key being written. Intermediate keys may not get written if they're orphaned
         // before Flush() is called. This is acceptable behavior (batching optimization).
@@ -167,7 +167,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
             behavior = behavior with { Properties = behavior.Properties.With("value", 50f) };
         });
         DatabaseRegistry.Instance.Flush();
-        
+
         // Act: Mutate and swap key in same frame (before Flush)
         entity.SetBehavior<PropertiesBehavior>(static (ref behavior) =>
         {
@@ -178,7 +178,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
             behavior = new PersistToDiskBehavior("swapped-key");
         });
         DatabaseRegistry.Instance.Flush();
-        
+
         // Assert: New key should have mutated value (100)
         var swappedEntity = EntityRegistry.Instance.Activate();
         swappedEntity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
@@ -188,7 +188,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(swappedEntity, out var swappedProps));
         Assert.NotNull(swappedProps.Value.Properties);
         Assert.Equal(100f, swappedProps.Value.Properties["value"]);
-        
+
         // test-architect: Original key should still have old value (50)
         var originalEntity = EntityRegistry.Instance.Activate();
         originalEntity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
@@ -198,7 +198,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(originalEntity, out var originalProps));
         Assert.NotNull(originalProps.Value.Properties);
         Assert.Equal(50f, originalProps.Value.Properties["value"]);
-        
+
         // test-architect: FINDING: Mutations made to "original-key" in the same frame
         // before key swap are DROPPED (niche edge case). This is acceptable as a feature:
         // the mutation was made while pointing to old key, but Flush happens after swap.
@@ -218,7 +218,7 @@ public sealed class PersistenceKeySwapTests : IDisposable
             behavior = behavior with { Properties = behavior.Properties.With("slot", "A") };
         });
         DatabaseRegistry.Instance.Flush();
-        
+
         var entity2 = EntityRegistry.Instance.Activate();
         entity2.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
@@ -229,18 +229,18 @@ public sealed class PersistenceKeySwapTests : IDisposable
             behavior = behavior with { Properties = behavior.Properties.With("slot", "B") };
         });
         DatabaseRegistry.Instance.Flush();
-        
+
         // Act: Swap entity1 to slot-B (which already exists)
         entity1.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>
         {
             behavior = new PersistToDiskBehavior("slot-B");
         });
-        
+
         // Assert: entity1 should load data from slot-B (overwriting its current state)
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity1, out var entity1Props));
         Assert.NotNull(entity1Props.Value.Properties);
         Assert.Equal("B", entity1Props.Value.Properties["slot"]);
-        
+
         // test-architect: slot-A should still exist with original data
         var slotAEntity = EntityRegistry.Instance.Activate();
         slotAEntity.SetBehavior<PersistToDiskBehavior>(static (ref behavior) =>

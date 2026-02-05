@@ -9,7 +9,7 @@ public sealed class SparseReferenceArray<T> : IEnumerable<(uint Index, T Value)>
     private readonly T?[] _sparse;
     private readonly int[] _denseIndices;
     private readonly List<(uint SparseIndex, T Value)> _dense;
-    
+
     public uint Capacity { get; }
 
     public SparseReferenceArray(uint capacity)
@@ -18,7 +18,7 @@ public sealed class SparseReferenceArray<T> : IEnumerable<(uint Index, T Value)>
         _sparse = new T?[capacity];
         _denseIndices = new int[capacity];
         _dense = new List<(uint, T)>((int)capacity);
-        
+
         // Initialize all dense indices to -1 (sentinel for "not set")
         Array.Fill(_denseIndices, -1);
     }

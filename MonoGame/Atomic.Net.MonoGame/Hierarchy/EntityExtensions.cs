@@ -67,7 +67,7 @@ public static class HierarchyEntityExtensions
     /// <param name="child">The child entity.</param>
     /// <returns>true if a parent was retrieved</returns>
     public static bool TryGetParent(
-        this Entity child, 
+        this Entity child,
         [NotNullWhen(true)]
         out Entity? parent
     )

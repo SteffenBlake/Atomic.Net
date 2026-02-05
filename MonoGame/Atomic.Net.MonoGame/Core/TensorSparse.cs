@@ -25,7 +25,7 @@ public static class TensorSparse
 
         TensorPrimitives.BitwiseAnd(_cacheLeft, _cacheRight, _cacheResult);
 
-        for(uint n = 0; n < left.Capacity; n++)
+        for (uint n = 0; n < left.Capacity; n++)
         {
             if (_cacheResult[n] == 1)
             {
@@ -49,7 +49,7 @@ public static class TensorSparse
 
         TensorPrimitives.BitwiseOr(_cacheLeft, _cacheRight, _cacheResult);
 
-        for(uint n = 0; n < left.Capacity; n++)
+        for (uint n = 0; n < left.Capacity; n++)
         {
             if (_cacheResult[n] == 1)
             {
@@ -65,14 +65,14 @@ public static class TensorSparse
     /// NOTE this does NOT clear the result array before hand, so old values will persist
     /// </summary>
     public static void And(
-        PartitionedSparseArray<bool> left, 
-        PartitionedSparseArray<bool> right, 
+        PartitionedSparseArray<bool> left,
+        PartitionedSparseArray<bool> right,
         PartitionedSparseArray<bool> result
     )
     {
         // Process global partition
         And(left.Global, right.Global, result.Global);
-        
+
         // Process scene partition
         And(left.Scene, right.Scene, result.Scene);
     }
@@ -84,14 +84,14 @@ public static class TensorSparse
     /// NOTE this does NOT clear the result array before hand, so old values will persist
     /// </summary>
     public static void Or(
-        PartitionedSparseArray<bool> left, 
-        PartitionedSparseArray<bool> right, 
+        PartitionedSparseArray<bool> left,
+        PartitionedSparseArray<bool> right,
         PartitionedSparseArray<bool> result
     )
     {
         // Process global partition
         Or(left.Global, right.Global, result.Global);
-        
+
         // Process scene partition
         Or(left.Scene, right.Scene, result.Scene);
     }

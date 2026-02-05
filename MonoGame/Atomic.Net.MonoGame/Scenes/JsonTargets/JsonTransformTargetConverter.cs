@@ -12,7 +12,7 @@ public class JsonTransformTargetConverter : JsonConverter<JsonTransformTarget>
     public override JsonTransformTarget Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var jsonNode = JsonNode.Parse(ref reader);
-        
+
         if (jsonNode is not JsonObject jsonObject)
         {
             throw new JsonException("Transform target must be an object");

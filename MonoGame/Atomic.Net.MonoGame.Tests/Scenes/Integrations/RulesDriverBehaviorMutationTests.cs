@@ -30,7 +30,7 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
         // Arrange: Initialize systems before each test
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
-        
+
         _errorListener = new FakeEventListener<ErrorEvent>();
     }
 
@@ -44,79 +44,79 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     }
 
     // ========== IdBehavior Tests ==========
-    
+
     [Fact]
     public void RunFrame_WithIdBehaviorMutation_AppliesCorrectly()
     {
         // Arrange: Load fixture with entity "entity1"
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/id-mutation.json");
-        
+
         // Act: Rule changes id from "entity1" to "renamedEntity"
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: Entity now has new id
         Assert.False(EntityIdRegistry.Instance.TryResolve("entity1", out _));
         Assert.True(EntityIdRegistry.Instance.TryResolve("renamedEntity", out var entity));
         Assert.True(BehaviorRegistry<IdBehavior>.Instance.TryGetBehavior(entity.Value, out var idBehavior));
         Assert.Equal("renamedEntity", idBehavior.Value.Id);
     }
-    
+
     [Fact]
     public void RunFrame_WithIdBehaviorMutation_Invalid_FiresError()
     {
         // Arrange: Load fixture attempting to set non-string id
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/id-mutation-invalid.json");
-        
+
         // Act: Rule tries to set id to numeric value (invalid)
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
         Assert.False(string.IsNullOrEmpty(error.Message));
-        
+
         // Assert: Id unchanged
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity1", out _));
     }
-    
+
     // ========== TagsBehavior Tests ==========
-    
+
     [Fact]
     public void RunFrame_WithTagsBehaviorMutation_AppliesCorrectly()
     {
         // Arrange: Entity starts with tags ["enemy"]
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/tags-mutation.json");
-        
+
         // Act: Rule adds "boss" tag
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: Entity has both "enemy" and "boss"
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin", out var entity));
         Assert.True(BehaviorRegistry<TagsBehavior>.Instance.TryGetBehavior(entity.Value, out var tags));
         Assert.Contains("enemy", tags.Value.Tags);
         Assert.Contains("boss", tags.Value.Tags);
     }
-    
+
     [Fact]
     public void RunFrame_WithTagsBehaviorMutation_Invalid_FiresError()
     {
         // Arrange: Fixture with malformed tags mutation (non-string tag)
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/tags-mutation-invalid.json");
-        
+
         // Act: Rule tries to add numeric tag
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired for invalid tag
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
         Assert.False(string.IsNullOrEmpty(error.Message));
-        
+
         // Assert: Valid tags applied (graceful degradation)
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin", out var entity));
         Assert.True(BehaviorRegistry<TagsBehavior>.Instance.TryGetBehavior(entity.Value, out var tags));
@@ -132,13 +132,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-position-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: Position updated
         Assert.True(EntityIdRegistry.Instance.TryResolve("cube", out var entity));
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity.Value, out var transform));
@@ -152,10 +152,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-position-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -167,13 +167,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-rotation-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: Rotation updated
         Assert.True(EntityIdRegistry.Instance.TryResolve("cube", out var entity));
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity.Value, out var transform));
@@ -186,10 +186,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-rotation-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -201,13 +201,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-scale-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: Scale updated
         Assert.True(EntityIdRegistry.Instance.TryResolve("sprite", out var entity));
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity.Value, out var transform));
@@ -220,10 +220,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-scale-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -235,13 +235,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-anchor-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: Anchor updated
         Assert.True(EntityIdRegistry.Instance.TryResolve("ui-element", out var entity));
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity.Value, out var transform));
@@ -254,10 +254,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-anchor-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -271,12 +271,12 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/parent-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         Assert.True(EntityIdRegistry.Instance.TryResolve("child-node", out var entity));
         Assert.True(BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(entity.Value, out var parent));
         Assert.Equal("@parent-node", parent.Value.ParentSelector.ToString());
@@ -287,10 +287,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/parent-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -304,13 +304,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-align-items-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexAlignItems set
         Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var entity));
         Assert.True(BehaviorRegistry<FlexAlignItemsBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -322,10 +322,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-align-items-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -337,13 +337,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-align-self-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexAlignSelf set
         Assert.True(EntityIdRegistry.Instance.TryResolve("item", out var entity));
         Assert.True(BehaviorRegistry<FlexAlignSelfBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -355,10 +355,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-align-self-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -370,13 +370,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-direction-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexDirection set
         Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var entity));
         Assert.True(BehaviorRegistry<FlexDirectionBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -388,10 +388,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-direction-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -403,13 +403,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-wrap-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexWrap set
         Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var entity));
         Assert.True(BehaviorRegistry<FlexWrapBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -421,10 +421,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-wrap-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -436,13 +436,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-justify-content-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexJustifyContent set
         Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var entity));
         Assert.True(BehaviorRegistry<FlexJustifyContentBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -454,10 +454,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-justify-content-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -469,13 +469,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-position-type-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexPositionType set
         Assert.True(EntityIdRegistry.Instance.TryResolve("item", out var entity));
         Assert.True(BehaviorRegistry<FlexPositionTypeBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -487,10 +487,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-position-type-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -504,13 +504,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-border-left-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexBorderLeft set
         Assert.True(EntityIdRegistry.Instance.TryResolve("box", out var entity));
         Assert.True(BehaviorRegistry<FlexBorderLeftBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -522,10 +522,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-border-left-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -537,13 +537,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-grow-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexGrow set
         Assert.True(EntityIdRegistry.Instance.TryResolve("item", out var entity));
         Assert.True(BehaviorRegistry<FlexGrowBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -555,10 +555,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-grow-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -570,13 +570,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-margin-left-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexMarginLeft set
         Assert.True(EntityIdRegistry.Instance.TryResolve("box", out var entity));
         Assert.True(BehaviorRegistry<FlexMarginLeftBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -588,10 +588,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-margin-left-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -603,13 +603,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-padding-left-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexPaddingLeft set
         Assert.True(EntityIdRegistry.Instance.TryResolve("box", out var entity));
         Assert.True(BehaviorRegistry<FlexPaddingLeftBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -621,10 +621,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-padding-left-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -638,13 +638,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-height-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexHeight set
         Assert.True(EntityIdRegistry.Instance.TryResolve("box", out var entity));
         Assert.True(BehaviorRegistry<FlexHeightBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -657,10 +657,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-height-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -672,13 +672,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-width-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexWidth set
         Assert.True(EntityIdRegistry.Instance.TryResolve("box", out var entity));
         Assert.True(BehaviorRegistry<FlexWidthBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -691,10 +691,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-width-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -706,13 +706,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-position-left-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexPositionLeft set
         Assert.True(EntityIdRegistry.Instance.TryResolve("item", out var entity));
         Assert.True(BehaviorRegistry<FlexPositionLeftBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -725,10 +725,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-position-left-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -742,13 +742,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-zoverride-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexZOverride set
         Assert.True(EntityIdRegistry.Instance.TryResolve("item", out var entity));
         Assert.True(BehaviorRegistry<FlexZOverride>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -760,10 +760,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-zoverride-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -777,13 +777,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-position-x-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: Position X updated
         Assert.True(EntityIdRegistry.Instance.TryResolve("cube", out var entity));
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity.Value, out var transform));
@@ -795,10 +795,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-position-x-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -810,13 +810,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-position-y-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: Position Y updated
         Assert.True(EntityIdRegistry.Instance.TryResolve("cube", out var entity));
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity.Value, out var transform));
@@ -828,10 +828,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-position-y-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -843,13 +843,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-position-z-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: Position Z updated
         Assert.True(EntityIdRegistry.Instance.TryResolve("cube", out var entity));
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity.Value, out var transform));
@@ -861,10 +861,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-position-z-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -876,13 +876,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-rotation-x-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: Rotation X updated
         Assert.True(EntityIdRegistry.Instance.TryResolve("cube", out var entity));
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity.Value, out var transform));
@@ -894,10 +894,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-rotation-x-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -909,13 +909,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-rotation-y-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: Rotation Y updated
         Assert.True(EntityIdRegistry.Instance.TryResolve("cube", out var entity));
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity.Value, out var transform));
@@ -927,10 +927,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-rotation-y-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -942,13 +942,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-rotation-z-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: Rotation Z updated
         Assert.True(EntityIdRegistry.Instance.TryResolve("cube", out var entity));
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity.Value, out var transform));
@@ -960,10 +960,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-rotation-z-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -975,13 +975,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-rotation-w-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: Rotation W updated
         Assert.True(EntityIdRegistry.Instance.TryResolve("cube", out var entity));
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity.Value, out var transform));
@@ -993,10 +993,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-rotation-w-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1008,13 +1008,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-scale-x-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: Scale X updated
         Assert.True(EntityIdRegistry.Instance.TryResolve("sprite", out var entity));
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity.Value, out var transform));
@@ -1026,10 +1026,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-scale-x-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1041,13 +1041,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-scale-y-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: Scale Y updated
         Assert.True(EntityIdRegistry.Instance.TryResolve("sprite", out var entity));
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity.Value, out var transform));
@@ -1059,10 +1059,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-scale-y-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1074,13 +1074,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-scale-z-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: Scale Z updated
         Assert.True(EntityIdRegistry.Instance.TryResolve("sprite", out var entity));
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity.Value, out var transform));
@@ -1092,10 +1092,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-scale-z-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1107,13 +1107,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-anchor-x-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: Anchor X updated
         Assert.True(EntityIdRegistry.Instance.TryResolve("ui-element", out var entity));
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity.Value, out var transform));
@@ -1125,10 +1125,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-anchor-x-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1140,13 +1140,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-anchor-y-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: Anchor Y updated
         Assert.True(EntityIdRegistry.Instance.TryResolve("ui-element", out var entity));
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity.Value, out var transform));
@@ -1158,10 +1158,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-anchor-y-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1173,13 +1173,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-anchor-z-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: Anchor Z updated
         Assert.True(EntityIdRegistry.Instance.TryResolve("ui-element", out var entity));
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity.Value, out var transform));
@@ -1191,10 +1191,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/transform-anchor-z-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1208,13 +1208,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-height-value-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexHeight value set
         Assert.True(EntityIdRegistry.Instance.TryResolve("box", out var entity));
         Assert.True(BehaviorRegistry<FlexHeightBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -1226,10 +1226,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-height-value-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1241,13 +1241,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-height-percent-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexHeight percent set
         Assert.True(EntityIdRegistry.Instance.TryResolve("box", out var entity));
         Assert.True(BehaviorRegistry<FlexHeightBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -1259,10 +1259,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-height-percent-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1274,13 +1274,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-width-value-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexWidth value set
         Assert.True(EntityIdRegistry.Instance.TryResolve("box", out var entity));
         Assert.True(BehaviorRegistry<FlexWidthBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -1292,10 +1292,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-width-value-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1307,13 +1307,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-width-percent-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexWidth percent set
         Assert.True(EntityIdRegistry.Instance.TryResolve("box", out var entity));
         Assert.True(BehaviorRegistry<FlexWidthBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -1325,10 +1325,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-width-percent-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1340,13 +1340,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-position-bottom-value-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexPositionBottom value set
         Assert.True(EntityIdRegistry.Instance.TryResolve("item", out var entity));
         Assert.True(BehaviorRegistry<FlexPositionBottomBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -1358,10 +1358,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-position-bottom-value-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1373,13 +1373,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-position-bottom-percent-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexPositionBottom percent set
         Assert.True(EntityIdRegistry.Instance.TryResolve("item", out var entity));
         Assert.True(BehaviorRegistry<FlexPositionBottomBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -1391,10 +1391,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-position-bottom-percent-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1406,13 +1406,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-position-left-value-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexPositionLeft value set
         Assert.True(EntityIdRegistry.Instance.TryResolve("item", out var entity));
         Assert.True(BehaviorRegistry<FlexPositionLeftBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -1424,10 +1424,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-position-left-value-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1439,13 +1439,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-position-left-percent-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexPositionLeft percent set
         Assert.True(EntityIdRegistry.Instance.TryResolve("item", out var entity));
         Assert.True(BehaviorRegistry<FlexPositionLeftBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -1457,10 +1457,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-position-left-percent-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1472,13 +1472,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-position-right-value-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexPositionRight value set
         Assert.True(EntityIdRegistry.Instance.TryResolve("item", out var entity));
         Assert.True(BehaviorRegistry<FlexPositionRightBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -1490,10 +1490,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-position-right-value-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1505,13 +1505,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-position-right-percent-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexPositionRight percent set
         Assert.True(EntityIdRegistry.Instance.TryResolve("item", out var entity));
         Assert.True(BehaviorRegistry<FlexPositionRightBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -1523,10 +1523,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-position-right-percent-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1538,13 +1538,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-position-top-value-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexPositionTop value set
         Assert.True(EntityIdRegistry.Instance.TryResolve("item", out var entity));
         Assert.True(BehaviorRegistry<FlexPositionTopBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -1556,10 +1556,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-position-top-value-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1571,13 +1571,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-position-top-percent-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexPositionTop percent set
         Assert.True(EntityIdRegistry.Instance.TryResolve("item", out var entity));
         Assert.True(BehaviorRegistry<FlexPositionTopBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -1589,10 +1589,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-position-top-percent-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1606,13 +1606,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-border-bottom-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexBorderBottom set
         Assert.True(EntityIdRegistry.Instance.TryResolve("box", out var entity));
         Assert.True(BehaviorRegistry<FlexBorderBottomBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -1624,10 +1624,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-border-bottom-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1639,13 +1639,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-border-right-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexBorderRight set
         Assert.True(EntityIdRegistry.Instance.TryResolve("box", out var entity));
         Assert.True(BehaviorRegistry<FlexBorderRightBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -1657,10 +1657,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-border-right-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1672,13 +1672,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-border-top-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexBorderTop set
         Assert.True(EntityIdRegistry.Instance.TryResolve("box", out var entity));
         Assert.True(BehaviorRegistry<FlexBorderTopBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -1690,10 +1690,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-border-top-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1705,13 +1705,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-margin-bottom-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexMarginBottom set
         Assert.True(EntityIdRegistry.Instance.TryResolve("box", out var entity));
         Assert.True(BehaviorRegistry<FlexMarginBottomBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -1723,10 +1723,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-margin-bottom-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1738,13 +1738,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-margin-right-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexMarginRight set
         Assert.True(EntityIdRegistry.Instance.TryResolve("box", out var entity));
         Assert.True(BehaviorRegistry<FlexMarginRightBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -1756,10 +1756,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-margin-right-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1771,13 +1771,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-margin-top-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexMarginTop set
         Assert.True(EntityIdRegistry.Instance.TryResolve("box", out var entity));
         Assert.True(BehaviorRegistry<FlexMarginTopBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -1789,10 +1789,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-margin-top-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1804,13 +1804,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-padding-bottom-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexPaddingBottom set
         Assert.True(EntityIdRegistry.Instance.TryResolve("box", out var entity));
         Assert.True(BehaviorRegistry<FlexPaddingBottomBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -1822,10 +1822,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-padding-bottom-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1837,13 +1837,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-padding-right-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexPaddingRight set
         Assert.True(EntityIdRegistry.Instance.TryResolve("box", out var entity));
         Assert.True(BehaviorRegistry<FlexPaddingRightBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -1855,10 +1855,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-padding-right-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();
@@ -1870,13 +1870,13 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-padding-top-mutation.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: No errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Assert: FlexPaddingTop set
         Assert.True(EntityIdRegistry.Instance.TryResolve("box", out var entity));
         Assert.True(BehaviorRegistry<FlexPaddingTopBehavior>.Instance.TryGetBehavior(entity.Value, out var behavior));
@@ -1888,10 +1888,10 @@ public sealed class RulesDriverBehaviorMutationTests : IDisposable
     {
         // Arrange
         SceneLoader.Instance.LoadGameScene("Scenes/Fixtures/RulesDriver/flex-padding-top-mutation-invalid.json");
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert: Error fired
         Assert.NotEmpty(_errorListener.ReceivedEvents);
         var error = _errorListener.ReceivedEvents.First();

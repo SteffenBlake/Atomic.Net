@@ -100,16 +100,16 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     {
         // Register for EntityMutatedEvent (fired by BehaviorRegistry/RefBehaviorRegistry)
         EventBus<EntityMutatedEvent>.Register(this);
-        
+
         // Register for PersistToDiskBehavior events (PR comment #2: use overload without explicit handler param - `this` is inferred)
         EventBus<BehaviorAddedEvent<PersistToDiskBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<PersistToDiskBehavior>>.Register(this);
         EventBus<PreBehaviorUpdatedEvent<PersistToDiskBehavior>>.Register(this);
         EventBus<PreBehaviorRemovedEvent<PersistToDiskBehavior>>.Register(this);
-        
+
         // senior-dev: Register for ShutdownEvent to properly close database connection
         EventBus<ShutdownEvent>.Register(this);
-        
+
         // senior-dev: Only initialize database once to prevent file locking issues
         if (_database != null)
         {
@@ -141,7 +141,7 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
             // Leave _database and _collection as null (graceful degradation)
         }
     }
-    
+
     /// <summary>
     /// Handles EntityMutatedEvent - marks entity as dirty for persistence.
     /// </summary>
@@ -170,7 +170,7 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
         EventBus<PreBehaviorUpdatedEvent<PersistToDiskBehavior>>.Unregister(this);
         EventBus<PreBehaviorRemovedEvent<PersistToDiskBehavior>>.Unregister(this);
         EventBus<ShutdownEvent>.Unregister(this);
-        
+
         _database?.Dispose();
         _database = null;
         _collection = null;
@@ -189,7 +189,7 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
         {
             return;
         }
-        
+
         if (_collection == null)
         {
             throw new InvalidOperationException(
@@ -198,7 +198,7 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
         }
 
         var persistentEntities = BehaviorRegistry<PersistToDiskBehavior>.Instance.GetActiveBehaviors();
-        
+
         foreach (var (entity, persistBehavior) in persistentEntities)
         {
             if (string.IsNullOrWhiteSpace(persistBehavior.Key))
@@ -208,12 +208,12 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
                 ));
                 continue;
             }
-            
+
             if (!_dirtyFlags.HasValue(entity.Index))
             {
                 continue;
             }
-            
+
             JsonEntity.ReadFromEntity(entity, ref _jsonEntityInstance);
 
             var json = System.Text.Json.JsonSerializer.Serialize(_jsonEntityInstance);
@@ -223,7 +223,7 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
                 ["_id"] = persistBehavior.Key,
                 ["data"] = json
             };
-            
+
             try
             {
                 _collection.Upsert(doc);
@@ -235,7 +235,7 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
                 ));
                 continue;
             }
-            
+
             _dirtyFlags.Remove(entity.Index);
         }
     }
@@ -342,10 +342,10 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
             MarkDirty(entity.Index);
             return;
         }
-        
+
         var wasEnabled = IsEnabled;
         Disable();
-        
+
         try
         {
             SceneLoader.DeserializeEntityFromJson(entity, json);
@@ -356,13 +356,13 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
                 $"Failed to deserialize entity with key '{key}': {ex.Message}"
             ));
         }
-        
+
         if (wasEnabled)
         {
             Enable();
         }
     }
-    
+
     private bool TryLoadFromDatabase(
         string key,
         [NotNullWhen(true)]
@@ -380,7 +380,7 @@ public sealed class DatabaseRegistry : ISingleton<DatabaseRegistry>,
     }
 
     private bool TryGetDoc(
-        string key, 
+        string key,
         [NotNullWhen(true)]
         out BsonDocument? doc
     )

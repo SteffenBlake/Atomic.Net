@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Atomic.Net.MonoGame.Core.Extensions;
 
-public static class SpriteBatchExtensions 
+public static class SpriteBatchExtensions
 {
     private static Texture2D? pixel;
 
@@ -79,10 +79,10 @@ public static class SpriteBatchExtensions
     }
 
     public static void DrawTiledMatrix(
-        this SpriteBatch spriteBatch, 
-        Texture2D texture, 
-        Rectangle[,] tiles, 
-        Rectangle sourceRectangle, 
+        this SpriteBatch spriteBatch,
+        Texture2D texture,
+        Rectangle[,] tiles,
+        Rectangle sourceRectangle,
         Color color
     )
     {
@@ -93,5 +93,5 @@ public static class SpriteBatchExtensions
                 spriteBatch.Draw(texture, dest, sourceRectangle, color);
             }
     }
- 
+
 }

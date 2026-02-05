@@ -45,15 +45,15 @@ public class LiteDbWriteBenchmark
 {
     [Params(10, 100, 1000)]
     public int EntityCount { get; set; }
-    
+
     private TestEntity[] _testEntities = [];
     private string _dbPath = "";
     private LiteDatabase? _db;
     private ILiteCollection<BsonDocument>? _collection;
-    
+
     private readonly SystemJsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = SystemJsonNamingPolicy.CamelCase };
     private readonly ArrayBufferWriter<byte> _bufferWriter = new(1000);
-   
+
     private readonly List<BsonDocument> _documentsPreAllocd = new(1000);
 
     [GlobalSetup]
@@ -61,7 +61,7 @@ public class LiteDbWriteBenchmark
     {
         _testEntities = new TestEntity[EntityCount];
         var rng = new Random(42);
-        
+
         for (int i = 0; i < EntityCount; i++)
         {
             _testEntities[i] = new TestEntity
@@ -83,13 +83,13 @@ public class LiteDbWriteBenchmark
                 PersistKey = $"save-slot-{i}"
             };
         }
-        
+
         _dbPath = Path.Combine(Path.GetTempPath(), $"benchmark_{Guid.NewGuid()}.db");
         _db = new LiteDatabase(_dbPath);
         _collection = _db.GetCollection("entities");
         _collection.EnsureIndex("_id");
     }
-    
+
     [GlobalCleanup]
     public void Cleanup()
     {
@@ -99,15 +99,15 @@ public class LiteDbWriteBenchmark
             File.Delete(_dbPath);
         }
     }
-    
+
     [IterationSetup]
     public void IterationSetup()
     {
         _collection!.DeleteAll();
     }
-    
+
     // ========== INDIVIDUAL INSERT METHODS ==========
-    
+
     [Benchmark]
     public int IndividualInsert_JsonSerializer()
     {
@@ -121,7 +121,7 @@ public class LiteDbWriteBenchmark
         }
         return count;
     }
-    
+
     [Benchmark]
     public int IndividualInsert_Utf8JsonWriter_Pooled()
     {
@@ -131,9 +131,10 @@ public class LiteDbWriteBenchmark
         foreach (var entity in _testEntities)
         {
             SystemJsonSerializer.Serialize(writer, entity, _jsonOptions);
-            var doc = new BsonDocument { 
-                ["_id"] = entity.PersistKey, 
-                ["data"] = Encoding.UTF8.GetString(_bufferWriter.WrittenSpan) 
+            var doc = new BsonDocument
+            {
+                ["_id"] = entity.PersistKey,
+                ["data"] = Encoding.UTF8.GetString(_bufferWriter.WrittenSpan)
             };
 
             _collection!.Insert(doc);
@@ -145,7 +146,7 @@ public class LiteDbWriteBenchmark
 
         return count;
     }
-    
+
     [Benchmark]
     public int IndividualInsert_DirectBson()
     {
@@ -188,9 +189,9 @@ public class LiteDbWriteBenchmark
         }
         return count;
     }
-    
+
     // ========== BULK INSERT METHODS ==========
-    
+
     [Benchmark(Baseline = true)]
     public int BulkInsert_JsonSerializer()
     {
@@ -202,7 +203,7 @@ public class LiteDbWriteBenchmark
         }
         return _collection!.InsertBulk(documents);
     }
-   
+
     [Benchmark]
     public int BulkInsert_JsonSerializer_PreAllocd()
     {
@@ -225,18 +226,18 @@ public class LiteDbWriteBenchmark
         foreach (var entity in _testEntities)
         {
             SystemJsonSerializer.Serialize(writer, entity, _jsonOptions);
-            documents.Add(new BsonDocument 
-            { 
-                ["_id"] = entity.PersistKey, 
-                ["data"] = Encoding.UTF8.GetString(_bufferWriter.WrittenSpan) 
+            documents.Add(new BsonDocument
+            {
+                ["_id"] = entity.PersistKey,
+                ["data"] = Encoding.UTF8.GetString(_bufferWriter.WrittenSpan)
             });
-            
+
             _bufferWriter.Clear();
             writer.Reset();
         }
         return _collection!.InsertBulk(documents);
     }
-   
+
 
     [Benchmark]
     public int BulkInsert_Utf8JsonWriter_Pooled_PreAllocd()
@@ -245,9 +246,10 @@ public class LiteDbWriteBenchmark
         foreach (var entity in _testEntities)
         {
             SystemJsonSerializer.Serialize(writer, entity, _jsonOptions);
-            _documentsPreAllocd.Add(new BsonDocument { 
-                ["_id"] = entity.PersistKey, 
-                ["data"] = Encoding.UTF8.GetString(_bufferWriter.WrittenSpan) 
+            _documentsPreAllocd.Add(new BsonDocument
+            {
+                ["_id"] = entity.PersistKey,
+                ["data"] = Encoding.UTF8.GetString(_bufferWriter.WrittenSpan)
             });
             _bufferWriter.Clear();
             writer.Reset();
@@ -297,7 +299,7 @@ public class LiteDbWriteBenchmark
         }
         return _collection!.InsertBulk(documents);
     }
-   
+
 
     [Benchmark]
     public int BulkInsert_DirectBson_PreAllocd()
@@ -342,23 +344,24 @@ public class LiteDbWriteBenchmark
     }
 
     // ========== UPSERT METHODS (for updates) ==========
-    
+
     [Benchmark]
     public int Upsert_JsonSerializer()
     {
         var count = 0;
         foreach (var entity in _testEntities)
         {
-            var doc = new BsonDocument { 
-                ["_id"] = entity.PersistKey, 
-                ["data"] = SystemJsonSerializer.Serialize(entity, _jsonOptions) 
+            var doc = new BsonDocument
+            {
+                ["_id"] = entity.PersistKey,
+                ["data"] = SystemJsonSerializer.Serialize(entity, _jsonOptions)
             };
             _collection!.Upsert(doc);
             count++;
         }
         return count;
     }
-    
+
     [Benchmark]
     public int Upsert_Utf8JsonWriter_Pooled()
     {
@@ -366,9 +369,10 @@ public class LiteDbWriteBenchmark
         using var writer = new SystemUtf8JsonWriter(_bufferWriter);
         foreach (var entity in _testEntities)
         {
-            var doc = new BsonDocument { 
-                ["_id"] = entity.PersistKey, 
-                ["data"] = Encoding.UTF8.GetString(_bufferWriter.WrittenSpan) 
+            var doc = new BsonDocument
+            {
+                ["_id"] = entity.PersistKey,
+                ["data"] = Encoding.UTF8.GetString(_bufferWriter.WrittenSpan)
             };
             _collection!.Upsert(doc);
             count++;
@@ -377,7 +381,7 @@ public class LiteDbWriteBenchmark
         }
         return count;
     }
-    
+
     [Benchmark]
     public int Upsert_DirectBson()
     {

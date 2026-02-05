@@ -4,12 +4,12 @@ using System.Diagnostics.CodeAnalysis;
 namespace Atomic.Net.MonoGame.Core;
 
 public sealed class SparseArray<T> : IEnumerable<(uint Index, T Value)>
-    where T: struct
+    where T : struct
 {
     private readonly T[] _sparse;
     private readonly int[] _denseIndices;
     private readonly List<(uint SparseIndex, T Value)> _dense;
-    
+
     public uint Capacity { get; }
 
     public SparseArray(uint capacity)
@@ -18,7 +18,7 @@ public sealed class SparseArray<T> : IEnumerable<(uint Index, T Value)>
         _sparse = new T[capacity];
         _denseIndices = new int[capacity];
         _dense = new List<(uint, T)>((int)capacity);
-        
+
         // Initialize all dense indices to -1 (sentinel for "not set")
         Array.Fill(_denseIndices, -1);
     }
@@ -31,7 +31,7 @@ public sealed class SparseArray<T> : IEnumerable<(uint Index, T Value)>
     public T[] Values => _sparse;
 
     public bool TryGetValue(
-        uint index, 
+        uint index,
         [NotNullWhen(true)]
         out T? value
     )
@@ -84,7 +84,7 @@ public sealed class SparseArray<T> : IEnumerable<(uint Index, T Value)>
             _dense.Add((index, value));
             _sparse[index] = value;
         }
-        
+
         return new SparseRef<T>(_sparse, index, this);
     }
 
@@ -108,7 +108,7 @@ public sealed class SparseArray<T> : IEnumerable<(uint Index, T Value)>
         if (denseIndex < 0)
         {
             // Not set yet
-            return false; 
+            return false;
         }
 
         // Swap-remove: move last dense element into the removed slot
@@ -154,7 +154,7 @@ public sealed class SparseArray<T> : IEnumerable<(uint Index, T Value)>
 
     public void Clear()
     {
-        foreach(var (SparseIndex, _) in _dense)
+        foreach (var (SparseIndex, _) in _dense)
         {
             _sparse[SparseIndex] = default;
             _denseIndices[SparseIndex] = -1;

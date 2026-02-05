@@ -13,7 +13,7 @@ public class IdBehaviorConverter : JsonConverter<IdBehavior>
             return default;
         }
 
-        return new ()
+        return new()
         {
             Id = nextString
         };

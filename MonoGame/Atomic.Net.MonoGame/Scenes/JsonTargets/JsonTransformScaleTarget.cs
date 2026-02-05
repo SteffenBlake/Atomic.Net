@@ -19,7 +19,7 @@ public readonly record struct JsonTransformScaleTarget(string Scale)
         "Unrecognized scale field. Expected one of: x, y, z"
     );
 
-    public void Apply(JsonObject transform, JsonNode value) 
+    public void Apply(JsonObject transform, JsonNode value)
     {
         // Get or create the "scale" object inside transform
         if (!transform.TryGetPropertyValue("scale", out var scaleNode) || scaleNode is not JsonObject scaleObj)

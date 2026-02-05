@@ -4,7 +4,7 @@ using FlexLayoutSharp;
 
 namespace Atomic.Net.MonoGame.Flex;
 
-public partial class FlexRegistry : 
+public partial class FlexRegistry :
     // Borders
     IEventHandler<BehaviorAddedEvent<FlexBorderLeftBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexBorderLeftBehavior>>,

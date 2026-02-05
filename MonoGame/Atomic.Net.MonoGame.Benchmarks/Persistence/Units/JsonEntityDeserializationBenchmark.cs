@@ -71,7 +71,7 @@ public class JsonEntityDeserializationBenchmark
     private string _jsonData = "";
     private JsonSerializerOptions _jsonOptions = null!;
     private MockEntity _targetEntity = null!;
-    
+
     // Reusable buffers for streaming approach
     private ArrayPool<byte> _bytePool = ArrayPool<byte>.Shared;
     private byte[] _rentedBuffer = Array.Empty<byte>();
@@ -87,9 +87,9 @@ public class JsonEntityDeserializationBenchmark
         // Create test entity based on complexity
         var entity = CreateTestEntity(Complexity);
         _jsonData = JsonSerializer.Serialize(entity, _jsonOptions);
-        
+
         _targetEntity = new MockEntity();
-        
+
         // Pre-rent a buffer for pooled approach
         _rentedBuffer = _bytePool.Rent(8192);
     }
@@ -154,7 +154,7 @@ public class JsonEntityDeserializationBenchmark
     {
         // This is what SceneLoader.DeserializeEntityFromJson currently does
         var jsonEntity = JsonSerializer.Deserialize<BenchmarkJsonEntity>(_jsonData, _jsonOptions);
-        
+
         if (jsonEntity == null)
         {
             return _targetEntity;
@@ -225,7 +225,7 @@ public class JsonEntityDeserializationBenchmark
     {
         var byteCount = Encoding.UTF8.GetByteCount(_jsonData);
         var buffer = _bytePool.Rent(byteCount);
-        
+
         try
         {
             var actualBytes = Encoding.UTF8.GetBytes(_jsonData, 0, _jsonData.Length, buffer, 0);
@@ -277,7 +277,7 @@ public class JsonEntityDeserializationBenchmark
     {
         // Reuse the same JsonEntity instance (like _jsonInstance in SceneLoader)
         var jsonEntity = JsonSerializer.Deserialize<BenchmarkJsonEntity>(_jsonData, _jsonOptions);
-        
+
         if (jsonEntity == null)
         {
             return _targetEntity;

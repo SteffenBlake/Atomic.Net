@@ -19,7 +19,7 @@ public readonly record struct JsonTransformRotationTarget(string Rotation)
         "Unrecognized rotation field. Expected one of: x, y, z, w"
     );
 
-    public void Apply(JsonObject transform, JsonNode value) 
+    public void Apply(JsonObject transform, JsonNode value)
     {
         // Get or create the "rotation" object inside transform
         if (!transform.TryGetPropertyValue("rotation", out var rotationNode) || rotationNode is not JsonObject rotationObj)

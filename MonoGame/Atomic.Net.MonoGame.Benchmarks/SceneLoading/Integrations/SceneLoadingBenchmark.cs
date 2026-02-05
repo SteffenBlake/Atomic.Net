@@ -28,28 +28,28 @@ public class SceneLoadingBenchmark
     private const string ScenePath = "SceneLoading/Fixtures/large-scene.json";
     private string _jsonText = "";
     private JsonScene _scene = null!;
-    
+
     private static readonly JsonSerializerOptions _serializerOptions = new(JsonSerializerOptions.Web)
     {
         RespectRequiredConstructorParameters = true
     };
-    
+
     [GlobalSetup]
     public void Setup()
     {
         // Initialize the Atomic system FIRST (required for JSON deserialization)
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
-        
+
         // Ensure scene file exists and is loaded
         if (!File.Exists(ScenePath))
         {
             throw new FileNotFoundException($"Scene file not found: {ScenePath}");
         }
-        
+
         // Pre-load JSON text for parsing benchmarks
         _jsonText = File.ReadAllText(ScenePath);
-        
+
         // Pre-parse scene object for entity spawning benchmarks
         _scene = JsonSerializer.Deserialize<JsonScene>(_jsonText, _serializerOptions) ?? new();
     }
@@ -77,10 +77,10 @@ public class SceneLoadingBenchmark
     {
         // Read file (in real scenarios, this might be cached)
         var jsonText = File.ReadAllText(ScenePath);
-        
+
         // Parse JSON into JsonScene object
         var scene = JsonSerializer.Deserialize<JsonScene>(jsonText, _serializerOptions);
-        
+
         return scene;
     }
 
@@ -94,18 +94,18 @@ public class SceneLoadingBenchmark
     {
         // Use pre-parsed scene object from Setup() - deserialization is NOT measured here
         var entityCount = 0;
-        
+
         foreach (var jsonEntity in _scene.Entities)
         {
             var entity = EntityRegistry.Instance.Activate();
             jsonEntity.WriteToEntity(entity);
             entityCount++;
         }
-        
+
         // Recalc selectors and hierarchy (part of scene loading)
         SelectorRegistry.Instance.Recalc();
         HierarchyRegistry.Instance.Recalc();
-        
+
         return entityCount;
     }
 
@@ -117,30 +117,30 @@ public class SceneLoadingBenchmark
     public int FullSceneLoad()
     {
         // This simulates the full LoadSceneInternal workflow
-        
+
         // Step 1: Parse JSON
         var jsonText = File.ReadAllText(ScenePath);
         var scene = JsonSerializer.Deserialize<JsonScene>(jsonText, _serializerOptions);
-        
+
         if (scene == null)
         {
             return 0;
         }
-        
+
         // Step 2: Spawn entities and apply behaviors
         var entityCount = 0;
-        
+
         foreach (var jsonEntity in scene.Entities)
         {
             var entity = EntityRegistry.Instance.Activate();
             jsonEntity.WriteToEntity(entity);
             entityCount++;
         }
-        
+
         // Step 3: Recalc selectors and hierarchy
         SelectorRegistry.Instance.Recalc();
         HierarchyRegistry.Instance.Recalc();
-        
+
         return entityCount;
     }
 }

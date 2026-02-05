@@ -3,7 +3,7 @@ using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Flex;
 
-public partial class FlexRegistry : 
+public partial class FlexRegistry :
     IEventHandler<BehaviorAddedEvent<FlexShrinkBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexShrinkBehavior>>,
     IEventHandler<PreBehaviorRemovedEvent<FlexShrinkBehavior>>

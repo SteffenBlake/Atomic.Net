@@ -3,7 +3,7 @@ using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Flex;
 
-public partial class FlexRegistry : 
+public partial class FlexRegistry :
     IEventHandler<BehaviorAddedEvent<AlignContentBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<AlignContentBehavior>>,
     IEventHandler<PreBehaviorRemovedEvent<AlignContentBehavior>>
@@ -11,7 +11,7 @@ public partial class FlexRegistry :
     public void OnEvent(BehaviorAddedEvent<AlignContentBehavior> e)
     {
         var node = EnsureDirtyNode(e.Entity.Index);
-        
+
         if (e.Entity.TryGetBehavior<AlignContentBehavior>(out var alignContent))
         {
             node.StyleSetAlignContent(alignContent.Value.Value);
@@ -21,7 +21,7 @@ public partial class FlexRegistry :
     public void OnEvent(PostBehaviorUpdatedEvent<AlignContentBehavior> e)
     {
         var node = EnsureDirtyNode(e.Entity.Index);
-        
+
         if (e.Entity.TryGetBehavior<AlignContentBehavior>(out var alignContent))
         {
             node.StyleSetAlignContent(alignContent.Value.Value);

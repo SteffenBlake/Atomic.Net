@@ -15,7 +15,7 @@ public readonly record struct PropertiesBehavior
     // senior-dev: ImmutableDictionary allocation is approved (following TagsBehavior pattern)
     // This is a load-time allocation, not a gameplay allocation
     private readonly FluentDictionary<string, PropertyValue>? _properties;
-    
+
     public FluentDictionary<string, PropertyValue> Properties
     {
         init => _properties = value;

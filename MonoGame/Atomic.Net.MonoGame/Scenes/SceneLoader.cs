@@ -29,7 +29,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     }
 
     public static SceneLoader Instance { get; private set; } = null!;
-    
+
     // Pre-allocated PartitionedSparseArray for PersistToDiskBehavior queue (zero-alloc scene loading)
     private readonly PartitionedSparseArray<PersistToDiskBehavior> _persistToDiskQueue = new(
         Constants.MaxGlobalEntities,
@@ -44,7 +44,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     public void LoadGameScene(string scenePath)
     {
         LoadSceneInternal(scenePath, useGlobalPartition: false);
-        
+
         // GC after scene goes out of scope
         GC.Collect();
         GC.WaitForPendingFinalizers();
@@ -58,13 +58,13 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
     public void LoadGlobalScene(string scenePath = "Content/Scenes/loading.json")
     {
         LoadSceneInternal(scenePath, useGlobalPartition: true);
-        
+
         // GC after scene goes out of scope
         GC.Collect();
         GC.WaitForPendingFinalizers();
     }
 
-    private static readonly JsonSerializerOptions _serializerOptions = 
+    private static readonly JsonSerializerOptions _serializerOptions =
         new(JsonSerializerOptions.Web)
         {
             RespectRequiredConstructorParameters = true
@@ -112,21 +112,21 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
         // We do NOT disable dirty tracking during scene load to prevent unwanted DB writes here
         // An "outer" calling system will be in charge of calling this
-        
+
         // Clear pre-allocated PersistToDiskBehavior queue (zero-alloc)
         _persistToDiskQueue.Global.Clear();
         _persistToDiskQueue.Scene.Clear();
-        
+
         foreach (var jsonEntity in scene.Entities)
         {
-            var entity = useGlobalPartition 
-                ? EntityRegistry.Instance.ActivateGlobal() 
+            var entity = useGlobalPartition
+                ? EntityRegistry.Instance.ActivateGlobal()
                 : EntityRegistry.Instance.Activate();
 
             // Use JsonEntity.WriteToEntity() to eliminate duplicate logic (PR comment #9)
             // This applies Transform, Properties, Id, and Parent behaviors
             jsonEntity.WriteToEntity(entity);
-            
+
             // CRITICAL: PersistToDiskBehavior MUST be applied after all other behaviors (including Parent)
             // to prevent unwanted DB loads during scene construction
             if (jsonEntity.PersistToDisk.HasValue)
@@ -134,11 +134,11 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
                 _persistToDiskQueue.Set(entity.Index, jsonEntity.PersistToDisk.Value);
             }
         }
-        
+
         // CRITICAL: Apply PersistToDiskBehavior LAST (after Parent and all other behaviors)
         // This order prevents DB loads from overwriting scene construction
         // Future maintainers: DO NOT change this order without understanding infinite loop prevention
-        
+
         // Process global partition
         foreach (var (entityIndex, persistToDisk) in _persistToDiskQueue.Global)
         {
@@ -149,7 +149,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
                 static (ref readonly _input, ref behavior) => behavior = _input
             );
         }
-        
+
         // Process scene partition
         foreach (var (entityIndex, persistToDisk) in _persistToDiskQueue.Scene)
         {
@@ -160,24 +160,24 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
                 static (ref readonly _input, ref behavior) => behavior = _input
             );
         }
-        
+
         // Clear queue for next scene load (zero-alloc)
         _persistToDiskQueue.Global.Clear();
         _persistToDiskQueue.Scene.Clear();
-        
+
         // senior-dev: Load rules into RuleRegistry (must be before selector recalc)
         LoadRules(scene, useGlobalPartition);
-        
+
         // senior-dev: Load sequences into SequenceRegistry
         LoadSequences(scene, useGlobalPartition);
-        
+
         // CRITICAL: Recalc selectors first, then hierarchy
         // SelectorRegistry.Recalc() must run before HierarchyRegistry.Recalc()
         // to ensure parent selectors have valid Matches arrays
         SelectorRegistry.Instance.Recalc();
         HierarchyRegistry.Instance.Recalc();
     }
-    
+
     /// <summary>
     /// Loads rules from scene into RuleRegistry.
     /// </summary>
@@ -211,7 +211,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
             }
         }
     }
-    
+
     /// <summary>
     /// Loads sequences from scene into SequenceRegistry.
     /// </summary>
@@ -236,7 +236,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
             }
         }
     }
-  
+
     // Static instance to write to, to avoid alloc'ing a new one each time
     private static JsonEntity _jsonInstance = new();
     /// <summary>
@@ -249,7 +249,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
         JsonEntity.ReadFromEntity(entity, ref _jsonInstance);
         return JsonSerializer.Serialize(_jsonInstance, JsonSerializerOptions.Web);
     }
-    
+
     /// <summary>
     /// Deserializes JSON string and applies behaviors to an entity.
     /// Used by DatabaseRegistry to load entity state from LiteDB.

@@ -54,7 +54,7 @@ public class SparseArrayBenchmark
     {
         var result = 0;
 
-        foreach(var (i, value) in _sparseArray)
+        foreach (var (i, value) in _sparseArray)
         {
             result += value;
             result += (int)i;

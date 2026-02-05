@@ -47,15 +47,15 @@ public sealed class PropertiesBehaviorConverterUnitTests : IDisposable
         // Assert
         Assert.NotNull(behavior.Properties);
         Assert.Equal(3, behavior.Properties.Count);
-        
+
         Assert.True(behavior.Properties.ContainsKey("enemy-type"));
         Assert.True(behavior.Properties["enemy-type"].TryMatch(out string? enemyType));
         Assert.Equal("goblin", enemyType);
-        
+
         Assert.True(behavior.Properties.ContainsKey("max-health"));
         Assert.True(behavior.Properties["max-health"].TryMatch(out float health));
         Assert.Equal(100f, health);
-        
+
         Assert.True(behavior.Properties.ContainsKey("is-boss"));
         Assert.True(behavior.Properties["is-boss"].TryMatch(out bool isBoss));
         Assert.False(isBoss);
@@ -113,7 +113,7 @@ public sealed class PropertiesBehaviorConverterUnitTests : IDisposable
         // Act & Assert
         // test-architect: Per requirements, empty string keys should fire ErrorEvent and throw
         Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<PropertiesBehavior>(json));
-        
+
         // test-architect: ErrorEvent should have been fired
         Assert.NotEmpty(errorListener.ReceivedEvents);
     }
@@ -132,7 +132,7 @@ public sealed class PropertiesBehaviorConverterUnitTests : IDisposable
         // Act & Assert
         // test-architect: Per requirements, whitespace-only keys should fire ErrorEvent and throw
         Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<PropertiesBehavior>(json));
-        
+
         // test-architect: ErrorEvent should have been fired
         Assert.NotEmpty(errorListener.ReceivedEvents);
     }
@@ -153,7 +153,7 @@ public sealed class PropertiesBehaviorConverterUnitTests : IDisposable
         // test-architect: System.Text.Json allows duplicate keys (last write wins) by default,
         // but our converter now detects and throws JsonException with ErrorEvent
         Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<PropertiesBehavior>(json));
-        
+
         // test-architect: ErrorEvent should have been fired
         Assert.NotEmpty(errorListener.ReceivedEvents);
     }
@@ -175,7 +175,7 @@ public sealed class PropertiesBehaviorConverterUnitTests : IDisposable
         // Dictionary uses StringComparer.OrdinalIgnoreCase, so "Faction" and "faction" are same key
         // Now that duplicate detection is implemented, should throw JsonException with ErrorEvent
         Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<PropertiesBehavior>(json));
-        
+
         // test-architect: ErrorEvent should have been fired
         Assert.NotEmpty(errorListener.ReceivedEvents);
     }

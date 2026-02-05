@@ -47,7 +47,7 @@ public class ScatterApproachBenchmark
                 parentIdx = (ushort)rng.Next(TotalSize);
             }
             while (usedIndices.Contains(parentIdx));
-            
+
             _parentIndices[i] = parentIdx;
             usedIndices.Add(parentIdx);
 
@@ -58,7 +58,7 @@ public class ScatterApproachBenchmark
                 childIdx = (ushort)rng.Next(TotalSize);
             }
             while (usedIndices.Contains(childIdx));
-            
+
             _childIndices[i] = childIdx;
             usedIndices.Add(childIdx);
         }
@@ -139,7 +139,7 @@ public class ScatterApproachBenchmark
             ushort parentIdx = _parentIndices[i];
             ushort childIdx = _childIndices[i];
 
-            _sourceValues. AsSpan(parentIdx, 1).CopyTo(_destValues.AsSpan(childIdx, 1));
+            _sourceValues.AsSpan(parentIdx, 1).CopyTo(_destValues.AsSpan(childIdx, 1));
         }
     }
 }

@@ -5,7 +5,7 @@ using FlexLayoutSharp;
 
 namespace Atomic.Net.MonoGame.Flex;
 
-public partial class FlexRegistry : 
+public partial class FlexRegistry :
     ISingleton<FlexRegistry>,
     IEventHandler<InitializeEvent>,
     // Flex core behaviors
@@ -36,7 +36,7 @@ public partial class FlexRegistry :
         Constants.MaxGlobalEntities,
         Constants.MaxSceneEntities
     );
-    
+
     /// <summary>
     /// Ensures a flex node exists for the entity and marks it dirty.
     /// Returns the node for further configuration.
@@ -59,7 +59,7 @@ public partial class FlexRegistry :
         {
             RecalculateNode((ushort)index);
         }
-        
+
         // Recalculate scene partition
         foreach (var (index, _) in _dirty.Scene)
         {
@@ -74,7 +74,7 @@ public partial class FlexRegistry :
             return;
         }
         _dirty.Remove(index);
-        
+
 
         // Check if we have a flex parent, if so run on that instead
         if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(index, out var parentBehavior))
@@ -155,15 +155,15 @@ public partial class FlexRegistry :
             BorderBottom: borderBottom,
             ZIndex: truezIndex
         );
-        
+
         e.SetBehavior<FlexBehavior, FlexBehavior>(
             in helper,
             static (ref readonly h, ref v) => v = h
-        ); 
+        );
 
-        foreach(var child in e.GetChildren())
+        foreach (var child in e.GetChildren())
         {
-            UpdateFlexBehavior(e, paddingLeft, paddingTop, zIndex+1);
+            UpdateFlexBehavior(e, paddingLeft, paddingTop, zIndex + 1);
         }
     }
 

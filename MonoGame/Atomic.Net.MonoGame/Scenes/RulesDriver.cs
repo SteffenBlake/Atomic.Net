@@ -12,7 +12,7 @@ namespace Atomic.Net.MonoGame.Scenes;
 /// Executes all active rules in a single frame.
 /// Processes global and scene rules in SparseArray order.
 /// </summary>
-public sealed class RulesDriver : 
+public sealed class RulesDriver :
     ISingleton<RulesDriver>
 {
     private readonly JsonObject _ruleContext = new()
@@ -54,7 +54,7 @@ public sealed class RulesDriver :
         {
             ProcessRule(rule, deltaTime);
         }
-        
+
         // Process scene rules
         foreach (var (_, rule) in RuleRegistry.Instance.Rules.Scene)
         {
@@ -99,10 +99,10 @@ public sealed class RulesDriver :
 
             // Update context for this entity
             _ruleContext["index"] = i;
-            
+
             // Execute the scene command on this entity
             rule.Do.Execute(entityJsonNode, _ruleContext);
-            
+
             // Write mutations back to real entity using partition tracked in C# code
             bool isGlobal = _entityPartitions[i];
             if (!entityJsonNode.TryGetEntityIndex(isGlobal, out var entityIndex))
@@ -122,7 +122,7 @@ public sealed class RulesDriver :
         var entities = (JsonArray)_ruleContext["entities"]!;
         entities.Clear();
         _entityCount = 0;
-        
+
         // Add global entities
         foreach (var (entityIndex, _) in selectorMatches.Global)
         {
@@ -131,7 +131,7 @@ public sealed class RulesDriver :
             entities.Add(jsonNode);
             _entityPartitions[_entityCount++] = true; // Track as global partition
         }
-        
+
         // Add scene entities
         foreach (var (entityIndex, _) in selectorMatches.Scene)
         {

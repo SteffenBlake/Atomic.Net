@@ -15,17 +15,17 @@ public class LiteDbReadBenchmark
 {
     [Params(100, 1000, 10000)]
     public int TotalEntitiesInDb { get; set; }
-    
+
     // Read 1% of entities (sparse reads - actual use case)
     private int EntitiesToRead => Math.Max(1, TotalEntitiesInDb / 100);
-    
+
     private string _dbPath = "";
     private LiteDatabase? _db;
     private ILiteCollection<BsonDocument>? _collection;
     private string[] _keysToRead = [];
-    
+
     private readonly SystemJsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = SystemJsonNamingPolicy.CamelCase };
-    
+
     [GlobalSetup]
     public void Setup()
     {
@@ -33,11 +33,11 @@ public class LiteDbReadBenchmark
         _db = new LiteDatabase(_dbPath);
         _collection = _db.GetCollection("entities");
         _collection.EnsureIndex("_id");
-        
+
         // Populate database
         var rng = new Random(42);
         var documents = new List<BsonDocument>(TotalEntitiesInDb);
-        
+
         for (int i = 0; i < TotalEntitiesInDb; i++)
         {
             var entity = new TestEntity
@@ -58,13 +58,13 @@ public class LiteDbReadBenchmark
                 },
                 PersistKey = $"save-slot-{i}"
             };
-            
+
             var json = SystemJsonSerializer.Serialize(entity, _jsonOptions);
             documents.Add(new BsonDocument { ["_id"] = entity.PersistKey, ["data"] = json });
         }
-        
+
         _collection.InsertBulk(documents);
-        
+
         // Select random keys to read (1% of total)
         _keysToRead = new string[EntitiesToRead];
         for (int i = 0; i < EntitiesToRead; i++)
@@ -73,7 +73,7 @@ public class LiteDbReadBenchmark
             _keysToRead[i] = $"save-slot-{randomIndex}";
         }
     }
-    
+
     [GlobalCleanup]
     public void Cleanup()
     {
@@ -83,9 +83,9 @@ public class LiteDbReadBenchmark
             File.Delete(_dbPath);
         }
     }
-    
+
     // ========== INDIVIDUAL FINDBYID METHODS ==========
-    
+
     [Benchmark(Baseline = true)]
     public int IndividualFindById_JsonDeserialize()
     {
@@ -102,7 +102,7 @@ public class LiteDbReadBenchmark
         }
         return count;
     }
-    
+
     [Benchmark]
     public int IndividualFindById_Utf8JsonReader()
     {
@@ -120,7 +120,7 @@ public class LiteDbReadBenchmark
         }
         return count;
     }
-    
+
     [Benchmark]
     public int IndividualFindById_DirectBson()
     {
@@ -137,16 +137,16 @@ public class LiteDbReadBenchmark
         }
         return count;
     }
-    
+
     // ========== BATCH QUERY METHODS ==========
-    
+
     [Benchmark]
     public int BatchQuery_JsonDeserialize()
     {
         var count = 0;
         var keySet = new HashSet<string>(_keysToRead);
         var documents = _collection!.Find(doc => keySet.Contains(doc["_id"].AsString));
-        
+
         foreach (var doc in documents)
         {
             var json = doc["data"].AsString;
@@ -155,14 +155,14 @@ public class LiteDbReadBenchmark
         }
         return count;
     }
-    
+
     [Benchmark]
     public int BatchQuery_Utf8JsonReader()
     {
         var count = 0;
         var keySet = new HashSet<string>(_keysToRead);
         var documents = _collection!.Find(doc => keySet.Contains(doc["_id"].AsString));
-        
+
         foreach (var doc in documents)
         {
             var json = doc["data"].AsString;
@@ -172,14 +172,14 @@ public class LiteDbReadBenchmark
         }
         return count;
     }
-    
+
     [Benchmark]
     public int BatchQuery_DirectBson()
     {
         var count = 0;
         var keySet = new HashSet<string>(_keysToRead);
         var documents = _collection!.Find(doc => keySet.Contains(doc["_id"].AsString));
-        
+
         foreach (var doc in documents)
         {
             var id = doc["_id"].AsString;
@@ -187,14 +187,14 @@ public class LiteDbReadBenchmark
         }
         return count;
     }
-    
+
     // ========== HYBRID APPROACH ==========
-    
+
     [Benchmark]
     public int Hybrid_JsonDeserialize()
     {
         var count = 0;
-        
+
         if (_keysToRead.Length <= 5)
         {
             // Individual lookups for small counts
@@ -214,7 +214,7 @@ public class LiteDbReadBenchmark
             // Batch query for larger counts
             var keySet = new HashSet<string>(_keysToRead);
             var documents = _collection!.Find(doc => keySet.Contains(doc["_id"].AsString));
-            
+
             foreach (var doc in documents)
             {
                 var json = doc["data"].AsString;
@@ -222,15 +222,15 @@ public class LiteDbReadBenchmark
                 if (entity != null) count++;
             }
         }
-        
+
         return count;
     }
-    
+
     [Benchmark]
     public int Hybrid_Utf8JsonReader()
     {
         var count = 0;
-        
+
         if (_keysToRead.Length <= 5)
         {
             foreach (var key in _keysToRead)
@@ -249,7 +249,7 @@ public class LiteDbReadBenchmark
         {
             var keySet = new HashSet<string>(_keysToRead);
             var documents = _collection!.Find(doc => keySet.Contains(doc["_id"].AsString));
-            
+
             foreach (var doc in documents)
             {
                 var json = doc["data"].AsString;
@@ -258,7 +258,7 @@ public class LiteDbReadBenchmark
                 if (entity != null) count++;
             }
         }
-        
+
         return count;
     }
 }

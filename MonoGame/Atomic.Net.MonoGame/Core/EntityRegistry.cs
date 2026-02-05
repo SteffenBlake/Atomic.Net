@@ -20,12 +20,12 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
 
     public static EntityRegistry Instance { get; private set; } = null!;
 
-    private readonly Entity[] _globalEntities = [.. 
+    private readonly Entity[] _globalEntities = [..
         Enumerable.Range(0, Constants.MaxGlobalEntities)
         .Select(static index => new Entity((ushort)index))
     ];
 
-    private readonly Entity[] _sceneEntities = [.. 
+    private readonly Entity[] _sceneEntities = [..
         Enumerable.Range(0, (int)Constants.MaxSceneEntities)
         .Select(static index => new Entity((uint)index))
     ];
@@ -40,7 +40,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     );
     private uint _nextSceneIndex = 0;
     private ushort _nextGlobalIndex = 0;
-    
+
     // Pre-allocated lists for zero-allocation event handlers
     private readonly List<Entity> _tempSceneEntityList = new((int)Constants.MaxSceneEntities);
     private readonly List<Entity> _tempAllEntityList = new((int)Constants.MaxSceneEntities + Constants.MaxGlobalEntities);
@@ -70,7 +70,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
         for (uint offset = 0; offset < Constants.MaxSceneEntities; offset++)
         {
             uint i = (_nextSceneIndex + offset) % Constants.MaxSceneEntities;
-            
+
             // Direct access to Scene array for scene-specific logic (performance)
             if (_active.Scene.HasValue(i))
             {
@@ -96,7 +96,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
         for (ushort offset = 0; offset < Constants.MaxGlobalEntities; offset++)
         {
             ushort i = (ushort)((_nextGlobalIndex + offset) % Constants.MaxGlobalEntities);
-            
+
             // Direct access to Global array for global-specific logic (performance)
             if (_active.Global.HasValue(i))
             {
@@ -154,7 +154,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
             return;
         }
 
-        if(!_active.HasValue(entity.Index))
+        if (!_active.HasValue(entity.Index))
         {
             throw new InvalidOperationException(
                 $"Tried to enable an entity that doesnt exist"
@@ -177,7 +177,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
             return;
         }
 
-        if(!_active.HasValue(entity.Index))
+        if (!_active.HasValue(entity.Index))
         {
             throw new InvalidOperationException(
                 $"Tried to disable an entity that doesnt exist"
@@ -199,9 +199,9 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     /// </summary>
     /// <param name="entity">The entity.</param>
     /// <returns>True if active.</returns>
-    public bool IsEnabled(Entity entity) => 
+    public bool IsEnabled(Entity entity) =>
         _active.HasValue(entity.Index) && _enabled.HasValue(entity.Index);
-    
+
     /// <summary>
     /// Get an iterator over active global entities.
     /// </summary>
@@ -213,7 +213,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
             yield return _globalEntities[index];
         }
     }
-    
+
     /// <summary>
     /// Get an iterator over active scene entities.
     /// </summary>
@@ -225,7 +225,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
             yield return _sceneEntities[index];
         }
     }
-    
+
     /// <summary>
     /// Get an iterator over enabled global entities.
     /// </summary>
@@ -237,7 +237,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
             yield return _globalEntities[index];
         }
     }
-    
+
     /// <summary>
     /// Get an iterator over enabled scene entities.
     /// </summary>
@@ -249,7 +249,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
             yield return _sceneEntities[index];
         }
     }
-    
+
     /// <summary>
     /// Get an iterator over all enabled entities (both global and scene).
     /// </summary>
@@ -274,7 +274,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
         // Deactivate only scene entities - iterate over scene partition
         // Use pre-allocated list to avoid allocations during reset
         _tempSceneEntityList.Clear();
-        
+
         foreach (var (index, _) in _active.Scene)
         {
             _tempSceneEntityList.Add(_sceneEntities[index]);
@@ -297,7 +297,7 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
         // Deactivate all entities (both global and scene)
         // Use pre-allocated list to avoid allocations during shutdown
         _tempAllEntityList.Clear();
-        
+
         foreach (var (index, _) in _active.Global)
         {
             _tempAllEntityList.Add(_globalEntities[index]);

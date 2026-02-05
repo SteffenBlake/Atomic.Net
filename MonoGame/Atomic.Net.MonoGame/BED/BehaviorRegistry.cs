@@ -7,14 +7,14 @@ namespace Atomic.Net.MonoGame.BED;
 /// Central registry for storing and managing behaviors per entity.
 /// </summary>
 /// <typeparam name="TBehavior">The behavior type.</typeparam>
-public class BehaviorRegistry<TBehavior> : 
-    ISingleton<BehaviorRegistry<TBehavior>>, 
+public class BehaviorRegistry<TBehavior> :
+    ISingleton<BehaviorRegistry<TBehavior>>,
     IEventHandler<InitializeEvent>,
     IEventHandler<PreEntityDeactivatedEvent>
     where TBehavior : struct
 {
     public static BehaviorRegistry<TBehavior> Instance { get; private set; } = null!;
-    
+
     public static void Initialize()
     {
         if (Instance != null)
@@ -69,7 +69,7 @@ public class BehaviorRegistry<TBehavior> :
         {
             EventBus<BehaviorAddedEvent<TBehavior>>.Push(new(entity));
         }
-        
+
         EventBus<EntityMutatedEvent>.Push(new(entity));
     }
 
@@ -106,7 +106,7 @@ public class BehaviorRegistry<TBehavior> :
         {
             EventBus<BehaviorAddedEvent<TBehavior>>.Push(new(entity));
         }
-        
+
         EventBus<EntityMutatedEvent>.Push(new(entity));
     }
 
@@ -125,7 +125,7 @@ public class BehaviorRegistry<TBehavior> :
         EventBus<PreBehaviorRemovedEvent<TBehavior>>.Push(new(entity));
 
         _ = _behaviors.Remove(entity.Index);
-        
+
         EventBus<PostBehaviorRemovedEvent<TBehavior>>.Push(new(entity));
 
         return true;
@@ -139,7 +139,7 @@ public class BehaviorRegistry<TBehavior> :
     /// <returns>True if the behavior exists and is active.</returns>
     /// <exception cref="InvalidOperationException">Thrown when entity is not active.</exception>
     public bool TryGetBehavior(
-        Entity entity, 
+        Entity entity,
         [NotNullWhen(true)]
         out TBehavior? behavior
     )
@@ -160,7 +160,7 @@ public class BehaviorRegistry<TBehavior> :
     /// <param name="behavior">The behavior instance.</param>
     /// <returns>True if the behavior exists and is active.</returns>
     public bool TryGetBehavior(
-        PartitionIndex entityIndex, 
+        PartitionIndex entityIndex,
         [NotNullWhen(true)]
         out TBehavior? behavior
     )
@@ -195,7 +195,7 @@ public class BehaviorRegistry<TBehavior> :
             yield return (EntityRegistry.Instance[(ushort)index], behavior);
         }
     }
-    
+
     /// <summary>
     /// Iterator over active scene behaviors (entity + behavior).
     /// </summary>
@@ -207,7 +207,7 @@ public class BehaviorRegistry<TBehavior> :
             yield return (EntityRegistry.Instance[(uint)index], behavior);
         }
     }
-    
+
     /// <summary>
     /// Iterator over all active behaviors (entity + behavior, both global and scene).
     /// </summary>

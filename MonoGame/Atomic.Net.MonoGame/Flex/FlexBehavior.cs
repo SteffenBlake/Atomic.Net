@@ -8,8 +8,8 @@ namespace Atomic.Net.MonoGame.Flex;
 /// </summary>
 public readonly record struct FlexBehavior(
     RectangleF MarginRect,
-    RectangleF PaddingRect, 
-    RectangleF ContentRect, 
+    RectangleF PaddingRect,
+    RectangleF ContentRect,
     float BorderLeft,
     float BorderTop,
     float BorderRight,

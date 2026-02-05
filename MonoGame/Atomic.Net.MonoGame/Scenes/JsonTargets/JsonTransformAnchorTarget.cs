@@ -19,7 +19,7 @@ public readonly record struct JsonTransformAnchorTarget(string Anchor)
         "Unrecognized anchor field. Expected one of: x, y, z"
     );
 
-    public void Apply(JsonObject transform, JsonNode value) 
+    public void Apply(JsonObject transform, JsonNode value)
     {
         // Get or create the "anchor" object inside transform
         if (!transform.TryGetPropertyValue("anchor", out var anchorNode) || anchorNode is not JsonObject anchorObj)

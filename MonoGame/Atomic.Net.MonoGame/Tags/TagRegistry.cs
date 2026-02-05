@@ -43,7 +43,7 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
     )
     {
         var normalizedTag = tag.ToLower();
-        
+
         if (_tagToEntities.TryGetValue(normalizedTag, out entities))
         {
             return true;
@@ -77,7 +77,7 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
         // Workaround: Manually clear _tagToEntities until proper fix is implemented.
         // Proper fix would be: Don't unregister in ShutdownEvent, only in destructor/dispose.
         _tagToEntities.Clear();
-        
+
         // Unregister from all events to prevent duplicate registrations
         EventBus<BehaviorAddedEvent<TagsBehavior>>.Unregister(this);
         EventBus<PreBehaviorUpdatedEvent<TagsBehavior>>.Unregister(this);
@@ -138,7 +138,7 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
                 );
                 _tagToEntities[tag] = entitySet;
             }
-            
+
             // Add entity to tag set
             entitySet.Set(entity.Index, true);
         }

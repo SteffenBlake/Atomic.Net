@@ -20,7 +20,7 @@ public class JsonEntity
     /// Optional entity ID for referencing (e.g., "player", "main-menu").
     /// </summary>
     public IdBehavior? Id { get; set; } = null;
-    
+
     /// <summary>
     /// Optional tags for group selection in rules and queries (e.g., ["enemy", "boss"]).
     /// </summary>
@@ -47,7 +47,7 @@ public class JsonEntity
     /// MUST be applied LAST in SceneLoader to prevent unwanted DB loads during scene construction
     /// </summary>
     public PersistToDiskBehavior? PersistToDisk { get; set; } = null;
-    
+
     /// <summary>
     /// Creates a JsonEntity from an existing entity by reading all its behaviors.
     /// Used for serialization to disk.
@@ -58,7 +58,7 @@ public class JsonEntity
         jsonEntity.Id = BehaviorRegistry<IdBehavior>.Instance.TryGetBehavior(
             entity, out var id
         ) ? id : null;
-        
+
         jsonEntity.Tags = BehaviorRegistry<TagsBehavior>.Instance.TryGetBehavior(
             entity, out var tags
         ) ? tags : null;
@@ -81,7 +81,7 @@ public class JsonEntity
             jsonEntity.Parent = parentBehavior;
         }
     }
-    
+
     /// <summary>
     /// Writes all behaviors from this JsonEntity to an existing entity.
     /// Used for deserialization from disk.
@@ -92,7 +92,7 @@ public class JsonEntity
         // Apply all behaviors from JSON (in specific order per sprint requirements)
         // Transform, Properties, Id, Tags applied first, then Parent
         // PersistToDiskBehavior is NOT applied here (already set by caller)
-        
+
         if (Transform.HasValue)
         {
             var input = Transform.Value;
@@ -119,7 +119,7 @@ public class JsonEntity
                 static (ref readonly _input, ref behavior) => behavior = _input
             );
         }
-        
+
         if (Tags.HasValue)
         {
             var input = Tags.Value;
