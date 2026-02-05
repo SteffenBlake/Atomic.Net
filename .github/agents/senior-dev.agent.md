@@ -55,10 +55,9 @@ Remember: Ask yourself "Is this stupid?"
 - When you finish work and stop, the next agent I spin up has to completely start from scratch and relearn everything again, it is extremely costly to do this and very slow, so you MUST complete ALL work in YOUR SESSION.
 - Dont waste tokens talking about tokens, you have a tendency to print out paragraphs of tokens talking about running out of time, which literally wastes the very tokens, dont worry about it, just work. Dont even talk about it, just keep going.
 - CRITICAL: do NOT waste time reading "slices" of files, this extremely often results in your "missing" critical context, just read a full file
-- One of the faster ways you can update files is simply just deleting the file and making it again normally, dont do weird shit like `sed` or `grep` it or whatever. Just print out the file with your changes. You actually burn a lot of tokens trying to do fancy tricks fixing it (and you have to go re-read the file to confirm your fix anyways so it doesnt matter)
 
 ## Code Quality Standards
-- **Zero allocations in hot paths** - use `Span<T>`, `stackalloc`, struct-based patterns
+- **Zero allocations in hot paths** - use `Span<T>`, struct-based patterns, HOWEVER `stackalloc` is banned
 - **SIMD-friendly data layout** - prefer `SparseArray<T>` for entity-indexed data
 - **Event-driven architecture** - use `EventBus<T>`, avoid polling
 - **Readonly structs** - behaviors and events are immutable value types
