@@ -19,7 +19,9 @@ public sealed class RulesDriver :
     {
         ["world"] = new JsonObject()
         {
-            ["deltaTime"] = 0.0f
+            ["deltaTime"] = 0.0f,
+            ["loading"] = false,
+            ["sceneLoadProgress"] = 1.0f
         },
         ["entities"] = new JsonArray(),
         ["index"] = -1
@@ -49,6 +51,11 @@ public sealed class RulesDriver :
     /// <param name="deltaTime">Time elapsed since last frame in seconds</param>
     public void RunFrame(float deltaTime)
     {
+        // Update world context with loading state
+        _ruleContext["world"]!["deltaTime"] = deltaTime;
+        _ruleContext["world"]!["loading"] = SceneManager.Instance.IsLoading;
+        _ruleContext["world"]!["sceneLoadProgress"] = SceneManager.Instance.LoadingProgress;
+
         // Process global rules
         foreach (var (_, rule) in RuleRegistry.Instance.Rules.Global)
         {
@@ -68,7 +75,6 @@ public sealed class RulesDriver :
     private void ProcessRule(JsonRule rule, float deltaTime)
     {
         var selectorMatches = rule.From.Matches;
-        _ruleContext["world"]!["deltaTime"] = deltaTime;
         _ruleContext["index"] = -1;
         BuildEntitiesArray(selectorMatches);
 

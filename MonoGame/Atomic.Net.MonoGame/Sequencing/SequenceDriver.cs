@@ -32,19 +32,21 @@ public sealed class SequenceDriver :
     // Pre-allocated context objects to avoid allocations in hot path
     private readonly JsonObject _doContext = new()
     {
-        ["world"] = new JsonObject { ["deltaTime"] = 0.0f },
+        ["world"] = new JsonObject { ["deltaTime"] = 0.0f, ["loading"] = false, ["sceneLoadProgress"] = 1.0f },
         ["self"] = null
     };
 
     private readonly JsonObject _tweenContext = new()
     {
         ["tween"] = 0.0f,
+        ["world"] = new JsonObject { ["deltaTime"] = 0.0f, ["loading"] = false, ["sceneLoadProgress"] = 1.0f },
         ["self"] = null
     };
 
     private readonly JsonObject _repeatContext = new()
     {
         ["elapsed"] = 0.0f,
+        ["world"] = new JsonObject { ["deltaTime"] = 0.0f, ["loading"] = false, ["sceneLoadProgress"] = 1.0f },
         ["self"] = null
     };
 
@@ -58,6 +60,16 @@ public sealed class SequenceDriver :
     /// <param name="deltaTime">Time elapsed since last frame in seconds</param>
     public void RunFrame(float deltaTime)
     {
+        // Update world context with loading state (deltaTime is set per-step in ProcessSequence)
+        _doContext["world"]!["loading"] = SceneManager.Instance.IsLoading;
+        _doContext["world"]!["sceneLoadProgress"] = SceneManager.Instance.LoadingProgress;
+
+        _tweenContext["world"]!["loading"] = SceneManager.Instance.IsLoading;
+        _tweenContext["world"]!["sceneLoadProgress"] = SceneManager.Instance.LoadingProgress;
+
+        _repeatContext["world"]!["loading"] = SceneManager.Instance.IsLoading;
+        _repeatContext["world"]!["sceneLoadProgress"] = SceneManager.Instance.LoadingProgress;
+
         _entitiesToRemove.Clear();
 
         // Process global entities
