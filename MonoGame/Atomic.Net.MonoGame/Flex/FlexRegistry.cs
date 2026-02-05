@@ -164,7 +164,7 @@ public partial class FlexRegistry :
         );
 
         // Set TransformBehavior based on flex layout (local position relative to parent)
-        var localPosition = new Vector3(paddingLeft, paddingTop, 0);
+        var localPosition = new Vector3(node.LayoutGetLeft(), node.LayoutGetTop(), 0);
         e.SetBehavior<TransformBehavior, Vector3>(
             in localPosition,
             static (ref readonly pos, ref transform) => transform = transform with { Position = pos }

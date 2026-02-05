@@ -2,7 +2,7 @@
   "entities": [
     {
       "id": "container",
-      "flexDirection": { "value": "row" },
+      "flexDirection": "row",
       "flexWidth": {
         "value": 300
       },

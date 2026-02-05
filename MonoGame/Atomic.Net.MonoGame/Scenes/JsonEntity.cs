@@ -7,6 +7,7 @@ using Atomic.Net.MonoGame.Hierarchy;
 using Atomic.Net.MonoGame.Ids;
 using Atomic.Net.MonoGame.Tags;
 using Atomic.Net.MonoGame.Flex;
+using System.Text.Json.Serialization;
 
 namespace Atomic.Net.MonoGame.Scenes;
 
