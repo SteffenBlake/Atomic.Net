@@ -72,6 +72,9 @@ public sealed class SceneManager : ISingleton<SceneManager>
             return;
         }
 
+        // Reset scene partition on MAIN THREAD before starting async load (thread-safety)
+        ResetDriver.Instance.Run();
+
         // Reset progress counters
         Interlocked.Exchange(ref _bytesRead, 0);
         Interlocked.Exchange(ref _totalBytes, 0);
@@ -79,7 +82,7 @@ public sealed class SceneManager : ISingleton<SceneManager>
         Interlocked.Exchange(ref _totalEntities, 0);
         LoadingProgress = 0.0f;
 
-        // Start background task
+        // Start background task (only for file I/O and JSON parsing)
         Task.Run(() => LoadSceneAsync(scenePath));
     }
 

@@ -30,7 +30,7 @@ public sealed class ProgressStream : Stream
     public override int Read(byte[] buffer, int offset, int count)
     {
         var bytesRead = _baseStream.Read(buffer, offset, count);
-        _bytesRead += bytesRead;
+        Interlocked.Add(ref _bytesRead, bytesRead);
         _progress.Report(_bytesRead);
         return bytesRead;
     }
@@ -38,7 +38,7 @@ public sealed class ProgressStream : Stream
     public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
     {
         var bytesRead = await _baseStream.ReadAsync(buffer, offset, count, cancellationToken);
-        _bytesRead += bytesRead;
+        Interlocked.Add(ref _bytesRead, bytesRead);
         _progress.Report(_bytesRead);
         return bytesRead;
     }
@@ -46,7 +46,7 @@ public sealed class ProgressStream : Stream
     public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
     {
         var bytesRead = await _baseStream.ReadAsync(buffer, cancellationToken);
-        _bytesRead += bytesRead;
+        Interlocked.Add(ref _bytesRead, bytesRead);
         _progress.Report(_bytesRead);
         return bytesRead;
     }
