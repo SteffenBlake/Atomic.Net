@@ -197,6 +197,29 @@
           "argName": "-f"
         }
       }
+    },
+    "mkdir": {
+      "description": "Create a directory and all necessary parent directories in the path",
+      "command": "mkdir",
+      "baseArgs": ["-p"],
+      "parameters": {
+        "directory_path": {
+          "type": "string",
+          "description": "Path to the directory to create (creates all parent directories as needed)",
+          "required": true,
+          "position": 0
+        },
+        "verbose": {
+          "type": "boolean",
+          "description": "Print a message for each created directory",
+          "argName": "-v"
+        },
+        "mode": {
+          "type": "string",
+          "description": "Set file mode (permissions) in octal format (e.g., '755', '700')",
+          "argName": "-m"
+        }
+      }
     }
   }
 }
