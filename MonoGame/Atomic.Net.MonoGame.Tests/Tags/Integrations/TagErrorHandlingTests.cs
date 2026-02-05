@@ -129,15 +129,18 @@ public sealed class TagErrorHandlingTests : IDisposable
         Assert.False(EntityIdRegistry.Instance.TryResolve("null-tag", out _));
         Assert.False(EntityIdRegistry.Instance.TryResolve("empty-tag", out _));
         Assert.False(EntityIdRegistry.Instance.TryResolve("invalid-chars", out _));
-        
+
         // Errors should be fired
         Assert.NotEmpty(errorListener.ReceivedEvents);
     }
 
     [Fact]
-    public void TagErrorHandling_SceneWith10Entities3Invalid_EntireSceneFailsToLoad()
+    public void TagErrorHandling_SceneWithInvalidEntity_EntireSceneDeserializationFails()
     {
-        // Arrange - Create a scene with mix of valid and invalid entities
+        // Arrange - Create a scene where entity3, entity5, and entity8 have invalid tags
+        // NOTE: Scene deserialization is ATOMIC - when JsonSerializer.Deserialize encounters
+        // the FIRST invalid entity (entity3), it throws JsonException and stops.
+        // This means the entire scene parse fails, and NO entities load (not even valid ones).
         var scenePath = "/tmp/tags-mixed-validation.json";
         System.IO.File.WriteAllText(scenePath, @"{
   ""entities"": [
@@ -159,7 +162,7 @@ public sealed class TagErrorHandlingTests : IDisposable
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
 
-        // Assert - NO entities should load because scene has invalid data
+        // Assert - NO entities should load because scene deserialization failed atomically
         Assert.False(EntityIdRegistry.Instance.TryResolve("entity1", out _));
         Assert.False(EntityIdRegistry.Instance.TryResolve("entity2", out _));
         Assert.False(EntityIdRegistry.Instance.TryResolve("entity3", out _));
@@ -223,7 +226,7 @@ public sealed class TagErrorHandlingTests : IDisposable
         Assert.False(EntityIdRegistry.Instance.TryResolve("whitespace-tag", out _));
         Assert.False(EntityIdRegistry.Instance.TryResolve("duplicate-tags", out _));
         Assert.False(EntityIdRegistry.Instance.TryResolve("invalid-chars", out _));
-        
+
         // Errors should be fired
         Assert.NotEmpty(errorListener.ReceivedEvents);
     }

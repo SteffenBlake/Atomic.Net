@@ -126,7 +126,7 @@ public sealed class SceneManagerIntegrationTests : IDisposable
         // Assert - Should return to idle state with error
         Assert.False(SceneManager.Instance.IsLoading, "IsLoading should be false after error");
         Assert.Equal(1.0f, SceneManager.Instance.LoadingProgress);
-        
+
         // Assert - Should have logged error about invalid tags from JsonException
         Assert.Single(_errorLogger.Errors);
         Assert.Contains("Tag array contains empty or whitespace-only tag", _errorLogger.Errors[0]);
@@ -150,7 +150,7 @@ public sealed class SceneManagerIntegrationTests : IDisposable
         // Assert - Should return to idle state with error
         Assert.False(SceneManager.Instance.IsLoading, "IsLoading should be false after error");
         Assert.Equal(1.0f, SceneManager.Instance.LoadingProgress);
-        
+
         // Assert - Should have logged exactly 1 error about JSON deserialization failure
         Assert.Single(_errorLogger.Errors);
         Assert.Contains("Failed to parse scene JSON", _errorLogger.Errors[0]);
