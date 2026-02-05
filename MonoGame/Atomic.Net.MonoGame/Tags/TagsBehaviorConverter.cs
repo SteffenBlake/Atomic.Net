@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Tags;
 
