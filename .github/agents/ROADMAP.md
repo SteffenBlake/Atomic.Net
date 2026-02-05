@@ -72,7 +72,7 @@ This should HEAVILY be cooked on to really hash out a very performance approach.
 ---
 
 ### Scene management
-- [ ] Ability to switch between Scenes, with loading scene active between. Loading of a new scene should be non blocking, allowing the loading scene to actually render and have frames while loading occurs
+- [x] Ability to switch between Scenes, with loading scene active between. Loading of a new scene should be non blocking, allowing the loading scene to actually render and have frames while loading occurs
 
 ---
 
