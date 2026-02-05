@@ -103,22 +103,22 @@ public partial class FlexRegistry :
             return;
         }
 
-        if (_nodes.TryGetValue(index, out var node))
+        if (_nodes.TryGetValue(index, out var node) && node is not null)
         {
-            node!.CalculateLayout(float.NaN, float.NaN, Direction.Inherit);
+            node.CalculateLayout(float.NaN, float.NaN, Direction.Inherit);
         }
 
-        UpdateFlexBehavior(root, 0, 0);
+        UpdateFlexBehavior(root);
     }
 
-    private void UpdateFlexBehavior(Entity e, float parentLeft, float parentTop, int zIndex = 0)
+    private void UpdateFlexBehavior(Entity e, int zIndex = 0)
     {
         if (!e.HasBehavior<FlexBehavior>())
         {
             return;
         }
 
-        if (!_nodes.TryGetValue(e.Index, out var node))
+        if (!_nodes.TryGetValue(e.Index, out var node) || node is null)
         {
             return;
         }
@@ -182,8 +182,7 @@ public partial class FlexRegistry :
 
         foreach (var child in e.GetChildren())
         {
-            // For children, pass our padding rect position as the new parent origin
-            UpdateFlexBehavior(child, 0, 0, zIndex + 1);
+            UpdateFlexBehavior(child, zIndex + 1);
         }
     }
 
@@ -201,13 +200,13 @@ public partial class FlexRegistry :
             e.Entity.SetBehavior<TransformBehavior>(static (ref _) => { });
         }
 
-        // Add to parent's flex tree if parent has FlexBehavior
+        // Try to add to parent's flex tree (will succeed if parent already has FlexBehavior)
         UpdateFlexTreeRelationship(e.Entity);
     }
 
     public void OnEvent(BehaviorAddedEvent<ParentBehavior> e)
     {
-        // If this entity has FlexBehavior, update its flex tree relationship
+        // If this entity has FlexBehavior, add it to parent's flex tree
         if (e.Entity.HasBehavior<FlexBehavior>())
         {
             UpdateFlexTreeRelationship(e.Entity);
@@ -216,31 +215,36 @@ public partial class FlexRegistry :
 
     public void OnEvent(PostBehaviorUpdatedEvent<ParentBehavior> e)
     {
-        // If this entity has FlexBehavior, update its flex tree relationship
+        // If this entity has FlexBehavior, update its position in parent's flex tree
         if (e.Entity.HasBehavior<FlexBehavior>())
         {
+            // Remove from old parent and add to new parent
+            RemoveFromParentFlexTree(e.Entity);
             UpdateFlexTreeRelationship(e.Entity);
         }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<ParentBehavior> e)
     {
-        // If this entity has FlexBehavior, remove it from parent's flex tree
-        if (!e.Entity.HasBehavior<FlexBehavior>())
+        // Remove from parent's flex tree before parent is removed
+        if (e.Entity.HasBehavior<FlexBehavior>())
+        {
+            RemoveFromParentFlexTree(e.Entity);
+        }
+    }
+
+    private void RemoveFromParentFlexTree(Entity entity)
+    {
+        if (!_nodes.TryGetValue(entity.Index, out var myNode) || myNode is null)
         {
             return;
         }
 
-        if (!_nodes.TryGetValue(e.Entity.Index, out var myNode) || myNode is null)
-        {
-            return;
-        }
-
-        // Find and remove from current parent
-        if (e.Entity.TryGetParent(out var parent))
+        if (entity.TryGetParent(out var parent))
         {
             if (_nodes.TryGetValue(parent.Value.Index, out var parentNode) && parentNode is not null)
             {
+                // Try to remove - will fail silently if not in parent
                 try
                 {
                     parentNode.RemoveChild(myNode);
@@ -248,7 +252,7 @@ public partial class FlexRegistry :
                 }
                 catch
                 {
-                    // Node not in parent - that's ok
+                    // Not in parent - that's fine
                 }
             }
         }
@@ -261,36 +265,59 @@ public partial class FlexRegistry :
             return;
         }
 
-        // Add to parent if it has FlexBehavior
-        if (entity.TryGetParent(out var parent) && parent.Value.HasBehavior<FlexBehavior>())
+        // Only add to parent if both have FlexBehavior
+        if (!entity.TryGetParent(out var parent) || !parent.Value.HasBehavior<FlexBehavior>())
         {
-            if (_nodes.TryGetValue(parent.Value.Index, out var parentNode) && parentNode is not null)
+            return;
+        }
+
+        if (!_nodes.TryGetValue(parent.Value.Index, out var parentNode) || parentNode is null)
+        {
+            return;
+        }
+
+        // Check if child is already in parent to avoid duplicate insertion
+        var maxChildren = 100; // Reasonable safety limit
+        for (var i = 0; i < maxChildren; i++)
+        {
+            try
             {
-                try
+                if (parentNode.GetChild(i) == myNode)
                 {
-                    // Try to find the child count by attempting to get children until we fail
-                    var childCount = 0;
-                    while (true)
-                    {
-                        try
-                        {
-                            _ = parentNode.GetChild(childCount);
-                            childCount++;
-                        }
-                        catch
-                        {
-                            break;
-                        }
-                    }
-                    
-                    parentNode.InsertChild(myNode, childCount);
-                    _dirty.Set(parent.Value.Index, true);
-                }
-                catch
-                {
-                    // Already inserted or other error - that's ok
+                    // Already in parent, don't re-insert
+                    return;
                 }
             }
+            catch
+            {
+                // Reached end of children
+                break;
+            }
+        }
+
+        // Not in parent yet, insert at end
+        var childCount = 0;
+        for (var i = 0; i < maxChildren; i++)
+        {
+            try
+            {
+                _ = parentNode.GetChild(i);
+                childCount++;
+            }
+            catch
+            {
+                break;
+            }
+        }
+
+        try
+        {
+            parentNode.InsertChild(myNode, childCount);
+            _dirty.Set(parent.Value.Index, true);
+        }
+        catch
+        {
+            // Insert failed - already there or other issue
         }
     }
 
