@@ -3,11 +3,10 @@ using System.Drawing;
 namespace Atomic.Net.MonoGame.Flex;
 
 /// <summary>
-/// Stores local flex rectangles of an entity, relative to the entity's local coordinate space.
-/// Positions are relative to the entity's position, NOT world-space or parent-relative.
-/// NOTE: Do not set this behavior manually, it's updated automatically via the <see cref="FlexRegistry"/>
+/// Stores the final world-space flex rectangles of an entity, calculated from WorldTransform + FlexBehavior.
+/// NOTE: Do not set this behavior manually, it's updated automatically via the <see cref="WorldFlexRegistry"/>
 /// </summary>
-public struct FlexBehavior
+public struct WorldFlexBehavior
 {
     public RectangleF MarginRect;
     public RectangleF PaddingRect;
@@ -18,7 +17,7 @@ public struct FlexBehavior
     public float BorderBottom;
     public int ZIndex;
 
-    public FlexBehavior()
+    public WorldFlexBehavior()
     {
         MarginRect = RectangleF.Empty;
         PaddingRect = RectangleF.Empty;
@@ -30,4 +29,3 @@ public struct FlexBehavior
         ZIndex = 0;
     }
 }
-

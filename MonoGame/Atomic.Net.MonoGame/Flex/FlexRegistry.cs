@@ -123,19 +123,23 @@ public partial class FlexRegistry :
             return;
         }
 
-        var paddingLeft = parentLeft + node.LayoutGetLeft();
-        var paddingTop = parentTop + node.LayoutGetTop();
+        // Local position relative to parent (this becomes TransformBehavior.Position)
+        var localX = node.LayoutGetLeft();
+        var localY = node.LayoutGetTop();
+
+        // Dimensions
         var paddingWidth = node.LayoutGetWidth();
         var paddingHeight = node.LayoutGetHeight();
 
-        var marginLeft = paddingLeft - node.LayoutGetMargin(Edge.Left);
-        var contentLeft = paddingLeft + node.LayoutGetPadding(Edge.Left);
+        // Margins/paddings relative to local coordinate space (starting at 0,0)
+        var marginLeft = -node.LayoutGetMargin(Edge.Left);
+        var contentLeft = node.LayoutGetPadding(Edge.Left);
 
         var marginWidth = paddingWidth + node.LayoutGetMargin(Edge.Left) + node.LayoutGetMargin(Edge.Right);
         var contentWidth = paddingWidth - node.LayoutGetPadding(Edge.Left) - node.LayoutGetPadding(Edge.Right);
 
-        var marginTop = paddingTop - node.LayoutGetMargin(Edge.Top);
-        var contentTop = paddingTop + node.LayoutGetPadding(Edge.Top);
+        var marginTop = -node.LayoutGetMargin(Edge.Top);
+        var contentTop = node.LayoutGetPadding(Edge.Top);
 
         var marginHeight = paddingHeight + node.LayoutGetMargin(Edge.Top) + node.LayoutGetMargin(Edge.Bottom);
         var contentHeight = paddingHeight - node.LayoutGetPadding(Edge.Top) - node.LayoutGetPadding(Edge.Bottom);
@@ -151,16 +155,18 @@ public partial class FlexRegistry :
             truezIndex = zOverride.Value.ZIndex;
         }
 
-        var helper = new FlexBehavior(
-            MarginRect: new(marginLeft, marginTop, marginWidth, marginHeight),
-            PaddingRect: new(paddingLeft, paddingTop, paddingWidth, paddingHeight),
-            ContentRect: new(contentLeft, contentTop, contentWidth, contentHeight),
-            BorderLeft: borderLeft,
-            BorderTop: borderTop,
-            BorderRight: borderRight,
-            BorderBottom: borderBottom,
-            ZIndex: truezIndex
-        );
+        // Store LOCAL flex rectangles (relative to entity's own position)
+        var helper = new FlexBehavior
+        {
+            MarginRect = new(marginLeft, marginTop, marginWidth, marginHeight),
+            PaddingRect = new(0, 0, paddingWidth, paddingHeight), // Padding rect starts at 0,0
+            ContentRect = new(contentLeft, contentTop, contentWidth, contentHeight),
+            BorderLeft = borderLeft,
+            BorderTop = borderTop,
+            BorderRight = borderRight,
+            BorderBottom = borderBottom,
+            ZIndex = truezIndex
+        };
 
         e.SetBehavior<FlexBehavior, FlexBehavior>(
             in helper,
@@ -168,7 +174,7 @@ public partial class FlexRegistry :
         );
 
         // Set TransformBehavior based on flex layout (local position relative to parent)
-        var localPosition = new Vector3(node.LayoutGetLeft(), node.LayoutGetTop(), 0);
+        var localPosition = new Vector3(localX, localY, 0);
         e.SetBehavior<TransformBehavior, Vector3>(
             in localPosition,
             static (ref readonly pos, ref transform) => transform = transform with { Position = pos }
@@ -176,7 +182,8 @@ public partial class FlexRegistry :
 
         foreach (var child in e.GetChildren())
         {
-            UpdateFlexBehavior(child, paddingLeft, paddingTop, zIndex + 1);
+            // For children, pass our padding rect position as the new parent origin
+            UpdateFlexBehavior(child, 0, 0, zIndex + 1);
         }
     }
 
@@ -221,7 +228,7 @@ public partial class FlexRegistry :
             return;
         }
 
-        if (!_nodes.TryGetValue(e.Entity.Index, out var myNode) || myNode == null)
+        if (!_nodes.TryGetValue(e.Entity.Index, out var myNode) || myNode is null)
         {
             return;
         }
@@ -229,7 +236,7 @@ public partial class FlexRegistry :
         // Find and remove from current parent
         if (e.Entity.TryGetParent(out var parent))
         {
-            if (_nodes.TryGetValue(parent.Value.Index, out var parentNode) && parentNode != null)
+            if (_nodes.TryGetValue(parent.Value.Index, out var parentNode) && parentNode is not null)
             {
                 try
                 {
@@ -246,38 +253,39 @@ public partial class FlexRegistry :
 
     private void UpdateFlexTreeRelationship(Entity entity)
     {
-        if (!_nodes.TryGetValue(entity.Index, out var myNode) || myNode == null)
+        if (!_nodes.TryGetValue(entity.Index, out var myNode) || myNode is null)
         {
             return;
         }
 
-        // First, try to remove from any current parent
-        try
-        {
-            var currentParent = myNode.Parent;
-            if (currentParent != null)
-            {
-                currentParent.RemoveChild(myNode);
-            }
-        }
-        catch
-        {
-            // No parent or already removed - that's ok
-        }
-
-        // Then add to new parent if it has FlexBehavior
+        // Add to parent if it has FlexBehavior
         if (entity.TryGetParent(out var parent) && parent.Value.HasBehavior<FlexBehavior>())
         {
-            if (_nodes.TryGetValue(parent.Value.Index, out var parentNode) && parentNode != null)
+            if (_nodes.TryGetValue(parent.Value.Index, out var parentNode) && parentNode is not null)
             {
                 try
                 {
-                    parentNode.InsertChild(myNode, parentNode.ChildCount);
+                    // Try to find the child count by attempting to get children until we fail
+                    var childCount = 0;
+                    while (true)
+                    {
+                        try
+                        {
+                            _ = parentNode.GetChild(childCount);
+                            childCount++;
+                        }
+                        catch
+                        {
+                            break;
+                        }
+                    }
+                    
+                    parentNode.InsertChild(myNode, childCount);
                     _dirty.Set(parent.Value.Index, true);
                 }
                 catch
                 {
-                    // Insertion failed - log or handle
+                    // Already inserted or other error - that's ok
                 }
             }
         }
