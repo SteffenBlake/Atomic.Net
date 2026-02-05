@@ -1,0 +1,38 @@
+{
+  "entities": [
+    {
+      "id": "loading-counter",
+      "properties": {
+        "count": 0
+      }
+    }
+  ],
+  "rules": [
+    {
+      "from": "@loading-counter",
+      "where": {
+        "==": [
+          { "var": "world.loading" },
+          true
+        ]
+      },
+      "do": {
+        "mut": {
+          "target": ".",
+          "operation": {
+            "merge": {
+              "properties": {
+                "count": {
+                  "+": [
+                    { "var": "self.properties.count" },
+                    1
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

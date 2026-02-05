@@ -1,0 +1,13 @@
+{
+  "entities": [
+    {
+      "id": "scene2-entity",
+      "transform": {
+        "position": { "x": 30, "y": 40, "z": 0 }
+      },
+      "properties": {
+        "sceneName": "scene2"
+      }
+    }
+  ]
+}
