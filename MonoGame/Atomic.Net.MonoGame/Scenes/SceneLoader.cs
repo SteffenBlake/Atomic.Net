@@ -88,6 +88,7 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
 
         try
         {
+            // Scene deserialization is atomic - JsonException caught and converted to ErrorEvent
             scene = JsonSerializer.Deserialize<JsonScene>(
                 jsonText, _serializerOptions
             ) ?? new();

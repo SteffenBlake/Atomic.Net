@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Properties;
 

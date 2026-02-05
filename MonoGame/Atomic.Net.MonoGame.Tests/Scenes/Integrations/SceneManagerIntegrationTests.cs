@@ -126,7 +126,7 @@ public sealed class SceneManagerIntegrationTests : IDisposable
         // Assert - Should return to idle state with error
         Assert.False(SceneManager.Instance.IsLoading, "IsLoading should be false after error");
         Assert.Equal(1.0f, SceneManager.Instance.LoadingProgress);
-        
+
         // Assert - Should have logged error about invalid tags from JsonException
         Assert.Single(_errorLogger.Errors);
         Assert.Contains("Tag array contains empty or whitespace-only tag", _errorLogger.Errors[0]);
@@ -150,7 +150,7 @@ public sealed class SceneManagerIntegrationTests : IDisposable
         // Assert - Should return to idle state with error
         Assert.False(SceneManager.Instance.IsLoading, "IsLoading should be false after error");
         Assert.Equal(1.0f, SceneManager.Instance.LoadingProgress);
-        
+
         // Assert - Should have logged exactly 1 error about JSON deserialization failure
         Assert.Single(_errorLogger.Errors);
         Assert.Contains("Failed to parse scene JSON", _errorLogger.Errors[0]);
@@ -184,5 +184,133 @@ public sealed class SceneManagerIntegrationTests : IDisposable
         var entity = scene2Entities[0];
         Assert.True(entity.TryGetBehavior<PropertiesBehavior>(out var props));
         Assert.Equal("scene2", props.Value.Properties["sceneName"]);
+    }
+
+    [Fact]
+    public async Task LoadScene_WithTooManyRules_ErrorBubblesUpFromBackgroundThread()
+    {
+        // Arrange - Create a scene with more than MaxSceneRules (1024) to trigger capacity error
+        // This tests that ErrorEvents pushed from background thread properly bubble up to main thread
+        var scenePath = "/tmp/scene-too-many-rules.json";
+
+        var sb = new StringBuilder();
+        sb.AppendLine("{");
+        sb.AppendLine("  \"entities\": [],");
+        sb.AppendLine("  \"rules\": [");
+
+        // Generate 1030 rules (more than MaxSceneRules = 1024)
+        // Use minimal valid rule format - from selector with empty do
+        for (var i = 0; i < 1030; i++)
+        {
+            sb.Append("    {");
+            sb.Append($"\"from\": \"#tag{i}\", ");
+            sb.Append("\"do\": {\"mut\": []}");
+            sb.Append("}");
+
+            if (i < 1029)
+            {
+                sb.AppendLine(",");
+            }
+            else
+            {
+                sb.AppendLine();
+            }
+        }
+
+        sb.AppendLine("  ]");
+        sb.AppendLine("}");
+
+        File.WriteAllText(scenePath, sb.ToString());
+
+        // Clear any previous errors
+        _errorLogger.Clear();
+
+        // Act
+        SceneManager.Instance.LoadScene(scenePath);
+
+        // Wait for loading to complete
+        var maxWait = TimeSpan.FromSeconds(5);
+        var start = DateTime.UtcNow;
+        while (SceneManager.Instance.IsLoading && DateTime.UtcNow - start < maxWait)
+        {
+            SceneManager.Instance.Update();
+            await Task.Delay(10);
+        }
+
+        // Assert - Should have error about capacity exceeded
+        // This test verifies the FIX: ErrorEvents pushed from background thread
+        // (by RuleRegistry.TryActivate when capacity is exceeded) properly bubble up
+        // via BackgroundErrorHandler queue mechanism
+        _output.WriteLine($"Error count: {_errorLogger.Errors.Count}");
+        foreach (var error in _errorLogger.Errors)
+        {
+            _output.WriteLine($"  Error: {error}");
+        }
+
+        Assert.NotEmpty(_errorLogger.Errors);
+        Assert.Contains(_errorLogger.Errors, e => e.Contains("capacity exceeded"));
+    }
+
+    [Fact]
+    public async Task LoadScene_WithTooManySequences_ErrorBubblesUpFromBackgroundThread()
+    {
+        // Arrange - Create a scene with more than MaxSceneSequences (512) to trigger capacity error
+        var scenePath = "/tmp/scene-too-many-sequences.json";
+
+        var sb = new StringBuilder();
+        sb.AppendLine("{");
+        sb.AppendLine("  \"entities\": [],");
+        sb.AppendLine("  \"sequences\": [");
+
+        // Generate 520 sequences (more than MaxSceneSequences = 512)
+        for (var i = 0; i < 520; i++)
+        {
+            sb.Append("    {");
+            sb.Append($"\"id\": \"seq{i}\", ");
+            sb.Append("\"steps\": [{\"delay\": 0.1}]");
+            sb.Append("}");
+
+            if (i < 519)
+            {
+                sb.AppendLine(",");
+            }
+            else
+            {
+                sb.AppendLine();
+            }
+        }
+
+        sb.AppendLine("  ]");
+        sb.AppendLine("}");
+
+        File.WriteAllText(scenePath, sb.ToString());
+
+        // Clear any previous errors
+        _errorLogger.Clear();
+
+        // Act
+        SceneManager.Instance.LoadScene(scenePath);
+
+        // Wait for loading to complete
+        var maxWait = TimeSpan.FromSeconds(5);
+        var start = DateTime.UtcNow;
+        while (SceneManager.Instance.IsLoading && DateTime.UtcNow - start < maxWait)
+        {
+            SceneManager.Instance.Update();
+            await Task.Delay(10);
+        }
+
+        // Assert - Should have error about capacity exceeded
+        // This test verifies the FIX: ErrorEvents pushed from background thread
+        // (by SequenceRegistry.TryActivate when capacity is exceeded) properly bubble up
+        // via BackgroundErrorHandler queue mechanism
+        _output.WriteLine($"Error count: {_errorLogger.Errors.Count}");
+        foreach (var error in _errorLogger.Errors)
+        {
+            _output.WriteLine($"  Error: {error}");
+        }
+
+        Assert.NotEmpty(_errorLogger.Errors);
+        Assert.Contains(_errorLogger.Errors, e => e.Contains("capacity exceeded"));
     }
 }

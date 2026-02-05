@@ -156,11 +156,6 @@ public sealed class PropertiesBehaviorConverterUnitTests : IDisposable
         // Act & Assert
         Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<PropertiesBehavior>(json));
     }
-        """;
-
-        // Act & Assert
-        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<PropertiesBehavior>(json));
-    }
 
     [Fact]
     public void Deserialize_ArrayValue_SkipsProperty()

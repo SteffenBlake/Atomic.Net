@@ -143,7 +143,7 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
     #region Scene Loading Errors
 
     [Fact]
-    public void SceneLoader_NullTagInArray_FiresErrorAndSkipsTag()
+    public void SceneLoader_NullTagInArray_SceneDeserializationFails()
     {
         // Arrange
         var scenePath = "Tags/Fixtures/tags-invalid.json";
@@ -152,22 +152,16 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
 
-        // Assert
-        Assert.True(EntityIdRegistry.Instance.TryResolve("null-tag", out var entity));
-
-        // Valid tags should be registered
-        Assert.True(TagRegistry.Instance.TryResolve("valid", out var validEntities));
-        Assert.True(validEntities.HasValue(entity.Value.Index));
-
-        Assert.True(TagRegistry.Instance.TryResolve("also-valid", out var alsoValidEntities));
-        Assert.True(alsoValidEntities.HasValue(entity.Value.Index));
+        // Assert - Entire scene deserialization fails (not just this entity)
+        // Scene deserialization is atomic - ANY invalid entity causes entire scene parse to fail
+        Assert.False(EntityIdRegistry.Instance.TryResolve("null-tag", out _));
 
         // Error should be fired
         Assert.NotEmpty(errorListener.ReceivedEvents);
     }
 
     [Fact]
-    public void SceneLoader_EmptyStringTag_FiresErrorAndSkipsTag()
+    public void SceneLoader_EmptyStringTag_SceneDeserializationFails()
     {
         // Arrange
         var scenePath = "Tags/Fixtures/tags-invalid.json";
@@ -176,22 +170,15 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
 
-        // Assert
-        Assert.True(EntityIdRegistry.Instance.TryResolve("empty-tag", out var entity));
-
-        // Valid tags should be registered
-        Assert.True(TagRegistry.Instance.TryResolve("valid", out var validEntities));
-        Assert.True(validEntities.HasValue(entity.Value.Index));
-
-        Assert.True(TagRegistry.Instance.TryResolve("also-valid", out var alsoValidEntities));
-        Assert.True(alsoValidEntities.HasValue(entity.Value.Index));
+        // Assert - Entire scene deserialization fails (not just this entity)
+        Assert.False(EntityIdRegistry.Instance.TryResolve("empty-tag", out _));
 
         // Error should be fired
         Assert.NotEmpty(errorListener.ReceivedEvents);
     }
 
     [Fact]
-    public void SceneLoader_WhitespaceTag_FiresErrorAndSkipsTag()
+    public void SceneLoader_WhitespaceTag_SceneDeserializationFails()
     {
         // Arrange
         var scenePath = "Tags/Fixtures/tags-invalid.json";
@@ -200,22 +187,15 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
 
-        // Assert
-        Assert.True(EntityIdRegistry.Instance.TryResolve("whitespace-tag", out var entity));
-
-        // Valid tags should be registered
-        Assert.True(TagRegistry.Instance.TryResolve("valid", out var validEntities));
-        Assert.True(validEntities.HasValue(entity.Value.Index));
-
-        Assert.True(TagRegistry.Instance.TryResolve("also-valid", out var alsoValidEntities));
-        Assert.True(alsoValidEntities.HasValue(entity.Value.Index));
+        // Assert - Entire scene deserialization fails (not just this entity)
+        Assert.False(EntityIdRegistry.Instance.TryResolve("whitespace-tag", out _));
 
         // Error should be fired
         Assert.NotEmpty(errorListener.ReceivedEvents);
     }
 
     [Fact]
-    public void SceneLoader_DuplicateTags_FiresErrorAndKeepsFirst()
+    public void SceneLoader_DuplicateTags_SceneDeserializationFails()
     {
         // Arrange
         var scenePath = "Tags/Fixtures/tags-invalid.json";
@@ -224,19 +204,15 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
 
-        // Assert
-        Assert.True(EntityIdRegistry.Instance.TryResolve("duplicate-tags", out var entity));
-
-        // Tags should be registered (only once)
-        Assert.True(entity.Value.TryGetBehavior<TagsBehavior>(out var behavior));
-        Assert.Equal(2, behavior.Value.Tags.Count); // "enemy" and "boss"
+        // Assert - Entire scene deserialization fails (not just this entity)
+        Assert.False(EntityIdRegistry.Instance.TryResolve("duplicate-tags", out _));
 
         // Error should be fired
         Assert.NotEmpty(errorListener.ReceivedEvents);
     }
 
     [Fact]
-    public void SceneLoader_InvalidCharactersInTag_FiresErrorAndSkipsTag()
+    public void SceneLoader_InvalidCharactersInTag_SceneDeserializationFails()
     {
         // Arrange
         var scenePath = "Tags/Fixtures/tags-invalid.json";
@@ -245,21 +221,8 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
 
-        // Assert
-        Assert.True(EntityIdRegistry.Instance.TryResolve("invalid-chars", out var entity));
-
-        // Valid tags should be registered
-        Assert.True(TagRegistry.Instance.TryResolve("valid-tag", out var validEntities));
-        Assert.True(validEntities.HasValue(entity.Value.Index));
-
-        Assert.True(TagRegistry.Instance.TryResolve("also_valid", out var alsoValidEntities));
-        Assert.True(alsoValidEntities.HasValue(entity.Value.Index));
-
-        // "invalid tag" with space should NOT be registered
-        if (TagRegistry.Instance.TryResolve("invalid tag", out var invalidEntities))
-        {
-            Assert.False(invalidEntities.HasValue(entity.Value.Index));
-        }
+        // Assert - Entire scene deserialization fails (not just this entity)
+        Assert.False(EntityIdRegistry.Instance.TryResolve("invalid-chars", out _));
 
         // Error should be fired
         Assert.NotEmpty(errorListener.ReceivedEvents);
