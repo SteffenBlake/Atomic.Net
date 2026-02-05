@@ -1,0 +1,62 @@
+{
+  "entities": [
+    {
+      "id": "root",
+      "transform": {
+        "position": {
+          "x": 50,
+          "y": 50,
+          "z": 0
+        }
+      },
+      "flexDirection": "row",
+      "flexWidth": {
+        "value": 400
+      },
+      "flexHeight": {
+        "value": 300
+      }
+    },
+    {
+      "id": "left-panel",
+      "parent": "@root",
+      "flexDirection": "column",
+      "flexWidth": {
+        "value": 200
+      },
+      "flexHeight": {
+        "value": 300
+      }
+    },
+    {
+      "id": "left-item1",
+      "parent": "@left-panel",
+      "flexWidth": {
+        "value": 200
+      },
+      "flexHeight": {
+        "value": 100
+      }
+    },
+    {
+      "id": "left-item2",
+      "parent": "@left-panel",
+      "flexWidth": {
+        "value": 200
+      },
+      "flexHeight": {
+        "value": 100
+      }
+    },
+    {
+      "id": "right-panel",
+      "parent": "@root",
+      "flexWidth": {
+        "value": 200
+      },
+      "flexHeight": {
+        "value": 300
+      }
+    }
+  ]
+}

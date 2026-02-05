@@ -1,7 +1,9 @@
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Hierarchy;
 using Atomic.Net.MonoGame.Core;
+using Atomic.Net.MonoGame.Transform;
 using FlexLayoutSharp;
+using Microsoft.Xna.Framework;
 
 namespace Atomic.Net.MonoGame.Flex;
 
@@ -161,9 +163,16 @@ public partial class FlexRegistry :
             static (ref readonly h, ref v) => v = h
         );
 
+        // Set TransformBehavior based on flex layout (local position relative to parent)
+        var localPosition = new Vector3(paddingLeft, paddingTop, 0);
+        e.SetBehavior<TransformBehavior, Vector3>(
+            in localPosition,
+            static (ref readonly pos, ref transform) => transform = transform with { Position = pos }
+        );
+
         foreach (var child in e.GetChildren())
         {
-            UpdateFlexBehavior(e, paddingLeft, paddingTop, zIndex + 1);
+            UpdateFlexBehavior(child, paddingLeft, paddingTop, zIndex + 1);
         }
     }
 
@@ -171,6 +180,12 @@ public partial class FlexRegistry :
     {
         _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
         _dirty.Set(e.Entity.Index, true);
+
+        // Ensure TransformBehavior exists for flex entities
+        if (!e.Entity.HasBehavior<TransformBehavior>())
+        {
+            e.Entity.SetBehavior<TransformBehavior>(static (ref _) => { });
+        }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexBehavior> e)

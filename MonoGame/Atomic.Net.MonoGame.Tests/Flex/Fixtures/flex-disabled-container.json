@@ -1,0 +1,25 @@
+{
+  "entities": [
+    {
+      "id": "disabled-container",
+      "enabled": false,
+      "flexDirection": "row",
+      "flexWidth": {
+        "value": 300
+      },
+      "flexHeight": {
+        "value": 100
+      }
+    },
+    {
+      "id": "child",
+      "parent": "@disabled-container",
+      "flexWidth": {
+        "value": 100
+      },
+      "flexHeight": {
+        "value": 100
+      }
+    }
+  ]
+}
