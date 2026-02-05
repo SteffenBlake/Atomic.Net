@@ -186,6 +186,34 @@ public partial class FlexRegistry :
         {
             e.Entity.SetBehavior<TransformBehavior>(static (ref _) => { });
         }
+
+        // Add this node to parent's flex tree if parent has FlexBehavior
+        if (e.Entity.TryGetParent(out var parent) && parent.Value.HasBehavior<FlexBehavior>())
+        {
+            if (_nodes.TryGetValue(parent.Value.Index, out var parentNode) && parentNode != null)
+            {
+                var myNode = _nodes[e.Entity.Index];
+                if (myNode != null)
+                {
+                    // Insert at end
+                    var childIndex = 0;
+                    for (int i = 0; i < 100; i++) // Max 100 children
+                    {
+                        try
+                        {
+                            _ = parentNode.GetChild(i);
+                            childIndex = i + 1;
+                        }
+                        catch
+                        {
+                            break;
+                        }
+                    }
+                    parentNode.InsertChild(myNode, childIndex);
+                    _dirty.Set(parent.Value.Index, true);
+                }
+            }
+        }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexBehavior> e)
