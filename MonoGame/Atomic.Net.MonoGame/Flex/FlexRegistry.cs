@@ -13,6 +13,10 @@ public partial class FlexRegistry :
     // Flex core behaviors
     IEventHandler<BehaviorAddedEvent<FlexBehavior>>,
     IEventHandler<PreBehaviorRemovedEvent<FlexBehavior>>,
+    // Parent hierarchy for flex tree management
+    IEventHandler<BehaviorAddedEvent<ParentBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<ParentBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<ParentBehavior>>,
     // Enable/Disable
     IEventHandler<EntityEnabledEvent>,
     IEventHandler<EntityDisabledEvent>
@@ -66,75 +70,6 @@ public partial class FlexRegistry :
         foreach (var (index, _) in _dirty.Scene)
         {
             RecalculateNode((uint)index);
-        }
-    }
-
-    private void RebuildFlexTree()
-    {
-        // Clear all parent-child relationships in flex nodes
-        foreach (var (index, node) in _nodes.Global)
-        {
-            if (node != null)
-            {
-                while (true)
-                {
-                    try { node.RemoveChild(node.GetChild(0)); }
-                    catch { break; }
-                }
-            }
-        }
-        foreach (var (index, node) in _nodes.Scene)
-        {
-            if (node != null)
-            {
-                while (true)
-                {
-                    try { node.RemoveChild(node.GetChild(0)); }
-                    catch { break; }
-                }
-            }
-        }
-
-        // Rebuild relationships from entity hierarchy
-        foreach (var (index, node) in _nodes.Global)
-        {
-            if (node == null) continue;
-            var entity = EntityRegistry.Instance[(ushort)index];
-            if (!entity.Active || !entity.HasBehavior<FlexBehavior>()) continue;
-
-            if (entity.TryGetParent(out var parent) && parent.Value.HasBehavior<FlexBehavior>())
-            {
-                if (_nodes.TryGetValue(parent.Value.Index, out var parentNode) && parentNode != null)
-                {
-                    var childIndex = 0;
-                    while (true)
-                    {
-                        try { _ = parentNode.GetChild(childIndex); childIndex++; }
-                        catch { break; }
-                    }
-                    parentNode.InsertChild(node, childIndex);
-                }
-            }
-        }
-        foreach (var (index, node) in _nodes.Scene)
-        {
-            if (node == null) continue;
-            var entity = EntityRegistry.Instance[(uint)index];
-            if (!entity.Active || !entity.HasBehavior<FlexBehavior>()) continue;
-
-            if (entity.TryGetParent(out var parent) && parent.Value.HasBehavior<FlexBehavior>())
-            {
-                if (_nodes.TryGetValue(parent.Value.Index, out var parentNode) && parentNode != null)
-                {
-                    var childIndex = 0;
-                    while (true)
-                    {
-                        try { _ = parentNode.GetChild(childIndex); childIndex++; }
-                        catch { break; }
-                    }
-                    parentNode.InsertChild(node, childIndex);
-                }
-            }
         }
     }
 
@@ -254,6 +189,97 @@ public partial class FlexRegistry :
         if (!e.Entity.HasBehavior<TransformBehavior>())
         {
             e.Entity.SetBehavior<TransformBehavior>(static (ref _) => { });
+        }
+
+        // Add to parent's flex tree if parent has FlexBehavior
+        UpdateFlexTreeRelationship(e.Entity);
+    }
+
+    public void OnEvent(BehaviorAddedEvent<ParentBehavior> e)
+    {
+        // If this entity has FlexBehavior, update its flex tree relationship
+        if (e.Entity.HasBehavior<FlexBehavior>())
+        {
+            UpdateFlexTreeRelationship(e.Entity);
+        }
+    }
+
+    public void OnEvent(PostBehaviorUpdatedEvent<ParentBehavior> e)
+    {
+        // If this entity has FlexBehavior, update its flex tree relationship
+        if (e.Entity.HasBehavior<FlexBehavior>())
+        {
+            UpdateFlexTreeRelationship(e.Entity);
+        }
+    }
+
+    public void OnEvent(PreBehaviorRemovedEvent<ParentBehavior> e)
+    {
+        // If this entity has FlexBehavior, remove it from parent's flex tree
+        if (!e.Entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
+        if (!_nodes.TryGetValue(e.Entity.Index, out var myNode) || myNode == null)
+        {
+            return;
+        }
+
+        // Find and remove from current parent
+        if (e.Entity.TryGetParent(out var parent))
+        {
+            if (_nodes.TryGetValue(parent.Value.Index, out var parentNode) && parentNode != null)
+            {
+                try
+                {
+                    parentNode.RemoveChild(myNode);
+                    _dirty.Set(parent.Value.Index, true);
+                }
+                catch
+                {
+                    // Node not in parent - that's ok
+                }
+            }
+        }
+    }
+
+    private void UpdateFlexTreeRelationship(Entity entity)
+    {
+        if (!_nodes.TryGetValue(entity.Index, out var myNode) || myNode == null)
+        {
+            return;
+        }
+
+        // First, try to remove from any current parent
+        try
+        {
+            var currentParent = myNode.Parent;
+            if (currentParent != null)
+            {
+                currentParent.RemoveChild(myNode);
+            }
+        }
+        catch
+        {
+            // No parent or already removed - that's ok
+        }
+
+        // Then add to new parent if it has FlexBehavior
+        if (entity.TryGetParent(out var parent) && parent.Value.HasBehavior<FlexBehavior>())
+        {
+            if (_nodes.TryGetValue(parent.Value.Index, out var parentNode) && parentNode != null)
+            {
+                try
+                {
+                    parentNode.InsertChild(myNode, parentNode.ChildCount);
+                    _dirty.Set(parent.Value.Index, true);
+                }
+                catch
+                {
+                    // Insertion failed - log or handle
+                }
+            }
         }
     }
 
@@ -411,6 +437,11 @@ public partial class FlexRegistry :
         EventBus<BehaviorAddedEvent<FlexHeightBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexHeightBehavior>>.Register(this);
         EventBus<PreBehaviorRemovedEvent<FlexHeightBehavior>>.Register(this);
+
+        // Parent hierarchy
+        EventBus<BehaviorAddedEvent<ParentBehavior>>.Register(this);
+        EventBus<PostBehaviorUpdatedEvent<ParentBehavior>>.Register(this);
+        EventBus<PreBehaviorRemovedEvent<ParentBehavior>>.Register(this);
 
         // Enable/Disable
         EventBus<EntityEnabledEvent>.Register(this);
