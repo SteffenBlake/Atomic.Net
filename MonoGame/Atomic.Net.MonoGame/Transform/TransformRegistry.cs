@@ -64,16 +64,16 @@ public sealed class TransformRegistry :
     {
         // Infinite loop protection
         const int maxIterations = 100;
-        for(var iterations = 1; iterations <= maxIterations; iterations++)
+        for (var iterations = 1; iterations <= maxIterations; iterations++)
         {
             // Process global entities
-            foreach(var (entityIndex, _) in _dirty.Global)
+            foreach (var (entityIndex, _) in _dirty.Global)
             {
                 ProcessDirtyEntity((ushort)entityIndex, iterations);
             }
-            
+
             // Process scene entities
-            foreach(var (entityIndex, _) in _dirty.Scene)
+            foreach (var (entityIndex, _) in _dirty.Scene)
             {
                 ProcessDirtyEntity((uint)entityIndex, iterations);
             }
@@ -175,7 +175,7 @@ public sealed class TransformRegistry :
         {
             // Children are in same partition as parent
             var isGlobal = entityIndex.IsGlobal;
-            
+
             if (isGlobal)
             {
                 // Global parent with global children
@@ -218,7 +218,7 @@ public sealed class TransformRegistry :
             var entity = EntityRegistry.Instance[(ushort)index];
             EventBus<PostBehaviorUpdatedEvent<WorldTransformBehavior>>.Push(new(entity));
         }
-        
+
         foreach (var (index, _) in _worldTransformUpdated.Scene)
         {
             var entity = EntityRegistry.Instance[(uint)index];

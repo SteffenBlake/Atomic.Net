@@ -15,7 +15,7 @@ namespace Atomic.Net.MonoGame.Tests.Tags.Integrations;
 public sealed class SceneLoaderTagIntegrationTests : IDisposable
 {
     private readonly ErrorEventLogger _errorLogger;
-    
+
     public SceneLoaderTagIntegrationTests(ITestOutputHelper output)
     {
         _errorLogger = new ErrorEventLogger(output);
@@ -72,10 +72,10 @@ public sealed class SceneLoaderTagIntegrationTests : IDisposable
 
         // Assert
         Assert.True(EntityIdRegistry.Instance.TryResolve("empty-tags", out var entity));
-        
+
         // Entity has TagsBehavior
         Assert.True(entity.Value.TryGetBehavior<TagsBehavior>(out var behavior));
-        
+
         // But tags are empty
         Assert.Empty(behavior.Value.Tags);
     }

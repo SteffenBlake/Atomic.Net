@@ -52,13 +52,13 @@ public static class AtomicSystem
 
         // Id Behaviors
         BehaviorRegistry<IdBehavior>.Initialize();
-        
+
         // Tags Behaviors
         BehaviorRegistry<TagsBehavior>.Initialize();
 
         // Persistence Behaviors
         BehaviorRegistry<PersistToDiskBehavior>.Initialize();
-        
+
         // Properties Behaviors
         BehaviorRegistry<PropertiesBehavior>.Initialize();
 
@@ -66,7 +66,7 @@ public static class AtomicSystem
         BehaviorRegistry<DrawableBehavior>.Initialize();
         BehaviorRegistry<NineSliceBehavior>.Initialize();
         BehaviorRegistry<ThreeSliceBehavior>.Initialize();
-        
+
         // Transform Behaviors
         BehaviorRegistry<TransformBehavior>.Initialize();
         BehaviorRegistry<WorldTransformBehavior>.Initialize();

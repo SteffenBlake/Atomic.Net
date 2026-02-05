@@ -25,7 +25,7 @@ public sealed class RulesDriverIntegrationTests : IDisposable
         // Arrange: Initialize systems before each test
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
-        
+
         _errorListener = new FakeEventListener<ErrorEvent>();
     }
 
@@ -44,19 +44,19 @@ public sealed class RulesDriverIntegrationTests : IDisposable
         // Arrange
         var scenePath = "Selectors/Fixtures/poison-rule.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert
         // senior-dev: Check for any errors
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // senior-dev: Verify goblin health decreased from 50 to 49 (poison-rule.json has poisonStacks: 3, but WHERE filters for >0, DO subtracts 1)
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin", out var goblin));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(goblin.Value, out var props));
         Assert.NotNull(props.Value.Properties);
-        
+
         // senior-dev: health should be 49 (50 - 1)
         Assert.True(props.Value.Properties.TryGetValue("health", out var healthValue));
         healthValue.Visit(
@@ -73,16 +73,16 @@ public sealed class RulesDriverIntegrationTests : IDisposable
         // Arrange
         var scenePath = "Scenes/Fixtures/burn-damage-rule.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.5f);
-        
+
         // Assert
         // senior-dev: Verify goblin health decreased from 100 to 95 (100 - 10 * 0.5)
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin", out var goblin));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(goblin.Value, out var props));
         Assert.NotNull(props.Value.Properties);
-        
+
         Assert.True(props.Value.Properties.TryGetValue("health", out var healthValue));
         healthValue.Visit(
             s => Assert.Fail("Expected float, got string"),
@@ -98,16 +98,16 @@ public sealed class RulesDriverIntegrationTests : IDisposable
         // Arrange
         var scenePath = "Scenes/Fixtures/sum-aggregate-rule.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert
         // senior-dev: All three enemies should have totalEnemyHealth = 350 (100 + 200 + 50)
         Assert.True(EntityIdRegistry.Instance.TryResolve("enemy1", out var enemy1));
         Assert.True(EntityIdRegistry.Instance.TryResolve("enemy2", out var enemy2));
         Assert.True(EntityIdRegistry.Instance.TryResolve("enemy3", out var enemy3));
-        
+
         // senior-dev: Check enemy1
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(enemy1.Value, out var props1));
         Assert.NotNull(props1.Value.Properties);
@@ -118,7 +118,7 @@ public sealed class RulesDriverIntegrationTests : IDisposable
             b => Assert.Fail("Expected float, got bool"),
             () => Assert.Fail("Expected float, got empty")
         );
-        
+
         // senior-dev: Check enemy2
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(enemy2.Value, out var props2));
         Assert.NotNull(props2.Value.Properties);
@@ -129,7 +129,7 @@ public sealed class RulesDriverIntegrationTests : IDisposable
             b => Assert.Fail("Expected float, got bool"),
             () => Assert.Fail("Expected float, got empty")
         );
-        
+
         // senior-dev: Check enemy3
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(enemy3.Value, out var props3));
         Assert.NotNull(props3.Value.Properties);
@@ -148,7 +148,7 @@ public sealed class RulesDriverIntegrationTests : IDisposable
         // Arrange
         var scenePath = "Selectors/Fixtures/multiple-rules.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
-        
+
         var initialHealth = 50f;
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin", out var goblin));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(goblin.Value, out var initialProps));
@@ -160,10 +160,10 @@ public sealed class RulesDriverIntegrationTests : IDisposable
             b => Assert.Fail("Expected float"),
             () => Assert.Fail("Expected float")
         );
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert
         // senior-dev: multiple-rules.json has poisonStacks: 2 and burnStacks: 1
         // First rule (#poisoned): health -= poisonStacks (50 - 2 = 48)
@@ -185,11 +185,11 @@ public sealed class RulesDriverIntegrationTests : IDisposable
         // Arrange
         var scenePath = "Selectors/Fixtures/no-entities-with-rules.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
-        
+
         // Act & Assert
         // senior-dev: Should complete without errors even though no entities match #poisoned
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // senior-dev: No errors should be logged
         Assert.Empty(_errorListener.ReceivedEvents);
     }
@@ -200,11 +200,11 @@ public sealed class RulesDriverIntegrationTests : IDisposable
         // Arrange
         var scenePath = "Selectors/Fixtures/entities-only.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
-        
+
         // Act & Assert
         // senior-dev: Should complete without errors even though scene has no rules
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // senior-dev: No errors should be logged
         Assert.Empty(_errorListener.ReceivedEvents);
     }
@@ -215,12 +215,12 @@ public sealed class RulesDriverIntegrationTests : IDisposable
         // Arrange
         var scenePath = "Selectors/Fixtures/poison-rule.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f); // health: 50 - 1 = 49
         RulesDriver.Instance.RunFrame(0.016f); // health: 49 - 1 = 48
         RulesDriver.Instance.RunFrame(0.016f); // health: 48 - 1 = 47
-        
+
         // Assert
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin", out var goblin));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(goblin.Value, out var props));
@@ -240,20 +240,20 @@ public sealed class RulesDriverIntegrationTests : IDisposable
         // Arrange
         var scenePath = "Scenes/Fixtures/average-calculation-rule.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert
         // senior-dev: Check for errors first
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // senior-dev: All 4 party members should have avgPartyHealth = 70 ((100+80+60+40)/4)
         Assert.True(EntityIdRegistry.Instance.TryResolve("p1", out var p1));
         Assert.True(EntityIdRegistry.Instance.TryResolve("p2", out var p2));
         Assert.True(EntityIdRegistry.Instance.TryResolve("p3", out var p3));
         Assert.True(EntityIdRegistry.Instance.TryResolve("p4", out var p4));
-        
+
         // Check all party members
         foreach (var (id, entity) in new[] { ("p1", p1), ("p2", p2), ("p3", p3), ("p4", p4) })
         {
@@ -276,22 +276,22 @@ public sealed class RulesDriverIntegrationTests : IDisposable
         // Arrange
         var scenePath = "Scenes/Fixtures/min-max-rule.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
-        
+
         // Act
         RulesDriver.Instance.RunFrame(0.016f);
-        
+
         // Assert
         // senior-dev: All enemies should have weakestEnemyHealth = 50, strongestEnemyHealth = 250
         Assert.True(EntityIdRegistry.Instance.TryResolve("e1", out var e1));
         Assert.True(EntityIdRegistry.Instance.TryResolve("e2", out var e2));
         Assert.True(EntityIdRegistry.Instance.TryResolve("e3", out var e3));
-        
+
         foreach (var (id, entity) in new[] { ("e1", e1), ("e2", e2), ("e3", e3) })
         {
             Assert.True(entity.HasValue);
             Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity.Value, out var props));
             Assert.NotNull(props.Value.Properties);
-            
+
             // Check weakest
             Assert.True(props.Value.Properties.TryGetValue("weakestEnemyHealth", out var weakValue));
             weakValue.Visit(
@@ -300,7 +300,7 @@ public sealed class RulesDriverIntegrationTests : IDisposable
                 b => Assert.Fail($"{id}: Expected float for weakest, got bool"),
                 () => Assert.Fail($"{id}: Expected float for weakest, got empty")
             );
-            
+
             // Check strongest
             Assert.True(props.Value.Properties.TryGetValue("strongestEnemyHealth", out var strongValue));
             strongValue.Visit(

@@ -124,7 +124,7 @@ public sealed class PartitionedSparseArray<T>(ushort globalCapacity, uint sceneC
         }
         return false;
     }
-    
+
     /// <summary>
     /// Gets the total count of elements across both partitions.
     /// </summary>

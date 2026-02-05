@@ -27,7 +27,7 @@ public class UnionEntitySelector(
         {
             var child = children[n];
             child.WriteTo(stringBuilder);
-            if (n != (children.Count -1))
+            if (n != (children.Count - 1))
             {
                 stringBuilder.Append(',');
             }
@@ -37,7 +37,7 @@ public class UnionEntitySelector(
     public bool Recalc()
     {
         var shouldRecalc = false;
-        foreach(var child in children)
+        foreach (var child in children)
         {
             shouldRecalc |= child.Recalc();
         }
@@ -47,7 +47,7 @@ public class UnionEntitySelector(
             Matches.Global.Clear();
             Matches.Scene.Clear();
 
-            foreach(var child in children)
+            foreach (var child in children)
             {
                 TensorSparse.Or(Matches, child.Matches, Matches);
             }

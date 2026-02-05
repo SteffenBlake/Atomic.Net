@@ -16,7 +16,7 @@ public class TagEntitySelector(
     private bool _dirty = true;
 
     public override int GetHashCode() => hashcode;
-    
+
     public override string ToString()
     {
         var builder = new StringBuilder();
@@ -47,7 +47,7 @@ public class TagEntitySelector(
         {
             Matches.Global.Clear();
             Matches.Scene.Clear();
-            
+
             // Resolve all entities with this tag from TagRegistry
             if (TagRegistry.Instance.TryResolve(tag, out var tagMatches))
             {
@@ -69,7 +69,7 @@ public class TagEntitySelector(
                     }
                 }
             }
-            
+
             // senior-dev: Reset dirty flag after recalc to prevent unnecessary recomputation
             _dirty = false;
         }

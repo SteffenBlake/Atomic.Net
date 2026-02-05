@@ -10,7 +10,7 @@ public class EntitySelectorConverter : JsonConverter<EntitySelector>
     )
     {
         var nextString = reader.GetString()?.Trim();
-       
+
         if (SelectorRegistry.Instance.TryParse(nextString, out var selector))
         {
             return selector;
@@ -38,7 +38,7 @@ public class NullableEntitySelectorConverter : JsonConverter<EntitySelector?>
         }
 
         var nextString = reader.GetString()?.Trim();
-       
+
         if (SelectorRegistry.Instance.TryParse(nextString, out var selector))
         {
             return selector;

@@ -22,7 +22,7 @@ public sealed class SelectorParsingUnitTests : IDisposable
         // Arrange: Initialize systems before each test
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
-        
+
         _errorListener = new FakeEventListener<ErrorEvent>();
     }
 
@@ -47,7 +47,7 @@ public sealed class SelectorParsingUnitTests : IDisposable
         // Assert
         Assert.True(success, "Should successfully parse @player");
         Assert.NotNull(selector);
-        
+
         // test-architect: Verify it's an IdEntitySelector variant by checking ToString
         Assert.True(selector.TryMatch(out IdEntitySelector? idSelector), "Should be IdEntitySelector");
         Assert.NotNull(idSelector);
@@ -66,7 +66,7 @@ public sealed class SelectorParsingUnitTests : IDisposable
         // Assert
         Assert.True(success, "Should successfully parse #enemies");
         Assert.NotNull(selector);
-        
+
         // test-architect: Verify it's a TagEntitySelector variant by checking ToString
         Assert.True(selector.TryMatch(out TagEntitySelector? tagSelector), "Should be TagEntitySelector");
         Assert.NotNull(tagSelector);
@@ -85,7 +85,7 @@ public sealed class SelectorParsingUnitTests : IDisposable
         // Assert
         Assert.True(success, "Should successfully parse !enter");
         Assert.NotNull(selector);
-        
+
         // test-architect: Verify it's a CollisionEnterEntitySelector variant
         Assert.True(selector.TryMatch(out CollisionEnterEntitySelector? enterSelector), "Should be CollisionEnterEntitySelector");
         Assert.NotNull(enterSelector);
@@ -104,7 +104,7 @@ public sealed class SelectorParsingUnitTests : IDisposable
         // Assert
         Assert.True(success, "Should successfully parse !exit");
         Assert.NotNull(selector);
-        
+
         // test-architect: Verify it's a CollisionExitEntitySelector variant
         Assert.True(selector.TryMatch(out CollisionExitEntitySelector? exitSelector), "Should be CollisionExitEntitySelector");
         Assert.NotNull(exitSelector);
@@ -123,7 +123,7 @@ public sealed class SelectorParsingUnitTests : IDisposable
         // Assert
         Assert.True(success, "Should successfully parse @player,@boss");
         Assert.NotNull(selector);
-        
+
         // test-architect: Verify it's a UnionEntitySelector variant
         Assert.True(selector.TryMatch(out UnionEntitySelector? unionSelector), "Should be UnionEntitySelector");
         Assert.NotNull(unionSelector);
@@ -143,7 +143,7 @@ public sealed class SelectorParsingUnitTests : IDisposable
         // Assert
         Assert.True(success, "Should successfully parse !enter:#enemies");
         Assert.NotNull(selector);
-        
+
         // senior-dev: Per sprint doc: "!enter:#enemies" → Tag("enemies", Prior: CollisionEnter())
         // The rightmost selector is the root (Tag), leftmost is its prior (CollisionEnter)
         Assert.True(selector.TryMatch(out TagEntitySelector? tagSelector), "Should be TagEntitySelector");
@@ -164,7 +164,7 @@ public sealed class SelectorParsingUnitTests : IDisposable
         // Assert
         Assert.True(success, "Should successfully parse !enter:#enemies:#boss");
         Assert.NotNull(selector);
-        
+
         // test-architect: Verify toString shows input format (left-to-right)
         Assert.Equal("!enter:#enemies:#boss", selector.ToString());
     }
@@ -181,7 +181,7 @@ public sealed class SelectorParsingUnitTests : IDisposable
         // Assert
         Assert.True(success, "Should successfully parse @player,!enter:#enemies:#boss");
         Assert.NotNull(selector);
-        
+
         // test-architect: Verify it's a UnionEntitySelector
         Assert.True(selector.TryMatch(out UnionEntitySelector? unionSelector), "Should be UnionEntitySelector");
         Assert.NotNull(unionSelector);

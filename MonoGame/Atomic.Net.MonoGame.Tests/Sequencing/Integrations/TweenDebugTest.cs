@@ -37,10 +37,10 @@ public sealed class TweenDebugTest : IDisposable
         SceneLoader.Instance.LoadGameScene("Sequencing/Fixtures/tween-simple-test.json");
         RulesDriver.Instance.RunFrame(0.016f);
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // Run for 0.5s - should execute tween step multiple times
         SequenceDriver.Instance.RunFrame(0.5f);
-        
+
         // Assert: Value should be 99 (hardcoded in mutation)
         Assert.True(EntityIdRegistry.Instance.TryResolve("testEntity", out var entity));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity.Value, out var props));

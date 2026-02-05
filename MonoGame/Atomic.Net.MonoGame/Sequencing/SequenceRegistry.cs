@@ -8,10 +8,10 @@ namespace Atomic.Net.MonoGame.Sequencing;
 /// Manages Global vs Scene partition allocation similar to EntityRegistry and RuleRegistry.
 /// Provides dual lookup: ID → index and index → sequence.
 /// </summary>
-public class SequenceRegistry : 
+public class SequenceRegistry :
     ISingleton<SequenceRegistry>,
     IEventHandler<InitializeEvent>,
-    IEventHandler<ResetEvent>, 
+    IEventHandler<ResetEvent>,
     IEventHandler<ShutdownEvent>
 {
     internal static void Initialize()
@@ -163,7 +163,7 @@ public class SequenceRegistry :
         for (int i = 0; i < sequence.Steps.Length; i++)
         {
             var step = sequence.Steps[i];
-            
+
             if (step.TryMatch(out DelayStep delayStep))
             {
                 if (delayStep.Duration <= 0)
@@ -237,7 +237,7 @@ public class SequenceRegistry :
         {
             _idToIndex.Remove(sequence.Id);
         }
-        
+
         // Clear scene partition with O(1) operation
         _sequences.Scene.Clear();
 

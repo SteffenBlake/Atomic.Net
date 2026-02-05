@@ -14,7 +14,7 @@ namespace Atomic.Net.MonoGame.Tests.Tags.Integrations;
 public sealed class TagErrorHandlingTests : IDisposable
 {
     private readonly ErrorEventLogger _errorLogger;
-    
+
     public TagErrorHandlingTests(ITestOutputHelper output)
     {
         _errorLogger = new ErrorEventLogger(output);
@@ -42,7 +42,7 @@ public sealed class TagErrorHandlingTests : IDisposable
 
         // Assert - Error event fired
         Assert.NotEmpty(errorListener.ReceivedEvents);
-        Assert.Contains(errorListener.ReceivedEvents, e => 
+        Assert.Contains(errorListener.ReceivedEvents, e =>
             e.Message.Contains("null", StringComparison.OrdinalIgnoreCase) ||
             e.Message.Contains("value", StringComparison.OrdinalIgnoreCase)
         );
@@ -205,7 +205,7 @@ public sealed class TagErrorHandlingTests : IDisposable
         var errorListener1 = new FakeEventListener<ErrorEvent>();
         SceneLoader.Instance.LoadGameScene(invalidScenePath);
         var errorCount1 = errorListener1.ReceivedEvents.Count;
-        
+
         // Reset and load clean scene
         EventBus<ResetEvent>.Push(new());
         var errorListener2 = new FakeEventListener<ErrorEvent>();

@@ -19,7 +19,7 @@ public readonly record struct JsonTransformPositionTarget(string Position)
         "Unrecognized position field. Expected one of: x, y, z"
     );
 
-    public void Apply(JsonObject transform, JsonNode value) 
+    public void Apply(JsonObject transform, JsonNode value)
     {
         // Get or create the "position" object inside transform
         if (!transform.TryGetPropertyValue("position", out var positionNode) || positionNode is not JsonObject positionObj)

@@ -21,7 +21,7 @@ public static class SpriteBatchRegistry
     /// </param>
     /// <returns><c>true</c> if a sprite batch with the given key exists; otherwise, <c>false</c>.</returns>
     public static bool TryGet(
-        string key, 
+        string key,
         [NotNullWhen(true)]
         out SpriteBatch? spriteBatch
     )

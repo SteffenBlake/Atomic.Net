@@ -27,7 +27,7 @@ public readonly struct TransformBehavior
         init => _rotation = value;
         get => _rotation ?? Quaternion.Identity;
     }
-   
+
 
     private readonly Vector3? _scale;
 
@@ -37,8 +37,8 @@ public readonly struct TransformBehavior
         init => _scale = value;
         get => _scale ?? Vector3.One;
     }
-    
-   
+
+
     private readonly Vector3? _anchor;
 
     [JsonConverter(typeof(Vector3Converter))]

@@ -48,22 +48,22 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(goblin1.Value, out var goblin1Props));
         Assert.NotNull(goblin1Props);
         Assert.NotNull(goblin1Props.Value.Properties);
-        
+
         // test-architect: Verify goblin-1 has 5 properties
         Assert.Equal(5, goblin1Props.Value.Properties.Count);
-        
+
         Assert.True(goblin1Props.Value.Properties["enemy-type"].TryMatch(out string? enemyType));
         Assert.Equal("goblin", enemyType);
-        
+
         Assert.True(goblin1Props.Value.Properties["faction"].TryMatch(out string? faction));
         Assert.Equal("horde", faction);
-        
+
         Assert.True(goblin1Props.Value.Properties["max-health"].TryMatch(out float maxHealth));
         Assert.Equal(100f, maxHealth);
-        
+
         Assert.True(goblin1Props.Value.Properties["is-boss"].TryMatch(out bool isBoss));
         Assert.False(isBoss);
-        
+
         Assert.True(goblin1Props.Value.Properties["loot-tier"].TryMatch(out float lootTier));
         Assert.Equal(2f, lootTier);
     }
@@ -84,20 +84,20 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         Assert.NotNull(bossProps);
         Assert.NotNull(bossProps.Value.Properties);
         Assert.Equal(6, bossProps.Value.Properties.Count);
-        
+
         Assert.True(bossProps.Value.Properties["is-boss"].TryMatch(out bool isBoss));
         Assert.True(isBoss);
-        
+
         Assert.True(bossProps.Value.Properties["max-health"].TryMatch(out float bossHealth));
         Assert.Equal(500f, bossHealth);
-        
+
         // test-architect: Verify treasure-chest has different properties
         Assert.True(EntityIdRegistry.Instance.TryResolve("treasure-chest", out var chest));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(chest.Value, out var chestProps));
         Assert.NotNull(chestProps);
         Assert.NotNull(chestProps.Value.Properties);
         Assert.Equal(2, chestProps.Value.Properties.Count);
-        
+
         Assert.True(chestProps.Value.Properties["locked"].TryMatch(out bool locked));
         Assert.True(locked);
     }
@@ -131,20 +131,20 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity.Value, out var props));
         Assert.NotNull(props);
         Assert.NotNull(props.Value.Properties);
-        
+
         // test-architect: Per requirements, empty string, 0, and false are valid values
         Assert.True(props.Value.Properties["empty-string"].TryMatch(out string? emptyStr));
         Assert.Equal("", emptyStr);
-        
+
         Assert.True(props.Value.Properties["zero-number"].TryMatch(out float zero));
         Assert.Equal(0f, zero);
-        
+
         Assert.True(props.Value.Properties["false-bool"].TryMatch(out bool falseBool));
         Assert.False(falseBool);
-        
+
         Assert.True(props.Value.Properties["negative-number"].TryMatch(out float negative));
         Assert.Equal(-42.5f, negative);
-        
+
         Assert.True(props.Value.Properties["large-number"].TryMatch(out float large));
         Assert.Equal(999999.99f, large, precision: 2);
     }
@@ -163,7 +163,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity.Value, out var props));
         Assert.NotNull(props);
         Assert.NotNull(props.Value.Properties);
-        
+
         // test-architect: Per requirements, null properties are skipped (not added to dictionary)
         Assert.Equal(2, props.Value.Properties.Count);
         Assert.True(props.Value.Properties.ContainsKey("valid-key"));
@@ -185,7 +185,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity.Value, out var props));
         Assert.NotNull(props);
         Assert.NotNull(props.Value.Properties);
-        
+
         // test-architect: Per requirements, arrays and objects are unsupported and should be skipped
         Assert.Equal(2, props.Value.Properties.Count);
         Assert.True(props.Value.Properties.ContainsKey("valid-string"));
@@ -207,7 +207,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         // Assert
         // test-architect: Per requirements, empty string keys should fire ErrorEvent
         Assert.NotEmpty(errorListener.ReceivedEvents);
-        var errorEvent = errorListener.ReceivedEvents.FirstOrDefault(e => 
+        var errorEvent = errorListener.ReceivedEvents.FirstOrDefault(e =>
             e.Message.Contains("empty") || e.Message.Contains("key") || e.Message.Contains("property"));
         Assert.NotEqual(default, errorEvent);
     }
@@ -227,12 +227,12 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(entity1.Value, out var props1));
         Assert.NotNull(props1);
         Assert.NotNull(props1.Value.Properties);
-        
+
         // test-architect: Keys should be accessible case-insensitively
         Assert.True(props1.Value.Properties.ContainsKey("faction"));
         Assert.True(props1.Value.Properties.ContainsKey("Faction"));
         Assert.True(props1.Value.Properties.ContainsKey("FACTION"));
-        
+
         // test-architect: All should resolve to same value
         Assert.True(props1.Value.Properties["faction"].TryMatch(out string? faction1));
         Assert.True(props1.Value.Properties["Faction"].TryMatch(out string? faction2));
@@ -247,7 +247,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         // Arrange
         var scenePath = "BED/Fixtures/properties-basic.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
-        
+
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin-1", out var goblin1));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.HasBehavior(goblin1.Value));
 
@@ -256,7 +256,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
 
         // Assert
         // test-architect: Accessing behavior on deactivated entity should throw
-        Assert.Throws<InvalidOperationException>(() => 
+        Assert.Throws<InvalidOperationException>(() =>
             BehaviorRegistry<PropertiesBehavior>.Instance.HasBehavior(goblin1.Value));
     }
 
@@ -266,7 +266,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         // Arrange
         var scenePath = "BED/Fixtures/properties-basic.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
-        
+
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin-1", out var goblin1Before));
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.HasBehavior(goblin1Before.Value));
 
@@ -276,11 +276,11 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         // Assert
         // test-architect: After reset, ID registry should be cleared
         Assert.False(EntityIdRegistry.Instance.TryResolve("goblin-1", out _));
-        
+
         // test-architect: Reload scene and verify no pollution
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin-1", out var goblin1After));
-        
+
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(goblin1After.Value, out var propsAfter));
         Assert.NotNull(propsAfter);
         Assert.NotNull(propsAfter.Value.Properties);
@@ -293,7 +293,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         // Arrange
         var scenePath = "BED/Fixtures/properties-basic.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
-        
+
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin-1", out var goblin1First));
         var firstIndex = goblin1First.Value.Index;
 
@@ -304,16 +304,16 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         // Assert
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin-1", out var goblin1Second));
         Assert.Equal(firstIndex, goblin1Second.Value.Index);
-        
+
         // test-architect: Properties should be identical to first load
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(goblin1Second.Value, out var props));
         Assert.NotNull(props);
         Assert.NotNull(props.Value.Properties);
         Assert.Equal(5, props.Value.Properties.Count);
-        
+
         Assert.True(props.Value.Properties["enemy-type"].TryMatch(out string? enemyType));
         Assert.Equal("goblin", enemyType);
-        
+
         Assert.True(props.Value.Properties["max-health"].TryMatch(out float health));
         Assert.Equal(100f, health);
     }
@@ -331,16 +331,16 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         // Assert
         // test-architect: Should fire event for each entity with properties (3 entities)
         Assert.True(listener.ReceivedEvents.Count >= 3);
-        
+
         // test-architect: Verify events contain correct entity references
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin-1", out var goblin1));
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin-boss", out var goblinBoss));
         Assert.True(EntityIdRegistry.Instance.TryResolve("treasure-chest", out var chest));
-        
+
         var goblin1Event = listener.ReceivedEvents.FirstOrDefault(e => e.Entity.Index == goblin1.Value.Index);
         var bossEvent = listener.ReceivedEvents.FirstOrDefault(e => e.Entity.Index == goblinBoss.Value.Index);
         var chestEvent = listener.ReceivedEvents.FirstOrDefault(e => e.Entity.Index == chest.Value.Index);
-        
+
         Assert.NotEqual(default, goblin1Event);
         Assert.NotEqual(default, bossEvent);
         Assert.NotEqual(default, chestEvent);
@@ -352,7 +352,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         // Arrange
         var scenePath = "BED/Fixtures/properties-basic.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
-        
+
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin-1", out var goblin1));
         using var updateListener = new FakeEventListener<PostBehaviorUpdatedEvent<PropertiesBehavior>>();
 
@@ -365,7 +365,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
 
         // Assert
         Assert.Single(updateListener.ReceivedEvents);
-        
+
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(goblin1.Value, out var updatedProps));
         Assert.NotNull(updatedProps);
         Assert.NotNull(updatedProps.Value.Properties);
@@ -379,10 +379,10 @@ public sealed class PropertyBagIntegrationTests : IDisposable
         // Arrange
         var scenePath = "BED/Fixtures/properties-basic.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
-        
+
         Assert.True(EntityIdRegistry.Instance.TryResolve("goblin-1", out var goblin1));
         using var removeListener = new FakeEventListener<PostBehaviorRemovedEvent<PropertiesBehavior>>();
-        
+
         Assert.True(BehaviorRegistry<PropertiesBehavior>.Instance.HasBehavior(goblin1.Value));
 
         // Act

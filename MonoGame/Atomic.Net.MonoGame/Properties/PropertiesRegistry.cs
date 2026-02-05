@@ -29,10 +29,10 @@ public sealed class PropertiesRegistry : ISingleton<PropertiesRegistry>,
 
     public static PropertiesRegistry Instance { get; private set; } = null!;
 
-    private readonly Dictionary<string, PartitionedSparseArray<bool>> _keyIndex = 
+    private readonly Dictionary<string, PartitionedSparseArray<bool>> _keyIndex =
         new(Constants.DefaultAllocPropertyBag, StringComparer.OrdinalIgnoreCase);
 
-    private readonly Dictionary<string, Dictionary<PropertyValue, PartitionedSparseArray<bool>>> _keyValueIndex = 
+    private readonly Dictionary<string, Dictionary<PropertyValue, PartitionedSparseArray<bool>>> _keyValueIndex =
         new(Constants.DefaultAllocPropertyBag, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>

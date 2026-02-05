@@ -3,7 +3,7 @@ using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Transform;
 using Atomic.Net.MonoGame.Hierarchy;
 using BenchmarkDotNet.Attributes;
-using Microsoft. Xna.Framework;
+using Microsoft.Xna.Framework;
 
 namespace Atomic.Net.MonoGame.Benchmarks.Transform;
 

@@ -40,10 +40,10 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
 
         // Assert
         var activeEntities = EntityRegistry.Instance.GetActiveGlobalEntities().Concat(EntityRegistry.Instance.GetActiveSceneEntities()).ToList();
-        
+
         // test-architect: Should spawn 2 entities (root-container, menu-button)
         Assert.True(activeEntities.Count >= 2, $"Expected at least 2 entities, got {activeEntities.Count}");
-        
+
         // test-architect: All entities should be in scene partition (index >= 256)
         Assert.All(activeEntities, entity =>
         {
@@ -67,10 +67,10 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
 
         // Assert
         var activeEntities = EntityRegistry.Instance.GetActiveGlobalEntities().Concat(EntityRegistry.Instance.GetActiveSceneEntities()).ToList();
-        
+
         // test-architect: Should spawn 2 entities (root-container, menu-button)
         Assert.True(activeEntities.Count >= 2, $"Expected at least 2 entities, got {activeEntities.Count}");
-        
+
         // test-architect: All entities should be in global partition (index < 256)
         Assert.All(activeEntities, entity =>
         {
@@ -133,7 +133,7 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
 
         // test-architect: Verify menu-button has transform with position only (rest are defaults)
         Assert.True(EntityIdRegistry.Instance.TryResolve("menu-button", out var buttonEntity));
-        
+
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(buttonEntity.Value, out var buttonTransform), "menu-button should have TransformBehavior");
         Assert.NotNull(buttonTransform);
         Assert.Equal(new Microsoft.Xna.Framework.Vector3(100, 50, 0), buttonTransform.Value.Position);
@@ -196,10 +196,10 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         // Assert
         // test-architect: Should fire error event for unresolved parent
         Assert.NotEmpty(errorListener.ReceivedEvents);
-        var errorEvent = errorListener.ReceivedEvents.FirstOrDefault(e => 
+        var errorEvent = errorListener.ReceivedEvents.FirstOrDefault(e =>
             e.Message.Contains("missing-parent") || e.Message.Contains("Unresolved"));
         Assert.NotEqual(default, errorEvent);
-        
+
         // test-architect: Entity should still be spawned, just without parent
         Assert.True(EntityIdRegistry.Instance.TryResolve("orphan", out var orphanEntity), "orphan entity should still be spawned");
         Assert.False(orphanEntity.Value.TryGetParent(out _), "orphan should not have parent since reference failed");
@@ -218,10 +218,10 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         // Assert
         // test-architect: Should fire error event for missing file
         Assert.NotEmpty(errorListener.ReceivedEvents);
-        var errorEvent = errorListener.ReceivedEvents.FirstOrDefault(e => 
+        var errorEvent = errorListener.ReceivedEvents.FirstOrDefault(e =>
             e.Message.Contains("not found") || e.Message.Contains("file"));
         Assert.NotEqual(default, errorEvent);
-        
+
         // test-architect: No entities should be spawned
         var activeEntities = EntityRegistry.Instance.GetActiveGlobalEntities().Concat(EntityRegistry.Instance.GetActiveSceneEntities()).ToList();
         Assert.Empty(activeEntities);
@@ -240,10 +240,10 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         // Assert
         // test-architect: Should fire error event for invalid JSON
         Assert.NotEmpty(errorListener.ReceivedEvents);
-        var errorEvent = errorListener.ReceivedEvents.FirstOrDefault(e => 
+        var errorEvent = errorListener.ReceivedEvents.FirstOrDefault(e =>
             e.Message.Contains("JSON") || e.Message.Contains("parse"));
         Assert.NotEqual(default, errorEvent);
-        
+
         // test-architect: No entities should be spawned
         var activeEntities = EntityRegistry.Instance.GetActiveGlobalEntities().Concat(EntityRegistry.Instance.GetActiveSceneEntities()).ToList();
         Assert.Empty(activeEntities);
@@ -255,7 +255,7 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         // Arrange
         var scenePath = "Scenes/Fixtures/basic-scene.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
-        
+
         Assert.True(EntityIdRegistry.Instance.TryResolve("root-container", out _), "ID should be registered before reset");
 
         // Act
@@ -272,23 +272,23 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         // Arrange: Load scene first time
         var scenePath = "Scenes/Fixtures/basic-scene.json";
         SceneLoader.Instance.LoadGameScene(scenePath);
-        
+
         Assert.True(EntityIdRegistry.Instance.TryResolve("root-container", out var entity1), "root-container should resolve on first load");
         var firstIndex = entity1.Value.Index;
-        
+
         Assert.True(
-            BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity1.Value, out _), 
+            BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity1.Value, out _),
             "root-container should have transform on first load"
         );
 
         // Act: Reset and reload
         EventBus<ResetEvent>.Push(new());
         SceneLoader.Instance.LoadGameScene(scenePath);
-        
+
         // Assert: Second load should work identically
         Assert.True(EntityIdRegistry.Instance.TryResolve("root-container", out var entity2), "root-container should resolve on second load");
         Assert.Equal(firstIndex, entity2.Value.Index);
-        
+
         Assert.True(BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity2.Value, out var transform2), "root-container should have transform on second load");
         Assert.NotNull(transform2);
         Assert.Equal(new Microsoft.Xna.Framework.Vector3(0, 0, 0), transform2.Value.Position);
@@ -303,10 +303,10 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         var entity = EntityRegistry.Instance.Activate();
         entity.SetBehavior<IdBehavior>(static (ref behavior) => behavior = new IdBehavior("initial-id")
         );
-        
+
         // Assert: Initial ID resolves
         Assert.True(
-            EntityIdRegistry.Instance.TryResolve("initial-id", out var resolvedEntity1), 
+            EntityIdRegistry.Instance.TryResolve("initial-id", out var resolvedEntity1),
             "initial-id should be registered"
         );
         Assert.Equal(entity.Index, resolvedEntity1.Value.Index);
@@ -315,13 +315,13 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
         BehaviorRegistry<IdBehavior>.Instance.Remove(entity);
         entity.SetBehavior<IdBehavior>(static (ref behavior) => behavior = new IdBehavior("new-id")
         );
-        
+
         // Assert: Old ID no longer resolves
         Assert.False(
-            EntityIdRegistry.Instance.TryResolve("initial-id", out _), 
+            EntityIdRegistry.Instance.TryResolve("initial-id", out _),
             "initial-id should be removed from registry"
         );
-        
+
         // Assert: New ID resolves to same entity
         Assert.True(EntityIdRegistry.Instance.TryResolve(
             "new-id", out var resolvedEntity2), "new-id should be registered"

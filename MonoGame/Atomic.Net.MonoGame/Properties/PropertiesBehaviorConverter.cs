@@ -18,14 +18,14 @@ public class PropertiesBehaviorConverter : JsonConverter<PropertiesBehavior>
             EventBus<ErrorEvent>.Push(new ErrorEvent("Properties object cannot be null"));
             return default;
         }
-        
+
         // Guard: not an object
         if (reader.TokenType != JsonTokenType.StartObject)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent($"Properties must be an object, found {reader.TokenType}"));
             return default;
         }
-       
+
         FluentDictionary<string, PropertyValue> result = new(8, StringComparer.InvariantCultureIgnoreCase);
 
         while (reader.Read())

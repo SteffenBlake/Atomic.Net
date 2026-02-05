@@ -69,7 +69,7 @@ public class SelectorRegistry :
 
     public bool TryParse(
         ReadOnlySpan<char> tokens,
-        [NotNullWhen(true)] 
+        [NotNullWhen(true)]
         out EntitySelector? entitySelector
     )
     {
@@ -391,7 +391,7 @@ public class SelectorRegistry :
         _idSelectorLookup.Clear();
         _tagSelectorLookup.Clear();
         _rootSelectors.Clear();
-        
+
         // Unregister from all events to prevent duplicate registrations
         EventBus<BehaviorAddedEvent<IdBehavior>>.Unregister(Instance);
         EventBus<PreBehaviorUpdatedEvent<IdBehavior>>.Unregister(Instance);
@@ -435,7 +435,7 @@ public class SelectorRegistry :
             }
         }
     }
-    
+
     public void OnEvent(BehaviorAddedEvent<TagsBehavior> e)
     {
         MarkTagSelectorsAsDirty(e.Entity);
@@ -455,7 +455,7 @@ public class SelectorRegistry :
     {
         MarkTagSelectorsAsDirty(e.Entity);
     }
-    
+
     private void MarkTagSelectorsAsDirty(Entity entity)
     {
         // senior-dev: When tags change on an entity, mark all selectors for those tags as dirty

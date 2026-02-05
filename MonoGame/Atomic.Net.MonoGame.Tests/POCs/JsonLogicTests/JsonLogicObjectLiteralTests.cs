@@ -26,7 +26,7 @@ public class JsonLogicObjectLiteralTests
         """);
 
         JsonNode? result = JsonLogic.Apply(rule, data);
-        
+
         Assert.NotNull(result);
         Console.WriteLine($"Result: {result}");
     }
@@ -56,7 +56,7 @@ public class JsonLogicObjectLiteralTests
         """);
 
         JsonNode? result = JsonLogic.Apply(rule, data);
-        
+
         Assert.NotNull(result);
         Console.WriteLine($"Result: {result}");
     }
@@ -79,7 +79,7 @@ public class JsonLogicObjectLiteralTests
         """);
 
         JsonNode? result = JsonLogic.Apply(rule, data);
-        
+
         Assert.NotNull(result);
         Assert.Equal(100, result?.GetValue<int>());
         Console.WriteLine($"Result: {result}");
@@ -106,7 +106,7 @@ public class JsonLogicObjectLiteralTests
         """);
 
         JsonNode? result = JsonLogic.Apply(rule, data);
-        
+
         Assert.NotNull(result);
         Console.WriteLine($"Result: {result}");
     }
@@ -134,7 +134,7 @@ public class JsonLogicObjectLiteralTests
         """);
 
         JsonNode? result = JsonLogic.Apply(rule, data);
-        
+
         Assert.NotNull(result);
         Console.WriteLine($"Result: {result}");
     }
@@ -166,7 +166,7 @@ public class JsonLogicObjectLiteralTests
         """);
 
         JsonNode? result = JsonLogic.Apply(rule, data);
-        
+
         Assert.NotNull(result);
         Console.WriteLine($"Result: {result}");
     }
@@ -195,7 +195,7 @@ public class JsonLogicObjectLiteralTests
         """);
 
         JsonNode? result = JsonLogic.Apply(rule, data);
-        
+
         Assert.NotNull(result);
         Assert.Equal(350m, result?.GetValue<decimal>());
         Console.WriteLine($"Result: {result}");
@@ -206,7 +206,7 @@ public class JsonLogicObjectLiteralTests
     {
         // Pre-allocated buffers (zero allocations during test execution)
         var results = new List<JsonObject>(capacity: 2); // Pre-sized to expected result count
-        
+
         // World context: deltaTime + entities with burn damage
         var worldData = JsonNode.Parse("""
         {
@@ -254,20 +254,20 @@ public class JsonLogicObjectLiteralTests
         var context = new JsonObject();
         context["world"] = worldData!["world"]!.DeepClone();
         context["entities"] = filtered.DeepClone();
-        
+
         for (var i = 0; i < filtered.Count; i++)
         {
             var entity = filtered[i]!;
-            
+
             // Update context (reuse, don't reallocate)
             context["self"] = entity.DeepClone();
 
             // Clone entity for mutation
             var mutatedEntity = entity.DeepClone() as JsonObject;
             Assert.NotNull(mutatedEntity);
-            
+
             // Process each mutation
-            foreach(var mutation in mutations)
+            foreach (var mutation in mutations)
             {
                 var mutationObj = mutation as JsonObject;
                 Assert.NotNull(mutationObj);
@@ -277,15 +277,15 @@ public class JsonLogicObjectLiteralTests
 
                 // Evaluate the value using JsonLogic with self context
                 var computedValue = JsonLogic.Apply(valueRule, context);
-                
+
                 Console.WriteLine($"Entity {mutatedEntity["_index"]}: computed value = {computedValue}");
-                
+
                 // Navigate target path and set value
                 var targetObj = target as JsonObject;
                 Assert.NotNull(targetObj);
                 var parentKey = targetObj.First().Key; // "properties"
                 var leafKey = (string)targetObj.First().Value!; // "health"
-                
+
                 var parentNode = mutatedEntity[parentKey] as JsonObject;
                 Assert.NotNull(parentNode);
                 parentNode[leafKey] = computedValue;
@@ -296,11 +296,11 @@ public class JsonLogicObjectLiteralTests
 
         // Assert results
         Assert.Equal(2, results.Count);
-        
+
         // Goblin: 100 - (10 * 0.5) = 95
         Assert.Equal(1, results[0]["_index"]!.GetValue<int>());
         Assert.Equal(95m, results[0]["properties"]!["health"]!.GetValue<decimal>());
-        
+
         // Orc: 200 - (5 * 0.5) = 197.5
         Assert.Equal(2, results[1]["_index"]!.GetValue<int>());
         Assert.Equal(197.5m, results[1]["properties"]!["health"]!.GetValue<decimal>());
@@ -316,13 +316,13 @@ public class JsonLogicObjectLiteralTests
             new JsonObject { ["health"] = 50 },
             new JsonObject { ["health"] = 75 }
         };
-        
+
         var context = new JsonObject
         {
             ["entities"] = entities,
             ["index"] = 1
         };
-        
+
         var rule = new JsonObject
         {
             ["var"] = new JsonObject
@@ -335,10 +335,10 @@ public class JsonLogicObjectLiteralTests
                 }
             }
         };
-        
+
         // Act
         var result = JsonLogic.Apply(rule, context);
-        
+
         // Assert
         Assert.NotNull(result);
         var value = result as JsonValue;

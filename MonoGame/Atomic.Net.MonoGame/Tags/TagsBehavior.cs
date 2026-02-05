@@ -14,11 +14,11 @@ public readonly record struct TagsBehavior
     // senior-dev: FluentHashSet allocation is approved (following PropertiesBehavior pattern)
     // This is a load-time allocation, not a gameplay allocation
     private readonly FluentHashSet<string>? _tags;
-    
+
     public FluentHashSet<string> Tags
     {
         init => _tags = value;
         get => _tags ?? new(8, StringComparer.OrdinalIgnoreCase);
     }
-    
+
 }

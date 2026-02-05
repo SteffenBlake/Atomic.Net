@@ -14,9 +14,9 @@ public class IdEntitySelector(
     );
 
     private bool _dirty = true;
-    
+
     public override int GetHashCode() => hashcode;
-    
+
     public override string ToString()
     {
         var builder = new StringBuilder();
@@ -37,7 +37,7 @@ public class IdEntitySelector(
     }
 
     public void MarkDirty() => _dirty = true;
-    
+
     public bool Recalc()
     {
         var priorDirty = prior?.Recalc() ?? false;
@@ -47,7 +47,7 @@ public class IdEntitySelector(
         {
             Matches.Global.Clear();
             Matches.Scene.Clear();
-            
+
             if (EntityIdRegistry.Instance.TryResolve(id, out var match))
             {
                 var priorMatches = prior?.Matches.HasValue(match.Value.Index) ?? true;
@@ -56,7 +56,7 @@ public class IdEntitySelector(
                     Matches.Set(match.Value.Index, true);
                 }
             }
-            
+
             // senior-dev: Reset dirty flag after recalc to prevent unnecessary recomputation
             _dirty = false;
         }

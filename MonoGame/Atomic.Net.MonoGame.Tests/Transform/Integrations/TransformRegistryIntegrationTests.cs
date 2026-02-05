@@ -54,9 +54,9 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
             .TryGetBehavior(entity, out var worldTransform);
 
         Assert.True(hasTransform, "Entity should have a WorldTransformBehavior behavior");
-        
+
         var actual = worldTransform!.Value.Value;
-        
+
         // Convert to arrays for easier comparison and clearer error messages
         var expectedArray = new float[]
         {
@@ -65,7 +65,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
             expected.M31, expected.M32, expected.M33, expected.M34,
             expected.M41, expected.M42, expected.M43, expected.M44
         };
-        
+
         var actualArray = new float[]
         {
             actual.M11, actual.M12, actual.M13, actual.M14,
@@ -73,7 +73,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
             actual.M31, actual.M32, actual.M33, actual.M34,
             actual.M41, actual.M42, actual.M43, actual.M44
         };
-        
+
         var labels = new[]
         {
             "M11", "M12", "M13", "M14",
@@ -81,9 +81,9 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
             "M31", "M32", "M33", "M34",
             "M41", "M42", "M43", "M44"
         };
-        
+
         var mismatches = new List<string>();
-        
+
         for (int i = 0; i < 16; i++)
         {
             if (MathF.Abs(expectedArray[i] - actualArray[i]) > Tolerance)
@@ -93,7 +93,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
                 );
             }
         }
-        
+
         if (mismatches.Count > 0)
         {
             var message = $@"
@@ -118,7 +118,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity));
-        
+
         TransformRegistry.Instance.Recalculate();
 
         // Assert
@@ -135,7 +135,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity));
-        
+
         TransformRegistry.Instance.Recalculate();
 
         // Assert
@@ -152,15 +152,15 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out var parent));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
-        
+
         TransformRegistry.Instance.Recalculate();
-        
+
         // Modify parent transform to make it dirty
         parent.Value.SetBehavior<TransformBehavior>(static (ref t) => t = t with
         {
             Position = new Vector3(200f, 0f, 0f)
         });
-        
+
         TransformRegistry.Instance.Recalculate();
 
         // Assert - child should have updated world transform
@@ -178,7 +178,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity));
-        
+
         TransformRegistry.Instance.Recalculate();
 
         // Assert
@@ -196,7 +196,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out _));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
-        
+
         TransformRegistry.Instance.Recalculate();
 
         // Assert
@@ -208,7 +208,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
     {
         // Arrange
         var scenePath = "Transform/Fixtures/parent-rotation-affects-child.json";
-        
+
         // ========================================================================
         // DISCOVERY NOTE: Matrix order is Rotation * Position (NOT Position * Rotation)
         // ========================================================================
@@ -221,7 +221,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         //
         // See: /TRANSFORM_TEST_INVESTIGATION.md for detailed investigation
         // ========================================================================
-        var parentTransform = Matrix.CreateFromQuaternion(Rotation90DegreesAroundZ()) * 
+        var parentTransform = Matrix.CreateFromQuaternion(Rotation90DegreesAroundZ()) *
                              Matrix.CreateTranslation(100f, 0f, 0f);
         var localChild = Matrix.CreateTranslation(50f, 0f, 0f);
         var expectedChild = localChild * parentTransform;
@@ -230,7 +230,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("parent", out _));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
-        
+
         TransformRegistry.Instance.Recalculate();
 
         // Assert
@@ -242,7 +242,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
     {
         // Arrange
         var scenePath = "Transform/Fixtures/two-body-orbit.json";
-        
+
         // ========================================================================
         // DISCOVERY NOTE: Matrix order is Rotation * Position (NOT Position * Rotation)
         // ========================================================================
@@ -256,7 +256,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         // See: /TRANSFORM_TEST_INVESTIGATION.md for detailed investigation
         // ========================================================================
         var sunTransform = Matrix.Identity;
-        var earthLocal = Matrix.CreateFromQuaternion(Rotation90DegreesAroundZ()) * 
+        var earthLocal = Matrix.CreateFromQuaternion(Rotation90DegreesAroundZ()) *
                         Matrix.CreateTranslation(100f, 0f, 0f);
         var earthWorld = earthLocal * sunTransform;
         var moonLocal = Matrix.CreateTranslation(20f, 0f, 0f);
@@ -267,7 +267,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("sun", out _));
         Assert.True(EntityIdRegistry.Instance.TryResolve("earth", out _));
         Assert.True(EntityIdRegistry.Instance.TryResolve("moon", out var moon));
-        
+
         TransformRegistry.Instance.Recalculate();
 
         // Assert
@@ -279,7 +279,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
     {
         // Arrange
         var scenePath = "Transform/Fixtures/anchor-with-rotation.json";
-        
+
         var anchor = new Vector3(5f, -5f, 0f);
         var rotation = Rotation90DegreesAroundZ();
         var expected = Matrix.CreateTranslation(-anchor) *
@@ -289,7 +289,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity));
-        
+
         TransformRegistry.Instance.Recalculate();
 
         // Assert
@@ -306,7 +306,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity));
-        
+
         TransformRegistry.Instance.Recalculate();
 
         // Assert
@@ -322,14 +322,14 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         // Act - Load scene, modify, reset, load again
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out _));
-        
+
         TransformRegistry.Instance.Recalculate();
-        
+
         EventBus<ResetEvent>.Push(new());
-        
+
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity2));
-        
+
         TransformRegistry.Instance.Recalculate();
 
         // Assert - entity should have clean transform
@@ -346,19 +346,19 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity1));
-        
+
         entity1.Value.SetBehavior<TransformBehavior>(static (ref t) => t = t with
         {
             Position = new Vector3(999f, 999f, 999f)
         });
-        
+
         TransformRegistry.Instance.Recalculate();
-        
+
         EventBus<ResetEvent>.Push(new());
-        
+
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity2));
-        
+
         TransformRegistry.Instance.Recalculate();
 
         // Assert
@@ -371,7 +371,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
     {
         // Arrange
         var scenePath = "Transform/Fixtures/anchor-with-scale.json";
-        
+
         var anchor = new Vector3(10f, 20f, 30f);
         var scale = new Vector3(2f, 3f, 4f);
         var expected = Matrix.CreateTranslation(-anchor) *
@@ -381,7 +381,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity));
-        
+
         TransformRegistry.Instance.Recalculate();
 
         // Assert
@@ -393,7 +393,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
     {
         // Arrange
         var scenePath = "Transform/Fixtures/anchor-scale-rotation.json";
-        
+
         var anchor = new Vector3(5f, -5f, 0f);
         var scale = new Vector3(2f, 2f, 2f);
         var rotation = Rotation90DegreesAroundZ();
@@ -405,7 +405,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity));
-        
+
         TransformRegistry.Instance.Recalculate();
 
         // Assert
@@ -417,7 +417,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
     {
         // Arrange
         var scenePath = "Transform/Fixtures/position-anchor-rotation.json";
-        
+
         var position = new Vector3(100f, 200f, 300f);
         var anchor = new Vector3(5f, -5f, 0f);
         var rotation = Rotation90DegreesAroundZ();
@@ -429,7 +429,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity));
-        
+
         TransformRegistry.Instance.Recalculate();
 
         // Assert
@@ -441,12 +441,12 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
     {
         // Arrange
         var scenePath = "Transform/Fixtures/complete-transform.json";
-        
+
         var position = new Vector3(100f, 200f, 300f);
         var rotation = Quaternion.Normalize(new Quaternion(0.1f, 0.2f, 0.3f, 0.9273619f));
         var scale = new Vector3(2f, 3f, 4f);
         var anchor = new Vector3(10f, 20f, 30f);
-        
+
         var expected = Matrix.CreateTranslation(-anchor) *
                       Matrix.CreateScale(scale) *
                       Matrix.CreateFromQuaternion(rotation) *
@@ -456,7 +456,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity));
-        
+
         TransformRegistry.Instance.Recalculate();
 
         // Assert
@@ -473,7 +473,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         // Act
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("entity", out var entity));
-        
+
         TransformRegistry.Instance.Recalculate();
 
         // Assert
@@ -491,15 +491,15 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("root", out var root));
         Assert.True(EntityIdRegistry.Instance.TryResolve("middle", out var middle));
         Assert.True(EntityIdRegistry.Instance.TryResolve("leaf", out var leaf));
-        
+
         TransformRegistry.Instance.Recalculate();
-        
+
         // Modify only leaf
         leaf.Value.SetBehavior<TransformBehavior>(static (ref t) => t = t with
         {
             Position = new Vector3(40f, 0f, 0f)
         });
-        
+
         TransformRegistry.Instance.Recalculate();
 
         // Assert
@@ -518,15 +518,15 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("root", out var root));
         Assert.True(EntityIdRegistry.Instance.TryResolve("middle", out var middle));
         Assert.True(EntityIdRegistry.Instance.TryResolve("leaf", out var leaf));
-        
+
         TransformRegistry.Instance.Recalculate();
-        
+
         // Modify middle node
         middle.Value.SetBehavior<TransformBehavior>(static (ref t) => t = t with
         {
             Position = new Vector3(25f, 0f, 0f)
         });
-        
+
         TransformRegistry.Instance.Recalculate();
 
         // Assert
@@ -545,15 +545,15 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("root", out var root));
         Assert.True(EntityIdRegistry.Instance.TryResolve("middle", out var middle));
         Assert.True(EntityIdRegistry.Instance.TryResolve("leaf", out var leaf));
-        
+
         TransformRegistry.Instance.Recalculate();
-        
+
         // Modify root
         root.Value.SetBehavior<TransformBehavior>(static (ref t) => t = t with
         {
             Position = new Vector3(100f, 0f, 0f)
         });
-        
+
         TransformRegistry.Instance.Recalculate();
 
         // Assert
@@ -572,7 +572,7 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("root", out _));
         Assert.True(EntityIdRegistry.Instance.TryResolve("middle", out _));
         Assert.True(EntityIdRegistry.Instance.TryResolve("leaf", out var leaf));
-        
+
         TransformRegistry.Instance.Recalculate();
         TransformRegistry.Instance.Recalculate();
         TransformRegistry.Instance.Recalculate();
@@ -593,15 +593,15 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("root", out var root));
         Assert.True(EntityIdRegistry.Instance.TryResolve("level2", out var level2));
         Assert.True(EntityIdRegistry.Instance.TryResolve("level4", out var level4));
-        
+
         TransformRegistry.Instance.Recalculate();
-        
+
         // Modify level2
         level2.Value.SetBehavior<TransformBehavior>(static (ref t) => t = t with
         {
             Position = new Vector3(20f, 0f, 0f)
         });
-        
+
         TransformRegistry.Instance.Recalculate();
 
         // Assert
@@ -620,15 +620,15 @@ public sealed class TransformRegistryIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("root", out var root));
         Assert.True(EntityIdRegistry.Instance.TryResolve("left-child", out var leftChild));
         Assert.True(EntityIdRegistry.Instance.TryResolve("right-child", out var rightChild));
-        
+
         TransformRegistry.Instance.Recalculate();
-        
+
         // Modify left child
         leftChild.Value.SetBehavior<TransformBehavior>(static (ref t) => t = t with
         {
             Position = new Vector3(100f, 10f, 0f)
         });
-        
+
         TransformRegistry.Instance.Recalculate();
 
         // Assert - right child should be unchanged

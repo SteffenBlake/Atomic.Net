@@ -104,7 +104,7 @@ public sealed class PartitionedSparseRefArray<T>(ushort globalCapacity, uint sce
         }
         return false;
     }
-    
+
     /// <summary>
     /// Gets the total count of elements across both partitions.
     /// </summary>

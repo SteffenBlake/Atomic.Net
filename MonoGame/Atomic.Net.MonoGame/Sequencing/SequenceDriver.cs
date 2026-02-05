@@ -8,7 +8,7 @@ namespace Atomic.Net.MonoGame.Sequencing;
 /// Singleton that processes all active sequences per-frame.
 /// Tracks sequence state per entity and executes steps based on elapsed time.
 /// </summary>
-public sealed class SequenceDriver : 
+public sealed class SequenceDriver :
     ISingleton<SequenceDriver>,
     IEventHandler<PreEntityDeactivatedEvent>
 {
@@ -26,7 +26,7 @@ public sealed class SequenceDriver :
     public static SequenceDriver Instance { get; private set; } = null!;
 
     // CRITICAL: Inner array must be PartitionedSparseArray because sequences use PartitionIndex
-    private readonly PartitionedSparseRefArray<PartitionedSparseArray<SequenceState>> _activeSequences = 
+    private readonly PartitionedSparseRefArray<PartitionedSparseArray<SequenceState>> _activeSequences =
         new(Constants.MaxGlobalEntities, Constants.MaxSceneEntities);
 
     // Pre-allocated context objects to avoid allocations in hot path
@@ -80,8 +80,8 @@ public sealed class SequenceDriver :
     }
 
     private void ProcessEntitySequences(
-        PartitionIndex entityIndex, 
-        PartitionedSparseArray<SequenceState> sequenceStates, 
+        PartitionIndex entityIndex,
+        PartitionedSparseArray<SequenceState> sequenceStates,
         float deltaTime
     )
     {
@@ -132,7 +132,7 @@ public sealed class SequenceDriver :
             _sequencesToRemove.Add(sequenceIndex);
             return;
         }
-        
+
         var sequence = sequenceNullable.Value;
 
         var shouldRemove = ProcessSequence(
@@ -182,8 +182,9 @@ public sealed class SequenceDriver :
                 }
                 else
                 {
-                    state = state with { 
-                        StepElapsedTime = state.StepElapsedTime + remainingTime 
+                    state = state with
+                    {
+                        StepElapsedTime = state.StepElapsedTime + remainingTime
                     };
                     remainingTime = 0;
                 }
@@ -196,7 +197,7 @@ public sealed class SequenceDriver :
                 _doContext["self"] = entityJsonNode;
                 doStep.Do.Execute(entityJsonNode, _doContext);
                 _doContext.Remove("self");  // Clean up immediately after use
-                
+
                 currentStepIndex++;
                 // Do NOT consume remaining time - allow progression to next step in same frame
             }
@@ -212,7 +213,7 @@ public sealed class SequenceDriver :
                 tweenStep.Do.Execute(entityJsonNode, _tweenContext);
 
                 // Clean up immediately after use
-                _tweenContext.Remove("self");  
+                _tweenContext.Remove("self");
 
                 var stepRemaining = tweenStep.Duration - state.StepElapsedTime;
                 if (stepRemaining <= remainingTime)
@@ -222,8 +223,9 @@ public sealed class SequenceDriver :
                 }
                 else
                 {
-                    state = state with { 
-                        StepElapsedTime = state.StepElapsedTime + remainingTime 
+                    state = state with
+                    {
+                        StepElapsedTime = state.StepElapsedTime + remainingTime
                     };
                     remainingTime = 0;
                 }
@@ -249,14 +251,14 @@ public sealed class SequenceDriver :
                         ));
 
                         // Clean up immediately after use
-                        _repeatContext.Remove("self");  
+                        _repeatContext.Remove("self");
                         // something went wrong, mark this sequence to be removed
-                        return true; 
+                        return true;
                     }
                 }
 
                 // Clean up immediately after use
-                _repeatContext.Remove("self");  
+                _repeatContext.Remove("self");
 
                 if (conditionMet)
                 {
@@ -264,8 +266,9 @@ public sealed class SequenceDriver :
                 }
                 else
                 {
-                    state = state with { 
-                        StepElapsedTime = elapsed + remainingTime 
+                    state = state with
+                    {
+                        StepElapsedTime = elapsed + remainingTime
                     };
                     remainingTime = 0;
                 }
@@ -285,14 +288,14 @@ public sealed class SequenceDriver :
         if (currentStepIndex >= sequence.Steps.Length)
         {
             // Sequence complete, should be removed
-            return true; 
+            return true;
         }
-        
+
         // Update sequence state
         sequenceStates.Set(sequenceIndex, state);
 
         // Sequence still running
-        return false; 
+        return false;
     }
 
     /// <summary>

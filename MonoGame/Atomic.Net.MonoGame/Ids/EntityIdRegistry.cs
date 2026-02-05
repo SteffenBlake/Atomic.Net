@@ -57,7 +57,7 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
     /// Returns true and outputs the entity if found, false otherwise.
     /// </summary>
     public bool TryResolve(
-        string id, 
+        string id,
         [NotNullWhen(true)]
         out Entity? entity
     )

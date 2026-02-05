@@ -20,7 +20,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         // Arrange: Initialize systems before each test
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
-        
+
         _errorListener = new FakeEventListener<ErrorEvent>();
     }
 
@@ -52,20 +52,20 @@ public sealed class RuleParsingIntegrationTests : IDisposable
             rules.Add(((ushort)item.Index, item.Value, false));
         }
         Assert.Single(rules);
-        
+
         var rule = rules[0].Value;
-        
+
         // test-architect: Verify rule is in scene partition
         Assert.False(rules[0].IsGlobal, "Rule should be in scene partition");
-        
+
         // test-architect: Verify FROM selector is #poisoned
         Assert.True(rule.From.TryMatch(out TagEntitySelector? tagSelector), "From should be TagEntitySelector");
         Assert.NotNull(tagSelector);
         Assert.Equal("#poisoned", rule.From.ToString());
-        
+
         // test-architect: Verify WHERE clause is present (JsonNode)
         Assert.NotNull(rule.Where);
-        
+
         // test-architect: Verify DO command is MutCommand
         Assert.True(rule.Do.TryMatch(out MutCommand mutCommand), "Do should be MutCommand");
         Assert.NotNull(mutCommand.Mut);
@@ -93,9 +93,9 @@ public sealed class RuleParsingIntegrationTests : IDisposable
             rules.Add(((ushort)item.Index, item.Value));
         }
         Assert.Single(rules);
-        
+
         var rule = rules[0].Value;
-        
+
         // test-architect: Verify FROM selector is union: @player, !enter:#enemies:#boss
         Assert.True(rule.From.TryMatch(out UnionEntitySelector? unionSelector), "From should be UnionEntitySelector");
         Assert.NotNull(unionSelector);
@@ -119,10 +119,10 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         // Assert
         // test-architect: Should fire ErrorEvent for invalid selector syntax (@@player)
         Assert.True(_errorListener.ReceivedEvents.Count > 0, "Should fire at least one ErrorEvent for invalid selector");
-        
+
         // test-architect: Error should mention the invalid selector or JSON parsing failure
-        var hasRelevantError = _errorListener.ReceivedEvents.Any(e => 
-            e.Message.Contains("@@") || 
+        var hasRelevantError = _errorListener.ReceivedEvents.Any(e =>
+            e.Message.Contains("@@") ||
             e.Message.Contains("selector", StringComparison.OrdinalIgnoreCase) ||
             e.Message.Contains("parse", StringComparison.OrdinalIgnoreCase) ||
             e.Message.Contains("JSON", StringComparison.OrdinalIgnoreCase)
@@ -151,9 +151,9 @@ public sealed class RuleParsingIntegrationTests : IDisposable
             rules.Add(((ushort)item.Index, item.Value));
         }
         Assert.Single(rules);
-        
+
         var rule = rules[0].Value;
-        
+
         // test-architect: Verify FROM selector is #poisoned
         Assert.True(rule.From.TryMatch(out TagEntitySelector? tagSelector), "From should be TagEntitySelector");
         Assert.NotNull(tagSelector);
@@ -181,11 +181,11 @@ public sealed class RuleParsingIntegrationTests : IDisposable
             rules.Add(((ushort)item.Index, item.Value, false));
         }
         Assert.Equal(2, rules.Count);
-        
+
         // test-architect: Verify both rules are in scene partition
-        Assert.All(rules, rule => 
+        Assert.All(rules, rule =>
             Assert.False(rule.IsGlobal, "Rule should be in scene partition"));
-        
+
         // test-architect: Verify rules have correct selectors (#poisoned and #burning)
         var selector1 = rules[0].Value.From.ToString();
         var selector2 = rules[1].Value.From.ToString();
@@ -221,10 +221,10 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         // Assert
         // test-architect: Should fire ErrorEvent for invalid parent selector (@@invalid)
         Assert.True(_errorListener.ReceivedEvents.Count > 0, "Should fire at least one ErrorEvent for invalid parent selector");
-        
+
         // test-architect: Error should mention the invalid selector or parsing failure
-        var hasRelevantError = _errorListener.ReceivedEvents.Any(e => 
-            e.Message.Contains("@@") || 
+        var hasRelevantError = _errorListener.ReceivedEvents.Any(e =>
+            e.Message.Contains("@@") ||
             e.Message.Contains("selector", StringComparison.OrdinalIgnoreCase) ||
             e.Message.Contains("parse", StringComparison.OrdinalIgnoreCase) ||
             e.Message.Contains("JSON", StringComparison.OrdinalIgnoreCase)
@@ -244,7 +244,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         // Assert
         // test-architect: Should load successfully with no errors (rules are optional)
         Assert.Empty(_errorListener.ReceivedEvents);
-        
+
         // test-architect: No rules should be loaded (scene has no rules section)
         var rules = new List<(uint Index, JsonRule Value)>();
         foreach (var item in RuleRegistry.Instance.Rules.Global)
@@ -279,11 +279,11 @@ public sealed class RuleParsingIntegrationTests : IDisposable
             rules.Add(((ushort)item.Index, item.Value));
         }
         Assert.Single(rules);
-        
+
         var rule = rules[0].Value;
-        
+
         // test-architect: Verify rule is in GLOBAL partition (index < MaxGlobalRules)
-        Assert.True(rules[0].Index < Constants.MaxGlobalRules, 
+        Assert.True(rules[0].Index < Constants.MaxGlobalRules,
             $"Rule should be in global partition (< {Constants.MaxGlobalRules})");
     }
 
@@ -293,10 +293,10 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         // Arrange
         var globalScenePath = "Selectors/Fixtures/poison-rule.json";
         var sceneScenePath = "Selectors/Fixtures/multiple-rules.json";
-        
+
         SceneLoader.Instance.LoadGlobalScene(globalScenePath);
         SceneLoader.Instance.LoadGameScene(sceneScenePath);
-        
+
         // test-architect: Verify we have 3 total rules (1 global + 2 scene)
         var rulesBeforeReset = new List<(uint Index, JsonRule Value)>();
         foreach (var item in RuleRegistry.Instance.Rules.Global)
@@ -324,9 +324,9 @@ public sealed class RuleParsingIntegrationTests : IDisposable
             rulesAfterReset.Add(((ushort)item.Index, item.Value));
         }
         Assert.Single(rulesAfterReset);
-        
+
         // test-architect: Remaining rule should be in global partition
-        Assert.True(rulesAfterReset[0].Index < Constants.MaxGlobalRules, 
+        Assert.True(rulesAfterReset[0].Index < Constants.MaxGlobalRules,
             "Remaining rule should be in global partition");
     }
 
@@ -336,10 +336,10 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         // Arrange
         var globalScenePath = "Selectors/Fixtures/poison-rule.json";
         var sceneScenePath = "Selectors/Fixtures/multiple-rules.json";
-        
+
         SceneLoader.Instance.LoadGlobalScene(globalScenePath);
         SceneLoader.Instance.LoadGameScene(sceneScenePath);
-        
+
         // test-architect: Verify we have 3 total rules (1 global + 2 scene)
         var rulesBeforeShutdown = new List<(uint Index, JsonRule Value)>();
         foreach (var item in RuleRegistry.Instance.Rules.Global)
@@ -387,9 +387,9 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         {
             rulesAfterFirstScene.Add(((ushort)item.Index, item.Value));
         }
-        
+
         EventBus<ResetEvent>.Push(new()); // Clear scene rules
-        
+
         SceneLoader.Instance.LoadGameScene(scene2Path);
         var rulesAfterSecondScene = new List<(uint Index, JsonRule Value)>();
         foreach (var item in RuleRegistry.Instance.Rules.Global)
@@ -404,7 +404,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
         // Assert
         // test-architect: First scene should load 1 rule
         Assert.Single(rulesAfterFirstScene);
-        
+
         // test-architect: After reset and loading second scene, should have 2 rules (from second scene only)
         Assert.Equal(2, rulesAfterSecondScene.Count);
     }

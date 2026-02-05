@@ -50,7 +50,7 @@ public class TensorChunkingBenchmark
     public void WholeArray_NoChunking()
     {
         // Single SIMD operation over entire array
-        TensorPrimitives. Exp(_wholeArray, _outputWhole);
+        TensorPrimitives.Exp(_wholeArray, _outputWhole);
     }
 
     [Benchmark]

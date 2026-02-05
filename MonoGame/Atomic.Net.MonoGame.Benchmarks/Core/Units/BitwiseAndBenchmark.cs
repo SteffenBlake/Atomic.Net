@@ -117,11 +117,11 @@ public class BitwiseAndBenchmark
     public int PlainForLoop_Bools()
     {
         int result = 0;
-        
+
         // Perform AND operation
         for (ushort i = 0; i < ArraySize; i++)
         {
-            if(_leftBools[i] & _rightBools[i])
+            if (_leftBools[i] & _rightBools[i])
             {
                 _resultSparse.Set(i, true);
                 result += i;

@@ -9,7 +9,7 @@ namespace Atomic.Net.MonoGame.Tests.BED.Integrations;
 public struct TestBehaviorIntegration
 {
     public int Value;
-    
+
 }
 
 [Collection("NonParallel")]
@@ -39,7 +39,7 @@ public sealed class BehaviorRegistryIntegrationTests : IDisposable
         // test-architect: This is a placeholder for future behavior loading from JSON
         // Currently there are no behaviors beyond Transform/Parent/EntityId that load from JSON
         // This test will be expanded when custom behaviors can be defined in JSON
-        
+
         // Act & Assert
         Assert.True(true, "Placeholder test - will be implemented when custom behaviors support JSON loading");
     }

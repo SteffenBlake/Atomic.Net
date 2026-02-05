@@ -7,7 +7,7 @@ public class InvariantJsonStringEnumConverter<TEnum> : JsonConverter<TEnum?>
     where TEnum : struct, Enum
 {
 
-    private static readonly IReadOnlyList<string> KnownValues = [.. 
+    private static readonly IReadOnlyList<string> KnownValues = [..
         Enum.GetNames<TEnum>().Select(JsonNamingPolicy.CamelCase.ConvertName)
     ];
 
@@ -27,7 +27,7 @@ public class InvariantJsonStringEnumConverter<TEnum> : JsonConverter<TEnum?>
             return result;
         }
 
-        
+
         throw new JsonException(
             $"Invalid value '{value}' for enum {typeof(TEnum).Name}, expected one of: ({string.Join(',', KnownValues)})"
         );

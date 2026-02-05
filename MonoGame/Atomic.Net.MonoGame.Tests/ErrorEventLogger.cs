@@ -22,10 +22,10 @@ public sealed class ErrorEventLogger : IEventHandler<ErrorEvent>, IDisposable
     {
         var message = $"[ERROR EVENT] {e.Message}";
         _errors.Add(message);
-        
+
         // Log to test output if available
         _output?.WriteLine(message);
-        
+
         // Also log to console so it shows up in test results
         Console.WriteLine(message);
     }

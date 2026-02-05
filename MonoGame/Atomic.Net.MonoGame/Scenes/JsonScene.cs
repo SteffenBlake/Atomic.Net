@@ -11,12 +11,12 @@ public class JsonScene
     /// List of entities to spawn in the scene.
     /// </summary>
     public List<JsonEntity> Entities { get; set; } = [];
-    
+
     /// <summary>
     /// List of rules to spawn in the scene, optional.
     /// </summary>
     public List<JsonRule>? Rules { get; set; } = null;
-    
+
     /// <summary>
     /// List of sequences to spawn in the scene, optional.
     /// </summary>

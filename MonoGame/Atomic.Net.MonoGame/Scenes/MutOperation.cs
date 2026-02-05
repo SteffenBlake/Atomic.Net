@@ -13,7 +13,7 @@ public readonly record struct MutOperation(
     /// Deserialized at scene load time using JsonTargetConverter.
     /// </summary>
     JsonTarget Target,
-    
+
     /// <summary>
     /// JsonLogic expression to evaluate and set at the target path
     /// </summary>

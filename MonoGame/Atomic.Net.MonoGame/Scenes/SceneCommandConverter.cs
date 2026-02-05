@@ -21,12 +21,12 @@ public class SceneCommandConverter : JsonConverter<SceneCommand>
             throw new JsonException("Expected JSON object");
         }
 
-        KeyValuePair<string, JsonNode?>? firstProperty = 
+        KeyValuePair<string, JsonNode?>? firstProperty =
             jsonObject.Count == 0 ? null :
             jsonObject.FirstOrDefault();
 
         var propertyKey = firstProperty?.Key;
-        
+
         SceneCommand? result = propertyKey == null ? null : propertyKey switch
         {
             "mut" => jsonNode.Deserialize<MutCommand>(options),
