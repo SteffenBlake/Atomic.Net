@@ -31,6 +31,16 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         EventBus<ShutdownEvent>.Push(new());
     }
 
+    /// <summary>
+    /// Recalculates all systems in the correct order: Flex → Transform → WorldFlex
+    /// </summary>
+    private static void RecalculateAll()
+    {
+        FlexRegistry.Instance.Recalculate();
+        TransformRegistry.Instance.Recalculate();
+        WorldFlexRegistry.Instance.Recalculate();
+    }
+
     private static void AssertPositionEquals(float expectedX, float expectedY, Entity entity, string context = "")
     {
         // Arrange
@@ -122,11 +132,15 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
-        // Assert - children should be laid out horizontally
+        // Assert - children should be laid out horizontally (local positions)
         AssertPositionEquals(0, 0, child1.Value, "child1");
         AssertPositionEquals(100, 0, child2.Value, "child2");
+
+        // Verify WorldFlexBehavior exists for flex entities
+        Assert.True(child1.Value.HasBehavior<WorldFlexBehavior>(), "child1 should have WorldFlexBehavior");
+        Assert.True(child2.Value.HasBehavior<WorldFlexBehavior>(), "child2 should have WorldFlexBehavior");
     }
 
     [Fact]
@@ -141,11 +155,15 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
-        // Assert - children should be laid out vertically
+        // Assert - children should be laid out vertically (local positions)
         AssertPositionEquals(0, 0, child1.Value, "child1");
         AssertPositionEquals(0, 100, child2.Value, "child2");
+
+        // Verify WorldFlexBehavior exists for flex entities
+        Assert.True(child1.Value.HasBehavior<WorldFlexBehavior>(), "child1 should have WorldFlexBehavior");
+        Assert.True(child2.Value.HasBehavior<WorldFlexBehavior>(), "child2 should have WorldFlexBehavior");
     }
 
     [Fact]
@@ -159,16 +177,16 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - child should be offset by left and top margins
         AssertPositionEquals(10, 20, child.Value, "child");
 
-        // Also check FlexBehavior contains correct margin rect
-        Assert.True(child.Value.TryGetBehavior<FlexBehavior>(out var flexBehavior));
+        // Check WorldFlexBehavior contains correct margin rect (world coordinates)
+        Assert.True(child.Value.TryGetBehavior<WorldFlexBehavior>(out var worldFlexBehavior));
         AssertFlexRectEquals(
             new RectangleF(0, 0, 140, 180), // margin increases width/height
-            flexBehavior.Value.MarginRect,
+            worldFlexBehavior.Value.MarginRect,
             "MarginRect",
             "child"
         );
@@ -185,16 +203,16 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
 
-        FlexRegistry.Instance.Recalculate();
+        RecalculateAll();
 
         // Assert - child should be offset by padding
         AssertPositionEquals(10, 10, child.Value, "child");
 
-        // Container padding rect should account for padding
-        Assert.True(container.Value.TryGetBehavior<FlexBehavior>(out var containerFlex));
+        // Container padding rect should account for padding (world coordinates)
+        Assert.True(container.Value.TryGetBehavior<WorldFlexBehavior>(out var containerWorldFlex));
         AssertFlexRectEquals(
             new RectangleF(10, 10, 280, 80), // content area reduced by padding
-            containerFlex.Value.ContentRect,
+            containerWorldFlex.Value.ContentRect,
             "ContentRect",
             "container"
         );
