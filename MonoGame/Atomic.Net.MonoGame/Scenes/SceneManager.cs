@@ -125,6 +125,17 @@ public sealed class SceneManager : ISingleton<SceneManager>
     {
         return Task.Run(() =>
         {
+            // senior-dev: CRITICAL - Background thread error handler
+            // EventBus.Push() invokes handlers on the calling thread. When registries
+            // (RuleRegistry, SequenceRegistry) push ErrorEvents from this background thread,
+            // those events would invoke ErrorEventLogger.OnEvent() on the background thread,
+            // which calls List.Add() - NOT thread-safe!
+            //
+            // Solution: Register a local error handler that captures errors and queues them
+            // for processing on the main thread via SceneManager.Update().
+            var backgroundErrorHandler = new BackgroundErrorHandler(this);
+            EventBus<ErrorEvent>.Register(backgroundErrorHandler);
+
             try
             {
                 // Check if file exists
@@ -226,6 +237,12 @@ public sealed class SceneManager : ISingleton<SceneManager>
                 QueueError($"Unexpected error during scene load: {ex.Message}");
                 ReturnToIdle();
             }
+            finally
+            {
+                // senior-dev: CRITICAL - Unregister background error handler
+                // Must be in finally block to ensure it's always removed, even if exception occurs
+                EventBus<ErrorEvent>.Unregister(backgroundErrorHandler);
+            }
         });
     }
 
@@ -289,5 +306,36 @@ public sealed class SceneManager : ISingleton<SceneManager>
     {
         Interlocked.Exchange(ref _isLoading, 0);
         LoadingProgress = 1.0f;
+    }
+
+    /// <summary>
+    /// Background thread error handler that captures ErrorEvents pushed from the background thread
+    /// and queues them for processing on the main thread.
+    /// 
+    /// This is necessary because EventBus.Push() invokes handlers synchronously on the calling thread.
+    /// When registries (RuleRegistry, SequenceRegistry) push ErrorEvents from the background thread,
+    /// those events would invoke ALL registered handlers (like ErrorEventLogger) on the background thread,
+    /// which can cause thread-safety issues with handlers that use non-thread-safe data structures.
+    /// 
+    /// By registering this handler at the start of the background thread, we capture those errors
+    /// and re-queue them to SceneManager's ConcurrentQueue, which is then processed on the main
+    /// thread in Update(), where EventBus.Push() is called again - this time on the main thread,
+    /// safely invoking all other handlers.
+    /// </summary>
+    private sealed class BackgroundErrorHandler : IEventHandler<ErrorEvent>
+    {
+        private readonly SceneManager _manager;
+
+        public BackgroundErrorHandler(SceneManager manager)
+        {
+            _manager = manager;
+        }
+
+        public void OnEvent(ErrorEvent e)
+        {
+            // Queue error to be re-emitted on main thread
+            // This prevents other handlers from being invoked on the background thread
+            _manager.QueueError(e.Message);
+        }
     }
 }

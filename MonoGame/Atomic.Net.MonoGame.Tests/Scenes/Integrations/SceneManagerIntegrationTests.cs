@@ -192,12 +192,12 @@ public sealed class SceneManagerIntegrationTests : IDisposable
         // Arrange - Create a scene with more than MaxSceneRules (1024) to trigger capacity error
         // This tests that ErrorEvents pushed from background thread properly bubble up to main thread
         var scenePath = "/tmp/scene-too-many-rules.json";
-        
+
         var sb = new StringBuilder();
         sb.AppendLine("{");
         sb.AppendLine("  \"entities\": [],");
         sb.AppendLine("  \"rules\": [");
-        
+
         // Generate 1030 rules (more than MaxSceneRules = 1024)
         // Use minimal valid rule format - from selector with empty do
         for (var i = 0; i < 1030; i++)
@@ -206,7 +206,7 @@ public sealed class SceneManagerIntegrationTests : IDisposable
             sb.Append($"\"from\": \"#tag{i}\", ");
             sb.Append("\"do\": {\"mut\": []}");
             sb.Append("}");
-            
+
             if (i < 1029)
             {
                 sb.AppendLine(",");
@@ -216,12 +216,12 @@ public sealed class SceneManagerIntegrationTests : IDisposable
                 sb.AppendLine();
             }
         }
-        
+
         sb.AppendLine("  ]");
         sb.AppendLine("}");
-        
+
         File.WriteAllText(scenePath, sb.ToString());
-        
+
         // Clear any previous errors
         _errorLogger.Clear();
 
@@ -245,7 +245,7 @@ public sealed class SceneManagerIntegrationTests : IDisposable
         {
             _output.WriteLine($"  Error: {error}");
         }
-        
+
         Assert.NotEmpty(_errorLogger.Errors);
         Assert.Contains(_errorLogger.Errors, e => e.Contains("capacity exceeded"));
     }
@@ -255,12 +255,12 @@ public sealed class SceneManagerIntegrationTests : IDisposable
     {
         // Arrange - Create a scene with more than MaxSceneSequences (512) to trigger capacity error
         var scenePath = "/tmp/scene-too-many-sequences.json";
-        
+
         var sb = new StringBuilder();
         sb.AppendLine("{");
         sb.AppendLine("  \"entities\": [],");
         sb.AppendLine("  \"sequences\": [");
-        
+
         // Generate 520 sequences (more than MaxSceneSequences = 512)
         for (var i = 0; i < 520; i++)
         {
@@ -268,7 +268,7 @@ public sealed class SceneManagerIntegrationTests : IDisposable
             sb.Append($"\"id\": \"seq{i}\", ");
             sb.Append("\"steps\": [{\"delay\": 0.1}]");
             sb.Append("}");
-            
+
             if (i < 519)
             {
                 sb.AppendLine(",");
@@ -278,12 +278,12 @@ public sealed class SceneManagerIntegrationTests : IDisposable
                 sb.AppendLine();
             }
         }
-        
+
         sb.AppendLine("  ]");
         sb.AppendLine("}");
-        
+
         File.WriteAllText(scenePath, sb.ToString());
-        
+
         // Clear any previous errors
         _errorLogger.Clear();
 
@@ -307,79 +307,8 @@ public sealed class SceneManagerIntegrationTests : IDisposable
         {
             _output.WriteLine($"  Error: {error}");
         }
-        
+
         Assert.NotEmpty(_errorLogger.Errors);
         Assert.Contains(_errorLogger.Errors, e => e.Contains("capacity exceeded"));
-    }
-
-    [Fact]
-    public async Task LoadScene_BackgroundThreadErrorEvents_DemonstrateThreadSafetyIssue()
-    {
-        // This test demonstrates the BUG: When ErrorEvents are pushed from the background thread,
-        // they invoke ALL registered handlers on the background thread, which can cause
-        // thread-safety issues with handlers that aren't thread-safe (like ErrorEventLogger
-        // which uses a non-thread-safe List).
-        
-        // The problem is that EventBus.Push() directly invokes handlers on the calling thread,
-        // so when RuleRegistry.TryActivate() pushes an error from the background thread,
-        // it calls ErrorEventLogger.OnEvent() on the background thread, which does
-        // _errors.Add() on a List that isn't thread-safe.
-        
-        // To properly demonstrate this, we'd need to create many concurrent loads that
-        // trigger errors simultaneously, but for now, we just verify that errors ARE
-        // being pushed from background thread (which is the root cause of the issue).
-        
-        var scenePath = "/tmp/scene-too-many-rules.json";
-        
-        // Generate scene with too many rules
-        var sb = new StringBuilder();
-        sb.AppendLine("{");
-        sb.AppendLine("  \"entities\": [],");
-        sb.AppendLine("  \"rules\": [");
-        
-        for (var i = 0; i < 1030; i++)
-        {
-            sb.Append("    {");
-            sb.Append($"\"from\": \"#tag{i}\", ");
-            sb.Append("\"do\": {{\"mut\": []}}");
-            sb.Append("}");
-            
-            if (i < 1029)
-            {
-                sb.AppendLine(",");
-            }
-            else
-            {
-                sb.AppendLine();
-            }
-        }
-        
-        sb.AppendLine("  ]");
-        sb.AppendLine("}");
-        
-        File.WriteAllText(scenePath, sb.ToString());
-        
-        _errorLogger.Clear();
-
-        // Act
-        SceneManager.Instance.LoadScene(scenePath);
-
-        // Wait for loading
-        var maxWait = TimeSpan.FromSeconds(5);
-        var start = DateTime.UtcNow;
-        while (SceneManager.Instance.IsLoading && DateTime.UtcNow - start < maxWait)
-        {
-            SceneManager.Instance.Update();
-            await Task.Delay(10);
-        }
-
-        // The test PASSES because errors ARE being received, but this demonstrates
-        // the concurrency issue: ErrorEventLogger.OnEvent() is being called on the
-        // background thread, which is unsafe.
-        _output.WriteLine($"Thread safety issue: ErrorEventLogger received {_errorLogger.Errors.Count} errors from background thread");
-        _output.WriteLine("These errors invoked ErrorEventLogger.OnEvent() on the background thread,");
-        _output.WriteLine("which calls List.Add() - NOT thread-safe!");
-        
-        Assert.NotEmpty(_errorLogger.Errors);
     }
 }
