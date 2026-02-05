@@ -3,6 +3,7 @@ namespace Atomic.Net.MonoGame.Core;
 
 /// <summary>
 /// Central registry for entity lifecycle management.
+/// Thread-safe for async scene loading using Interlocked for index allocation.
 /// </summary>
 public class EntityRegistry : IEventHandler<ShutdownEvent>
 {
@@ -37,8 +38,10 @@ public class EntityRegistry : IEventHandler<ShutdownEvent>
         Constants.MaxGlobalEntities,
         Constants.MaxSceneEntities
     );
-    private uint _nextSceneIndex = 0;
-    private ushort _nextGlobalIndex = 0;
+    
+    // Thread-safe index counters for async scene loading
+    private int _nextSceneIndex = 0;
+    private int _nextGlobalIndex = 0;
 
     // Pre-allocated lists for zero-allocation event handlers
     private readonly List<Entity> _tempSceneEntityList = new((int)Constants.MaxSceneEntities);
@@ -62,13 +65,17 @@ public class EntityRegistry : IEventHandler<ShutdownEvent>
 
     /// <summary>
     /// Activate the next available scene entity.
+    /// Thread-safe using Interlocked for concurrent calls during async scene loading.
     /// </summary>
     /// <returns>The activated entity.</returns>
     public Entity Activate()
     {
-        for (uint offset = 0; offset < Constants.MaxSceneEntities; offset++)
+        // Try to find an available entity using thread-safe increment
+        for (uint attempt = 0; attempt < Constants.MaxSceneEntities; attempt++)
         {
-            uint i = (_nextSceneIndex + offset) % Constants.MaxSceneEntities;
+            // Atomically get and increment the next index
+            var currentIndex = Interlocked.Increment(ref _nextSceneIndex) - 1;
+            uint i = (uint)(currentIndex % Constants.MaxSceneEntities);
 
             // Direct access to Scene array for scene-specific logic (performance)
             if (_active.Scene.HasValue(i))
@@ -78,7 +85,6 @@ public class EntityRegistry : IEventHandler<ShutdownEvent>
 
             _active.Scene.Set(i, true);
             _enabled.Scene.Set(i, true);
-            _nextSceneIndex = (i + 1) % Constants.MaxSceneEntities;
 
             return _sceneEntities[i];
         }
@@ -288,7 +294,8 @@ public class EntityRegistry : IEventHandler<ShutdownEvent>
             Deactivate(entity);
         }
 
-        _nextSceneIndex = 0;
+        // Reset index counter (thread-safe)
+        Interlocked.Exchange(ref _nextSceneIndex, 0);
     }
 
     /// <summary>

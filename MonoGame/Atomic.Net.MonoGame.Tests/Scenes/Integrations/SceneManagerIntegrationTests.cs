@@ -38,7 +38,7 @@ public sealed class SceneManagerIntegrationTests : IDisposable
         EventBus<ShutdownEvent>.Push(new());
     }
 
-    [Fact(Skip = "Thread safety issue: EntityRegistry.Activate() not thread-safe for background calls")]
+    [Fact]
     public async Task LoadScene_WithValidPath_LoadsSceneInBackground()
     {
         // Arrange
@@ -109,7 +109,7 @@ public sealed class SceneManagerIntegrationTests : IDisposable
         Assert.Equal(1.0f, SceneManager.Instance.LoadingProgress);
     }
 
-    [Fact(Skip = "Thread safety issue: EntityRegistry.Activate() not thread-safe for background calls")]
+    [Fact]
     public async Task LoadScene_ClearsScenePartition_BeforeLoad()
     {
         // Arrange - Load scene1 first
