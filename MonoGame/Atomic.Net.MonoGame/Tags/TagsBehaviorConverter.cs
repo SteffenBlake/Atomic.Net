@@ -1,13 +1,12 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Tags;
 
 /// <summary>
 /// JSON converter for TagsBehavior.
-/// Validates tags and fires ErrorEvents for invalid entries (null, empty, whitespace, duplicates, invalid characters).
+/// Validates tags and throws JsonException for invalid entries.
 /// </summary>
 public partial class TagsBehaviorConverter : JsonConverter<TagsBehavior>
 {
@@ -20,15 +19,13 @@ public partial class TagsBehaviorConverter : JsonConverter<TagsBehavior>
         // Guard: null value
         if (reader.TokenType == JsonTokenType.Null)
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent("Tag array cannot be null"));
-            return default;
+            throw new JsonException("Tag array cannot be null");
         }
 
         // Guard: not an array
         if (reader.TokenType != JsonTokenType.StartArray)
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Tags must be an array, found {reader.TokenType}"));
-            return default;
+            throw new JsonException($"Tags must be an array, found {reader.TokenType}");
         }
 
         var tags = new FluentHashSet<string>(8, StringComparer.OrdinalIgnoreCase);
@@ -43,15 +40,13 @@ public partial class TagsBehaviorConverter : JsonConverter<TagsBehavior>
             // Guard: null tag in array
             if (reader.TokenType == JsonTokenType.Null)
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent("Tag array contains null value (skipped)"));
-                continue;
+                throw new JsonException("Tag array contains null value");
             }
 
             // Guard: non-string tag in array
             if (reader.TokenType != JsonTokenType.String)
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent($"Tag array contains non-string value of type {reader.TokenType} (skipped)"));
-                continue;
+                throw new JsonException($"Tag array contains non-string value of type {reader.TokenType}");
             }
 
             var tag = reader.GetString();
@@ -59,8 +54,7 @@ public partial class TagsBehaviorConverter : JsonConverter<TagsBehavior>
             // Guard: empty or whitespace tag
             if (string.IsNullOrWhiteSpace(tag))
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent("Tag array contains empty or whitespace-only tag (skipped)"));
-                continue;
+                throw new JsonException("Tag array contains empty or whitespace-only tag");
             }
 
             // Normalize to lowercase for case-insensitive matching
@@ -69,15 +63,13 @@ public partial class TagsBehaviorConverter : JsonConverter<TagsBehavior>
             // Guard: invalid characters in tag
             if (!ValidTagPattern().IsMatch(normalizedTag))
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent($"Tag '{tag}' contains invalid characters (only a-z, A-Z, 0-9, -, _ allowed) (skipped)"));
-                continue;
+                throw new JsonException($"Tag '{tag}' contains invalid characters (only a-z, A-Z, 0-9, -, _ allowed)");
             }
 
             // Guard: duplicate tag
             if (!tags.Add(normalizedTag))
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent($"Duplicate tag '{tag}' in entity (skipped)"));
-                continue;
+                throw new JsonException($"Duplicate tag '{tag}' in entity");
             }
         }
 

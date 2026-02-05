@@ -1,12 +1,11 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Properties;
 
 /// <summary>
 /// JSON converter for PropertiesBehavior.
-/// Validates property keys and fires ErrorEvents for invalid entries.
+/// Validates property keys and throws JsonException for invalid entries.
 /// </summary>
 public class PropertiesBehaviorConverter : JsonConverter<PropertiesBehavior>
 {
@@ -15,15 +14,13 @@ public class PropertiesBehaviorConverter : JsonConverter<PropertiesBehavior>
         // Guard: null value
         if (reader.TokenType == JsonTokenType.Null)
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent("Properties object cannot be null"));
-            return default;
+            throw new JsonException("Properties object cannot be null");
         }
 
         // Guard: not an object
         if (reader.TokenType != JsonTokenType.StartObject)
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent($"Properties must be an object, found {reader.TokenType}"));
-            return default;
+            throw new JsonException($"Properties must be an object, found {reader.TokenType}");
         }
 
         FluentDictionary<string, PropertyValue> result = new(8, StringComparer.InvariantCultureIgnoreCase);
@@ -45,15 +42,13 @@ public class PropertiesBehaviorConverter : JsonConverter<PropertiesBehavior>
             // Guard: empty or whitespace key
             if (string.IsNullOrWhiteSpace(key))
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent("Property key cannot be empty or whitespace"));
-                return default;
+                throw new JsonException("Property key cannot be empty or whitespace");
             }
 
             // Guard: duplicate keys (case-insensitive)
             if (result.ContainsKey(key))
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent($"Duplicate property key '{key}' detected (keys are case-insensitive)"));
-                return default;
+                throw new JsonException($"Duplicate property key '{key}' detected (keys are case-insensitive)");
             }
 
             // Read the value

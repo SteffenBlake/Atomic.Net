@@ -110,6 +110,54 @@ public sealed class SceneManagerIntegrationTests : IDisposable
     }
 
     [Fact]
+    public async Task LoadScene_WithInvalidTags_ReturnsToIdleState()
+    {
+        // Arrange - Scene has invalid tags which will cause deserialization to fail
+        var scenePath = "Scenes/Fixtures/invalid-tags-scene.json";
+        _errorLogger.Clear(); // Clear any previous errors
+
+        // Act
+        SceneManager.Instance.LoadScene(scenePath);
+
+        // Wait a bit for background task to process error
+        await Task.Delay(100);
+        SceneManager.Instance.Update(); // Process error queue
+
+        // Assert - Should return to idle state with error
+        Assert.False(SceneManager.Instance.IsLoading, "IsLoading should be false after error");
+        Assert.Equal(1.0f, SceneManager.Instance.LoadingProgress);
+        
+        // Assert - Should have logged error about invalid tags from JsonException
+        Assert.Single(_errorLogger.Errors);
+        Assert.Contains("Tag array contains empty or whitespace-only tag", _errorLogger.Errors[0]);
+    }
+
+    [Fact]
+    public async Task LoadScene_WithInvalidRules_ReturnsToIdleState()
+    {
+        // Arrange - This replicates the EXACT issue that was causing the original test failures
+        // The scene has rules with "mut" command that can't be deserialized
+        var scenePath = "Scenes/Fixtures/invalid-rules-scene.json";
+        _errorLogger.Clear(); // Clear any previous errors
+
+        // Act
+        SceneManager.Instance.LoadScene(scenePath);
+
+        // Wait a bit for background task to process error
+        await Task.Delay(100);
+        SceneManager.Instance.Update(); // Process error queue
+
+        // Assert - Should return to idle state with error
+        Assert.False(SceneManager.Instance.IsLoading, "IsLoading should be false after error");
+        Assert.Equal(1.0f, SceneManager.Instance.LoadingProgress);
+        
+        // Assert - Should have logged exactly 1 error about JSON deserialization failure
+        Assert.Single(_errorLogger.Errors);
+        Assert.Contains("Failed to parse scene JSON", _errorLogger.Errors[0]);
+        Assert.Contains("could not be converted", _errorLogger.Errors[0]);
+    }
+
+    [Fact]
     public async Task LoadScene_ClearsScenePartition_BeforeLoad()
     {
         // Arrange - Load scene1 first

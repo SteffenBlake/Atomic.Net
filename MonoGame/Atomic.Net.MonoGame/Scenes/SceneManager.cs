@@ -274,7 +274,7 @@ public sealed class SceneManager : ISingleton<SceneManager>
         var entitiesLoaded = Interlocked.CompareExchange(ref _entitiesLoaded, 0, 0);
         var totalEntities = Interlocked.CompareExchange(ref _totalEntities, 0, 0);
 
-        // Calculate progress: 66% file I/O + 33% entity spawning
+        // Calculate progress: 66% file I/O + 33% entity spawning (per sprint requirements)
         var fileProgress = totalBytes > 0 ? (float)bytesRead / totalBytes : 0.0f;
         var entityProgress = totalEntities > 0 ? (float)entitiesLoaded / totalEntities : 0.0f;
         LoadingProgress = 0.66f * fileProgress + 0.33f * entityProgress;
