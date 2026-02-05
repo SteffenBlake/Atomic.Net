@@ -126,4 +126,15 @@ public sealed class EntityIdRegistry : ISingleton<EntityIdRegistry>,
             _entityToId.Remove(e.Entity.Index);
         }
     }
+
+    /// <summary>
+    /// Resets scene partition. Entity IDs are automatically cleaned up through
+    /// behavior removal events when entities are deactivated by EntityRegistry.
+    /// Called by ResetDriver during scene transitions.
+    /// </summary>
+    public void Reset()
+    {
+        // No-op: Entity IDs are cleaned up automatically via PreBehaviorRemovedEvent
+        // when scene entities are deactivated by EntityRegistry.Reset()
+    }
 }

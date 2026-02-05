@@ -91,5 +91,6 @@ public static class AtomicSystem
         SequenceStartCmdDriver.Initialize();
         SequenceStopCmdDriver.Initialize();
         SequenceResetCmdDriver.Initialize();
+        ResetDriver.Initialize();
     }
 }

@@ -228,9 +228,10 @@ public class SequenceRegistry :
     }
 
     /// <summary>
-    /// Handle reset event by deactivating only scene sequences.
+    /// Resets scene partition by clearing only scene sequences.
+    /// Called by ResetDriver during scene transitions.
     /// </summary>
-    public void OnEvent(ResetEvent _)
+    public void Reset()
     {
         // Clear scene partition only - remove IDs from dictionary
         foreach (var (_, sequence) in _sequences.Scene)
@@ -243,6 +244,14 @@ public class SequenceRegistry :
 
         // Reset scene index allocator
         _nextSceneSequenceIndex = 0;
+    }
+
+    /// <summary>
+    /// Handle reset event by deactivating only scene sequences.
+    /// </summary>
+    public void OnEvent(ResetEvent _)
+    {
+        Reset();
     }
 
     /// <summary>

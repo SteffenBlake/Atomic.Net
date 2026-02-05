@@ -155,4 +155,15 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
             }
         }
     }
+
+    /// <summary>
+    /// Resets scene partition. Tags are automatically cleaned up through
+    /// behavior removal events when entities are deactivated by EntityRegistry.
+    /// Called by ResetDriver during scene transitions.
+    /// </summary>
+    public void Reset()
+    {
+        // No-op: Tags are cleaned up automatically via PreBehaviorRemovedEvent
+        // when scene entities are deactivated by EntityRegistry.Reset()
+    }
 }

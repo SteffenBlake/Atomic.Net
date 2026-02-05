@@ -371,13 +371,22 @@ public class SelectorRegistry :
         EventBus<ShutdownEvent>.Register(Instance);
     }
 
-    public void OnEvent(ResetEvent _)
+    /// <summary>
+    /// Resets scene partition by recalculating all selectors.
+    /// Called by ResetDriver during scene transitions.
+    /// </summary>
+    public void Reset()
     {
         // senior-dev: On Reset, recalc all selectors to update Matches for non-persistent entities
         // Scene entities (>= MaxGlobalEntities) are deactivated by EntityRegistry
         // Their IdBehaviors are removed, marking selectors dirty
         // We recalc here to update all selector Matches arrays
         Recalc();
+    }
+
+    public void OnEvent(ResetEvent _)
+    {
+        Reset();
     }
 
     public void OnEvent(ShutdownEvent _)

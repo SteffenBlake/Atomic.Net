@@ -160,6 +160,17 @@ public sealed class PropertiesRegistry : ISingleton<PropertiesRegistry>,
         EventBus<ShutdownEvent>.Unregister(this);
     }
 
+    /// <summary>
+    /// Resets scene partition. Properties are automatically cleaned up through
+    /// behavior removal events when entities are deactivated by EntityRegistry.
+    /// Called by ResetDriver during scene transitions.
+    /// </summary>
+    public void Reset()
+    {
+        // No-op: Properties are cleaned up automatically via PreBehaviorRemovedEvent
+        // when scene entities are deactivated by EntityRegistry.Reset()
+    }
+
     public void OnEvent(BehaviorAddedEvent<PropertiesBehavior> e)
     {
         if (BehaviorRegistry<PropertiesBehavior>.Instance.TryGetBehavior(e.Entity, out var propertiesBehavior))

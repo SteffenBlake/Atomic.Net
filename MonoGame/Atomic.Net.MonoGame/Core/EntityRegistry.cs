@@ -269,7 +269,11 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
     /// <summary>
     /// Handle reset event by deactivating only scene entities.
     /// </summary>
-    public void OnEvent(ResetEvent _)
+    /// <summary>
+    /// Resets scene partition by deactivating only scene entities.
+    /// Called by ResetDriver during scene transitions.
+    /// </summary>
+    public void Reset()
     {
         // Deactivate only scene entities - iterate over scene partition
         // Use pre-allocated list to avoid allocations during reset
@@ -286,6 +290,11 @@ public class EntityRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownE
         }
 
         _nextSceneIndex = 0;
+    }
+
+    public void OnEvent(ResetEvent _)
+    {
+        Reset();
     }
 
     /// <summary>

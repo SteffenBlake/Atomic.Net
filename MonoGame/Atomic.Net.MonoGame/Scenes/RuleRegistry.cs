@@ -75,15 +75,24 @@ public class RuleRegistry : IEventHandler<ResetEvent>, IEventHandler<ShutdownEve
     }
 
     /// <summary>
-    /// Handle reset event by deactivating only scene rules.
+    /// Resets scene partition by clearing only scene rules.
+    /// Called by ResetDriver during scene transitions.
     /// </summary>
-    public void OnEvent(ResetEvent _)
+    public void Reset()
     {
         // senior-dev: Clear scene partition with O(1) operation
         Rules.Scene.Clear();
 
         // senior-dev: Reset scene index allocator
         _nextSceneRuleIndex = 0;
+    }
+
+    /// <summary>
+    /// Handle reset event by deactivating only scene rules.
+    /// </summary>
+    public void OnEvent(ResetEvent _)
+    {
+        Reset();
     }
 
     /// <summary>

@@ -419,6 +419,16 @@ public class HierarchyRegistry :
         }
     }
 
+    /// <summary>
+    /// Resets scene partition by recalculating hierarchy after scene entities cleared.
+    /// Called by ResetDriver during scene transitions.
+    /// </summary>
+    public void Reset()
+    {
+        // Recalc to ensure hierarchy is in clean state after scene entities deactivated
+        Recalc();
+    }
+
     public void OnEvent(InitializeEvent e)
     {
         EventBus<BehaviorAddedEvent<ParentBehavior>>.Register(this);
