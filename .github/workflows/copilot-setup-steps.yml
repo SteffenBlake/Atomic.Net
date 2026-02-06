@@ -84,8 +84,7 @@ jobs:
           cat $HOME/.config/claude/cclsp.json
           echo ""
           echo "=== cli-mcp-mapper ==="
-          which cli-mcp-mapper
-          cat $HOME/.config/cli-mcp-mapper/commands.json
+          cli-mcp-mapper --dry-run
           echo "=== Roslyn ==="
           roslyn-language-server --version 
 
