@@ -298,6 +298,24 @@ Assert.True(TryGetBar(out var bar));
 - If an existing test conflicts with the human's directives, its likely the test was just written wrong
 - If existing domain layer code conflicts with the human's directives, its likely the domain layer code having been implemented wrong
 
+## NEVER Modify JSON Schema Without Explicit Approval
+**CRITICAL RULE:** Do NOT add, remove, or modify properties in JsonEntity, JsonScene, or any JSON schema classes without explicit tech-lead approval.
+
+**Why:** JSON schema changes are architectural decisions that:
+1. Break existing game content (all JSON files need updates)
+2. Require documentation updates
+3. Impact external tooling (editors, validators)
+4. Must be planned and coordinated
+
+**When tests fail due to JSON data:**
+- ✅ **FIX THE BEHAVIOR** - Update the implementation to handle edge cases correctly
+- ✅ **FIX THE TEST** - Update test code if expectations are wrong
+- ❌ **DO NOT change JSON schema** - That's an architectural change requiring approval
+- ❌ **DO NOT change test fixtures** - That often hides the real bug
+
+**Example:**
+If a test expects `{ value: 100, percent: true }` to work on a root container, DON'T change the JSON to use explicit pixels. Instead, FIX the flex system to handle percentage dimensions on root containers correctly (treat as explicit values when no parent exists).
+
 ## CRITICAL: UNDERSTAND, ABOVE ALL ELSE
 Take the time to UNDERSTAND the system. Its INCREDIBLY common you agents will just start making wild assumptions about how things work without first reading and understanding not just the 1 chunk of code but HOW IT FITS INTO EVERYTHING
 
