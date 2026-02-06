@@ -19,6 +19,7 @@ public static class AtomicSystem
     public static void Initialize()
     {
         // Flex Behaviors
+        BehaviorRegistry<AlignContentBehavior>.Initialize();
         BehaviorRegistry<FlexAlignItemsBehavior>.Initialize();
         BehaviorRegistry<FlexAlignSelfBehavior>.Initialize();
         BehaviorRegistry<FlexBorderBottomBehavior>.Initialize();
@@ -28,6 +29,7 @@ public static class AtomicSystem
         BehaviorRegistry<FlexBehavior>.Initialize();
         BehaviorRegistry<FlexDirectionBehavior>.Initialize();
         BehaviorRegistry<FlexGrowBehavior>.Initialize();
+        BehaviorRegistry<FlexShrinkBehavior>.Initialize();
         BehaviorRegistry<FlexWrapBehavior>.Initialize();
         BehaviorRegistry<FlexZOverride>.Initialize();
         BehaviorRegistry<FlexHeightBehavior>.Initialize();

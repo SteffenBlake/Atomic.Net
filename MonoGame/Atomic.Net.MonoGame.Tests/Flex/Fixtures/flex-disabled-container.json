@@ -2,7 +2,6 @@
   "entities": [
     {
       "id": "disabled-container",
-      "enabled": false,
       "flexDirection": "row",
       "flexWidth": {
         "value": 300

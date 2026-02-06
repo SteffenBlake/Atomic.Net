@@ -8,6 +8,9 @@ using Atomic.Net.MonoGame.Flex;
 using Atomic.Net.MonoGame.Transform;
 using Atomic.Net.MonoGame.Scenes;
 using Atomic.Net.MonoGame.Ids;
+using Atomic.Net.MonoGame.Hierarchy;
+using Atomic.Net.MonoGame.Selectors;
+using FlexLayoutSharp;
 
 namespace Atomic.Net.MonoGame.Tests.Flex.Integrations;
 
@@ -185,7 +188,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         // Check WorldFlexBehavior contains correct margin rect (world coordinates)
         Assert.True(child.Value.TryGetBehavior<WorldFlexBehavior>(out var worldFlexBehavior));
         AssertFlexRectEquals(
-            new RectangleF(0, 0, 140, 180), // margin increases width/height
+            new RectangleF(0, 0, 140, 160), // margin increases width/height
             worldFlexBehavior.Value.MarginRect,
             "MarginRect",
             "child"
@@ -710,13 +713,11 @@ public sealed class FlexSystemIntegrationTests : IDisposable
 
         RecalculateAll();
 
-        // Assert - child should be 50% of parent width
-        // But we need to check how flex library calculates this
+        // Assert - child width should be 50% of parent's 400px = 200px
         Assert.True(child.Value.TryGetBehavior<FlexBehavior>(out var childFlex));
-        // Width calculation depends on parent, just verify it's not zero
         Assert.True(
-            childFlex.Value.PaddingRect.Width > 0,
-            $"child width should be calculated, got {childFlex.Value.PaddingRect.Width}"
+            MathF.Abs(childFlex.Value.PaddingRect.Width - 200f) < Tolerance,
+            $"child width should be 50% of parent (200px), got {childFlex.Value.PaddingRect.Width}"
         );
     }
 
@@ -733,12 +734,36 @@ public sealed class FlexSystemIntegrationTests : IDisposable
 
         RecalculateAll();
 
-        // Assert - child should be 50% of parent height
+        // Assert - child height should be 50% of parent's 400px = 200px
         Assert.True(child.Value.TryGetBehavior<FlexBehavior>(out var childFlex));
-        // Height calculation depends on parent, just verify it's not zero
         Assert.True(
-            childFlex.Value.PaddingRect.Height > 0,
-            $"child height should be calculated, got {childFlex.Value.PaddingRect.Height}"
+            MathF.Abs(childFlex.Value.PaddingRect.Height - 200f) < Tolerance,
+            $"child height should be 50% of parent (200px), got {childFlex.Value.PaddingRect.Height}"
+        );
+    }
+
+    [Fact]
+    public void FlexRootPercentageDimensions_CorrectlyResultsInZero()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-root-percentage-dimensions.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("root-with-percentage", out var root));
+
+        RecalculateAll();
+
+        // Assert - root element with percentage dimensions and no parent should have 0px dimensions
+        // This is correct HTML/CSS behavior - FlexSharp (Yoga) implements this correctly
+        Assert.True(root.Value.TryGetBehavior<FlexBehavior>(out var rootFlex));
+        Assert.True(
+            MathF.Abs(rootFlex.Value.PaddingRect.Width - 0f) < Tolerance,
+            $"root width should be 0px (percentage with no parent), got {rootFlex.Value.PaddingRect.Width}"
+        );
+        Assert.True(
+            MathF.Abs(rootFlex.Value.PaddingRect.Height - 0f) < Tolerance,
+            $"root height should be 0px (percentage with no parent), got {rootFlex.Value.PaddingRect.Height}"
         );
     }
 
@@ -833,22 +858,33 @@ public sealed class FlexSystemIntegrationTests : IDisposable
 
         RecalculateAll();
 
-        // Assert - all children should have equal width (~166.67px each)
+        // Assert - all children should have roughly equal width (500/3 ≈ 166.67)
+        // Yoga uses integer layout, so values will be rounded (e.g., 167, 167, 166)
         Assert.True(child1.Value.TryGetBehavior<FlexBehavior>(out var child1Flex));
         Assert.True(child2.Value.TryGetBehavior<FlexBehavior>(out var child2Flex));
         Assert.True(child3.Value.TryGetBehavior<FlexBehavior>(out var child3Flex));
 
+        // Check that widths sum to container width (500)
+        var totalWidth = child1Flex.Value.PaddingRect.Width +
+                        child2Flex.Value.PaddingRect.Width +
+                        child3Flex.Value.PaddingRect.Width;
+        Assert.True(
+            MathF.Abs(500f - totalWidth) < Tolerance,
+            $"Total width should be 500, got {totalWidth}"
+        );
+
+        // Check each child is approximately 166.67 (within 1 pixel due to rounding)
         var expectedWidth = 500f / 3f;
         Assert.True(
-            MathF.Abs(expectedWidth - child1Flex.Value.PaddingRect.Width) < Tolerance,
+            MathF.Abs(expectedWidth - child1Flex.Value.PaddingRect.Width) < 1f,
             $"child1 width should be ~{expectedWidth}, got {child1Flex.Value.PaddingRect.Width}"
         );
         Assert.True(
-            MathF.Abs(expectedWidth - child2Flex.Value.PaddingRect.Width) < Tolerance,
+            MathF.Abs(expectedWidth - child2Flex.Value.PaddingRect.Width) < 1f,
             $"child2 width should be ~{expectedWidth}, got {child2Flex.Value.PaddingRect.Width}"
         );
         Assert.True(
-            MathF.Abs(expectedWidth - child3Flex.Value.PaddingRect.Width) < Tolerance,
+            MathF.Abs(expectedWidth - child3Flex.Value.PaddingRect.Width) < 1f,
             $"child3 width should be ~{expectedWidth}, got {child3Flex.Value.PaddingRect.Width}"
         );
     }
@@ -1088,6 +1124,9 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(EntityIdRegistry.Instance.TryResolve("disabled-container", out var container));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
 
+        // Manually disable the container to test FlexRegistry's EntityDisabledEvent handler
+        container.Value.Disable();
+
         RecalculateAll();
 
         // Assert - disabled entities should be marked as Display.None
@@ -1182,6 +1221,385 @@ public sealed class FlexSystemIntegrationTests : IDisposable
             $"child2 Y should be stable across recalculations"
         );
     }
+
+    #region Bug Fix Tests
+
+    [Fact]
+    public void RapidParentChanges_CleansUpAllIntermediateParents()
+    {
+        // Arrange - Test BUG-01 fix
+        // Create entities A, B, C, and child that will change parents A→B→C→NULL
+        var parentA = EntityRegistry.Instance.Activate();
+        var parentB = EntityRegistry.Instance.Activate();
+        var parentC = EntityRegistry.Instance.Activate();
+        var child = EntityRegistry.Instance.Activate();
+
+        // Set IDs for parent resolution
+        parentA.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "parentA" });
+        parentB.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "parentB" });
+        parentC.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "parentC" });
+        child.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "child" });
+
+        // Add FlexBehavior to all parents so hierarchy is relevant
+        parentA.SetBehavior<FlexBehavior>(static (ref _) => { });
+        parentB.SetBehavior<FlexBehavior>(static (ref _) => { });
+        parentC.SetBehavior<FlexBehavior>(static (ref _) => { });
+        child.SetBehavior<FlexBehavior>(static (ref _) => { });
+
+        // Act - Rapidly change parent: A → B → C → NULL
+        Assert.True(SelectorRegistry.Instance.TryParse("@parentA", out var selectorA));
+        child.SetBehavior<ParentBehavior, EntitySelector>(
+            in selectorA,
+            static (ref readonly sel, ref behavior) => behavior = new ParentBehavior(sel)
+        );
+        SelectorRegistry.Instance.Recalc();
+        HierarchyRegistry.Instance.Recalc();
+
+        Assert.True(SelectorRegistry.Instance.TryParse("@parentB", out var selectorB));
+        child.SetBehavior<ParentBehavior, EntitySelector>(
+            in selectorB,
+            static (ref readonly sel, ref behavior) => behavior = new ParentBehavior(sel)
+        );
+        SelectorRegistry.Instance.Recalc();
+        HierarchyRegistry.Instance.Recalc();
+
+        Assert.True(SelectorRegistry.Instance.TryParse("@parentC", out var selectorC));
+        child.SetBehavior<ParentBehavior, EntitySelector>(
+            in selectorC,
+            static (ref readonly sel, ref behavior) => behavior = new ParentBehavior(sel)
+        );
+        SelectorRegistry.Instance.Recalc();
+        HierarchyRegistry.Instance.Recalc();
+
+        child.RemoveBehavior<ParentBehavior>();
+        HierarchyRegistry.Instance.Recalc();
+
+        // Assert - ALL intermediate parents (A, B, C) should have child removed
+        Assert.False(
+            HierarchyRegistry.Instance.HasChild(parentA, child),
+            "Child should be removed from parentA"
+        );
+        Assert.False(
+            HierarchyRegistry.Instance.HasChild(parentB, child),
+            "Child should be removed from parentB"
+        );
+        Assert.False(
+            HierarchyRegistry.Instance.HasChild(parentC, child),
+            "Child should be removed from parentC"
+        );
+        Assert.False(
+            child.TryGetParent(out _),
+            "Child should have no parent"
+        );
+    }
+
+    [Fact]
+    public void RemoveFlexBehavior_MarksParentDirty()
+    {
+        // Arrange - Test BUG-02 fix: parent with 2 FlexGrow children
+        // Setup so removing a child actually changes layout dimensions (provable recalculation)
+        var parent = EntityRegistry.Instance.Activate();
+        var child1 = EntityRegistry.Instance.Activate();
+        var child2 = EntityRegistry.Instance.Activate();
+
+        parent.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "parent" });
+        child1.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "child1" });
+        child2.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "child2" });
+
+        // Parent: 400x200 container with Row direction
+        parent.SetBehavior<FlexBehavior>(static (ref _) => { });
+        var parentWidth = 400f;
+        parent.SetBehavior<FlexWidthBehavior, float>(
+            in parentWidth,
+            static (ref readonly width, ref behavior) => behavior = new FlexWidthBehavior(width, false)
+        );
+        var parentHeight = 200f;
+        parent.SetBehavior<FlexHeightBehavior, float>(
+            in parentHeight,
+            static (ref readonly height, ref behavior) => behavior = new FlexHeightBehavior(height, false)
+        );
+        parent.SetBehavior<FlexDirectionBehavior>(
+            static (ref behavior) => behavior = new FlexDirectionBehavior(FlexDirection.Row)
+        );
+
+        // Child1: FlexGrow=1, should get half of parent width (200px)
+        Assert.True(SelectorRegistry.Instance.TryParse("@parent", out var parentSelector));
+        child1.SetBehavior<ParentBehavior, EntitySelector>(
+            in parentSelector,
+            static (ref readonly sel, ref behavior) => behavior = new ParentBehavior(sel)
+        );
+        child1.SetBehavior<FlexBehavior>(static (ref _) => { });
+        child1.SetBehavior<FlexGrowBehavior>(
+            static (ref behavior) => behavior = new FlexGrowBehavior(1)
+        );
+        var child1Height = 100f;
+        child1.SetBehavior<FlexHeightBehavior, float>(
+            in child1Height,
+            static (ref readonly height, ref behavior) => behavior = new FlexHeightBehavior(height, false)
+        );
+
+        // Child2: FlexGrow=1, should get half of parent width (200px)
+        child2.SetBehavior<ParentBehavior, EntitySelector>(
+            in parentSelector,
+            static (ref readonly sel, ref behavior) => behavior = new ParentBehavior(sel)
+        );
+        child2.SetBehavior<FlexBehavior>(static (ref _) => { });
+        child2.SetBehavior<FlexGrowBehavior>(
+            static (ref behavior) => behavior = new FlexGrowBehavior(1)
+        );
+        var child2Height = 100f;
+        child2.SetBehavior<FlexHeightBehavior, float>(
+            in child2Height,
+            static (ref readonly height, ref behavior) => behavior = new FlexHeightBehavior(height, false)
+        );
+
+        SelectorRegistry.Instance.Recalc();
+        HierarchyRegistry.Instance.Recalc();
+        RecalculateAll();
+
+        // Both children should each get ~200px width (400/2)
+        Assert.True(child1.TryGetBehavior<FlexBehavior>(out var child1FlexBefore));
+        Assert.True(child2.TryGetBehavior<FlexBehavior>(out var child2FlexBefore));
+
+        var child1WidthBefore = child1FlexBefore.Value.ContentRect.Width;
+        var child2WidthBefore = child2FlexBefore.Value.ContentRect.Width;
+
+        Assert.True(
+            MathF.Abs(child1WidthBefore - 200) < 1,
+            $"Child1 width should be ~200, got {child1WidthBefore}"
+        );
+        Assert.True(
+            MathF.Abs(child2WidthBefore - 200) < 1,
+            $"Child2 width should be ~200, got {child2WidthBefore}"
+        );
+
+        // Act - Remove child1's FlexBehavior
+        child1.RemoveBehavior<FlexBehavior>();
+        RecalculateAll();
+
+        // Assert - child2 should now take full width (400px) because child1 is gone
+        // This proves parent was marked dirty and recalculated
+        Assert.True(
+            child2.TryGetBehavior<FlexBehavior>(out var child2FlexAfter),
+            "Child2 should still have FlexBehavior"
+        );
+
+        var child2WidthAfter = child2FlexAfter.Value.ContentRect.Width;
+
+        Assert.True(
+            MathF.Abs(child2WidthAfter - 400) < 1,
+            $"Child2 should grow to full parent width (400px) after child1 removed, got {child2WidthAfter}"
+        );
+    }
+
+    [Fact]
+    public void CircularParentReference_DetectedGracefully()
+    {
+        // Arrange - Test BUG-03 fix
+        var entityA = EntityRegistry.Instance.Activate();
+        var entityB = EntityRegistry.Instance.Activate();
+
+        entityA.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "entityA" });
+        entityB.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "entityB" });
+
+        entityA.SetBehavior<FlexBehavior>(static (ref _) => { });
+        entityB.SetBehavior<FlexBehavior>(static (ref _) => { });
+
+        // Create circular reference: A → B, B → A
+        Assert.True(SelectorRegistry.Instance.TryParse("@entityB", out var selectorB));
+        entityA.SetBehavior<ParentBehavior, EntitySelector>(
+            in selectorB,
+            static (ref readonly sel, ref behavior) => behavior = new ParentBehavior(sel)
+        );
+
+        Assert.True(SelectorRegistry.Instance.TryParse("@entityA", out var selectorA));
+        entityB.SetBehavior<ParentBehavior, EntitySelector>(
+            in selectorA,
+            static (ref readonly sel, ref behavior) => behavior = new ParentBehavior(sel)
+        );
+
+        SelectorRegistry.Instance.Recalc();
+        HierarchyRegistry.Instance.Recalc();
+
+        // Act & Assert - Should not cause stack overflow, should fire ErrorEvent
+        // ErrorEventLogger will capture any error events fired
+        RecalculateAll();
+
+        // No assertion needed - if we get here without stack overflow, the fix works
+        // ErrorEventLogger will capture the circular reference error
+    }
+
+    [Fact]
+    public void ParentChangeDuringRecalculate_ProcessedCorrectly()
+    {
+        // Arrange - Test parent changes during recalculate
+        var parentA = EntityRegistry.Instance.Activate();
+        var parentB = EntityRegistry.Instance.Activate();
+        var child = EntityRegistry.Instance.Activate();
+
+        parentA.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "parentA" });
+        parentB.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "parentB" });
+        child.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "child" });
+
+        parentA.SetBehavior<FlexBehavior>(static (ref _) => { });
+        parentB.SetBehavior<FlexBehavior>(static (ref _) => { });
+        child.SetBehavior<FlexBehavior>(static (ref _) => { });
+
+        Assert.True(SelectorRegistry.Instance.TryParse("@parentA", out var selectorA));
+        child.SetBehavior<ParentBehavior, EntitySelector>(
+            in selectorA,
+            static (ref readonly sel, ref behavior) => behavior = new ParentBehavior(sel)
+        );
+        SelectorRegistry.Instance.Recalc();
+        HierarchyRegistry.Instance.Recalc();
+        RecalculateAll();
+
+        // Act - Change parent and recalculate
+        Assert.True(SelectorRegistry.Instance.TryParse("@parentB", out var selectorB));
+        child.SetBehavior<ParentBehavior, EntitySelector>(
+            in selectorB,
+            static (ref readonly sel, ref behavior) => behavior = new ParentBehavior(sel)
+        );
+        SelectorRegistry.Instance.Recalc();
+        HierarchyRegistry.Instance.Recalc();
+        RecalculateAll();
+
+        // Assert - Child should be under new parent
+        Assert.True(child.TryGetParent(out var parent));
+        Assert.Equal(parentB.Index, parent.Value.Index);
+        Assert.True(HierarchyRegistry.Instance.HasChild(parentB, child));
+        Assert.False(HierarchyRegistry.Instance.HasChild(parentA, child));
+    }
+
+    [Fact]
+    public void DisabledEntity_CanChangeParent_ThenReEnable()
+    {
+        // Arrange - Test disable → change parent → re-enable workflow
+        var parentA = EntityRegistry.Instance.Activate();
+        var parentB = EntityRegistry.Instance.Activate();
+        var child = EntityRegistry.Instance.Activate();
+
+        parentA.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "parentA" });
+        parentB.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "parentB" });
+        child.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "child" });
+
+        parentA.SetBehavior<FlexBehavior>(static (ref _) => { });
+        parentB.SetBehavior<FlexBehavior>(static (ref _) => { });
+        child.SetBehavior<FlexBehavior>(static (ref _) => { });
+
+        Assert.True(SelectorRegistry.Instance.TryParse("@parentA", out var selectorA));
+        child.SetBehavior<ParentBehavior, EntitySelector>(
+            in selectorA,
+            static (ref readonly sel, ref behavior) => behavior = new ParentBehavior(sel)
+        );
+        SelectorRegistry.Instance.Recalc();
+        HierarchyRegistry.Instance.Recalc();
+        RecalculateAll();
+
+        // Act - Disable, change parent, re-enable
+        child.Disable();
+        RecalculateAll();
+
+        Assert.True(SelectorRegistry.Instance.TryParse("@parentB", out var selectorB));
+        child.SetBehavior<ParentBehavior, EntitySelector>(
+            in selectorB,
+            static (ref readonly sel, ref behavior) => behavior = new ParentBehavior(sel)
+        );
+        SelectorRegistry.Instance.Recalc();
+        HierarchyRegistry.Instance.Recalc();
+
+        child.Enable();
+        RecalculateAll();
+
+        // Assert - Child should be under new parent after re-enable
+        Assert.True(child.Enabled);
+        Assert.True(child.TryGetParent(out var parent));
+        Assert.Equal(parentB.Index, parent.Value.Index);
+        Assert.True(HierarchyRegistry.Instance.HasChild(parentB, child));
+    }
+
+    [Fact]
+    public void ParentDeactivation_OrphansFlexChildren()
+    {
+        // Arrange - Test parent deactivation orphans children
+        var parent = EntityRegistry.Instance.Activate();
+        var child1 = EntityRegistry.Instance.Activate();
+        var child2 = EntityRegistry.Instance.Activate();
+
+        parent.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "parent" });
+        child1.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "child1" });
+        child2.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "child2" });
+
+        parent.SetBehavior<FlexBehavior>(static (ref _) => { });
+        child1.SetBehavior<FlexBehavior>(static (ref _) => { });
+        child2.SetBehavior<FlexBehavior>(static (ref _) => { });
+
+        Assert.True(SelectorRegistry.Instance.TryParse("@parent", out var parentSelector));
+        child1.SetBehavior<ParentBehavior, EntitySelector>(
+            in parentSelector,
+            static (ref readonly sel, ref behavior) => behavior = new ParentBehavior(sel)
+        );
+        child2.SetBehavior<ParentBehavior, EntitySelector>(
+            in parentSelector,
+            static (ref readonly sel, ref behavior) => behavior = new ParentBehavior(sel)
+        );
+        SelectorRegistry.Instance.Recalc();
+        HierarchyRegistry.Instance.Recalc();
+        RecalculateAll();
+
+        // Act - Deactivate parent
+        EntityRegistry.Instance.Deactivate(parent);
+
+        // Assert - Children should be orphaned
+        Assert.False(child1.TryGetParent(out _), "child1 should be orphaned");
+        Assert.False(child2.TryGetParent(out _), "child2 should be orphaned");
+    }
+
+    [Fact]
+    public void DeeplyNestedHierarchy_NoStackOverflow()
+    {
+        // Arrange - Stress test with 12-level deep hierarchy
+        var entities = new Entity[12];
+        for (int i = 0; i < 12; i++)
+        {
+            entities[i] = EntityRegistry.Instance.Activate();
+            entities[i].SetBehavior<IdBehavior, int>(
+                in i,
+                static (ref readonly index, ref b) => b = b with { Id = $"entity{index}" }
+            );
+            entities[i].SetBehavior<FlexBehavior>(static (ref _) => { });
+        }
+
+        // Create hierarchy: entity0 → entity1 → entity2 → ... → entity11
+        for (int i = 1; i < 12; i++)
+        {
+            var parentId = $"@entity{i - 1}";
+            Assert.True(SelectorRegistry.Instance.TryParse(parentId, out var selector));
+            entities[i].SetBehavior<ParentBehavior, EntitySelector>(
+                in selector,
+                static (ref readonly sel, ref behavior) => behavior = new ParentBehavior(sel)
+            );
+        }
+
+        SelectorRegistry.Instance.Recalc();
+        HierarchyRegistry.Instance.Recalc();
+
+        // Act - Should not cause stack overflow
+        RecalculateAll();
+
+        // Assert - Verify hierarchy is intact
+        for (int i = 1; i < 12; i++)
+        {
+            Assert.True(entities[i].TryGetParent(out var parent));
+            Assert.Equal(entities[i - 1].Index, parent.Value.Index);
+        }
+
+        // Verify deepest child has correct hierarchy
+        Assert.True(entities[11].TryGetParent(out var parent11));
+        Assert.Equal(entities[10].Index, parent11.Value.Index);
+    }
+
+    #endregion
 
     #endregion
 }

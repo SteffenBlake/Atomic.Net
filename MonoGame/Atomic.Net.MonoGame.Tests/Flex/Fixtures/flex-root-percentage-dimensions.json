@@ -1,0 +1,15 @@
+{
+  "entities": [
+    {
+      "id": "root-with-percentage",
+      "flexWidth": {
+        "value": 100,
+        "percent": true
+      },
+      "flexHeight": {
+        "value": 100,
+        "percent": true
+      }
+    }
+  ]
+}

@@ -16,6 +16,7 @@ public static class FlexSystem
         BehaviorRegistry<FlexBehavior>.Initialize();
         BehaviorRegistry<FlexDirectionBehavior>.Initialize();
         BehaviorRegistry<FlexGrowBehavior>.Initialize();
+        BehaviorRegistry<FlexShrinkBehavior>.Initialize();
         BehaviorRegistry<FlexWrapBehavior>.Initialize();
         BehaviorRegistry<FlexZOverride>.Initialize();
         BehaviorRegistry<FlexHeightBehavior>.Initialize();

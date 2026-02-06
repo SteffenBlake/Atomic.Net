@@ -93,6 +93,18 @@ THIS IS CRITICAL, you MUST do this
 - ❌ Leave `@senior-dev` pings unresolved (always change to `#senior-dev` after responding)
 - ❌ make massive refactor changes that cause breaking changes to already existing systems (without permission)
 - ❌ comment out or in any way "disable" failing tests to "fake" success, THIS IS NOT ACCEPTABLE
+- ❌ **MODIFY JSON SCHEMA WITHOUT APPROVAL** - Do NOT add/remove/change properties in JsonEntity, JsonScene, etc. These are architectural changes requiring tech-lead approval
+
+## CRITICAL: When Tests Fail Due to JSON Data
+**DO NOT change the JSON schema or test fixtures to make tests pass!**
+
+**Correct approach:**
+1. ✅ Fix the BEHAVIOR in the implementation code
+2. ✅ Fix the TEST code if expectations are wrong  
+3. ❌ Do NOT add properties to JsonEntity
+4. ❌ Do NOT modify test fixture JSON files to work around bugs
+
+**Example:** If `{ value: 100, percent: true }` on a root container fails, DON'T change it to explicit pixels. Instead, FIX the flex system to handle percentage dimensions on root containers (treat as explicit when no parent exists).
 
 # CRITICAL: ALWAYS CHECK IF YOU ARE FOLLOWING ESTABLISHED PATTERNS
 
