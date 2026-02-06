@@ -10,6 +10,7 @@ using Atomic.Net.MonoGame.Scenes;
 using Atomic.Net.MonoGame.Ids;
 using Atomic.Net.MonoGame.Hierarchy;
 using Atomic.Net.MonoGame.Selectors;
+using FlexLayoutSharp;
 
 namespace Atomic.Net.MonoGame.Tests.Flex.Integrations;
 
@@ -1295,59 +1296,100 @@ public sealed class FlexSystemIntegrationTests : IDisposable
     [Fact]
     public void RemoveFlexBehavior_MarksParentDirty()
     {
-        // Arrange - Test BUG-02 fix
+        // Arrange - Test BUG-02 fix: parent with 2 FlexGrow children
+        // Setup so removing a child actually changes layout dimensions (provable recalculation)
         var parent = EntityRegistry.Instance.Activate();
-        var child = EntityRegistry.Instance.Activate();
+        var child1 = EntityRegistry.Instance.Activate();
+        var child2 = EntityRegistry.Instance.Activate();
 
         parent.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "parent" });
-        child.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "child" });
+        child1.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "child1" });
+        child2.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "child2" });
 
+        // Parent: 400x200 container with Row direction
         parent.SetBehavior<FlexBehavior>(static (ref _) => { });
-        var parentWidth = 200f;
+        var parentWidth = 400f;
         parent.SetBehavior<FlexWidthBehavior, float>(
             in parentWidth,
-            static (ref readonly width, ref behavior) => behavior = new FlexWidthBehavior { Value = width }
+            static (ref readonly width, ref behavior) => behavior = new FlexWidthBehavior(width, false)
         );
         var parentHeight = 200f;
         parent.SetBehavior<FlexHeightBehavior, float>(
             in parentHeight,
-            static (ref readonly height, ref behavior) => behavior = new FlexHeightBehavior { Value = height }
+            static (ref readonly height, ref behavior) => behavior = new FlexHeightBehavior(height, false)
+        );
+        parent.SetBehavior<FlexDirectionBehavior>(
+            static (ref behavior) => behavior = new FlexDirectionBehavior(FlexDirection.Row)
         );
 
-        child.SetBehavior<FlexBehavior>(static (ref _) => { });
-        var childWidth = 100f;
-        child.SetBehavior<FlexWidthBehavior, float>(
-            in childWidth,
-            static (ref readonly width, ref behavior) => behavior = new FlexWidthBehavior { Value = width }
-        );
-        var childHeight = 100f;
-        child.SetBehavior<FlexHeightBehavior, float>(
-            in childHeight,
-            static (ref readonly height, ref behavior) => behavior = new FlexHeightBehavior { Value = height }
-        );
-
+        // Child1: FlexGrow=1, should get half of parent width (200px)
         Assert.True(SelectorRegistry.Instance.TryParse("@parent", out var parentSelector));
-        child.SetBehavior<ParentBehavior, EntitySelector>(
+        child1.SetBehavior<ParentBehavior, EntitySelector>(
             in parentSelector,
             static (ref readonly sel, ref behavior) => behavior = new ParentBehavior(sel)
+        );
+        child1.SetBehavior<FlexBehavior>(static (ref _) => { });
+        child1.SetBehavior<FlexGrowBehavior>(
+            static (ref behavior) => behavior = new FlexGrowBehavior(1)
+        );
+        var child1Height = 100f;
+        child1.SetBehavior<FlexHeightBehavior, float>(
+            in child1Height,
+            static (ref readonly height, ref behavior) => behavior = new FlexHeightBehavior(height, false)
+        );
+
+        // Child2: FlexGrow=1, should get half of parent width (200px)
+        child2.SetBehavior<ParentBehavior, EntitySelector>(
+            in parentSelector,
+            static (ref readonly sel, ref behavior) => behavior = new ParentBehavior(sel)
+        );
+        child2.SetBehavior<FlexBehavior>(static (ref _) => { });
+        child2.SetBehavior<FlexGrowBehavior>(
+            static (ref behavior) => behavior = new FlexGrowBehavior(1)
+        );
+        var child2Height = 100f;
+        child2.SetBehavior<FlexHeightBehavior, float>(
+            in child2Height,
+            static (ref readonly height, ref behavior) => behavior = new FlexHeightBehavior(height, false)
         );
 
         SelectorRegistry.Instance.Recalc();
         HierarchyRegistry.Instance.Recalc();
         RecalculateAll();
 
-        // Get parent's initial FlexBehavior (should have child in layout)
-        Assert.True(parent.TryGetBehavior<FlexBehavior>(out var initialFlex));
+        // Both children should each get ~200px width (400/2)
+        Assert.True(child1.TryGetBehavior<FlexBehavior>(out var child1FlexBefore));
+        Assert.True(child2.TryGetBehavior<FlexBehavior>(out var child2FlexBefore));
 
-        // Act - Remove child's FlexBehavior
-        child.RemoveBehavior<FlexBehavior>();
+        var child1WidthBefore = child1FlexBefore.Value.ContentRect.Width;
+        var child2WidthBefore = child2FlexBefore.Value.ContentRect.Width;
+
+        Assert.True(
+            MathF.Abs(child1WidthBefore - 200) < 1,
+            $"Child1 width should be ~200, got {child1WidthBefore}"
+        );
+        Assert.True(
+            MathF.Abs(child2WidthBefore - 200) < 1,
+            $"Child2 width should be ~200, got {child2WidthBefore}"
+        );
+
+        // Act - Remove child1's FlexBehavior
+        child1.RemoveBehavior<FlexBehavior>();
         RecalculateAll();
 
-        // Assert - Parent should recalculate without child
-        // Parent's flex layout should update (though in this case dimensions are explicit so won't visibly change)
-        // The key test is that no error occurs and parent processes the removal
-        Assert.True(parent.TryGetBehavior<FlexBehavior>(out var finalFlex));
-        Assert.True(parent.HasBehavior<FlexBehavior>(), "Parent should still have FlexBehavior");
+        // Assert - child2 should now take full width (400px) because child1 is gone
+        // This proves parent was marked dirty and recalculated
+        Assert.True(
+            child2.TryGetBehavior<FlexBehavior>(out var child2FlexAfter),
+            "Child2 should still have FlexBehavior"
+        );
+
+        var child2WidthAfter = child2FlexAfter.Value.ContentRect.Width;
+
+        Assert.True(
+            MathF.Abs(child2WidthAfter - 400) < 1,
+            $"Child2 should grow to full parent width (400px) after child1 removed, got {child2WidthAfter}"
+        );
     }
 
     [Fact]
