@@ -19,10 +19,18 @@
       "flexHeight": {
         "value": 100
       },
-      "flexMarginLeft": 10,
-      "flexMarginTop": 20,
-      "flexMarginRight": 30,
-      "flexMarginBottom": 40
+      "flexMarginLeft": {
+        "value": 10
+      },
+      "flexMarginTop": {
+        "value": 20
+      },
+      "flexMarginRight": {
+        "value": 30
+      },
+      "flexMarginBottom": {
+        "value": 40
+      }
     }
   ]
 }

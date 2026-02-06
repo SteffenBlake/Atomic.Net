@@ -23,7 +23,9 @@
     {
       "id": "growing-child",
       "parent": "@container",
-      "flexGrow": 1,
+      "flexGrow": {
+        "value": 1
+      },
       "flexHeight": {
         "value": 100
       }

@@ -108,7 +108,7 @@ public partial class FlexRegistry :
     private void UpdateFlexTreeForEntity(PartitionIndex entityIndex)
     {
         var entity = EntityRegistry.Instance[entityIndex];
-        
+
         if (!entity.Active || !entity.HasBehavior<FlexBehavior>())
         {
             return;
@@ -152,24 +152,29 @@ public partial class FlexRegistry :
         }
         _dirty.Remove(index);
 
+        var entity = EntityRegistry.Instance[index];
+
+        // Skip inactive entities (dirty flags persist across scene resets)
+        if (!entity.Active)
+        {
+            return;
+        }
 
         // Check if we have a flex parent, if so run on that instead
         if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(index, out var parentBehavior))
         {
-            var entity = EntityRegistry.Instance[index];
             if (parentBehavior.Value.TryFindParent(entity.IsGlobal(), out var parent))
             {
-                if (parent.Value.HasBehavior<FlexBehavior>())
+                if (parent.Value.Active && parent.Value.HasBehavior<FlexBehavior>())
                 {
                     RecalculateNode(parent.Value.Index);
                     return;
                 }
             }
         }
-        var root = EntityRegistry.Instance[index];
 
         // Otherwise we are a root node, so confirm we are a flex node
-        if (!root.HasBehavior<FlexBehavior>())
+        if (!entity.HasBehavior<FlexBehavior>())
         {
             return;
         }
@@ -179,11 +184,17 @@ public partial class FlexRegistry :
             node.CalculateLayout(float.NaN, float.NaN, Direction.Inherit);
         }
 
-        UpdateFlexBehavior(root);
+        UpdateFlexBehavior(entity);
     }
 
     private void UpdateFlexBehavior(Entity e, int zIndex = 0)
     {
+        // Skip inactive entities
+        if (!e.Active)
+        {
+            return;
+        }
+
         if (!e.HasBehavior<FlexBehavior>())
         {
             return;
@@ -198,27 +209,50 @@ public partial class FlexRegistry :
         var localX = node.LayoutGetLeft();
         var localY = node.LayoutGetTop();
 
-        // Dimensions
-        var paddingWidth = node.LayoutGetWidth();
-        var paddingHeight = node.LayoutGetHeight();
+        // Dimensions from Yoga (content + padding + border, NOT including margin)
+        var borderWidth = node.LayoutGetWidth();
+        var borderHeight = node.LayoutGetHeight();
 
-        // Margins/paddings relative to local coordinate space (starting at 0,0)
-        var marginLeft = -node.LayoutGetMargin(Edge.Left);
-        var contentLeft = node.LayoutGetPadding(Edge.Left);
-
-        var marginWidth = paddingWidth + node.LayoutGetMargin(Edge.Left) + node.LayoutGetMargin(Edge.Right);
-        var contentWidth = paddingWidth - node.LayoutGetPadding(Edge.Left) - node.LayoutGetPadding(Edge.Right);
-
-        var marginTop = -node.LayoutGetMargin(Edge.Top);
-        var contentTop = node.LayoutGetPadding(Edge.Top);
-
-        var marginHeight = paddingHeight + node.LayoutGetMargin(Edge.Top) + node.LayoutGetMargin(Edge.Bottom);
-        var contentHeight = paddingHeight - node.LayoutGetPadding(Edge.Top) - node.LayoutGetPadding(Edge.Bottom);
-
+        // Get border values
         var borderTop = node.LayoutGetBorder(Edge.Top);
         var borderRight = node.LayoutGetBorder(Edge.Right);
         var borderBottom = node.LayoutGetBorder(Edge.Bottom);
         var borderLeft = node.LayoutGetBorder(Edge.Left);
+
+        // Get padding values
+        var paddingTop = node.LayoutGetPadding(Edge.Top);
+        var paddingRight = node.LayoutGetPadding(Edge.Right);
+        var paddingBottom = node.LayoutGetPadding(Edge.Bottom);
+        var paddingLeft = node.LayoutGetPadding(Edge.Left);
+
+        // Get margin values
+        var marginTop = node.LayoutGetMargin(Edge.Top);
+        var marginRight = node.LayoutGetMargin(Edge.Right);
+        var marginBottom = node.LayoutGetMargin(Edge.Bottom);
+        var marginLeft = node.LayoutGetMargin(Edge.Left);
+
+        // Calculate padding box dimensions (border box - borders)
+        var paddingWidth = borderWidth - borderLeft - borderRight;
+        var paddingHeight = borderHeight - borderTop - borderBottom;
+
+        // Calculate content box dimensions (padding box - padding)
+        var contentWidth = paddingWidth - paddingLeft - paddingRight;
+        var contentHeight = paddingHeight - paddingTop - paddingBottom;
+
+        // Calculate rectangle positions and dimensions in local coordinates
+        // MarginRect starts at negative margin offset and includes everything
+        var marginRectX = -marginLeft;
+        var marginRectY = -marginTop;
+        var marginRectWidth = borderWidth + marginLeft + marginRight;
+        var marginRectHeight = borderHeight + marginTop + marginBottom;
+
+        // PaddingRect starts at border offset (inside the border)
+        var paddingRectX = borderLeft;
+        var paddingRectY = borderTop;
+
+        // ContentRect starts at border + padding offset
+        var contentRectX = borderLeft + paddingLeft;
+        var contentRectY = borderTop + paddingTop;
 
         var truezIndex = zIndex;
         if (e.TryGetBehavior<FlexZOverride>(out var zOverride))
@@ -228,9 +262,9 @@ public partial class FlexRegistry :
 
         // Store LOCAL flex rectangles (relative to entity's own position)
         var helper = new FlexBehavior(
-            MarginRect: new(marginLeft, marginTop, marginWidth, marginHeight),
-            PaddingRect: new(0, 0, paddingWidth, paddingHeight), // Padding rect starts at 0,0
-            ContentRect: new(contentLeft, contentTop, contentWidth, contentHeight),
+            MarginRect: new(marginRectX, marginRectY, marginRectWidth, marginRectHeight),
+            PaddingRect: new(paddingRectX, paddingRectY, paddingWidth, paddingHeight),
+            ContentRect: new(contentRectX, contentRectY, contentWidth, contentHeight),
             BorderLeft: borderLeft,
             BorderTop: borderTop,
             BorderRight: borderRight,
@@ -329,7 +363,7 @@ public partial class FlexRegistry :
         if (parentNode is not null && parentNode.IndexOfChild(myNode) != -1)
         {
             parentNode.RemoveChild(myNode);
-            
+
             // Use O(1) reverse lookup to find parent entity and mark it dirty
             if (_nodeToEntity.TryGetValue(parentNode, out var parentIndex))
             {
@@ -352,7 +386,7 @@ public partial class FlexRegistry :
     {
         // Remove from parent's children first
         RemoveFromParentFlexTree(e.Entity);
-        
+
         // Then remove the node itself and its reverse lookup
         if (_nodes.TryGetValue(e.Entity.Index, out var node))
         {

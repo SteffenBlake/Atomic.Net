@@ -185,7 +185,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         // Check WorldFlexBehavior contains correct margin rect (world coordinates)
         Assert.True(child.Value.TryGetBehavior<WorldFlexBehavior>(out var worldFlexBehavior));
         AssertFlexRectEquals(
-            new RectangleF(0, 0, 140, 180), // margin increases width/height
+            new RectangleF(0, 0, 140, 160), // margin increases width/height
             worldFlexBehavior.Value.MarginRect,
             "MarginRect",
             "child"
@@ -833,22 +833,33 @@ public sealed class FlexSystemIntegrationTests : IDisposable
 
         RecalculateAll();
 
-        // Assert - all children should have equal width (~166.67px each)
+        // Assert - all children should have roughly equal width (500/3 ≈ 166.67)
+        // Yoga uses integer layout, so values will be rounded (e.g., 167, 167, 166)
         Assert.True(child1.Value.TryGetBehavior<FlexBehavior>(out var child1Flex));
         Assert.True(child2.Value.TryGetBehavior<FlexBehavior>(out var child2Flex));
         Assert.True(child3.Value.TryGetBehavior<FlexBehavior>(out var child3Flex));
 
+        // Check that widths sum to container width (500)
+        var totalWidth = child1Flex.Value.PaddingRect.Width + 
+                        child2Flex.Value.PaddingRect.Width + 
+                        child3Flex.Value.PaddingRect.Width;
+        Assert.True(
+            MathF.Abs(500f - totalWidth) < Tolerance,
+            $"Total width should be 500, got {totalWidth}"
+        );
+
+        // Check each child is approximately 166.67 (within 1 pixel due to rounding)
         var expectedWidth = 500f / 3f;
         Assert.True(
-            MathF.Abs(expectedWidth - child1Flex.Value.PaddingRect.Width) < Tolerance,
+            MathF.Abs(expectedWidth - child1Flex.Value.PaddingRect.Width) < 1f,
             $"child1 width should be ~{expectedWidth}, got {child1Flex.Value.PaddingRect.Width}"
         );
         Assert.True(
-            MathF.Abs(expectedWidth - child2Flex.Value.PaddingRect.Width) < Tolerance,
+            MathF.Abs(expectedWidth - child2Flex.Value.PaddingRect.Width) < 1f,
             $"child2 width should be ~{expectedWidth}, got {child2Flex.Value.PaddingRect.Width}"
         );
         Assert.True(
-            MathF.Abs(expectedWidth - child3Flex.Value.PaddingRect.Width) < Tolerance,
+            MathF.Abs(expectedWidth - child3Flex.Value.PaddingRect.Width) < 1f,
             $"child3 width should be ~{expectedWidth}, got {child3Flex.Value.PaddingRect.Width}"
         );
     }
