@@ -840,8 +840,8 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.True(child3.Value.TryGetBehavior<FlexBehavior>(out var child3Flex));
 
         // Check that widths sum to container width (500)
-        var totalWidth = child1Flex.Value.PaddingRect.Width + 
-                        child2Flex.Value.PaddingRect.Width + 
+        var totalWidth = child1Flex.Value.PaddingRect.Width +
+                        child2Flex.Value.PaddingRect.Width +
                         child3Flex.Value.PaddingRect.Width;
         Assert.True(
             MathF.Abs(500f - totalWidth) < Tolerance,
@@ -1098,6 +1098,9 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         SceneLoader.Instance.LoadGameScene(scenePath);
         Assert.True(EntityIdRegistry.Instance.TryResolve("disabled-container", out var container));
         Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
+
+        // Manually disable the container to test FlexRegistry's EntityDisabledEvent handler
+        container.Value.Disable();
 
         RecalculateAll();
 

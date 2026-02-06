@@ -128,12 +128,6 @@ public sealed class SceneLoader : ISingleton<SceneLoader>
             // This applies Transform, Properties, Id, and Parent behaviors
             jsonEntity.WriteToEntity(entity);
 
-            // Handle enabled state (defaults to true if not specified)
-            if (jsonEntity.Enabled.HasValue && !jsonEntity.Enabled.Value)
-            {
-                entity.Disable();
-            }
-
             // CRITICAL: PersistToDiskBehavior MUST be applied after all other behaviors (including Parent)
             // to prevent unwanted DB loads during scene construction
             if (jsonEntity.PersistToDisk.HasValue)
