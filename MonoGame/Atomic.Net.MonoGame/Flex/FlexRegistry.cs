@@ -59,6 +59,21 @@ public partial class FlexRegistry :
     protected Node EnsureDirtyNode(PartitionIndex index)
     {
         _dirty.Set(index, true);
+
+        // If this entity has a flex parent, mark the parent dirty too
+        // This ensures that when child properties change, the parent's layout is recalculated
+        var entity = EntityRegistry.Instance[index];
+        if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(index, out var parentBehavior))
+        {
+            if (parentBehavior.Value.TryFindParent(entity.IsGlobal(), out var parent))
+            {
+                if (parent.Value.Active && parent.Value.HasBehavior<FlexBehavior>())
+                {
+                    _dirty.Set(parent.Value.Index, true);
+                }
+            }
+        }
+
         if (!_nodes.TryGetValue(index, out var node))
         {
             node = FlexLayoutSharp.Flex.CreateDefaultNode();
@@ -286,11 +301,27 @@ public partial class FlexRegistry :
         );
 
         // Set TransformBehavior based on flex layout (local position relative to parent)
-        var localPosition = new Vector3(localX, localY, 0);
-        e.SetBehavior<TransformBehavior, Vector3>(
-            in localPosition,
-            static (ref readonly pos, ref transform) => transform = transform with { Position = pos }
-        );
+        // BUT: Only set position for non-root flex entities (entities with flex parents)
+        // Root flex entities keep their original Transform.Position (e.g., from JSON)
+        var hasFlexParent = false;
+        if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(e.Index, out var parentBehavior))
+        {
+            if (parentBehavior.Value.TryFindParent(e.IsGlobal(), out var parent))
+            {
+                hasFlexParent = parent.Value.Active && parent.Value.HasBehavior<FlexBehavior>();
+            }
+        }
+
+        if (hasFlexParent)
+        {
+            // Child of flex parent: position is determined by flex layout
+            var localPosition = new Vector3(localX, localY, 0);
+            e.SetBehavior<TransformBehavior, Vector3>(
+                in localPosition,
+                static (ref readonly pos, ref transform) => transform = transform with { Position = pos }
+            );
+        }
+        // else: Root flex entity keeps its original Transform.Position
 
         foreach (var child in e.GetChildren())
         {

@@ -19,6 +19,12 @@ namespace Atomic.Net.MonoGame.Scenes;
 public class JsonEntity
 {
     /// <summary>
+    /// Optional enabled state for the entity. Defaults to true if not specified.
+    /// When false, entity is spawned but immediately disabled.
+    /// </summary>
+    public bool? Enabled { get; set; } = null;
+
+    /// <summary>
     /// Optional entity ID for referencing (e.g., "player", "main-menu").
     /// </summary>
     public IdBehavior? Id { get; set; } = null;
