@@ -710,13 +710,11 @@ public sealed class FlexSystemIntegrationTests : IDisposable
 
         RecalculateAll();
 
-        // Assert - child should be 50% of parent width
-        // But we need to check how flex library calculates this
+        // Assert - child width should be 50% of parent's 400px = 200px
         Assert.True(child.Value.TryGetBehavior<FlexBehavior>(out var childFlex));
-        // Width calculation depends on parent, just verify it's not zero
         Assert.True(
-            childFlex.Value.PaddingRect.Width > 0,
-            $"child width should be calculated, got {childFlex.Value.PaddingRect.Width}"
+            MathF.Abs(childFlex.Value.PaddingRect.Width - 200f) < Tolerance,
+            $"child width should be 50% of parent (200px), got {childFlex.Value.PaddingRect.Width}"
         );
     }
 
@@ -733,12 +731,36 @@ public sealed class FlexSystemIntegrationTests : IDisposable
 
         RecalculateAll();
 
-        // Assert - child should be 50% of parent height
+        // Assert - child height should be 50% of parent's 400px = 200px
         Assert.True(child.Value.TryGetBehavior<FlexBehavior>(out var childFlex));
-        // Height calculation depends on parent, just verify it's not zero
         Assert.True(
-            childFlex.Value.PaddingRect.Height > 0,
-            $"child height should be calculated, got {childFlex.Value.PaddingRect.Height}"
+            MathF.Abs(childFlex.Value.PaddingRect.Height - 200f) < Tolerance,
+            $"child height should be 50% of parent (200px), got {childFlex.Value.PaddingRect.Height}"
+        );
+    }
+
+    [Fact]
+    public void FlexRootPercentageDimensions_CorrectlyResultsInZero()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-root-percentage-dimensions.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("root-with-percentage", out var root));
+
+        RecalculateAll();
+
+        // Assert - root element with percentage dimensions and no parent should have 0px dimensions
+        // This is correct HTML/CSS behavior - FlexSharp (Yoga) implements this correctly
+        Assert.True(root.Value.TryGetBehavior<FlexBehavior>(out var rootFlex));
+        Assert.True(
+            MathF.Abs(rootFlex.Value.PaddingRect.Width - 0f) < Tolerance,
+            $"root width should be 0px (percentage with no parent), got {rootFlex.Value.PaddingRect.Width}"
+        );
+        Assert.True(
+            MathF.Abs(rootFlex.Value.PaddingRect.Height - 0f) < Tolerance,
+            $"root height should be 0px (percentage with no parent), got {rootFlex.Value.PaddingRect.Height}"
         );
     }
 

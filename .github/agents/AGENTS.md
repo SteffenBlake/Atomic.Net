@@ -436,6 +436,30 @@ if (!_nodes.TryGetValue(index, out var node))
 
 Document in comments when redundant checks are intentionally defensive.
 
+## NEVER Second-Guess Third-Party Libraries
+
+**CRITICAL RULE:** Do NOT add logic to "fix" or "work around" well-tested third-party libraries like FlexSharp (Yoga).
+
+**Why:** Libraries like FlexSharp are extremely well-tested implementations of established standards (HTML/CSS flexbox). They are the **source of truth**, not our code.
+
+**What to do instead:**
+- ✅ **TRUST THE LIBRARY** - If FlexSharp returns a value, that's the correct value
+- ✅ **FIX THE TEST** - Update test assertions to match library behavior
+- ✅ **FIX THE FIXTURE** - Update test data to be valid according to the standard
+- ❌ **DO NOT add workarounds** - Don't add logic like "HasFlexParent()" to change library behavior
+- ❌ **DO NOT question the library** - Don't assume it's broken when tests fail
+
+**Example - The HasFlexParent() Mistake:**
+- ❌ **WRONG:** Added `HasFlexParent()` to convert percentage dimensions to pixels for root elements
+- ✅ **RIGHT:** Trust FlexSharp - percentage dimensions on root elements = 0px (correct HTML/CSS behavior)
+- ✅ **RIGHT:** Fix test fixtures to use explicit pixel dimensions on root containers
+
+**When FlexSharp (or any library) behavior seems "wrong":**
+1. Research the standard (HTML/CSS spec for FlexSharp)
+2. Verify your understanding is correct
+3. Update your code/tests to match the standard
+4. NEVER add workarounds to "fix" the library
+
 GO READ `.github/agents/DISCOVERIES.md` FOR CRITICAL FINDINGS FROM PREVIOUS BENCHMARKS
 
 CRITICAL: Every ~25k tokens, you will PAUSE WHAT YOUR DOING and ensure you use your "view files" action to re-read this file, in whole, AGAIN, this is to ensure you fresh reload the files information back into your context window. IF YOU DO NOT DO THIS YOU WILL BE TERMINATED, After you do this, you can resume work. You MUST use the "view file" action specifically and read THE ENTIRE FILES, ALL OF THEM, AND ACKNOWLEDGE THEM, you are an LLM and your context window will fade these instructions out so you MUST REFRESH THEM EVERY ~25k tokens

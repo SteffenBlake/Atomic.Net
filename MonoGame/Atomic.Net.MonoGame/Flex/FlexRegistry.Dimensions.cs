@@ -19,17 +19,12 @@ public partial class FlexRegistry :
         var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexWidthBehavior>(out var val))
         {
-            // Check if entity has a flex parent
-            var hasFlexParent = HasFlexParent(e.Entity);
-
-            if (val.Value.Percent && hasFlexParent)
+            if (val.Value.Percent)
             {
-                // Has flex parent: use percentage
                 node.StyleSetWidthPercent(val.Value.Value);
             }
             else
             {
-                // No flex parent OR explicit pixel value: treat as pixels
                 node.StyleSetWidth(val.Value.Value);
             }
         }
@@ -40,17 +35,12 @@ public partial class FlexRegistry :
         var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexWidthBehavior>(out var val))
         {
-            // Check if entity has a flex parent
-            var hasFlexParent = HasFlexParent(e.Entity);
-
-            if (val.Value.Percent && hasFlexParent)
+            if (val.Value.Percent)
             {
-                // Has flex parent: use percentage
                 node.StyleSetWidthPercent(val.Value.Value);
             }
             else
             {
-                // No flex parent OR explicit pixel value: treat as pixels
                 node.StyleSetWidth(val.Value.Value);
             }
         }
@@ -68,17 +58,12 @@ public partial class FlexRegistry :
         var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexHeightBehavior>(out var val))
         {
-            // Check if entity has a flex parent
-            var hasFlexParent = HasFlexParent(e.Entity);
-
-            if (val.Value.Percent && hasFlexParent)
+            if (val.Value.Percent)
             {
-                // Has flex parent: use percentage
                 node.StyleSetHeightPercent(val.Value.Value);
             }
             else
             {
-                // No flex parent OR explicit pixel value: treat as pixels
                 node.StyleSetHeight(val.Value.Value);
             }
         }
@@ -89,17 +74,12 @@ public partial class FlexRegistry :
         var node = EnsureDirtyNode(e.Entity.Index);
         if (e.Entity.TryGetBehavior<FlexHeightBehavior>(out var val))
         {
-            // Check if entity has a flex parent
-            var hasFlexParent = HasFlexParent(e.Entity);
-
-            if (val.Value.Percent && hasFlexParent)
+            if (val.Value.Percent)
             {
-                // Has flex parent: use percentage
                 node.StyleSetHeightPercent(val.Value.Value);
             }
             else
             {
-                // No flex parent OR explicit pixel value: treat as pixels
                 node.StyleSetHeight(val.Value.Value);
             }
         }

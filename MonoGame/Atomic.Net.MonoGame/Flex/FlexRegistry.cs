@@ -1,6 +1,6 @@
 using Atomic.Net.MonoGame.BED;
-using Atomic.Net.MonoGame.Hierarchy;
 using Atomic.Net.MonoGame.Core;
+using Atomic.Net.MonoGame.Hierarchy;
 using Atomic.Net.MonoGame.Transform;
 using FlexLayoutSharp;
 using Microsoft.Xna.Framework;
@@ -51,25 +51,6 @@ public partial class FlexRegistry :
     // Reverse lookup: Node -> Entity Index
     // Enables O(1) parent entity lookup when removing child from flex tree
     private readonly Dictionary<Node, PartitionIndex> _nodeToEntity = [];
-
-    /// <summary>
-    /// Checks if an entity has a flex parent (a parent entity that has FlexBehavior).
-    /// Used to determine whether percentage dimensions should be applied.
-    /// </summary>
-    private static bool HasFlexParent(Entity entity)
-    {
-        if (!BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(entity.Index, out var parentBehavior))
-        {
-            return false;
-        }
-
-        if (!parentBehavior.Value.TryFindParent(entity.IsGlobal(), out var parent))
-        {
-            return false;
-        }
-
-        return parent.Value.Active && parent.Value.HasBehavior<FlexBehavior>();
-    }
 
     /// <summary>
     /// Ensures a flex node exists for the entity and marks it dirty.
