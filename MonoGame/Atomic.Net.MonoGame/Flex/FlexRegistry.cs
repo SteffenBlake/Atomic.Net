@@ -43,6 +43,12 @@ public partial class FlexRegistry :
         Constants.MaxSceneEntities
     );
 
+    // BUG-03 FIX: Track visited nodes during RecalculateNode to detect cycles
+    private readonly PartitionedSparseArray<bool> _visitedThisFrame = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
+
     private readonly PartitionedSparseArray<bool> _flexTreeDirty = new(
         Constants.MaxGlobalEntities,
         Constants.MaxSceneEntities
@@ -85,6 +91,10 @@ public partial class FlexRegistry :
 
     public void Recalculate()
     {
+        // BUG-03 FIX: Clear visited tracking at start of each Recalculate
+        _visitedThisFrame.Global.Clear();
+        _visitedThisFrame.Scene.Clear();
+
         // First, update flex tree for any entities that had parent changes
         foreach (var (index, _) in _flexTreeDirty.Global)
         {
@@ -161,6 +171,18 @@ public partial class FlexRegistry :
 
     private void RecalculateNode(PartitionIndex index)
     {
+        // BUG-03 FIX: Check visited BEFORE dirty check
+        // This MUST be first or cycles won't be detected (dirty flags removed before recursion)
+        if (_visitedThisFrame.HasValue(index))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent(
+                $"Circular parent reference detected in flex hierarchy at entity {index}"
+            ));
+            return;
+        }
+        _visitedThisFrame.Set(index, true);
+
+        // Now check dirty (after visited check)
         if (!_dirty.HasValue(index))
         {
             return;
@@ -423,6 +445,16 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexBehavior> e)
     {
+        // BUG-02 FIX: Mark parent dirty when child's FlexBehavior is removed
+        // Parent needs to recalculate layout without this child
+        if (e.Entity.TryGetParent(out var parent))
+        {
+            if (parent.Value.HasBehavior<FlexBehavior>())
+            {
+                _dirty.Set(parent.Value.Index, true);
+            }
+        }
+
         // Remove from parent's children first
         RemoveFromParentFlexTree(e.Entity);
 

@@ -46,9 +46,10 @@ public class HierarchyRegistry :
         Constants.MaxSceneEntities
     );
 
-    // Track old parent index during parent change (Pre->Post event)
-    // This allows us to clean up the old parent's child list during Recalc
-    private readonly PartitionedSparseArray<PartitionIndex> _oldParentLookup = new(
+    // BUG-01 FIX: Track old parent stack during multiple parent changes (Pre->Post event)
+    // Multiple rapid parent changes (A→B→C) need a stack to track ALL old parents
+    // This allows us to clean up all intermediate parents during Recalc
+    private readonly PartitionedSparseRefArray<Stack<PartitionIndex>> _oldParentStack = new(
         Constants.MaxGlobalEntities,
         Constants.MaxSceneEntities
     );
@@ -289,18 +290,27 @@ public class HierarchyRegistry :
         // Handle race condition: entity deactivated between dirty mark and Recalc
         if (!child.Active)
         {
-            _oldParentLookup.Remove(childIndex);
+            // BUG-01 FIX: Clear entire stack of old parents
+            if (_oldParentStack.TryGetValue(childIndex, out var stack))
+            {
+                stack.Clear();
+                _oldParentStack.Remove(childIndex);
+            }
             return;
         }
 
         // Get the child's ParentBehavior (may have been removed)
         if (!child.TryGetBehavior<ParentBehavior>(out var behavior))
         {
-            // ParentBehavior was removed - clean up old parent if we tracked one
-            if (_oldParentLookup.TryGetValue(childIndex, out var oldParentIdx))
+            // BUG-01 FIX: ParentBehavior was removed - clean up ALL old parents from stack
+            if (_oldParentStack.TryGetValue(childIndex, out var stack))
             {
-                UntrackChild(EntityRegistry.Instance[oldParentIdx.Value], child);
-                _oldParentLookup.Remove(childIndex);
+                while (stack.Count > 0)
+                {
+                    var oldParentIdx = stack.Pop();
+                    UntrackChild(EntityRegistry.Instance[oldParentIdx], child);
+                }
+                _oldParentStack.Remove(childIndex);
             }
             return;
         }
@@ -316,33 +326,27 @@ public class HierarchyRegistry :
             ));
         }
 
-        // Clean up old parent relationship if one was tracked
-        if (_oldParentLookup.TryGetValue(childIndex, out var oldParentIndex))
+        // BUG-01 FIX: Clean up ALL old parent relationships from stack
+        if (_oldParentStack.TryGetValue(childIndex, out var oldParentStack))
         {
-            var oldParent = EntityRegistry.Instance[oldParentIndex.Value];
-
-            // Only untrack/retrack if the parent actually changed
-            if (!hasNewParent || newParent!.Value.Index != oldParentIndex.Value)
+            // Process all old parents in the stack
+            while (oldParentStack.Count > 0)
             {
-                UntrackChild(oldParent, child);
+                var oldParentIdx = oldParentStack.Pop();
 
-                // Track new parent relationship if one was found
-                if (hasNewParent)
+                // Only untrack if this parent is different from the new one
+                if (!hasNewParent || newParent!.Value.Index != oldParentIdx)
                 {
-                    TrackChild(newParent!.Value, child);
+                    UntrackChild(EntityRegistry.Instance[oldParentIdx], child);
                 }
             }
-            // else: parent didn't change, no need to untrack/retrack
-
-            _oldParentLookup.Remove(childIndex);
+            _oldParentStack.Remove(childIndex);
         }
-        else
+
+        // Track new parent relationship if one was found
+        if (hasNewParent)
         {
-            // No old parent tracked, just track the new one
-            if (hasNewParent)
-            {
-                TrackChild(newParent!.Value, child);
-            }
+            TrackChild(newParent!.Value, child);
         }
     }
 
@@ -355,12 +359,17 @@ public class HierarchyRegistry :
 
     public void OnEvent(PreBehaviorUpdatedEvent<ParentBehavior> e)
     {
-        // Store old parent index for cleanup during Recalc
+        // BUG-01 FIX: Push old parent onto stack instead of replacing lookup
+        // This allows tracking multiple rapid parent changes (A→B→C)
         if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(e.Entity, out var oldBehavior))
         {
             if (oldBehavior.Value.TryFindParent(e.Entity.IsGlobal(), out var oldParent))
             {
-                _oldParentLookup.Set(e.Entity.Index, oldParent.Value.Index);
+                if (!_oldParentStack.HasValue(e.Entity.Index))
+                {
+                    _oldParentStack[e.Entity.Index] = new Stack<PartitionIndex>();
+                }
+                _oldParentStack[e.Entity.Index].Push(oldParent.Value.Index);
             }
         }
     }
@@ -373,12 +382,16 @@ public class HierarchyRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<ParentBehavior> e)
     {
-        // Store old parent for cleanup, mark dirty so Recalc processes removal
+        // BUG-01 FIX: Push old parent onto stack, mark dirty so Recalc processes removal
         if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(e.Entity, out var behavior))
         {
             if (behavior.Value.TryFindParent(e.Entity.IsGlobal(), out var parent))
             {
-                _oldParentLookup.Set(e.Entity.Index, parent.Value.Index);
+                if (!_oldParentStack.HasValue(e.Entity.Index))
+                {
+                    _oldParentStack[e.Entity.Index] = new Stack<PartitionIndex>();
+                }
+                _oldParentStack[e.Entity.Index].Push(parent.Value.Index);
             }
         }
         _dirtyChildren.Set(e.Entity.Index, true);
@@ -388,7 +401,13 @@ public class HierarchyRegistry :
     {
         // Clean up both parent-child tracking and dirty state on deactivation
         _dirtyChildren.Remove(e.Entity.Index);
-        _oldParentLookup.Remove(e.Entity.Index);
+
+        // BUG-01 FIX: Clear stack of old parents
+        if (_oldParentStack.TryGetValue(e.Entity.Index, out var stack))
+        {
+            stack.Clear();
+            _oldParentStack.Remove(e.Entity.Index);
+        }
 
         // If this entity is a child, remove it from its parent's child list (O(1) lookup)
         if (_childToParentLookup.TryGetValue(e.Entity.Index, out var parentIdx))
