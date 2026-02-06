@@ -296,7 +296,7 @@
           "argName": "-i"
         }
       }
-    }
+    },
     "grep": {
       "description": "Search for patterns in files",
       "command": "grep",
