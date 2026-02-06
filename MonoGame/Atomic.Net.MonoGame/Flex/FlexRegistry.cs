@@ -209,6 +209,14 @@ public partial class FlexRegistry :
         var localX = node.LayoutGetLeft();
         var localY = node.LayoutGetTop();
 
+        // senior-dev: FINDING: Yoga's LayoutGetWidth/Height returns BORDER BOX dimensions
+        // (content + padding + border), NOT padding box or content box. This was causing
+        // incorrect calculation of PaddingRect and ContentRect. The correct calculation is:
+        // - borderWidth/Height = LayoutGetWidth/Height() (from Yoga)
+        // - paddingWidth/Height = borderWidth/Height - borderLeft - borderRight/Top/Bottom
+        // - contentWidth/Height = paddingWidth/Height - paddingLeft/Right/Top/Bottom
+        // This matches CSS box-sizing: border-box behavior.
+
         // Dimensions from Yoga (content + padding + border, NOT including margin)
         var borderWidth = node.LayoutGetWidth();
         var borderHeight = node.LayoutGetHeight();
