@@ -248,6 +248,13 @@ public partial class FlexRegistry :
         var localX = node.LayoutGetLeft();
         var localY = node.LayoutGetTop();
 
+        // senior-dev: FINDING: Yoga's LayoutGetLeft/Top returns position relative to parent's 
+        // PADDING BOX (after border, but including padding area), NOT relative to parent's 
+        // origin (border box edge). Our Transform system expects positions relative to parent's
+        // origin, so we must add the parent's border offset when setting child positions.
+        // This was discovered via failing tests FlexPaddingAndMargins_CombinesCorrectly and
+        // FlexWrap_WrapsChildrenToNextLine.
+
         // senior-dev: FINDING: Yoga's LayoutGetWidth/Height returns BORDER BOX dimensions
         // (content + padding + border), NOT padding box or content box. This was causing
         // incorrect calculation of PaddingRect and ContentRect. The correct calculation is:
