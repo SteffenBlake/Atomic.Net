@@ -48,6 +48,10 @@ public partial class FlexRegistry :
         Constants.MaxSceneEntities
     );
 
+    // Reverse lookup: Node -> Entity Index
+    // Enables O(1) parent entity lookup when removing child from flex tree
+    private readonly Dictionary<Node, PartitionIndex> _nodeToEntity = new();
+
     /// <summary>
     /// Ensures a flex node exists for the entity and marks it dirty.
     /// Returns the node for further configuration.
@@ -59,6 +63,7 @@ public partial class FlexRegistry :
         {
             node = FlexLayoutSharp.Flex.CreateDefaultNode();
             _nodes[index] = node;
+            _nodeToEntity[node] = index;
         }
         return node;
     }
@@ -88,6 +93,18 @@ public partial class FlexRegistry :
         }
     }
 
+    /// <summary>
+    /// Updates the flex tree structure for an entity by removing it from its old parent
+    /// and adding it to its new parent if both the entity and parent have FlexBehavior.
+    /// Called during Recalc() when parent relationships change.
+    /// </summary>
+    /// <remarks>
+    /// This method handles complex state management:
+    /// - Removes entity from old parent node (if exists) using Node.GetParent()
+    /// - Adds entity to new parent node only if parent has FlexBehavior
+    /// - Prevents duplicate children by checking IndexOfChild before AddChild
+    /// - Marks parent entities dirty for layout recalculation (O(1) via _nodeToEntity lookup)
+    /// </remarks>
     private void UpdateFlexTreeForEntity(PartitionIndex entityIndex)
     {
         var entity = EntityRegistry.Instance[entityIndex];
@@ -97,7 +114,8 @@ public partial class FlexRegistry :
             return;
         }
 
-        if (!_nodes.TryGetValue(entityIndex, out var myNode) || myNode is null)
+        // TryGetValue on SparseReferenceArray guarantees non-null on success for reference types
+        if (!_nodes.TryGetValue(entityIndex, out var myNode))
         {
             return;
         }
@@ -106,20 +124,23 @@ public partial class FlexRegistry :
         RemoveFromParentFlexTree(entity);
 
         // Then add to new parent if it has FlexBehavior
-        if (entity.TryGetParent(out var parent) && parent.Value.HasBehavior<FlexBehavior>())
+        if (!entity.TryGetParent(out var parent) || !parent.Value.HasBehavior<FlexBehavior>())
         {
-            if (_nodes.TryGetValue(parent.Value.Index, out var parentNode) && parentNode is not null)
-            {
-                try
-                {
-                    parentNode.AddChild(myNode);
-                    _dirty.Set(parent.Value.Index, true);
-                }
-                catch
-                {
-                    // Already added or other issue - that's fine
-                }
-            }
+            return;
+        }
+
+        if (!_nodes.TryGetValue(parent.Value.Index, out var parentNode))
+        {
+            return;
+        }
+
+        // Defensive check: IndexOfChild ensures we don't add duplicate children
+        // This can occur during Recalc when multiple parent change events fire
+        // for the same entity within a single frame
+        if (parentNode.IndexOfChild(myNode) == -1)
+        {
+            parentNode.AddChild(myNode);
+            _dirty.Set(parent.Value.Index, true);
         }
     }
 
@@ -153,7 +174,7 @@ public partial class FlexRegistry :
             return;
         }
 
-        if (_nodes.TryGetValue(index, out var node) && node is not null)
+        if (_nodes.TryGetValue(index, out var node))
         {
             node.CalculateLayout(float.NaN, float.NaN, Direction.Inherit);
         }
@@ -168,7 +189,7 @@ public partial class FlexRegistry :
             return;
         }
 
-        if (!_nodes.TryGetValue(e.Index, out var node) || node is null)
+        if (!_nodes.TryGetValue(e.Index, out var node))
         {
             return;
         }
@@ -237,9 +258,11 @@ public partial class FlexRegistry :
 
     public void OnEvent(BehaviorAddedEvent<FlexBehavior> e)
     {
-        if (!_nodes.TryGetValue(e.Entity.Index, out var existingNode) || existingNode is null)
+        if (!_nodes.TryGetValue(e.Entity.Index, out var existingNode))
         {
-            _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode();
+            var newNode = FlexLayoutSharp.Flex.CreateDefaultNode();
+            _nodes[e.Entity.Index] = newNode;
+            _nodeToEntity[newNode] = e.Entity.Index;
         }
         _dirty.Set(e.Entity.Index, true);
         _flexTreeDirty.Set(e.Entity.Index, true); // Mark for flex tree update
@@ -278,44 +301,69 @@ public partial class FlexRegistry :
         }
     }
 
+    /// <summary>
+    /// Removes an entity's flex node from its parent node in the flex tree.
+    /// Uses O(1) reverse lookup via _nodeToEntity dictionary to find and mark parent entity dirty.
+    /// </summary>
+    /// <remarks>
+    /// Performance characteristics:
+    /// - Node parent lookup: O(1) via Node.GetParent()
+    /// - Parent entity lookup: O(1) via _nodeToEntity dictionary
+    /// - Child removal: O(n) where n = number of children in parent (FlexLayoutSharp limitation)
+    /// - Total: O(n) where n = children count, NOT entity count
+    /// 
+    /// Called when:
+    /// - Entity parent changes (need to remove from old parent before adding to new)
+    /// - FlexBehavior is removed from entity
+    /// </remarks>
     private void RemoveFromParentFlexTree(Entity entity)
     {
-        if (!_nodes.TryGetValue(entity.Index, out var myNode) || myNode is null)
+        if (!_nodes.TryGetValue(entity.Index, out var myNode))
         {
             return;
         }
 
-        if (entity.TryGetParent(out var parent))
+        // Use Node.GetParent() to get the node's current parent in the flex tree
+        // (entity's parent might have already changed, but node's parent hasn't)
+        var parentNode = myNode.GetParent();
+        if (parentNode is not null && parentNode.IndexOfChild(myNode) != -1)
         {
-            if (_nodes.TryGetValue(parent.Value.Index, out var parentNode) && parentNode is not null)
+            parentNode.RemoveChild(myNode);
+            
+            // Use O(1) reverse lookup to find parent entity and mark it dirty
+            if (_nodeToEntity.TryGetValue(parentNode, out var parentIndex))
             {
-                // Try to remove - will fail silently if not in parent
-                try
-                {
-                    parentNode.RemoveChild(myNode);
-                    _dirty.Set(parent.Value.Index, true);
-                }
-                catch
-                {
-                    // Not in parent - that's fine
-                }
+                _dirty.Set(parentIndex, true);
+            }
+            else
+            {
+                // Defensive: This should never happen in normal operation since we maintain
+                // _nodeToEntity in sync with _nodes. If we reach here, it indicates a bug
+                // in the registry's internal state management.
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    "FlexRegistry internal error: Parent node exists in flex tree but not in _nodeToEntity lookup. " +
+                    $"Entity: {entity.Index}, Parent node will not be marked dirty for recalculation."
+                ));
             }
         }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexBehavior> e)
     {
-        _nodes.Remove(e.Entity.Index);
-        // Special case, because this node isnt even a flex anymore
-        if (e.Entity.TryGetParent(out var parent))
+        // Remove from parent's children first
+        RemoveFromParentFlexTree(e.Entity);
+        
+        // Then remove the node itself and its reverse lookup
+        if (_nodes.TryGetValue(e.Entity.Index, out var node))
         {
-            _dirty.Set(parent.Value.Index, true);
+            _nodeToEntity.Remove(node);
         }
+        _nodes.Remove(e.Entity.Index);
     }
 
     public void OnEvent(EntityEnabledEvent e)
     {
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node) || node == null)
+        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
         {
             return;
         }
@@ -326,7 +374,7 @@ public partial class FlexRegistry :
 
     public void OnEvent(EntityDisabledEvent e)
     {
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node) || node == null)
+        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
         {
             return;
         }

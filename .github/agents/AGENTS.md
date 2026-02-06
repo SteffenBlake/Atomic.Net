@@ -348,6 +348,76 @@ PR Comments are not commited as markdown files or code in the Repo, the above is
   }
   ```
 
+## O(1) Reverse Lookups for Performance
+
+When you need to look up an entity from a reference-type object (like a Node), use a reverse lookup Dictionary:
+
+DO NOT DO THIS (O(n) iteration through all entities):
+```csharp
+// BAD - iterates through ALL entities to find which one owns this node
+foreach (var (idx, node) in _nodes.Global)
+{
+    if (ReferenceEquals(node, targetNode))
+    {
+        // found it...
+    }
+}
+```
+
+DO THIS INSTEAD (O(1) dictionary lookup):
+```csharp
+// GOOD - maintain reverse lookup dictionary
+private readonly Dictionary<Node, PartitionIndex> _nodeToEntity = new();
+
+// Update when creating nodes
+_nodes[index] = newNode;
+_nodeToEntity[newNode] = index;
+
+// Update when removing nodes
+if (_nodes.TryGetValue(index, out var node))
+{
+    _nodeToEntity.Remove(node);
+}
+_nodes.Remove(index);
+
+// O(1) lookup when needed
+if (_nodeToEntity.TryGetValue(targetNode, out var entityIndex))
+{
+    // found it instantly
+}
+```
+
+See HierarchyRegistry._childToParentLookup and FlexRegistry._nodeToEntity for examples.
+
+## Null Checking Consistency
+
+Use consistent null checking patterns throughout a file. Prefer `is not null` pattern matching:
+
+DO NOT DO THIS (mixing multiple patterns):
+```csharp
+if (foo is null) { } // pattern 1
+if (bar != null) { } // pattern 2  
+if (baz is not null) { } // pattern 3
+```
+
+DO THIS INSTEAD (consistent pattern):
+```csharp
+if (foo is not null) { }
+if (bar is not null) { }
+if (baz is not null) { }
+```
+
+For TryGetValue on SparseReferenceArray with reference types, the null check is redundant:
+```csharp
+// REDUNDANT - TryGetValue guarantees non-null on success for reference types
+if (!_nodes.TryGetValue(index, out var node) || node is null)
+
+// CORRECT - TryGetValue already ensures node is not null
+if (!_nodes.TryGetValue(index, out var node))
+```
+
+Document in comments when redundant checks are intentionally defensive.
+
 GO READ `.github/agents/DISCOVERIES.md` FOR CRITICAL FINDINGS FROM PREVIOUS BENCHMARKS
 
 CRITICAL: Every ~25k tokens, you will PAUSE WHAT YOUR DOING and ensure you use your "view files" action to re-read this file, in whole, AGAIN, this is to ensure you fresh reload the files information back into your context window. IF YOU DO NOT DO THIS YOU WILL BE TERMINATED, After you do this, you can resume work. You MUST use the "view file" action specifically and read THE ENTIRE FILES, ALL OF THEM, AND ACKNOWLEDGE THEM, you are an LLM and your context window will fade these instructions out so you MUST REFRESH THEM EVERY ~25k tokens
