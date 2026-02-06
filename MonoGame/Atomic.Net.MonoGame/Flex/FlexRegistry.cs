@@ -10,6 +10,7 @@ namespace Atomic.Net.MonoGame.Flex;
 public partial class FlexRegistry :
     ISingleton<FlexRegistry>,
     IEventHandler<InitializeEvent>,
+    IEventHandler<ShutdownEvent>,
     // Flex core behaviors
     IEventHandler<BehaviorAddedEvent<FlexBehavior>>,
     IEventHandler<PreBehaviorRemovedEvent<FlexBehavior>>,
@@ -30,6 +31,7 @@ public partial class FlexRegistry :
 
         Instance ??= new();
         EventBus<InitializeEvent>.Register(Instance);
+        EventBus<ShutdownEvent>.Register(Instance);
     }
 
     public static FlexRegistry Instance { get; private set; } = null!;
@@ -325,23 +327,32 @@ public partial class FlexRegistry :
         // Set TransformBehavior based on flex layout (local position relative to parent)
         // BUT: Only set position for non-root flex entities (entities with flex parents)
         // Root flex entities keep their original Transform.Position (e.g., from JSON)
-        var hasFlexParent = false;
         if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(e.Index, out var parentBehavior))
         {
             if (parentBehavior.Value.TryFindParent(e.IsGlobal(), out var parent))
             {
-                hasFlexParent = parent.Value.Active && parent.Value.HasBehavior<FlexBehavior>();
-            }
-        }
+                if (parent.Value.Active && parent.Value.HasBehavior<FlexBehavior>())
+                {
+                    // Child of flex parent: position is determined by flex layout
+                    // Yoga returns position relative to parent's padding box (after border, includes padding area)
+                    // Transform.Position needs to be relative to parent's origin (border box edge)
+                    // So we add parent's border to convert coordinate systems
+                    var adjustedX = localX;
+                    var adjustedY = localY;
 
-        if (hasFlexParent)
-        {
-            // Child of flex parent: position is determined by flex layout
-            var localPosition = new Vector3(localX, localY, 0);
-            e.SetBehavior<TransformBehavior, Vector3>(
-                in localPosition,
-                static (ref readonly pos, ref transform) => transform = transform with { Position = pos }
-            );
+                    if (_nodes.TryGetValue(parent.Value.Index, out var parentNode))
+                    {
+                        adjustedX += parentNode.LayoutGetBorder(Edge.Left);
+                        adjustedY += parentNode.LayoutGetBorder(Edge.Top);
+                    }
+
+                    var localPosition = new Vector3(adjustedX, adjustedY, 0);
+                    e.SetBehavior<TransformBehavior, Vector3>(
+                        in localPosition,
+                        static (ref readonly pos, ref transform) => transform = transform with { Position = pos }
+                    );
+                }
+            }
         }
         // else: Root flex entity keeps its original Transform.Position
 
@@ -486,6 +497,23 @@ public partial class FlexRegistry :
 
         _dirty.Set(e.Entity.Index, true);
         node.StyleSetDisplay(Display.None);
+    }
+
+    public void OnEvent(ShutdownEvent _)
+    {
+        // Clear all internal state to prevent pollution between tests
+        _dirty.Global.Clear();
+        _dirty.Scene.Clear();
+        _visitedThisFrame.Global.Clear();
+        _visitedThisFrame.Scene.Clear();
+        _flexTreeDirty.Global.Clear();
+        _flexTreeDirty.Scene.Clear();
+        _nodeToEntity.Clear();
+
+        // Clear nodes (entities are being deactivated, which will trigger PreBehaviorRemovedEvent)
+        // But we also clear here to ensure no stale references
+        _nodes.Global.Clear();
+        _nodes.Scene.Clear();
     }
 
     public void OnEvent(InitializeEvent _)
