@@ -34,6 +34,8 @@ public static class FlexSystem
         BehaviorRegistry<FlexPositionTopBehavior>.Initialize();
         BehaviorRegistry<FlexPositionTypeBehavior>.Initialize();
         BehaviorRegistry<FlexWidthBehavior>.Initialize();
+        BehaviorRegistry<WorldFlexBehavior>.Initialize();
         FlexRegistry.Initialize();
+        WorldFlexRegistry.Initialize();
     }
 }

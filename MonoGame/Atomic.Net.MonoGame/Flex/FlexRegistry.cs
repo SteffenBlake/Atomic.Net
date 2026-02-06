@@ -1,7 +1,9 @@
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Hierarchy;
 using Atomic.Net.MonoGame.Core;
+using Atomic.Net.MonoGame.Transform;
 using FlexLayoutSharp;
+using Microsoft.Xna.Framework;
 
 namespace Atomic.Net.MonoGame.Flex;
 
@@ -11,6 +13,10 @@ public partial class FlexRegistry :
     // Flex core behaviors
     IEventHandler<BehaviorAddedEvent<FlexBehavior>>,
     IEventHandler<PreBehaviorRemovedEvent<FlexBehavior>>,
+    // Parent hierarchy for flex tree management
+    IEventHandler<BehaviorAddedEvent<ParentBehavior>>,
+    IEventHandler<PostBehaviorUpdatedEvent<ParentBehavior>>,
+    IEventHandler<PreBehaviorRemovedEvent<ParentBehavior>>,
     // Enable/Disable
     IEventHandler<EntityEnabledEvent>,
     IEventHandler<EntityDisabledEvent>
@@ -37,6 +43,11 @@ public partial class FlexRegistry :
         Constants.MaxSceneEntities
     );
 
+    private readonly PartitionedSparseArray<bool> _flexTreeDirty = new(
+        Constants.MaxGlobalEntities,
+        Constants.MaxSceneEntities
+    );
+
     /// <summary>
     /// Ensures a flex node exists for the entity and marks it dirty.
     /// Returns the node for further configuration.
@@ -54,16 +65,61 @@ public partial class FlexRegistry :
 
     public void Recalculate()
     {
-        // Recalculate global partition
+        // First, update flex tree for any entities that had parent changes
+        foreach (var (index, _) in _flexTreeDirty.Global)
+        {
+            UpdateFlexTreeForEntity((ushort)index);
+        }
+        foreach (var (index, _) in _flexTreeDirty.Scene)
+        {
+            UpdateFlexTreeForEntity((uint)index);
+        }
+        _flexTreeDirty.Global.Clear();
+        _flexTreeDirty.Scene.Clear();
+
+        // Then recalculate layout for dirty nodes
         foreach (var (index, _) in _dirty.Global)
         {
             RecalculateNode((ushort)index);
         }
-
-        // Recalculate scene partition
         foreach (var (index, _) in _dirty.Scene)
         {
             RecalculateNode((uint)index);
+        }
+    }
+
+    private void UpdateFlexTreeForEntity(PartitionIndex entityIndex)
+    {
+        var entity = EntityRegistry.Instance[entityIndex];
+        
+        if (!entity.Active || !entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
+        if (!_nodes.TryGetValue(entityIndex, out var myNode) || myNode is null)
+        {
+            return;
+        }
+
+        // Remove from any current parent first (if it exists)
+        RemoveFromParentFlexTree(entity);
+
+        // Then add to new parent if it has FlexBehavior
+        if (entity.TryGetParent(out var parent) && parent.Value.HasBehavior<FlexBehavior>())
+        {
+            if (_nodes.TryGetValue(parent.Value.Index, out var parentNode) && parentNode is not null)
+            {
+                try
+                {
+                    parentNode.AddChild(myNode);
+                    _dirty.Set(parent.Value.Index, true);
+                }
+                catch
+                {
+                    // Already added or other issue - that's fine
+                }
+            }
         }
     }
 
@@ -97,39 +153,43 @@ public partial class FlexRegistry :
             return;
         }
 
-        if (_nodes.TryGetValue(index, out var node))
+        if (_nodes.TryGetValue(index, out var node) && node is not null)
         {
-            node!.CalculateLayout(float.NaN, float.NaN, Direction.Inherit);
+            node.CalculateLayout(float.NaN, float.NaN, Direction.Inherit);
         }
 
-        UpdateFlexBehavior(root, 0, 0);
+        UpdateFlexBehavior(root);
     }
 
-    private void UpdateFlexBehavior(Entity e, float parentLeft, float parentTop, int zIndex = 0)
+    private void UpdateFlexBehavior(Entity e, int zIndex = 0)
     {
         if (!e.HasBehavior<FlexBehavior>())
         {
             return;
         }
 
-        if (!_nodes.TryGetValue(e.Index, out var node))
+        if (!_nodes.TryGetValue(e.Index, out var node) || node is null)
         {
             return;
         }
 
-        var paddingLeft = parentLeft + node.LayoutGetLeft();
-        var paddingTop = parentTop + node.LayoutGetTop();
+        // Local position relative to parent (this becomes TransformBehavior.Position)
+        var localX = node.LayoutGetLeft();
+        var localY = node.LayoutGetTop();
+
+        // Dimensions
         var paddingWidth = node.LayoutGetWidth();
         var paddingHeight = node.LayoutGetHeight();
 
-        var marginLeft = paddingLeft - node.LayoutGetMargin(Edge.Left);
-        var contentLeft = paddingLeft + node.LayoutGetPadding(Edge.Left);
+        // Margins/paddings relative to local coordinate space (starting at 0,0)
+        var marginLeft = -node.LayoutGetMargin(Edge.Left);
+        var contentLeft = node.LayoutGetPadding(Edge.Left);
 
         var marginWidth = paddingWidth + node.LayoutGetMargin(Edge.Left) + node.LayoutGetMargin(Edge.Right);
         var contentWidth = paddingWidth - node.LayoutGetPadding(Edge.Left) - node.LayoutGetPadding(Edge.Right);
 
-        var marginTop = paddingTop - node.LayoutGetMargin(Edge.Top);
-        var contentTop = paddingTop + node.LayoutGetPadding(Edge.Top);
+        var marginTop = -node.LayoutGetMargin(Edge.Top);
+        var contentTop = node.LayoutGetPadding(Edge.Top);
 
         var marginHeight = paddingHeight + node.LayoutGetMargin(Edge.Top) + node.LayoutGetMargin(Edge.Bottom);
         var contentHeight = paddingHeight - node.LayoutGetPadding(Edge.Top) - node.LayoutGetPadding(Edge.Bottom);
@@ -145,9 +205,10 @@ public partial class FlexRegistry :
             truezIndex = zOverride.Value.ZIndex;
         }
 
+        // Store LOCAL flex rectangles (relative to entity's own position)
         var helper = new FlexBehavior(
             MarginRect: new(marginLeft, marginTop, marginWidth, marginHeight),
-            PaddingRect: new(paddingLeft, paddingTop, paddingWidth, paddingHeight),
+            PaddingRect: new(0, 0, paddingWidth, paddingHeight), // Padding rect starts at 0,0
             ContentRect: new(contentLeft, contentTop, contentWidth, contentHeight),
             BorderLeft: borderLeft,
             BorderTop: borderTop,
@@ -161,16 +222,85 @@ public partial class FlexRegistry :
             static (ref readonly h, ref v) => v = h
         );
 
+        // Set TransformBehavior based on flex layout (local position relative to parent)
+        var localPosition = new Vector3(localX, localY, 0);
+        e.SetBehavior<TransformBehavior, Vector3>(
+            in localPosition,
+            static (ref readonly pos, ref transform) => transform = transform with { Position = pos }
+        );
+
         foreach (var child in e.GetChildren())
         {
-            UpdateFlexBehavior(e, paddingLeft, paddingTop, zIndex + 1);
+            UpdateFlexBehavior(child, zIndex + 1);
         }
     }
 
     public void OnEvent(BehaviorAddedEvent<FlexBehavior> e)
     {
-        _nodes[e.Entity.Index] ??= FlexLayoutSharp.Flex.CreateDefaultNode();
+        if (!_nodes.TryGetValue(e.Entity.Index, out var existingNode) || existingNode is null)
+        {
+            _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode();
+        }
         _dirty.Set(e.Entity.Index, true);
+        _flexTreeDirty.Set(e.Entity.Index, true); // Mark for flex tree update
+
+        // Ensure TransformBehavior exists for flex entities
+        if (!e.Entity.HasBehavior<TransformBehavior>())
+        {
+            e.Entity.SetBehavior<TransformBehavior>(static (ref _) => { });
+        }
+    }
+
+    public void OnEvent(BehaviorAddedEvent<ParentBehavior> e)
+    {
+        // If this entity has FlexBehavior, mark for flex tree update
+        if (e.Entity.HasBehavior<FlexBehavior>())
+        {
+            _flexTreeDirty.Set(e.Entity.Index, true);
+        }
+    }
+
+    public void OnEvent(PostBehaviorUpdatedEvent<ParentBehavior> e)
+    {
+        // If this entity has FlexBehavior, mark for flex tree update
+        if (e.Entity.HasBehavior<FlexBehavior>())
+        {
+            _flexTreeDirty.Set(e.Entity.Index, true);
+        }
+    }
+
+    public void OnEvent(PreBehaviorRemovedEvent<ParentBehavior> e)
+    {
+        // If this entity has FlexBehavior, mark for flex tree update
+        if (e.Entity.HasBehavior<FlexBehavior>())
+        {
+            _flexTreeDirty.Set(e.Entity.Index, true);
+        }
+    }
+
+    private void RemoveFromParentFlexTree(Entity entity)
+    {
+        if (!_nodes.TryGetValue(entity.Index, out var myNode) || myNode is null)
+        {
+            return;
+        }
+
+        if (entity.TryGetParent(out var parent))
+        {
+            if (_nodes.TryGetValue(parent.Value.Index, out var parentNode) && parentNode is not null)
+            {
+                // Try to remove - will fail silently if not in parent
+                try
+                {
+                    parentNode.RemoveChild(myNode);
+                    _dirty.Set(parent.Value.Index, true);
+                }
+                catch
+                {
+                    // Not in parent - that's fine
+                }
+            }
+        }
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexBehavior> e)
@@ -327,6 +457,11 @@ public partial class FlexRegistry :
         EventBus<BehaviorAddedEvent<FlexHeightBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexHeightBehavior>>.Register(this);
         EventBus<PreBehaviorRemovedEvent<FlexHeightBehavior>>.Register(this);
+
+        // Parent hierarchy
+        EventBus<BehaviorAddedEvent<ParentBehavior>>.Register(this);
+        EventBus<PostBehaviorUpdatedEvent<ParentBehavior>>.Register(this);
+        EventBus<PreBehaviorRemovedEvent<ParentBehavior>>.Register(this);
 
         // Enable/Disable
         EventBus<EntityEnabledEvent>.Register(this);

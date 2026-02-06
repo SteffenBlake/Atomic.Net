@@ -1,0 +1,46 @@
+{
+  "entities": [
+    {
+      "id": "container",
+      "flexDirection": "row",
+      "flexWidth": {
+        "value": 300
+      },
+      "flexHeight": {
+        "value": 100
+      }
+    },
+    {
+      "id": "child1",
+      "parent": "@container",
+      "flexWidth": {
+        "value": 100
+      },
+      "flexHeight": {
+        "value": 100
+      }
+    },
+    {
+      "id": "child2",
+      "parent": "@container",
+      "flexWidth": {
+        "value": 100
+      },
+      "flexHeight": {
+        "value": 100
+      },
+      "flexZOverride": 10
+    },
+    {
+      "id": "child3",
+      "parent": "@container",
+      "flexWidth": {
+        "value": 100
+      },
+      "flexHeight": {
+        "value": 100
+      },
+      "flexZOverride": 5
+    }
+  ]
+}

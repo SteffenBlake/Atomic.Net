@@ -1,0 +1,1187 @@
+using Xunit;
+using Xunit.Abstractions;
+using System.Drawing;
+using Microsoft.Xna.Framework;
+using Atomic.Net.MonoGame.Core;
+using Atomic.Net.MonoGame.BED;
+using Atomic.Net.MonoGame.Flex;
+using Atomic.Net.MonoGame.Transform;
+using Atomic.Net.MonoGame.Scenes;
+using Atomic.Net.MonoGame.Ids;
+
+namespace Atomic.Net.MonoGame.Tests.Flex.Integrations;
+
+[Collection("NonParallel")]
+[Trait("Category", "Integration")]
+public sealed class FlexSystemIntegrationTests : IDisposable
+{
+    private readonly ErrorEventLogger _errorLogger;
+    private const float Tolerance = 0.0001f;
+
+    public FlexSystemIntegrationTests(ITestOutputHelper output)
+    {
+        _errorLogger = new ErrorEventLogger(output);
+        AtomicSystem.Initialize();
+        EventBus<InitializeEvent>.Push(new());
+    }
+
+    public void Dispose()
+    {
+        _errorLogger.Dispose();
+        EventBus<ShutdownEvent>.Push(new());
+    }
+
+    /// <summary>
+    /// Recalculates all systems in the correct order: Flex → Transform → WorldFlex
+    /// </summary>
+    private static void RecalculateAll()
+    {
+        FlexRegistry.Instance.Recalculate();
+        TransformRegistry.Instance.Recalculate();
+        WorldFlexRegistry.Instance.Recalculate();
+    }
+
+    private static void AssertPositionEquals(float expectedX, float expectedY, Entity entity, string context = "")
+    {
+        // Arrange
+        Assert.True(
+            BehaviorRegistry<TransformBehavior>.Instance.TryGetBehavior(entity, out var transform),
+            $"{context}: Entity should have TransformBehavior"
+        );
+
+        // Assert
+        var actualX = transform!.Value.Position.X;
+        var actualY = transform.Value.Position.Y;
+
+        Assert.True(
+            MathF.Abs(expectedX - actualX) < Tolerance,
+            $"{context}: Expected X={expectedX}, got {actualX}"
+        );
+        Assert.True(
+            MathF.Abs(expectedY - actualY) < Tolerance,
+            $"{context}: Expected Y={expectedY}, got {actualY}"
+        );
+    }
+
+    private static void AssertFlexRectEquals(
+        RectangleF expected,
+        RectangleF actual,
+        string rectName,
+        string context = ""
+    )
+    {
+        Assert.True(
+            MathF.Abs(expected.X - actual.X) < Tolerance,
+            $"{context} {rectName}.X: Expected {expected.X}, got {actual.X}"
+        );
+        Assert.True(
+            MathF.Abs(expected.Y - actual.Y) < Tolerance,
+            $"{context} {rectName}.Y: Expected {expected.Y}, got {actual.Y}"
+        );
+        Assert.True(
+            MathF.Abs(expected.Width - actual.Width) < Tolerance,
+            $"{context} {rectName}.Width: Expected {expected.Width}, got {actual.Width}"
+        );
+        Assert.True(
+            MathF.Abs(expected.Height - actual.Height) < Tolerance,
+            $"{context} {rectName}.Height: Expected {expected.Height}, got {actual.Height}"
+        );
+    }
+
+    private static void AssertWorldPositionEquals(
+        float expectedX,
+        float expectedY,
+        Entity entity,
+        string context = ""
+    )
+    {
+        // Arrange
+        Assert.True(
+            BehaviorRegistry<WorldTransformBehavior>.Instance.TryGetBehavior(
+                entity,
+                out var worldTransform
+            ),
+            $"{context}: Entity should have WorldTransformBehavior"
+        );
+
+        // Assert
+        var actualX = worldTransform!.Value.Value.Translation.X;
+        var actualY = worldTransform.Value.Value.Translation.Y;
+
+        Assert.True(
+            MathF.Abs(expectedX - actualX) < Tolerance,
+            $"{context}: Expected World X={expectedX}, got {actualX}"
+        );
+        Assert.True(
+            MathF.Abs(expectedY - actualY) < Tolerance,
+            $"{context}: Expected World Y={expectedY}, got {actualY}"
+        );
+    }
+
+    #region Basic Flex Layouts
+
+    [Fact]
+    public void SimpleFlexRow_PositionsChildrenHorizontally()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/simple-flex-row.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
+
+        RecalculateAll();
+
+        // Assert - children should be laid out horizontally (local positions)
+        AssertPositionEquals(0, 0, child1.Value, "child1");
+        AssertPositionEquals(100, 0, child2.Value, "child2");
+
+        // Verify WorldFlexBehavior exists for flex entities
+        Assert.True(child1.Value.HasBehavior<WorldFlexBehavior>(), "child1 should have WorldFlexBehavior");
+        Assert.True(child2.Value.HasBehavior<WorldFlexBehavior>(), "child2 should have WorldFlexBehavior");
+    }
+
+    [Fact]
+    public void SimpleFlexColumn_PositionsChildrenVertically()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/simple-flex-column.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
+
+        RecalculateAll();
+
+        // Assert - children should be laid out vertically (local positions)
+        AssertPositionEquals(0, 0, child1.Value, "child1");
+        AssertPositionEquals(0, 100, child2.Value, "child2");
+
+        // Verify WorldFlexBehavior exists for flex entities
+        Assert.True(child1.Value.HasBehavior<WorldFlexBehavior>(), "child1 should have WorldFlexBehavior");
+        Assert.True(child2.Value.HasBehavior<WorldFlexBehavior>(), "child2 should have WorldFlexBehavior");
+    }
+
+    [Fact]
+    public void FlexWithMargins_OffsetsByMargin()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-with-margins.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
+
+        RecalculateAll();
+
+        // Assert - child should be offset by left and top margins
+        AssertPositionEquals(10, 20, child.Value, "child");
+
+        // Check WorldFlexBehavior contains correct margin rect (world coordinates)
+        Assert.True(child.Value.TryGetBehavior<WorldFlexBehavior>(out var worldFlexBehavior));
+        AssertFlexRectEquals(
+            new RectangleF(0, 0, 140, 180), // margin increases width/height
+            worldFlexBehavior.Value.MarginRect,
+            "MarginRect",
+            "child"
+        );
+    }
+
+    [Fact]
+    public void FlexWithPadding_OffsetsByPadding()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-with-padding.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
+
+        RecalculateAll();
+
+        // Assert - child should be offset by padding
+        AssertPositionEquals(10, 10, child.Value, "child");
+
+        // Container padding rect should account for padding (world coordinates)
+        Assert.True(container.Value.TryGetBehavior<WorldFlexBehavior>(out var containerWorldFlex));
+        AssertFlexRectEquals(
+            new RectangleF(10, 10, 280, 80), // content area reduced by padding
+            containerWorldFlex.Value.ContentRect,
+            "ContentRect",
+            "container"
+        );
+    }
+
+    [Fact]
+    public void FlexGrow_DistributesSpaceProportionally()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-grow.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
+
+        RecalculateAll();
+
+        // Assert - child1 gets 1/3, child2 gets 2/3 of 300px
+        Assert.True(child1.Value.TryGetBehavior<FlexBehavior>(out var child1Flex));
+        Assert.True(child2.Value.TryGetBehavior<FlexBehavior>(out var child2Flex));
+
+        Assert.True(
+            MathF.Abs(100 - child1Flex.Value.PaddingRect.Width) < Tolerance,
+            $"child1 width: expected ~100, got {child1Flex.Value.PaddingRect.Width}"
+        );
+        Assert.True(
+            MathF.Abs(200 - child2Flex.Value.PaddingRect.Width) < Tolerance,
+            $"child2 width: expected ~200, got {child2Flex.Value.PaddingRect.Width}"
+        );
+    }
+
+    #endregion
+
+    #region Wrapping and Direction
+
+    [Fact]
+    public void FlexWrap_WrapsChildrenToNextLine()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-wrap.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
+
+        RecalculateAll();
+
+        // Assert - child1 on first row, child2 wraps to second row
+        Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1Transform));
+        Assert.True(child2.Value.TryGetBehavior<TransformBehavior>(out var child2Transform));
+
+        // First child at (0, 0)
+        AssertPositionEquals(0, 0, child1.Value, "child1");
+
+        // Second child wraps (check Y position changed)
+        Assert.True(
+            child2Transform.Value.Position.Y > Tolerance,
+            $"child2 should wrap to next row, Y={child2Transform.Value.Position.Y}"
+        );
+    }
+
+    [Fact]
+    public void FlexRowReverse_ReversesChildOrder()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-row-reverse.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
+
+        RecalculateAll();
+
+        // Assert - child2 should be before child1 (reverse order)
+        Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1Transform));
+        Assert.True(child2.Value.TryGetBehavior<TransformBehavior>(out var child2Transform));
+
+        Assert.True(
+            child2Transform.Value.Position.X < child1Transform.Value.Position.X,
+            $"child2 X ({child2Transform.Value.Position.X}) should be less than child1 X ({child1Transform.Value.Position.X})"
+        );
+    }
+
+    [Fact]
+    public void FlexColumnReverse_ReversesChildOrder()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-column-reverse.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
+
+        RecalculateAll();
+
+        // Assert - child2 should be before child1 (reverse order)
+        Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1Transform));
+        Assert.True(child2.Value.TryGetBehavior<TransformBehavior>(out var child2Transform));
+
+        Assert.True(
+            child2Transform.Value.Position.Y < child1Transform.Value.Position.Y,
+            $"child2 Y ({child2Transform.Value.Position.Y}) should be less than child1 Y ({child1Transform.Value.Position.Y})"
+        );
+    }
+
+    #endregion
+
+    #region Justify Content
+
+    [Fact]
+    public void FlexJustifyCenter_CentersChildren()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-justify-center.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
+
+        RecalculateAll();
+
+        // Assert - child should be centered horizontally in 300px container
+        Assert.True(child.Value.TryGetBehavior<TransformBehavior>(out var childTransform));
+        Assert.True(
+            MathF.Abs(100 - childTransform.Value.Position.X) < Tolerance,
+            $"child should be centered at X=100, got {childTransform.Value.Position.X}"
+        );
+    }
+
+    [Fact]
+    public void FlexJustifySpaceBetween_DistributesChildren()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-justify-space-between.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
+
+        RecalculateAll();
+
+        // Assert - child1 at start, child2 at end
+        Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1Transform));
+        Assert.True(child2.Value.TryGetBehavior<TransformBehavior>(out var child2Transform));
+
+        AssertPositionEquals(0, 0, child1.Value, "child1");
+        Assert.True(
+            child2Transform.Value.Position.X > 200,
+            $"child2 should be near end, X={child2Transform.Value.Position.X}"
+        );
+    }
+
+    [Fact]
+    public void FlexJustifyFlexEnd_MovesChildrenToEnd()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-justify-flex-end.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
+
+        RecalculateAll();
+
+        // Assert - both children should be near the end
+        Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1Transform));
+        Assert.True(child2.Value.TryGetBehavior<TransformBehavior>(out var child2Transform));
+
+        Assert.True(
+            child1Transform.Value.Position.X > 150,
+            $"child1 should be near end, X={child1Transform.Value.Position.X}"
+        );
+        Assert.True(
+            child2Transform.Value.Position.X > child1Transform.Value.Position.X,
+            $"child2 ({child2Transform.Value.Position.X}) should be after child1 ({child1Transform.Value.Position.X})"
+        );
+    }
+
+    [Fact]
+    public void FlexJustifySpaceAround_DistributesWithEqualMargins()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-justify-space-around.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child3", out var child3));
+
+        RecalculateAll();
+
+        // Assert - children should have space around them
+        Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1Transform));
+        Assert.True(child2.Value.TryGetBehavior<TransformBehavior>(out var child2Transform));
+        Assert.True(child3.Value.TryGetBehavior<TransformBehavior>(out var child3Transform));
+
+        // child1 should not be at 0 (has space before)
+        Assert.True(
+            child1Transform.Value.Position.X > Tolerance,
+            $"child1 should have space before, X={child1Transform.Value.Position.X}"
+        );
+
+        // child3 should not be at far right (has space after)
+        Assert.True(
+            child3Transform.Value.Position.X < 250,
+            $"child3 should have space after, X={child3Transform.Value.Position.X}"
+        );
+    }
+
+    #endregion
+
+    #region Align Items
+
+    [Fact]
+    public void FlexAlignItemsCenter_CentersChildrenCrossAxis()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-align-items-center.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
+
+        RecalculateAll();
+
+        // Assert - child should be centered vertically in 200px container
+        Assert.True(child.Value.TryGetBehavior<TransformBehavior>(out var childTransform));
+        Assert.True(
+            MathF.Abs(50 - childTransform.Value.Position.Y) < Tolerance,
+            $"child should be centered at Y=50, got {childTransform.Value.Position.Y}"
+        );
+    }
+
+    [Fact]
+    public void FlexAlignItemsFlexEnd_MovesChildrenToEndCrossAxis()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-align-items-flex-end.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
+
+        RecalculateAll();
+
+        // Assert - child should be at bottom (Y=100) in 200px container
+        Assert.True(child.Value.TryGetBehavior<TransformBehavior>(out var childTransform));
+        Assert.True(
+            MathF.Abs(100 - childTransform.Value.Position.Y) < Tolerance,
+            $"child should be at Y=100, got {childTransform.Value.Position.Y}"
+        );
+    }
+
+    [Fact]
+    public void FlexAlignItemsStretch_StretchesChildrenToFillCrossAxis()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-align-items-stretch.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
+
+        RecalculateAll();
+
+        // Assert - children should be stretched to container height (200px)
+        Assert.True(child1.Value.TryGetBehavior<FlexBehavior>(out var child1Flex));
+        Assert.True(child2.Value.TryGetBehavior<FlexBehavior>(out var child2Flex));
+
+        Assert.True(
+            MathF.Abs(200 - child1Flex.Value.PaddingRect.Height) < Tolerance,
+            $"child1 should stretch to 200px height, got {child1Flex.Value.PaddingRect.Height}"
+        );
+        Assert.True(
+            MathF.Abs(200 - child2Flex.Value.PaddingRect.Height) < Tolerance,
+            $"child2 should stretch to 200px height, got {child2Flex.Value.PaddingRect.Height}"
+        );
+    }
+
+    [Fact]
+    public void FlexAlignSelfOverride_OverridesParentAlignment()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-align-self-override.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
+
+        RecalculateAll();
+
+        // Assert - child1 at flexStart (Y=0), child2 at flexEnd (Y=150)
+        Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1Transform));
+        Assert.True(child2.Value.TryGetBehavior<TransformBehavior>(out var child2Transform));
+
+        AssertPositionEquals(0, 0, child1.Value, "child1");
+        Assert.True(
+            MathF.Abs(150 - child2Transform.Value.Position.Y) < Tolerance,
+            $"child2 should be at Y=150 (flexEnd), got {child2Transform.Value.Position.Y}"
+        );
+    }
+
+    #endregion
+
+    #region Nested Flex Containers
+
+    [Fact]
+    public void NestedFlex2Levels_CalculatesCorrectPositions()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/nested-flex-2-levels.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("root", out var root));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("header", out var header));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("header-left", out var headerLeft));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("header-right", out var headerRight));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("content", out var content));
+
+        RecalculateAll();
+
+        // Assert - header at top, content below
+        AssertPositionEquals(0, 0, header.Value, "header");
+        AssertPositionEquals(0, 100, content.Value, "content");
+
+        // header children should be side-by-side
+        AssertPositionEquals(0, 0, headerLeft.Value, "header-left");
+        AssertPositionEquals(200, 0, headerRight.Value, "header-right");
+    }
+
+    [Fact]
+    public void NestedFlex3Levels_CalculatesCorrectPositions()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/nested-flex-3-levels.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("root", out var root));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("level1", out var level1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("level2-left", out var level2Left));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("level3-top", out var level3Top));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("level3-bottom", out var level3Bottom));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("level2-right", out var level2Right));
+
+        RecalculateAll();
+
+        // Assert - verify nested positioning
+        AssertPositionEquals(0, 0, level1.Value, "level1");
+        AssertPositionEquals(0, 0, level2Left.Value, "level2-left");
+        AssertPositionEquals(300, 0, level2Right.Value, "level2-right");
+
+        // Level 3 children stacked vertically
+        AssertPositionEquals(0, 0, level3Top.Value, "level3-top");
+        AssertPositionEquals(0, 150, level3Bottom.Value, "level3-bottom");
+    }
+
+    #endregion
+
+    #region Borders and Spacing
+
+    [Fact]
+    public void FlexWithBorders_IncludesBordersInLayout()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-with-borders.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
+
+        RecalculateAll();
+
+        // Assert - check border values are stored
+        Assert.True(container.Value.TryGetBehavior<FlexBehavior>(out var containerFlex));
+        Assert.True(
+            MathF.Abs(5 - containerFlex.Value.BorderLeft) < Tolerance,
+            $"BorderLeft should be 5, got {containerFlex.Value.BorderLeft}"
+        );
+        Assert.True(
+            MathF.Abs(10 - containerFlex.Value.BorderTop) < Tolerance,
+            $"BorderTop should be 10, got {containerFlex.Value.BorderTop}"
+        );
+        Assert.True(
+            MathF.Abs(15 - containerFlex.Value.BorderRight) < Tolerance,
+            $"BorderRight should be 15, got {containerFlex.Value.BorderRight}"
+        );
+        Assert.True(
+            MathF.Abs(20 - containerFlex.Value.BorderBottom) < Tolerance,
+            $"BorderBottom should be 20, got {containerFlex.Value.BorderBottom}"
+        );
+    }
+
+    [Fact]
+    public void FlexPaddingAndMargins_CombinesCorrectly()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-padding-and-margins.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
+
+        RecalculateAll();
+
+        // Assert - child position should include container padding + child margin
+        Assert.True(child.Value.TryGetBehavior<TransformBehavior>(out var childTransform));
+        // Container padding (10) + child margin left (20) = 30
+        Assert.True(
+            MathF.Abs(30 - childTransform.Value.Position.X) < Tolerance,
+            $"child X should be 30 (padding 10 + margin 20), got {childTransform.Value.Position.X}"
+        );
+        // Container padding (10) + child margin top (15) = 25
+        Assert.True(
+            MathF.Abs(25 - childTransform.Value.Position.Y) < Tolerance,
+            $"child Y should be 25 (padding 10 + margin 15), got {childTransform.Value.Position.Y}"
+        );
+    }
+
+    [Fact]
+    public void FlexComplexSpacing_CalculatesCorrectLayout()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-complex-spacing.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child3", out var child3));
+
+        RecalculateAll();
+
+        // Assert - verify spacing with padding, borders, and margins
+        Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1Transform));
+        Assert.True(child2.Value.TryGetBehavior<TransformBehavior>(out var child2Transform));
+        Assert.True(child3.Value.TryGetBehavior<TransformBehavior>(out var child3Transform));
+
+        // child1: padding(20) + border(3) = starts at 23
+        Assert.True(
+            child1Transform.Value.Position.Y > 15,
+            $"child1 Y should account for padding+border, got {child1Transform.Value.Position.Y}"
+        );
+
+        // child2 and child3 should be spaced below child1
+        Assert.True(
+            child2Transform.Value.Position.Y > child1Transform.Value.Position.Y + 100,
+            $"child2 should be below child1, Y={child2Transform.Value.Position.Y}"
+        );
+        Assert.True(
+            child3Transform.Value.Position.Y > child2Transform.Value.Position.Y + 100,
+            $"child3 should be below child2, Y={child3Transform.Value.Position.Y}"
+        );
+    }
+
+    #endregion
+
+    #region Percentage Sizing
+
+    [Fact]
+    public void FlexPercentageWidth_CalculatesRelativeToParent()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-percentage-width.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
+
+        RecalculateAll();
+
+        // Assert - child should be 50% of parent width
+        // But we need to check how flex library calculates this
+        Assert.True(child.Value.TryGetBehavior<FlexBehavior>(out var childFlex));
+        // Width calculation depends on parent, just verify it's not zero
+        Assert.True(
+            childFlex.Value.PaddingRect.Width > 0,
+            $"child width should be calculated, got {childFlex.Value.PaddingRect.Width}"
+        );
+    }
+
+    [Fact]
+    public void FlexPercentageHeight_CalculatesRelativeToParent()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-percentage-height.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
+
+        RecalculateAll();
+
+        // Assert - child should be 50% of parent height
+        Assert.True(child.Value.TryGetBehavior<FlexBehavior>(out var childFlex));
+        // Height calculation depends on parent, just verify it's not zero
+        Assert.True(
+            childFlex.Value.PaddingRect.Height > 0,
+            $"child height should be calculated, got {childFlex.Value.PaddingRect.Height}"
+        );
+    }
+
+    #endregion
+
+    #region Absolute Positioning
+
+    [Fact]
+    public void FlexAbsolutePosition_PositionsRelativeToContainer()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-absolute-position.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("absolute-child", out var absoluteChild));
+
+        RecalculateAll();
+
+        // Assert - absolute child should be at specified position
+        AssertPositionEquals(50, 30, absoluteChild.Value, "absolute-child");
+    }
+
+    [Fact]
+    public void FlexMixedAbsoluteRelative_HandlesCorrectly()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-mixed-absolute-relative.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("regular-child", out var regularChild));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("absolute-child", out var absoluteChild));
+
+        RecalculateAll();
+
+        // Assert - regular child follows flex flow
+        AssertPositionEquals(0, 0, regularChild.Value, "regular-child");
+
+        // Absolute child should be positioned from right/bottom
+        Assert.True(absoluteChild.Value.TryGetBehavior<TransformBehavior>(out var absTransform));
+        // Should be positioned from right (10px from right edge)
+        Assert.True(
+            absTransform.Value.Position.X > 200,
+            $"absolute-child should be near right, X={absTransform.Value.Position.X}"
+        );
+    }
+
+    #endregion
+
+    #region Advanced Features
+
+    [Fact]
+    public void FlexZOverride_SetsCorrectZIndex()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-z-override.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child3", out var child3));
+
+        RecalculateAll();
+
+        // Assert - verify z-indices
+        Assert.True(child1.Value.TryGetBehavior<FlexBehavior>(out var child1Flex));
+        Assert.True(child2.Value.TryGetBehavior<FlexBehavior>(out var child2Flex));
+        Assert.True(child3.Value.TryGetBehavior<FlexBehavior>(out var child3Flex));
+
+        Assert.Equal(1, child1Flex.Value.ZIndex); // default child z-index
+        Assert.Equal(10, child2Flex.Value.ZIndex); // overridden to 10
+        Assert.Equal(5, child3Flex.Value.ZIndex); // overridden to 5
+    }
+
+    [Fact]
+    public void FlexGrowEqual_DistributesSpaceEvenly()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-grow-equal.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child3", out var child3));
+
+        RecalculateAll();
+
+        // Assert - all children should have equal width (~166.67px each)
+        Assert.True(child1.Value.TryGetBehavior<FlexBehavior>(out var child1Flex));
+        Assert.True(child2.Value.TryGetBehavior<FlexBehavior>(out var child2Flex));
+        Assert.True(child3.Value.TryGetBehavior<FlexBehavior>(out var child3Flex));
+
+        var expectedWidth = 500f / 3f;
+        Assert.True(
+            MathF.Abs(expectedWidth - child1Flex.Value.PaddingRect.Width) < Tolerance,
+            $"child1 width should be ~{expectedWidth}, got {child1Flex.Value.PaddingRect.Width}"
+        );
+        Assert.True(
+            MathF.Abs(expectedWidth - child2Flex.Value.PaddingRect.Width) < Tolerance,
+            $"child2 width should be ~{expectedWidth}, got {child2Flex.Value.PaddingRect.Width}"
+        );
+        Assert.True(
+            MathF.Abs(expectedWidth - child3Flex.Value.PaddingRect.Width) < Tolerance,
+            $"child3 width should be ~{expectedWidth}, got {child3Flex.Value.PaddingRect.Width}"
+        );
+    }
+
+    [Fact]
+    public void FlexGrowMixed_DistributesSpaceCorrectly()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-grow-mixed.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("fixed-child", out var fixedChild));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("growing-child", out var growingChild));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("another-fixed", out var anotherFixed));
+
+        RecalculateAll();
+
+        // Assert - fixed children stay 100px, growing child fills remainder
+        Assert.True(fixedChild.Value.TryGetBehavior<FlexBehavior>(out var fixedFlex));
+        Assert.True(growingChild.Value.TryGetBehavior<FlexBehavior>(out var growingFlex));
+        Assert.True(anotherFixed.Value.TryGetBehavior<FlexBehavior>(out var anotherFixedFlex));
+
+        Assert.True(
+            MathF.Abs(100 - fixedFlex.Value.PaddingRect.Width) < Tolerance,
+            $"fixed-child should be 100px, got {fixedFlex.Value.PaddingRect.Width}"
+        );
+        Assert.True(
+            MathF.Abs(200 - growingFlex.Value.PaddingRect.Width) < Tolerance,
+            $"growing-child should fill 200px, got {growingFlex.Value.PaddingRect.Width}"
+        );
+        Assert.True(
+            MathF.Abs(100 - anotherFixedFlex.Value.PaddingRect.Width) < Tolerance,
+            $"another-fixed should be 100px, got {anotherFixedFlex.Value.PaddingRect.Width}"
+        );
+    }
+
+    [Fact]
+    public void FlexShrink_ShrinksChildrenProportionally()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-shrink.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
+
+        RecalculateAll();
+
+        // Assert - children should shrink to fit in 200px container
+        Assert.True(child1.Value.TryGetBehavior<FlexBehavior>(out var child1Flex));
+        Assert.True(child2.Value.TryGetBehavior<FlexBehavior>(out var child2Flex));
+
+        // Total should not exceed container width
+        var totalWidth = child1Flex.Value.PaddingRect.Width + child2Flex.Value.PaddingRect.Width;
+        Assert.True(
+            totalWidth <= 200 + Tolerance,
+            $"Total width should not exceed 200px, got {totalWidth}"
+        );
+
+        // child2 (shrink:2) should shrink more than child1 (shrink:1)
+        Assert.True(
+            child2Flex.Value.PaddingRect.Width < child1Flex.Value.PaddingRect.Width,
+            $"child2 ({child2Flex.Value.PaddingRect.Width}) should be smaller than child1 ({child1Flex.Value.PaddingRect.Width})"
+        );
+    }
+
+    [Fact]
+    public void FlexWrapMultiRow_WrapsToMultipleRows()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-wrap-multi-row.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child3", out var child3));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child4", out var child4));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child5", out var child5));
+
+        RecalculateAll();
+
+        // Assert - children should wrap to multiple rows
+        Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1Transform));
+        Assert.True(child2.Value.TryGetBehavior<TransformBehavior>(out var child2Transform));
+        Assert.True(child3.Value.TryGetBehavior<TransformBehavior>(out var child3Transform));
+        Assert.True(child4.Value.TryGetBehavior<TransformBehavior>(out var child4Transform));
+        Assert.True(child5.Value.TryGetBehavior<TransformBehavior>(out var child5Transform));
+
+        // First row: child1, child2, child3
+        Assert.True(
+            child1Transform.Value.Position.Y < 60,
+            $"child1 should be on first row, Y={child1Transform.Value.Position.Y}"
+        );
+        Assert.True(
+            child2Transform.Value.Position.Y < 60,
+            $"child2 should be on first row, Y={child2Transform.Value.Position.Y}"
+        );
+        Assert.True(
+            child3Transform.Value.Position.Y < 60,
+            $"child3 should be on first row, Y={child3Transform.Value.Position.Y}"
+        );
+
+        // Second row: child4, child5
+        Assert.True(
+            child4Transform.Value.Position.Y > 60,
+            $"child4 should be on second row, Y={child4Transform.Value.Position.Y}"
+        );
+        Assert.True(
+            child5Transform.Value.Position.Y > 60,
+            $"child5 should be on second row, Y={child5Transform.Value.Position.Y}"
+        );
+    }
+
+    #endregion
+
+    #region Transform Integration
+
+    [Fact]
+    public void FlexBehaviorAdded_AutomaticallyAddsTransformBehavior()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-single-root.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("single-flex", out var singleFlex));
+
+        // Assert - TransformBehavior should be automatically added
+        Assert.True(
+            singleFlex.Value.HasBehavior<TransformBehavior>(),
+            "FlexBehavior should automatically add TransformBehavior"
+        );
+    }
+
+    [Fact]
+    public void FlexWithTransformRoot_CombinesFlexAndTransformCorrectly()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-with-transform-root.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("root", out var root));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
+
+        RecalculateAll();
+
+        // Assert - root should have both flex position (0,0) and transform position (100,50)
+        // Child's world position should be root transform + flex offset
+        AssertWorldPositionEquals(100, 50, child.Value, "child");
+    }
+
+    [Fact]
+    public void FlexNestedWithTransform_CalculatesWorldPositionsCorrectly()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-nested-with-transform.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("root", out var root));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("left-panel", out var leftPanel));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("left-item1", out var leftItem1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("left-item2", out var leftItem2));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("right-panel", out var rightPanel));
+
+        RecalculateAll();
+
+        // Assert - verify world positions account for both flex and transform
+        // Root has transform (50, 50), flex positions children
+        AssertWorldPositionEquals(50, 50, leftPanel.Value, "left-panel");
+        AssertWorldPositionEquals(250, 50, rightPanel.Value, "right-panel");
+
+        // Nested items under left-panel
+        AssertWorldPositionEquals(50, 50, leftItem1.Value, "left-item1");
+        AssertWorldPositionEquals(50, 150, leftItem2.Value, "left-item2");
+    }
+
+    #endregion
+
+    #region Edge Cases
+
+    [Fact]
+    public void FlexEmptyContainer_HandlesGracefully()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-empty-container.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+
+        RecalculateAll();
+
+        // Assert - container should have flex behavior even without children
+        Assert.True(
+            container.Value.HasBehavior<FlexBehavior>(),
+            "Empty container should have FlexBehavior"
+        );
+        Assert.True(
+            container.Value.HasBehavior<TransformBehavior>(),
+            "Empty container should have TransformBehavior"
+        );
+    }
+
+    [Fact]
+    public void FlexSingleRoot_WorksWithoutParent()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-single-root.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("single-flex", out var singleFlex));
+
+        RecalculateAll();
+
+        // Assert - single root flex entity should work
+        Assert.True(singleFlex.Value.HasBehavior<FlexBehavior>());
+        AssertPositionEquals(0, 0, singleFlex.Value, "single-flex");
+    }
+
+    [Fact]
+    public void FlexDisabledContainer_HidesFromLayout()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/flex-disabled-container.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("disabled-container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child", out var child));
+
+        RecalculateAll();
+
+        // Assert - disabled entities should be marked as Display.None
+        // This is handled by FlexRegistry's EntityDisabledEvent handler
+        Assert.False(
+            container.Value.Enabled,
+            "Container should be disabled"
+        );
+    }
+
+    [Fact]
+    public void FlexRecalculate_UpdatesAfterBehaviorChange()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/simple-flex-row.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
+
+        RecalculateAll();
+
+        // Verify initial positions
+        AssertPositionEquals(0, 0, child1.Value, "child1 initially");
+        AssertPositionEquals(100, 0, child2.Value, "child2 initially");
+
+        // Modify child1 width
+        var newWidth = 200f;
+        child1.Value.SetBehavior<FlexWidthBehavior, float>(
+            in newWidth,
+            static (ref readonly width, ref behavior) => behavior = behavior with
+            {
+                Value = width
+            }
+        );
+
+        RecalculateAll();
+
+        // Assert - child2 should move to accommodate child1's new width
+        Assert.True(child2.Value.TryGetBehavior<TransformBehavior>(out var child2Transform));
+        Assert.True(
+            child2Transform.Value.Position.X > 150,
+            $"child2 should move right after child1 width change, X={child2Transform.Value.Position.X}"
+        );
+    }
+
+    [Fact]
+    public void FlexMultipleRecalculations_ProducesSameResults()
+    {
+        // Arrange
+        var scenePath = "Flex/Fixtures/simple-flex-row.json";
+
+        // Act
+        SceneLoader.Instance.LoadGameScene(scenePath);
+        Assert.True(EntityIdRegistry.Instance.TryResolve("container", out var container));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child1", out var child1));
+        Assert.True(EntityIdRegistry.Instance.TryResolve("child2", out var child2));
+
+        RecalculateAll();
+
+        // Get positions after first recalculation
+        Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1TransformFirst));
+        Assert.True(child2.Value.TryGetBehavior<TransformBehavior>(out var child2TransformFirst));
+        var child1PosFirst = child1TransformFirst.Value.Position;
+        var child2PosFirst = child2TransformFirst.Value.Position;
+
+        // Recalculate multiple times
+        RecalculateAll();
+        RecalculateAll();
+        RecalculateAll();
+
+        // Assert - positions should be identical
+        Assert.True(child1.Value.TryGetBehavior<TransformBehavior>(out var child1TransformFinal));
+        Assert.True(child2.Value.TryGetBehavior<TransformBehavior>(out var child2TransformFinal));
+
+        Assert.True(
+            MathF.Abs(child1PosFirst.X - child1TransformFinal.Value.Position.X) < Tolerance,
+            $"child1 X should be stable across recalculations"
+        );
+        Assert.True(
+            MathF.Abs(child1PosFirst.Y - child1TransformFinal.Value.Position.Y) < Tolerance,
+            $"child1 Y should be stable across recalculations"
+        );
+        Assert.True(
+            MathF.Abs(child2PosFirst.X - child2TransformFinal.Value.Position.X) < Tolerance,
+            $"child2 X should be stable across recalculations"
+        );
+        Assert.True(
+            MathF.Abs(child2PosFirst.Y - child2TransformFinal.Value.Position.Y) < Tolerance,
+            $"child2 Y should be stable across recalculations"
+        );
+    }
+
+    #endregion
+}

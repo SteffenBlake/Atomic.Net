@@ -1,0 +1,31 @@
+{
+  "entities": [
+    {
+      "id": "root",
+      "transform": {
+        "position": {
+          "x": 100,
+          "y": 50,
+          "z": 0
+        }
+      },
+      "flexDirection": "row",
+      "flexWidth": {
+        "value": 300
+      },
+      "flexHeight": {
+        "value": 100
+      }
+    },
+    {
+      "id": "child",
+      "parent": "@root",
+      "flexWidth": {
+        "value": 100
+      },
+      "flexHeight": {
+        "value": 100
+      }
+    }
+  ]
+}

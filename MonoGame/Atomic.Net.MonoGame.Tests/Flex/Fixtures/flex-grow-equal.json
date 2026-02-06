@@ -1,0 +1,38 @@
+{
+  "entities": [
+    {
+      "id": "container",
+      "flexDirection": "row",
+      "flexWidth": {
+        "value": 500
+      },
+      "flexHeight": {
+        "value": 200
+      }
+    },
+    {
+      "id": "child1",
+      "parent": "@container",
+      "flexGrow": 1,
+      "flexHeight": {
+        "value": 200
+      }
+    },
+    {
+      "id": "child2",
+      "parent": "@container",
+      "flexGrow": 1,
+      "flexHeight": {
+        "value": 200
+      }
+    },
+    {
+      "id": "child3",
+      "parent": "@container",
+      "flexGrow": 1,
+      "flexHeight": {
+        "value": 200
+      }
+    }
+  ]
+}

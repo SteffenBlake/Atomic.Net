@@ -1,0 +1,41 @@
+{
+  "entities": [
+    {
+      "id": "container",
+      "flexDirection": "row",
+      "flexWidth": {
+        "value": 400
+      },
+      "flexHeight": {
+        "value": 200
+      }
+    },
+    {
+      "id": "regular-child",
+      "parent": "@container",
+      "flexWidth": {
+        "value": 100
+      },
+      "flexHeight": {
+        "value": 100
+      }
+    },
+    {
+      "id": "absolute-child",
+      "parent": "@container",
+      "flexPositionType": "absolute",
+      "flexPositionRight": {
+        "value": 10
+      },
+      "flexPositionBottom": {
+        "value": 10
+      },
+      "flexWidth": {
+        "value": 80
+      },
+      "flexHeight": {
+        "value": 80
+      }
+    }
+  ]
+}

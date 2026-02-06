@@ -3,8 +3,9 @@ using System.Drawing;
 namespace Atomic.Net.MonoGame.Flex;
 
 /// <summary>
-/// Computed final positions of the Flex node, based on its various behaviors
-/// NOTE: Do not set this behavior manually, it's updating is handled automatically via the <see cref="FlexRegistry"/>
+/// Stores local flex rectangles of an entity, relative to the entity's local coordinate space.
+/// Positions are relative to the entity's position, NOT world-space or parent-relative.
+/// NOTE: Do not set this behavior manually, it's updated automatically via the <see cref="FlexRegistry"/>
 /// </summary>
 public readonly record struct FlexBehavior(
     RectangleF MarginRect,

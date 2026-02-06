@@ -743,6 +743,44 @@ public static class JsonEntityConverter
             static (ref readonly _flexPositionType, ref b) =>
                 b = new FlexPositionTypeBehavior(_flexPositionType)
         );
+
+        // If any flex behaviors are present, ensure FlexBehavior exists
+        var hasFlexProperty = entity.HasBehavior<FlexDirectionBehavior>() ||
+            entity.HasBehavior<FlexWidthBehavior>() ||
+            entity.HasBehavior<FlexHeightBehavior>() ||
+            entity.HasBehavior<FlexGrowBehavior>() ||
+            entity.HasBehavior<FlexShrinkBehavior>() ||
+            entity.HasBehavior<FlexMarginLeftBehavior>() ||
+            entity.HasBehavior<FlexMarginRightBehavior>() ||
+            entity.HasBehavior<FlexMarginTopBehavior>() ||
+            entity.HasBehavior<FlexMarginBottomBehavior>() ||
+            entity.HasBehavior<FlexPaddingLeftBehavior>() ||
+            entity.HasBehavior<FlexPaddingRightBehavior>() ||
+            entity.HasBehavior<FlexPaddingTopBehavior>() ||
+            entity.HasBehavior<FlexPaddingBottomBehavior>() ||
+            entity.HasBehavior<FlexBorderLeftBehavior>() ||
+            entity.HasBehavior<FlexBorderRightBehavior>() ||
+            entity.HasBehavior<FlexBorderTopBehavior>() ||
+            entity.HasBehavior<FlexBorderBottomBehavior>() ||
+            entity.HasBehavior<FlexAlignItemsBehavior>() ||
+            entity.HasBehavior<FlexAlignSelfBehavior>() ||
+            entity.HasBehavior<AlignContentBehavior>() ||
+            entity.HasBehavior<FlexJustifyContentBehavior>() ||
+            entity.HasBehavior<FlexWrapBehavior>() ||
+            entity.HasBehavior<FlexPositionTypeBehavior>() ||
+            entity.HasBehavior<FlexPositionLeftBehavior>() ||
+            entity.HasBehavior<FlexPositionRightBehavior>() ||
+            entity.HasBehavior<FlexPositionTopBehavior>() ||
+            entity.HasBehavior<FlexPositionBottomBehavior>() ||
+            entity.HasBehavior<FlexZOverride>();
+
+        if (hasFlexProperty)
+        {
+            if (!entity.HasBehavior<FlexBehavior>())
+            {
+                entity.SetBehavior<FlexBehavior>(static (ref _) => { });
+            }
+        }
     }
 
     private static void TrySetRef<TValue, TBehavior>(

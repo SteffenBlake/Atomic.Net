@@ -1,0 +1,13 @@
+{
+  "entities": [
+    {
+      "id": "single-flex",
+      "flexWidth": {
+        "value": 100.0
+      },
+      "flexHeight": {
+        "value": 100.0
+      }
+    }
+  ]
+}

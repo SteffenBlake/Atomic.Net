@@ -1,0 +1,14 @@
+{
+  "entities": [
+    {
+      "id": "container",
+      "flexDirection": "row",
+      "flexWidth": {
+        "value": 200
+      },
+      "flexHeight": {
+        "value": 100
+      }
+    }
+  ]
+}

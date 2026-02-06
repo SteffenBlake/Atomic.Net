@@ -1,0 +1,31 @@
+{
+  "entities": [
+    {
+      "id": "container",
+      "flexDirection": "row",
+      "flexWidth": {
+        "value": 300
+      },
+      "flexHeight": {
+        "value": 200
+      }
+    },
+    {
+      "id": "absolute-child",
+      "parent": "@container",
+      "flexPositionType": "absolute",
+      "flexPositionLeft": {
+        "value": 50
+      },
+      "flexPositionTop": {
+        "value": 30
+      },
+      "flexWidth": {
+        "value": 100
+      },
+      "flexHeight": {
+        "value": 100
+      }
+    }
+  ]
+}

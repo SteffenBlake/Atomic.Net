@@ -6,6 +6,8 @@ using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.Hierarchy;
 using Atomic.Net.MonoGame.Ids;
 using Atomic.Net.MonoGame.Tags;
+using Atomic.Net.MonoGame.Flex;
+using System.Text.Json.Serialization;
 
 namespace Atomic.Net.MonoGame.Scenes;
 
@@ -47,6 +49,36 @@ public class JsonEntity
     /// MUST be applied LAST in SceneLoader to prevent unwanted DB loads during scene construction
     /// </summary>
     public PersistToDiskBehavior? PersistToDisk { get; set; } = null;
+
+    // Flex behavior properties
+    public FlexDirectionBehavior? FlexDirection { get; set; } = null;
+    public FlexWidthBehavior? FlexWidth { get; set; } = null;
+    public FlexHeightBehavior? FlexHeight { get; set; } = null;
+    public FlexGrowBehavior? FlexGrow { get; set; } = null;
+    public FlexShrinkBehavior? FlexShrink { get; set; } = null;
+    public FlexWrapBehavior? FlexWrap { get; set; } = null;
+    public FlexJustifyContentBehavior? FlexJustifyContent { get; set; } = null;
+    public FlexAlignItemsBehavior? FlexAlignItems { get; set; } = null;
+    public FlexAlignSelfBehavior? FlexAlignSelf { get; set; } = null;
+    public AlignContentBehavior? AlignContent { get; set; } = null;
+    public FlexPositionTypeBehavior? FlexPositionType { get; set; } = null;
+    public FlexPositionLeftBehavior? FlexPositionLeft { get; set; } = null;
+    public FlexPositionRightBehavior? FlexPositionRight { get; set; } = null;
+    public FlexPositionTopBehavior? FlexPositionTop { get; set; } = null;
+    public FlexPositionBottomBehavior? FlexPositionBottom { get; set; } = null;
+    public FlexMarginLeftBehavior? FlexMarginLeft { get; set; } = null;
+    public FlexMarginRightBehavior? FlexMarginRight { get; set; } = null;
+    public FlexMarginTopBehavior? FlexMarginTop { get; set; } = null;
+    public FlexMarginBottomBehavior? FlexMarginBottom { get; set; } = null;
+    public FlexPaddingLeftBehavior? FlexPaddingLeft { get; set; } = null;
+    public FlexPaddingRightBehavior? FlexPaddingRight { get; set; } = null;
+    public FlexPaddingTopBehavior? FlexPaddingTop { get; set; } = null;
+    public FlexPaddingBottomBehavior? FlexPaddingBottom { get; set; } = null;
+    public FlexBorderLeftBehavior? FlexBorderLeft { get; set; } = null;
+    public FlexBorderRightBehavior? FlexBorderRight { get; set; } = null;
+    public FlexBorderTopBehavior? FlexBorderTop { get; set; } = null;
+    public FlexBorderBottomBehavior? FlexBorderBottom { get; set; } = null;
+    public FlexZOverride? FlexZOverride { get; set; } = null;
 
     /// <summary>
     /// Creates a JsonEntity from an existing entity by reading all its behaviors.
@@ -133,6 +165,280 @@ public class JsonEntity
         {
             var input = Parent.Value;
             entity.SetBehavior<ParentBehavior, ParentBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        // FIRST: Check if ANY flex behaviors exist, and add FlexBehavior BEFORE applying properties
+        if (FlexDirection.HasValue || FlexWidth.HasValue || FlexHeight.HasValue ||
+            FlexGrow.HasValue || FlexShrink.HasValue || FlexWrap.HasValue ||
+            FlexJustifyContent.HasValue || FlexAlignItems.HasValue || FlexAlignSelf.HasValue ||
+            AlignContent.HasValue || FlexPositionType.HasValue ||
+            FlexPositionLeft.HasValue || FlexPositionRight.HasValue ||
+            FlexPositionTop.HasValue || FlexPositionBottom.HasValue ||
+            FlexMarginLeft.HasValue || FlexMarginRight.HasValue ||
+            FlexMarginTop.HasValue || FlexMarginBottom.HasValue ||
+            FlexPaddingLeft.HasValue || FlexPaddingRight.HasValue ||
+            FlexPaddingTop.HasValue || FlexPaddingBottom.HasValue ||
+            FlexBorderLeft.HasValue || FlexBorderRight.HasValue ||
+            FlexBorderTop.HasValue || FlexBorderBottom.HasValue ||
+            FlexZOverride.HasValue)
+        {
+            if (!entity.HasBehavior<FlexBehavior>())
+            {
+                entity.SetBehavior<FlexBehavior>(static (ref _) => { });
+            }
+        }
+
+        // THEN: Apply individual flex behaviors
+        if (FlexDirection.HasValue)
+        {
+            var input = FlexDirection.Value;
+            entity.SetBehavior<FlexDirectionBehavior, FlexDirectionBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexWidth.HasValue)
+        {
+            var input = FlexWidth.Value;
+            entity.SetBehavior<FlexWidthBehavior, FlexWidthBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexHeight.HasValue)
+        {
+            var input = FlexHeight.Value;
+            entity.SetBehavior<FlexHeightBehavior, FlexHeightBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexGrow.HasValue)
+        {
+            var input = FlexGrow.Value;
+            entity.SetBehavior<FlexGrowBehavior, FlexGrowBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexShrink.HasValue)
+        {
+            var input = FlexShrink.Value;
+            entity.SetBehavior<FlexShrinkBehavior, FlexShrinkBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexWrap.HasValue)
+        {
+            var input = FlexWrap.Value;
+            entity.SetBehavior<FlexWrapBehavior, FlexWrapBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexJustifyContent.HasValue)
+        {
+            var input = FlexJustifyContent.Value;
+            entity.SetBehavior<FlexJustifyContentBehavior, FlexJustifyContentBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexAlignItems.HasValue)
+        {
+            var input = FlexAlignItems.Value;
+            entity.SetBehavior<FlexAlignItemsBehavior, FlexAlignItemsBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexAlignSelf.HasValue)
+        {
+            var input = FlexAlignSelf.Value;
+            entity.SetBehavior<FlexAlignSelfBehavior, FlexAlignSelfBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (AlignContent.HasValue)
+        {
+            var input = AlignContent.Value;
+            entity.SetBehavior<AlignContentBehavior, AlignContentBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexPositionType.HasValue)
+        {
+            var input = FlexPositionType.Value;
+            entity.SetBehavior<FlexPositionTypeBehavior, FlexPositionTypeBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexPositionLeft.HasValue)
+        {
+            var input = FlexPositionLeft.Value;
+            entity.SetBehavior<FlexPositionLeftBehavior, FlexPositionLeftBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexPositionRight.HasValue)
+        {
+            var input = FlexPositionRight.Value;
+            entity.SetBehavior<FlexPositionRightBehavior, FlexPositionRightBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexPositionTop.HasValue)
+        {
+            var input = FlexPositionTop.Value;
+            entity.SetBehavior<FlexPositionTopBehavior, FlexPositionTopBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexPositionBottom.HasValue)
+        {
+            var input = FlexPositionBottom.Value;
+            entity.SetBehavior<FlexPositionBottomBehavior, FlexPositionBottomBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexMarginLeft.HasValue)
+        {
+            var input = FlexMarginLeft.Value;
+            entity.SetBehavior<FlexMarginLeftBehavior, FlexMarginLeftBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexMarginRight.HasValue)
+        {
+            var input = FlexMarginRight.Value;
+            entity.SetBehavior<FlexMarginRightBehavior, FlexMarginRightBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexMarginTop.HasValue)
+        {
+            var input = FlexMarginTop.Value;
+            entity.SetBehavior<FlexMarginTopBehavior, FlexMarginTopBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexMarginBottom.HasValue)
+        {
+            var input = FlexMarginBottom.Value;
+            entity.SetBehavior<FlexMarginBottomBehavior, FlexMarginBottomBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexPaddingLeft.HasValue)
+        {
+            var input = FlexPaddingLeft.Value;
+            entity.SetBehavior<FlexPaddingLeftBehavior, FlexPaddingLeftBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexPaddingRight.HasValue)
+        {
+            var input = FlexPaddingRight.Value;
+            entity.SetBehavior<FlexPaddingRightBehavior, FlexPaddingRightBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexPaddingTop.HasValue)
+        {
+            var input = FlexPaddingTop.Value;
+            entity.SetBehavior<FlexPaddingTopBehavior, FlexPaddingTopBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexPaddingBottom.HasValue)
+        {
+            var input = FlexPaddingBottom.Value;
+            entity.SetBehavior<FlexPaddingBottomBehavior, FlexPaddingBottomBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexBorderLeft.HasValue)
+        {
+            var input = FlexBorderLeft.Value;
+            entity.SetBehavior<FlexBorderLeftBehavior, FlexBorderLeftBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexBorderRight.HasValue)
+        {
+            var input = FlexBorderRight.Value;
+            entity.SetBehavior<FlexBorderRightBehavior, FlexBorderRightBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexBorderTop.HasValue)
+        {
+            var input = FlexBorderTop.Value;
+            entity.SetBehavior<FlexBorderTopBehavior, FlexBorderTopBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexBorderBottom.HasValue)
+        {
+            var input = FlexBorderBottom.Value;
+            entity.SetBehavior<FlexBorderBottomBehavior, FlexBorderBottomBehavior>(
+                in input,
+                static (ref readonly _input, ref behavior) => behavior = _input
+            );
+        }
+
+        if (FlexZOverride.HasValue)
+        {
+            var input = FlexZOverride.Value;
+            entity.SetBehavior<Flex.FlexZOverride, Flex.FlexZOverride>(
                 in input,
                 static (ref readonly _input, ref behavior) => behavior = _input
             );

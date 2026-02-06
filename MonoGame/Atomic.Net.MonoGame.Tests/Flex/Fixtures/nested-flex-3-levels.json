@@ -1,0 +1,66 @@
+{
+  "entities": [
+    {
+      "id": "root",
+      "flexDirection": "column",
+      "flexWidth": {
+        "value": 600
+      },
+      "flexHeight": {
+        "value": 600
+      }
+    },
+    {
+      "id": "level1",
+      "parent": "@root",
+      "flexDirection": "row",
+      "flexWidth": {
+        "value": 600
+      },
+      "flexHeight": {
+        "value": 300
+      }
+    },
+    {
+      "id": "level2-left",
+      "parent": "@level1",
+      "flexDirection": "column",
+      "flexWidth": {
+        "value": 300
+      },
+      "flexHeight": {
+        "value": 300
+      }
+    },
+    {
+      "id": "level3-top",
+      "parent": "@level2-left",
+      "flexWidth": {
+        "value": 300
+      },
+      "flexHeight": {
+        "value": 150
+      }
+    },
+    {
+      "id": "level3-bottom",
+      "parent": "@level2-left",
+      "flexWidth": {
+        "value": 300
+      },
+      "flexHeight": {
+        "value": 150
+      }
+    },
+    {
+      "id": "level2-right",
+      "parent": "@level1",
+      "flexWidth": {
+        "value": 300
+      },
+      "flexHeight": {
+        "value": 300
+      }
+    }
+  ]
+}
