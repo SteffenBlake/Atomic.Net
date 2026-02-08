@@ -46,8 +46,6 @@ jobs:
             --configuration Release \
             --runtime linux-x64 \
             --self-contained true \
-            -p:PublishSingleFile=true \
-            -p:EnableCompressionInSingleFile=true \
             --output /tmp/sharptools-build
 
       - name: Install SharpToolsMCP to system
@@ -73,6 +71,12 @@ jobs:
         run: |
           echo "=== SharpTools ==="
           which sharptools
+          echo ""
+          echo "=== SharpTools BuildHost Check ==="
+          if [ ! -d /usr/lib/sharptools/BuildHost-netcore ]; then
+            echo "ERROR: BuildHost-netcore directory not found!"
+            exit 1
+          fi
           echo ""
           echo "=== cli-mcp-mapper ==="
           cli-mcp-mapper --dry-run
