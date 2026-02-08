@@ -20,53 +20,45 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      # Install cclsp
-      - name: Install cclsp
-        run: npm install -g cclsp@latest
-
       # Install CLI MCP Mapper
       - name: Install CLI MCP Mapper
         run: npm install -g cli-mcp-mapper
 
-      # Download and setup Roslyn LSP for C#
-      # To update to newer version, get the url from here: https://dev.azure.com/azure-public/vside/_artifacts/feed/vs-impl/NuGet/Microsoft.CodeAnalysis.LanguageServer.linux-x64
-
-      # Download and setup Roslyn LSP for C#
-      - name: Download Roslyn Language Server
+      # Clone and build SharpToolsMCP
+      - name: Clone SharpToolsMCP
         run: |
-          dotnet tool install --global roslyn-language-server --prerelease
+          git clone https://github.com/kooshi/SharpToolsMCP.git /tmp/SharpToolsMCP
 
-      # Create log directory for Roslyn LSP
-      - name: Create Roslyn LSP log directory
-        run: mkdir -p $HOME/.local/var/log/roslyn-lsp
-
-      # Create the cclsp configuration file
-      - name: Create cclsp configuration
+      - name: Build SharpToolsMCP Stdio Server
         run: |
-          mkdir -p $HOME/.config/claude
-          cat > $HOME/.config/claude/cclsp.json << 'EOF'
-          {
-            "servers": [
-              {
-                "extensions": ["cs", "csx"],
-                "command": [
-                  "roslyn-language-server",
-                  "--stdio",
-                  "--logLevel",
-                  "Information",
-                  "--extensionLogDirectory",
-                  "$HOME/.local/var/log/roslyn-lsp"
-                ],
-                "rootDir": "."
-              }
-            ]
-          }
-          EOF
+          cd /tmp/SharpToolsMCP
+          dotnet publish SharpTools.StdioServer/SharpTools.StdioServer.csproj \
+            --configuration Release \
+            --runtime linux-x64 \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:EnableCompressionInSingleFile=true \
+            --output /tmp/sharptools-build
+
+      - name: Install SharpToolsMCP to system
+        run: |
+          sudo mkdir -p /usr/lib/sharptools
+          sudo cp -r /tmp/sharptools-build/* /usr/lib/sharptools/
+          sudo chmod +x /usr/lib/sharptools/SharpTools.StdioServer
+          sudo ln -sf /usr/lib/sharptools/SharpTools.StdioServer /usr/bin/sharptools
+
+      - name: Create SharpTools log directory
+        run: mkdir -p $HOME/.local/var/log/sharptools
 
       # Copy CLI commands configuration to expected location
       - name: Setup CLI MCP Mapper configuration
@@ -79,17 +71,11 @@ jobs:
       # Verify installations
       - name: Verify installations
         run: |
-          echo "=== cclsp ==="
-          which cclsp
-          cat $HOME/.config/claude/cclsp.json
+          echo "=== SharpTools ==="
+          which sharptools
           echo ""
           echo "=== cli-mcp-mapper ==="
           cli-mcp-mapper --dry-run
-          echo "=== Roslyn ==="
-          roslyn-language-server --version 
-
-      # Verify cclsp is ready
-      - name: Verify cclsp installation
-        run: |
-          which cclsp
-          cat $HOME/.config/claude/cclsp.json
+          echo ""
+          echo "=== .NET SDK ==="
+          dotnet --version
