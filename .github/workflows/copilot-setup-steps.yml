@@ -30,9 +30,45 @@ jobs:
         with:
           node-version: "20"
 
+      # Install cclsp
+      - name: Install cclsp
+        run: npm install -g cclsp@latest
+
       # Install CLI MCP Mapper
       - name: Install CLI MCP Mapper
         run: npm install -g cli-mcp-mapper
+
+      # Download and setup Roslyn LSP for C#
+      - name: Download Roslyn Language Server
+        run: |
+          dotnet tool install --global roslyn-language-server --prerelease
+
+      # Create log directory for Roslyn LSP
+      - name: Create Roslyn LSP log directory
+        run: mkdir -p $HOME/.local/var/log/roslyn-lsp
+
+      # Create the cclsp configuration file
+      - name: Create cclsp configuration
+        run: |
+          mkdir -p $HOME/.config/claude
+          cat > $HOME/.config/claude/cclsp.json << 'EOF'
+          {
+            "servers": [
+              {
+                "extensions": ["cs", "csx"],
+                "command": [
+                  "roslyn-language-server",
+                  "--stdio",
+                  "--logLevel",
+                  "Information",
+                  "--extensionLogDirectory",
+                  "$HOME/.local/var/log/roslyn-lsp"
+                ],
+                "rootDir": "."
+              }
+            ]
+          }
+          EOF
 
       # Clone and build SharpToolsMCP
       - name: Clone SharpToolsMCP
@@ -69,14 +105,23 @@ jobs:
       # Verify installations
       - name: Verify installations
         run: |
+          echo "=== cclsp ==="
+          which cclsp
+          cat $HOME/.config/claude/cclsp.json
+          echo ""
+          echo "=== Roslyn ==="
+          roslyn-language-server --version
+          echo ""
           echo "=== SharpTools ==="
           which sharptools
+          ls -lah /usr/lib/sharptools/
           echo ""
-          echo "=== SharpTools BuildHost Check ==="
+          echo "=== BuildHost Check ==="
           if [ ! -d /usr/lib/sharptools/BuildHost-netcore ]; then
             echo "ERROR: BuildHost-netcore directory not found!"
             exit 1
           fi
+          ls -lah /usr/lib/sharptools/BuildHost-netcore/
           echo ""
           echo "=== cli-mcp-mapper ==="
           cli-mcp-mapper --dry-run
