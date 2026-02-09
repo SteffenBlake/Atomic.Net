@@ -19,7 +19,6 @@ namespace Atomic.Net.MonoGame.Flex;
 public partial class FlexRegistry :
     ISingleton<FlexRegistry>,
     IEventHandler<InitializeEvent>,
-    IEventHandler<ShutdownEvent>,
     // Flex core behaviors
     IEventHandler<BehaviorAddedEvent<FlexBehavior>>,
     IEventHandler<PreBehaviorRemovedEvent<FlexBehavior>>,
@@ -482,7 +481,6 @@ public partial class FlexRegistry :
 
     public void OnEvent(InitializeEvent _)
     {
-        EventBus<ShutdownEvent>.Register(this);
         EventBus<BehaviorAddedEvent<FlexBehavior>>.Register(this);
         EventBus<PreBehaviorRemovedEvent<FlexBehavior>>.Register(this);
 
@@ -613,16 +611,5 @@ public partial class FlexRegistry :
         // Enable/Disable
         EventBus<EntityEnabledEvent>.Register(this);
         EventBus<EntityDisabledEvent>.Register(this);
-    }
-
-    public void OnEvent(ShutdownEvent _)
-    {
-        // Clear all state to prevent test contamination
-        _nodes.Global.Clear();
-        _nodes.Scene.Clear();
-        _dirty.Global.Clear();
-        _dirty.Scene.Clear();
-        _flexTreeDirty.Global.Clear();
-        _flexTreeDirty.Scene.Clear();
     }
 }
