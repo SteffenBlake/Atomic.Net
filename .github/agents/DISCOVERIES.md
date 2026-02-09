@@ -294,47 +294,55 @@ this re-enables the ability for you to assign your instance of `child` to a new 
 
 ---
 
-## FlexRegistry Dirty Flag Contamination Bug (February 2026)
+## FlexRegistry Dirty Flag Contamination Bug - RESOLVED (February 2026)
 
 **Problem:** Dirty flags (_dirty and _flexTreeDirty) persisted across test boundaries, causing false recalculations and test contamination. Tests would fail when run after flex tests but pass when run alone.
 
-**Root Cause:** When entities were deactivated during ShutdownEvent/ResetEvent, their behaviors were removed via PreBehaviorRemovedEvent<FlexBehavior>. However, this handler was NOT clearing the dirty flags for those entities. The flags persisted in sparse arrays across test runs.
+**Root Cause (Initial):** When entities were deactivated during ShutdownEvent/ResetEvent, their behaviors were removed via PreBehaviorRemovedEvent<FlexBehavior>. The handler was NOT clearing the dirty flags for those entities. The flags persisted in sparse arrays across test runs.
 
-**Solution:** Clear dirty flags in PreBehaviorRemovedEvent<FlexBehavior> handler:
+**Root Cause (Deeper):** The initial fix cleared dirty flags in PreBehaviorRemovedEvent<FlexBehavior>, but other flex property handlers (FlexWidth, FlexHeight, FlexDirection, etc.) were ALSO firing PreBehaviorRemovedEvent handlers that called EnsureDirtyNode() AFTER the FlexBehavior handler had cleaned up. This re-marked entities as dirty even though they were being deactivated.
+
+**Solution:** All PreBehaviorRemovedEvent<T> handlers now check if the entity still has FlexBehavior before calling EnsureDirtyNode():
 ```csharp
-public void OnEvent(PreBehaviorRemovedEvent<FlexBehavior> e)
+public void OnEvent(PreBehaviorRemovedEvent<FlexWidthBehavior> e)
 {
-    // ... existing logic to remove from parent, remove node ...
+    // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
+    if (!e.Entity.HasBehavior<FlexBehavior>())
+    {
+        return;
+    }
     
-    // Clear dirty flags to prevent contamination across scenes
-    _dirty.Remove(e.Entity.Index);
-    _flexTreeDirty.Remove(e.Entity.Index);
+    var node = EnsureDirtyNode(e.Entity.Index);
+    node.StyleSetWidth(float.NaN);
 }
 ```
 
-**Key Insight:** The cleanup SHOULD happen automatically through the PreBehaviorRemovedEvent cascade. When entities are deactivated:
-1. Entity deactivation triggers BehaviorRemoved events for all behaviors
-2. BehaviorRemoved events fire PreBehaviorRemovedEvent<FlexBehavior>
-3. That handler cleans up ALL state for that entity (nodes + dirty flags)
+**Key Insight:** During entity deactivation, behaviors are removed in an undefined order. When a flex property behavior (like FlexWidth) is removed AFTER FlexBehavior, it should NOT mark the entity dirty because the entity is being torn down. The pattern is:
+1. If entity still has FlexBehavior → mark dirty and update node (property is being removed individually)
+2. If entity doesn't have FlexBehavior → skip (entity is being deactivated, FlexBehavior handler already cleaned everything)
 
-This is the proper event-driven cleanup pattern - no need for banned event subscriptions like PreEntityDeactivatedEvent or modifications to EntityDisabledEvent.
+This prevents dirty flag contamination while still allowing individual property removal during gameplay.
 
-**Tests Fixed:** 212 failing tests → 2 failing tests (440/442 passing)
+**Code Quality Improvements:**
+- Simplified PreBehaviorRemovedEvent<FlexBehavior> from 35 lines to 19 lines
+- Used entity.TryGetParent(out var parent) instead of GetParent()
+- Removed duplicate cleanup logic
+- Inverted if clause for early return pattern
 
-**Commit:** `fc954a2 - Fix: Clear dirty flags in PreBehaviorRemovedEvent handler instead of using banned events`
+**Tests Fixed:** 440/442 → 442/442 passing (100%)
+
+**Commits:** 
+- `fc954a2` - Initial fix: Clear dirty flags in PreBehaviorRemovedEvent handler
+- `5b3e245` - Complete fix: Prevent dirty flag re-contamination from property handlers
 
 ---
 
 ## Known Issues: FlexRegistry (February 2026)
 
-### 1. FlexAlignItemsFlexEnd Not Working
+### ~~1. FlexAlignItemsFlexEnd Not Working~~ - RESOLVED
 **Test:** FlexAlignItemsFlexEnd_MovesChildrenToEndCrossAxis  
-**Symptom:** Child should be at Y=100 (bottom of 200px container with align-items: flex-end), but is at Y=0  
-**Status:** Unresolved - appears to be a bug in how align-items: flex-end is applied  
-**Note:** FlexAlignItemsCenter works correctly, suggesting the issue is specific to flex-end value
+**Status:** FIXED by contamination bug fix
 
-### 2. RemoveFlexBehavior Not Triggering Parent Recalculation
+### ~~2. RemoveFlexBehavior Not Triggering Parent Recalculation~~ - RESOLVED
 **Test:** RemoveFlexBehavior_MarksParentDirty  
-**Symptom:** After removing child1's FlexBehavior, child2 should grow from 200px to 400px (full parent width), but stays at 200px  
-**Status:** Unresolved - parent is marked dirty and RemoveFromParentFlexTree is called, but layout doesn't update  
-**Note:** This suggests either the dirty flag isn't being processed, or the Yoga node isn't being removed correctly
+**Status:** FIXED by contamination bug fix
