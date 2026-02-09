@@ -43,14 +43,9 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexMarginLeftBehavior> e)
     {
-        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
-        if (!e.Entity.HasBehavior<FlexBehavior>())
-        {
-            return;
-        }
-
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetMargin(Edge.Left, float.NaN);
+        // Step 1: No guard clause - handler must run
+        // Step 6: Pass isRemoval=true to prevent node creation
+        EnsureDirtyNode(e.Entity.Index, isRemoval: true);
     }
 
     // MarginRight
@@ -74,14 +69,9 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexMarginRightBehavior> e)
     {
-        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
-        if (!e.Entity.HasBehavior<FlexBehavior>())
-        {
-            return;
-        }
-
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetMargin(Edge.Right, float.NaN);
+        // Step 1: No guard clause - handler must run
+        // Step 6: Pass isRemoval=true to prevent node creation
+        EnsureDirtyNode(e.Entity.Index, isRemoval: true);
     }
 
     // MarginTop
@@ -105,14 +95,9 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexMarginTopBehavior> e)
     {
-        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
-        if (!e.Entity.HasBehavior<FlexBehavior>())
-        {
-            return;
-        }
-
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetMargin(Edge.Top, float.NaN);
+        // Step 1: No guard clause - handler must run
+        // Step 6: Pass isRemoval=true to prevent node creation
+        EnsureDirtyNode(e.Entity.Index, isRemoval: true);
     }
 
     // MarginBottom
@@ -136,13 +121,8 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexMarginBottomBehavior> e)
     {
-        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
-        if (!e.Entity.HasBehavior<FlexBehavior>())
-        {
-            return;
-        }
-
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetMargin(Edge.Bottom, float.NaN);
+        // Step 1: No guard clause - handler must run
+        // Step 6: Pass isRemoval=true to prevent node creation
+        EnsureDirtyNode(e.Entity.Index, isRemoval: true);
     }
 }

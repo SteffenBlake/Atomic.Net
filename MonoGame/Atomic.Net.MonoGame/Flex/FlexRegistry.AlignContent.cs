@@ -30,13 +30,8 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<AlignContentBehavior> e)
     {
-        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
-        if (!e.Entity.HasBehavior<FlexBehavior>())
-        {
-            return;
-        }
-
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetAlignContent(default);
+        // Step 1: No guard clause - handler must run
+        // Step 6: Pass isRemoval=true to prevent node creation
+        EnsureDirtyNode(e.Entity.Index, isRemoval: true);
     }
 }

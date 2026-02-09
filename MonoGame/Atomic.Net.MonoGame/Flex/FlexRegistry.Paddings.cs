@@ -43,14 +43,9 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPaddingLeftBehavior> e)
     {
-        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
-        if (!e.Entity.HasBehavior<FlexBehavior>())
-        {
-            return;
-        }
-
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetPadding(Edge.Left, float.NaN);
+        // Step 1: No guard clause - handler must run
+        // Step 6: Pass isRemoval=true to prevent node creation
+        EnsureDirtyNode(e.Entity.Index, isRemoval: true);
     }
 
     // PaddingRight
@@ -74,14 +69,9 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPaddingRightBehavior> e)
     {
-        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
-        if (!e.Entity.HasBehavior<FlexBehavior>())
-        {
-            return;
-        }
-
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetPadding(Edge.Right, float.NaN);
+        // Step 1: No guard clause - handler must run
+        // Step 6: Pass isRemoval=true to prevent node creation
+        EnsureDirtyNode(e.Entity.Index, isRemoval: true);
     }
 
     // PaddingTop
@@ -105,14 +95,9 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPaddingTopBehavior> e)
     {
-        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
-        if (!e.Entity.HasBehavior<FlexBehavior>())
-        {
-            return;
-        }
-
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetPadding(Edge.Top, float.NaN);
+        // Step 1: No guard clause - handler must run
+        // Step 6: Pass isRemoval=true to prevent node creation
+        EnsureDirtyNode(e.Entity.Index, isRemoval: true);
     }
 
     // PaddingBottom
@@ -136,13 +121,8 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPaddingBottomBehavior> e)
     {
-        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
-        if (!e.Entity.HasBehavior<FlexBehavior>())
-        {
-            return;
-        }
-
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetPadding(Edge.Bottom, float.NaN);
+        // Step 1: No guard clause - handler must run
+        // Step 6: Pass isRemoval=true to prevent node creation
+        EnsureDirtyNode(e.Entity.Index, isRemoval: true);
     }
 }

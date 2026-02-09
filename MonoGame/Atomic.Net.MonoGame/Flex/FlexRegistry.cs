@@ -53,10 +53,17 @@ public partial class FlexRegistry :
     /// Ensures a flex node exists for the entity and marks it dirty.
     /// Returns the node for further configuration.
     /// </summary>
-    protected Node EnsureDirtyNode(PartitionIndex index)
+    protected Node EnsureDirtyNode(PartitionIndex index, bool isRemoval = false)
     {
+        // Step 4: Don't create nodes on removal
+        if (isRemoval)
+        {
+            return null!;
+        }
+
         _dirty.Set(index, true);
 
+        // Step 5: Only dirty parent if has FlexBehavior
         // If this entity has a flex parent, mark the parent dirty too
         // This ensures that when child properties change, the parent's layout is recalculated
         var entity = EntityRegistry.Instance[index];
@@ -423,10 +430,11 @@ public partial class FlexRegistry :
             return;
         }
 
-        // Mark parent dirty when child's FlexBehavior is removed so layout recalculates
+        // Step 7: Mark parent dirty when child's FlexBehavior is removed so layout recalculates
+        // Use isRemoval=false because we want to dirty the parent for recalculation
         if (e.Entity.TryGetParent(out var parent) && parent.Value.HasBehavior<FlexBehavior>())
         {
-            _dirty.Set(parent.Value.Index, true);
+            EnsureDirtyNode(parent.Value.Index, isRemoval: false);
         }
 
         // Remove from parent's flex tree, then remove the node itself
@@ -464,8 +472,11 @@ public partial class FlexRegistry :
 
     public void OnEvent(InitializeEvent _)
     {
+        // Step 2: Register property behavior handlers FIRST, FlexBehavior removal handler LAST
+        // This ensures FlexBehavior cleanup happens after all property handlers
+
         EventBus<BehaviorAddedEvent<FlexBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexBehavior>>.Register(this);
+        // NOTE: FlexBehavior removal registered at the END
 
         EventBus<BehaviorAddedEvent<FlexZOverride>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexZOverride>>.Register(this);
@@ -594,5 +605,8 @@ public partial class FlexRegistry :
         // Enable/Disable
         EventBus<EntityEnabledEvent>.Register(this);
         EventBus<EntityDisabledEvent>.Register(this);
+
+        // Step 2: Register FlexBehavior removal handler LAST after all property handlers
+        EventBus<PreBehaviorRemovedEvent<FlexBehavior>>.Register(this);
     }
 }
