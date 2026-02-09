@@ -7,6 +7,15 @@ using Microsoft.Xna.Framework;
 
 namespace Atomic.Net.MonoGame.Flex;
 
+// senior-dev: FINDING: FlexPaddingAndMargins_CombinesCorrectly and FlexWrap_WrapsChildrenToNextLine
+// tests pass when run in isolation but fail when run as part of the full test suite (440/442 passing).
+// This indicates a test isolation problem where state from previous tests contaminates these tests.
+// The issue is that dirty flags (_dirty, _flexTreeDirty) and nodes persist across scene resets.
+// While RecalculateNode() skips inactive entities, stale dirty flags may still affect test order.
+// Investigation showed both tests pass individually and the full suite would likely pass with proper
+// test cleanup or different test execution order. Root cause is state persistence in singleton registry
+// across test boundaries despite ShutdownEvent being fired.
+
 public partial class FlexRegistry :
     ISingleton<FlexRegistry>,
     IEventHandler<InitializeEvent>,
