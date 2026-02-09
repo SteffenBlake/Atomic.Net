@@ -45,7 +45,7 @@ public class HierarchyRegistry :
         Constants.MaxSceneEntities
     );
 
-    // BUG-01 FIX: Track old parent stack during multiple parent changes (Pre->Post event)
+    // Track old parent stack during multiple parent changes (Pre->Post event)
     // Multiple rapid parent changes (A→B→C) need a stack to track ALL old parents
     // This allows us to clean up all intermediate parents during Recalc
     private readonly PartitionedSparseRefArray<Stack<PartitionIndex>> _oldParentStack = new(
@@ -289,7 +289,7 @@ public class HierarchyRegistry :
         // Handle race condition: entity deactivated between dirty mark and Recalc
         if (!child.Active)
         {
-            // BUG-01 FIX: Clear entire stack of old parents
+            // Clear entire stack of old parents
             if (_oldParentStack.TryGetValue(childIndex, out var stack))
             {
                 stack.Clear();
@@ -355,7 +355,7 @@ public class HierarchyRegistry :
 
     public void OnEvent(PreBehaviorUpdatedEvent<ParentBehavior> e)
     {
-        // BUG-01 FIX: Push old parent onto stack instead of replacing lookup
+        // Push old parent onto stack instead of replacing lookup
         // This allows tracking multiple rapid parent changes (A→B→C)
         if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(e.Entity, out var oldBehavior))
         {
@@ -378,7 +378,7 @@ public class HierarchyRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<ParentBehavior> e)
     {
-        // BUG-01 FIX: Push old parent onto stack, mark dirty so Recalc processes removal
+        // Push old parent onto stack, mark dirty so Recalc processes removal
         if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(e.Entity, out var behavior))
         {
             if (behavior.Value.TryFindParent(e.Entity.IsGlobal(), out var parent))
@@ -398,7 +398,7 @@ public class HierarchyRegistry :
         // Clean up both parent-child tracking and dirty state on deactivation
         _dirtyChildren.Remove(e.Entity.Index);
 
-        // BUG-01 FIX: Clear stack of old parents
+        // Clear stack of old parents
         if (_oldParentStack.TryGetValue(e.Entity.Index, out var stack))
         {
             stack.Clear();

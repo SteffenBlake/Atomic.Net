@@ -253,9 +253,6 @@ public class SelectorRegistry :
         // Guard: cache hit
         if (_idSelectorRegistry.TryGetValue(hash, out var match))
         {
-            // Mark dirty to ensure Recalc() will recompute matches
-            // This is necessary because selectors persist across tests (no ShutdownEvent cleanup)
-            match.MarkDirty();
             selector = match;
             return true;
         }
@@ -289,9 +286,6 @@ public class SelectorRegistry :
         // Guard: cache hit
         if (_tagSelectorRegistry.TryGetValue(hash, out var match))
         {
-            // Mark dirty to ensure Recalc() will recompute matches
-            // This is necessary because selectors persist across tests (no ShutdownEvent cleanup)
-            match.MarkDirty();
             selector = match;
             return true;
         }
@@ -348,9 +342,6 @@ public class SelectorRegistry :
             // Guard: cache hit
             if (_exitSelectorRegistry.TryGetValue(hash, out var match))
             {
-                // Mark dirty to ensure Recalc() will recompute matches
-                // This is necessary because selectors persist across tests (no ShutdownEvent cleanup)
-                match.MarkDirty();
                 selector = match;
                 return true;
             }

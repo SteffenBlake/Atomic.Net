@@ -13,9 +13,7 @@
     {
       "id": "child1",
       "parent": "@container",
-      "flexGrow": {
-        "value": 1
-      },
+      "flexGrow": 1,
       "flexHeight": {
         "value": 200
       }
@@ -23,9 +21,7 @@
     {
       "id": "child2",
       "parent": "@container",
-      "flexGrow": {
-        "value": 1
-      },
+      "flexGrow": 1,
       "flexHeight": {
         "value": 200
       }
@@ -33,9 +29,7 @@
     {
       "id": "child3",
       "parent": "@container",
-      "flexGrow": {
-        "value": 1
-      },
+      "flexGrow": 1,
       "flexHeight": {
         "value": 200
       }

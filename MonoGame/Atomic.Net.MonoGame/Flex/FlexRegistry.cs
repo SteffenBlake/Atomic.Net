@@ -24,6 +24,7 @@ public partial class FlexRegistry :
     IEventHandler<PreBehaviorRemovedEvent<FlexBehavior>>,
     // Parent hierarchy for flex tree management
     IEventHandler<BehaviorAddedEvent<ParentBehavior>>,
+    IEventHandler<PreBehaviorUpdatedEvent<ParentBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<ParentBehavior>>,
     IEventHandler<PreBehaviorRemovedEvent<ParentBehavior>>,
     // Enable/Disable
@@ -57,9 +58,37 @@ public partial class FlexRegistry :
         Constants.MaxSceneEntities
     );
 
-    // Reverse lookup: Node -> Entity Index
-    // Enables O(1) parent entity lookup when removing child from flex tree
-    private readonly PartitionedSparseArray<bool> _flexTreeDirty = new(
+    /// <summary>
+    /// Ensures a flex node exists for the entity and marks it dirty.
+    /// Returns the node for further configuration.
+    /// </summary>
+    protected Node EnsureDirtyNode(PartitionIndex index)
+    {
+        _dirty.Set(index, true);
+
+        // If this entity has a flex parent, mark the parent dirty too
+        // This ensures that when child properties change, the parent's layout is recalculated
+        var entity = EntityRegistry.Instance[index];
+        if (entity.TryGetParent(out var parent))
+        {
+            if (parent.Value.Active && parent.Value.HasBehavior<FlexBehavior>())
+            {
+                _dirty.Set(parent.Value.Index, true);
+            }
+        }
+
+        if (!_nodes.TryGetValue(index, out var node))
+        {
+            node = FlexLayoutSharp.Flex.CreateDefaultNode();
+            _nodes[index] = node;
+        }
+        return node;
+    }
+
+    public void Recalculate()
+    {
+        // First, update flex tree for any entities that had parent changes
+        foreach (var (index, _) in _flexTreeDirty.Global)
         {
             UpdateFlexTreeForEntity((ushort)index);
         }
@@ -91,7 +120,7 @@ public partial class FlexRegistry :
     /// - Removes entity from old parent node (if exists) using Node.GetParent()
     /// - Adds entity to new parent node only if parent has FlexBehavior
     /// - Prevents duplicate children by checking IndexOfChild before AddChild
-    /// - Marks parent entities dirty for layout recalculation (O(1) via _nodeToEntity lookup)
+    /// - Marks parent entities dirty via PreBehaviorUpdatedEvent handler (not here)
     /// </remarks>
     private void UpdateFlexTreeForEntity(PartitionIndex entityIndex)
     {
@@ -125,11 +154,13 @@ public partial class FlexRegistry :
         // Defensive check: IndexOfChild ensures we don't add duplicate children
         // This can occur during Recalc when multiple parent change events fire
         // for the same entity within a single frame
-        if (parentNode.IndexOfChild(myNode) == -1)
+        if (parentNode.IndexOfChild(myNode) != -1)
         {
-            parentNode.AddChild(myNode);
-            _dirty.Set(parent.Value.Index, true);
+            return;
         }
+
+        parentNode.AddChild(myNode);
+        _dirty.Set(parent.Value.Index, true);
     }
 
     private void RecalculateNode(PartitionIndex index)
@@ -346,6 +377,18 @@ public partial class FlexRegistry :
         }
     }
 
+    public void OnEvent(PreBehaviorUpdatedEvent<ParentBehavior> e)
+    {
+        // Mark old parent dirty before parent changes
+        if (e.Entity.HasBehavior<FlexBehavior>())
+        {
+            if (e.Entity.TryGetParent(out var oldParent) && oldParent.Value.HasBehavior<FlexBehavior>())
+            {
+                _dirty.Set(oldParent.Value.Index, true);
+            }
+        }
+    }
+
     public void OnEvent(PostBehaviorUpdatedEvent<ParentBehavior> e)
     {
         // If this entity has FlexBehavior, mark for flex tree update
@@ -366,18 +409,17 @@ public partial class FlexRegistry :
 
     /// <summary>
     /// Removes an entity's flex node from its parent node in the flex tree.
-    /// Uses O(1) reverse lookup via _nodeToEntity dictionary to find and mark parent entity dirty.
     /// </summary>
     /// <remarks>
     /// Performance characteristics:
     /// - Node parent lookup: O(1) via Node.GetParent()
-    /// - Parent entity lookup: O(1) via _nodeToEntity dictionary
     /// - Child removal: O(n) where n = number of children in parent (FlexLayoutSharp limitation)
-    /// - Total: O(n) where n = children count, NOT entity count
     /// 
     /// Called when:
     /// - Entity parent changes (need to remove from old parent before adding to new)
     /// - FlexBehavior is removed from entity
+    /// 
+    /// Note: Parent entity is marked dirty in PreBehaviorUpdatedEvent handler, not here.
     /// </remarks>
     private void RemoveFromParentFlexTree(Entity entity)
     {
@@ -389,26 +431,12 @@ public partial class FlexRegistry :
         // Use Node.GetParent() to get the node's current parent in the flex tree
         // (entity's parent might have already changed, but node's parent hasn't)
         var parentNode = myNode.GetParent();
-        if (parentNode is not null && parentNode.IndexOfChild(myNode) != -1)
+        if (parentNode is null || parentNode.IndexOfChild(myNode) == -1)
         {
-            parentNode.RemoveChild(myNode);
-
-            // Use O(1) reverse lookup to find parent entity and mark it dirty
-            if (_nodeToEntity.TryGetValue(parentNode, out var parentIndex))
-            {
-                _dirty.Set(parentIndex, true);
-            }
-            else
-            {
-                // Defensive: This should never happen in normal operation since we maintain
-                // _nodeToEntity in sync with _nodes. If we reach here, it indicates a bug
-                // in the registry's internal state management.
-                EventBus<ErrorEvent>.Push(new ErrorEvent(
-                    "FlexRegistry internal error: Parent node exists in flex tree but not in _nodeToEntity lookup. " +
-                    $"Entity: {entity.Index}, Parent node will not be marked dirty for recalculation."
-                ));
-            }
+            return;
         }
+
+        parentNode.RemoveChild(myNode);
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexBehavior> e)
@@ -423,11 +451,7 @@ public partial class FlexRegistry :
         // Remove from parent's children first
         RemoveFromParentFlexTree(e.Entity);
 
-        // Then remove the node itself and its reverse lookup
-        if (_nodes.TryGetValue(e.Entity.Index, out var node))
-        {
-            _nodeToEntity.Remove(node);
-        }
+        // Then remove the node itself
         _nodes.Remove(e.Entity.Index);
     }
 
@@ -580,6 +604,7 @@ public partial class FlexRegistry :
 
         // Parent hierarchy
         EventBus<BehaviorAddedEvent<ParentBehavior>>.Register(this);
+        EventBus<PreBehaviorUpdatedEvent<ParentBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<ParentBehavior>>.Register(this);
         EventBus<PreBehaviorRemovedEvent<ParentBehavior>>.Register(this);
 

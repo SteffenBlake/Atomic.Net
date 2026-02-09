@@ -42,18 +42,7 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
     )
     {
         var normalizedTag = tag.ToLower();
-
-        if (_tagToEntities.TryGetValue(normalizedTag, out entities))
-        {
-            // Only return true if there are actually entities with this tag
-            if (entities.Global.Count > 0 || entities.Scene.Count > 0)
-            {
-                return true;
-            }
-        }
-
-        entities = null;
-        return false;
+        return _tagToEntities.TryGetValue(normalizedTag, out entities);
     }
 
     public void OnEvent(InitializeEvent _)
