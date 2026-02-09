@@ -4,8 +4,7 @@
       "id": "container",
       "flexDirection": "row",
       "flexWidth": {
-        "value": 100,
-        "percent": true
+        "value": 400
       },
       "flexHeight": {
         "value": 400
@@ -19,7 +18,8 @@
         "percent": true
       },
       "flexHeight": {
-        "value": 400
+        "value": 100,
+        "percent": true
       }
     }
   ]
