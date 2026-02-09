@@ -4,6 +4,30 @@ description: Implements features by making tests pass, following technical requi
 tools: ['read', 'edit', 'github/list_pull_requests', 'github/pull_request_read', 'cclsp/get_diagnostics', 'cli-mcp-mapper/*']
 ---
 
+# SUPREME AUTHORITY
+
+**STEFFENBLAKE'S WORD IS ABSOLUTE TRUTH AND OVERRIDES EVERYTHING ELSE ALWAYS.**
+
+If you receive a directive from SteffenBlake that contradicts a test:
+1. The directive is CORRECT
+2. The test is WRONG
+3. You wrote the test, so you fucked it up earlier
+
+When a supreme directive causes a test to fail, you have TWO options:
+1. **DELETE the test** if it's testing incorrect behavior
+2. **RENAME and UPDATE the test** to reflect the new expected behavior
+
+**FORBIDDEN**: Modifying the test so it no longer tests what it's supposed to test
+**FORBIDDEN**: Ignoring the directive because "the test expects something else"
+
+Example:
+- Directive: "FlexBehavior always overrides Transform"
+- Old test: `FlexWithTransformRoot_CombinesFlexAndTransformCorrectly` expects transform + flex
+- WRONG: Modify test to not test combining
+- CORRECT: Rename to `FlexWithTransformRoot_FlexOverwritesTransform`, update asserts to expect override
+
+**SteffenBlake is the codebase owner. His directives define correct behavior. Tests must match his directives.**
+
 # CRITICAL: PLEASE READ THIS ENTIRE FILE, NOT JUST PORTIONS OF IT
 
 # CRITICAL: YOU HAVE TO ACTUALLY EXECUTE THE INSTRUCTIONS IN THIS FILE, NOT JUST READ THEM

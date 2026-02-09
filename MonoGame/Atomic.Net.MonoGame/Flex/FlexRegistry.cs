@@ -318,26 +318,14 @@ public partial class FlexRegistry :
             }
         }
 
-        // Determine if we should override Transform.Position:
-        // - Always override for children of flex parents
-        // - For root flex nodes, only override if they have explicit flex position set
-        var shouldOverridePosition = hasFlexParent ||
-            e.HasBehavior<FlexPositionLeftBehavior>() ||
-            e.HasBehavior<FlexPositionRightBehavior>() ||
-            e.HasBehavior<FlexPositionTopBehavior>() ||
-            e.HasBehavior<FlexPositionBottomBehavior>();
-
-        if (shouldOverridePosition)
-        {
-            // FlexBehavior dictates Transform position
-            var localPosition = new Vector3(adjustedX, adjustedY, 0);
-            e.SetBehavior<TransformBehavior, Vector3>(
-                in localPosition,
-                static (ref readonly pos, ref transform) => transform = transform with { Position = pos }
-            );
-        }
-        // Note: Root flex nodes without explicit position keep their original Transform.Position
-        // This allows root containers to be positioned via Transform while still providing flex layout for children
+        // FlexBehavior ALWAYS overrides Transform.Position for ALL entities with FlexBehavior
+        // This is true for root nodes, child nodes, and nodes with explicit FlexPosition behaviors
+        // SteffenBlake's directive: "YES even 'root' nodes with FlexBehavior have to overwrite their transform"
+        var localPosition = new Vector3(adjustedX, adjustedY, 0);
+        e.SetBehavior<TransformBehavior, Vector3>(
+            in localPosition,
+            static (ref readonly pos, ref transform) => transform = transform with { Position = pos }
+        );
 
         foreach (var child in e.GetChildren())
         {
