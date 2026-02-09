@@ -43,6 +43,12 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPaddingLeftBehavior> e)
     {
+        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
+        if (!e.Entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
         var node = EnsureDirtyNode(e.Entity.Index);
         node.StyleSetPadding(Edge.Left, float.NaN);
     }
@@ -68,6 +74,12 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPaddingRightBehavior> e)
     {
+        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
+        if (!e.Entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
         var node = EnsureDirtyNode(e.Entity.Index);
         node.StyleSetPadding(Edge.Right, float.NaN);
     }
@@ -93,6 +105,12 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPaddingTopBehavior> e)
     {
+        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
+        if (!e.Entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
         var node = EnsureDirtyNode(e.Entity.Index);
         node.StyleSetPadding(Edge.Top, float.NaN);
     }
@@ -118,6 +136,12 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPaddingBottomBehavior> e)
     {
+        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
+        if (!e.Entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
         var node = EnsureDirtyNode(e.Entity.Index);
         node.StyleSetPadding(Edge.Bottom, float.NaN);
     }

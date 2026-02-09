@@ -423,31 +423,16 @@ public partial class FlexRegistry :
             return;
         }
 
-        // Mark parent dirty when child's FlexBehavior is removed
-        // Parent needs to recalculate layout without this child
-        var parent = e.Entity.GetParent();
-        if (parent is null || !parent.Value.HasBehavior<FlexBehavior>())
+        // Mark parent dirty when child's FlexBehavior is removed so layout recalculates
+        if (e.Entity.TryGetParent(out var parent) && parent.Value.HasBehavior<FlexBehavior>())
         {
-            // Remove from parent's children first
-            RemoveFromParentFlexTree(e.Entity);
-
-            // Then remove the node itself
-            _nodes.Remove(e.Entity.Index);
-            
-            // Clear dirty flags to prevent contamination across scenes
-            _dirty.Remove(e.Entity.Index);
-            _flexTreeDirty.Remove(e.Entity.Index);
-            return;
+            _dirty.Set(parent.Value.Index, true);
         }
 
-        _dirty.Set(parent.Value.Index, true);
-
-        // Remove from parent's children first
+        // Remove from parent's flex tree, then remove the node itself
         RemoveFromParentFlexTree(e.Entity);
-
-        // Then remove the node itself
         _nodes.Remove(e.Entity.Index);
-        
+
         // Clear dirty flags to prevent contamination across scenes
         _dirty.Remove(e.Entity.Index);
         _flexTreeDirty.Remove(e.Entity.Index);

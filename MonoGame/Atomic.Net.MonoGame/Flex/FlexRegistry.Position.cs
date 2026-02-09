@@ -45,6 +45,12 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPositionTypeBehavior> e)
     {
+        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
+        if (!e.Entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
         var node = EnsureDirtyNode(e.Entity.Index);
         node.StyleSetPositionType(default);
     }
@@ -82,6 +88,12 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPositionLeftBehavior> e)
     {
+        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
+        if (!e.Entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
         var node = EnsureDirtyNode(e.Entity.Index);
         node.StyleSetPosition(Edge.Left, float.NaN);
     }
@@ -120,6 +132,12 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPositionRightBehavior> e)
     {
+        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
+        if (!e.Entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
         var node = EnsureDirtyNode(e.Entity.Index);
         node.StyleSetPosition(Edge.Right, float.NaN);
     }
@@ -158,6 +176,12 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPositionTopBehavior> e)
     {
+        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
+        if (!e.Entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
         var node = EnsureDirtyNode(e.Entity.Index);
         node.StyleSetPosition(Edge.Top, float.NaN);
     }
@@ -196,6 +220,12 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPositionBottomBehavior> e)
     {
+        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
+        if (!e.Entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
         var node = EnsureDirtyNode(e.Entity.Index);
         node.StyleSetPosition(Edge.Bottom, float.NaN);
     }
