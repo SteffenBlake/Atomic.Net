@@ -16,8 +16,7 @@ public class SelectorRegistry :
     IEventHandler<BehaviorAddedEvent<TagsBehavior>>,
     IEventHandler<PreBehaviorUpdatedEvent<TagsBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<TagsBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<TagsBehavior>>,
-    IEventHandler<ShutdownEvent>
+    IEventHandler<PreBehaviorRemovedEvent<TagsBehavior>>
 {
     public static SelectorRegistry Instance { get; private set; } = null!;
 
@@ -366,7 +365,6 @@ public class SelectorRegistry :
         EventBus<PreBehaviorUpdatedEvent<TagsBehavior>>.Register(Instance);
         EventBus<PostBehaviorUpdatedEvent<TagsBehavior>>.Register(Instance);
         EventBus<PreBehaviorRemovedEvent<TagsBehavior>>.Register(Instance);
-        EventBus<ShutdownEvent>.Register(Instance);
     }
 
     /// <summary>
@@ -375,35 +373,11 @@ public class SelectorRegistry :
     /// </summary>
     public void Reset()
     {
-        // senior-dev: On Reset, recalc all selectors to update Matches for non-persistent entities
+        // On Reset, recalc all selectors to update Matches for non-persistent entities
         // Scene entities (>= MaxGlobalEntities) are deactivated by EntityRegistry
         // Their IdBehaviors are removed, marking selectors dirty
         // We recalc here to update all selector Matches arrays
         Recalc();
-    }
-
-    public void OnEvent(ShutdownEvent _)
-    {
-        // senior-dev: Shutdown clears EVERYTHING (used between tests)
-        _unionSelectorRegistry.Clear();
-        _idSelectorRegistry.Clear();
-        _tagSelectorRegistry.Clear();
-        _enterSelectorRegistry.Clear();
-        _exitSelectorRegistry.Clear();
-        _idSelectorLookup.Clear();
-        _tagSelectorLookup.Clear();
-        _rootSelectors.Clear();
-
-        // Unregister from all events to prevent duplicate registrations
-        EventBus<BehaviorAddedEvent<IdBehavior>>.Unregister(Instance);
-        EventBus<PreBehaviorUpdatedEvent<IdBehavior>>.Unregister(Instance);
-        EventBus<PostBehaviorUpdatedEvent<IdBehavior>>.Unregister(Instance);
-        EventBus<PreBehaviorRemovedEvent<IdBehavior>>.Unregister(Instance);
-        EventBus<BehaviorAddedEvent<TagsBehavior>>.Unregister(Instance);
-        EventBus<PreBehaviorUpdatedEvent<TagsBehavior>>.Unregister(Instance);
-        EventBus<PostBehaviorUpdatedEvent<TagsBehavior>>.Unregister(Instance);
-        EventBus<PreBehaviorRemovedEvent<TagsBehavior>>.Unregister(Instance);
-        EventBus<ShutdownEvent>.Unregister(Instance);
     }
 
     public void OnEvent(BehaviorAddedEvent<IdBehavior> e)

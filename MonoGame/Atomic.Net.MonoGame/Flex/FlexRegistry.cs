@@ -10,7 +10,6 @@ namespace Atomic.Net.MonoGame.Flex;
 public partial class FlexRegistry :
     ISingleton<FlexRegistry>,
     IEventHandler<InitializeEvent>,
-    IEventHandler<ShutdownEvent>,
     // Flex core behaviors
     IEventHandler<BehaviorAddedEvent<FlexBehavior>>,
     IEventHandler<PreBehaviorRemovedEvent<FlexBehavior>>,
@@ -31,7 +30,6 @@ public partial class FlexRegistry :
 
         Instance ??= new();
         EventBus<InitializeEvent>.Register(Instance);
-        EventBus<ShutdownEvent>.Register(Instance);
     }
 
     public static FlexRegistry Instance { get; private set; } = null!;
@@ -479,101 +477,7 @@ public partial class FlexRegistry :
         node.StyleSetDisplay(Display.None);
     }
 
-    public void OnEvent(ShutdownEvent _)
-    {
-        // Unsubscribe from all events
-        EventBus<BehaviorAddedEvent<FlexBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexZOverride>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexZOverride>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexZOverride>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexDirectionBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexDirectionBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexDirectionBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexWrapBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexWrapBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexWrapBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexJustifyContentBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexJustifyContentBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexJustifyContentBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexAlignItemsBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexAlignItemsBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexAlignItemsBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<AlignContentBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<AlignContentBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<AlignContentBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexAlignSelfBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexAlignSelfBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexAlignSelfBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexGrowBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexGrowBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexGrowBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexShrinkBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexShrinkBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexShrinkBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexPositionTypeBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexPositionTypeBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPositionTypeBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexPositionLeftBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexPositionLeftBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPositionLeftBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexPositionRightBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexPositionRightBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPositionRightBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexPositionTopBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexPositionTopBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPositionTopBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexPositionBottomBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexPositionBottomBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPositionBottomBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexMarginLeftBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexMarginLeftBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexMarginLeftBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexMarginRightBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexMarginRightBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexMarginRightBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexMarginTopBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexMarginTopBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexMarginTopBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexMarginBottomBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexMarginBottomBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexMarginBottomBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexPaddingLeftBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexPaddingLeftBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPaddingLeftBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexPaddingRightBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexPaddingRightBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPaddingRightBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexPaddingTopBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexPaddingTopBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPaddingTopBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexPaddingBottomBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexPaddingBottomBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPaddingBottomBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexBorderLeftBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexBorderLeftBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexBorderLeftBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexBorderRightBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexBorderRightBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexBorderRightBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexBorderTopBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexBorderTopBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexBorderTopBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexBorderBottomBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexBorderBottomBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexBorderBottomBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexWidthBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexWidthBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexWidthBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<FlexHeightBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<FlexHeightBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<FlexHeightBehavior>>.Unregister(this);
-        EventBus<BehaviorAddedEvent<ParentBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<ParentBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<ParentBehavior>>.Unregister(this);
-        EventBus<EntityEnabledEvent>.Unregister(this);
-        EventBus<EntityDisabledEvent>.Unregister(this);
-    }
+
 
     public void OnEvent(InitializeEvent _)
     {

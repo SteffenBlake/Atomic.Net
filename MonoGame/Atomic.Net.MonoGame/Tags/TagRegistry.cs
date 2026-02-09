@@ -13,8 +13,7 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
     IEventHandler<BehaviorAddedEvent<TagsBehavior>>,
     IEventHandler<PreBehaviorUpdatedEvent<TagsBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<TagsBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<TagsBehavior>>,
-    IEventHandler<ShutdownEvent>
+    IEventHandler<PreBehaviorRemovedEvent<TagsBehavior>>
 {
     internal static void Initialize()
     {
@@ -46,7 +45,11 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
 
         if (_tagToEntities.TryGetValue(normalizedTag, out entities))
         {
-            return true;
+            // Only return true if there are actually entities with this tag
+            if (entities.Global.Count > 0 || entities.Scene.Count > 0)
+            {
+                return true;
+            }
         }
 
         entities = null;
@@ -59,31 +62,6 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
         EventBus<PreBehaviorUpdatedEvent<TagsBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<TagsBehavior>>.Register(this);
         EventBus<PreBehaviorRemovedEvent<TagsBehavior>>.Register(this);
-        EventBus<ShutdownEvent>.Register(this);
-    }
-
-    public void OnEvent(ShutdownEvent _)
-    {
-        // senior-dev: FINDING: Unregistering from PreBehaviorRemovedEvent in ShutdownEvent
-        // creates a potential race condition. EntityRegistry.OnEvent(ShutdownEvent) deactivates 
-        // entities, which should trigger PreBehaviorRemovedEvent for cleanup. However, if we
-        // unregister here before the cascade completes, we miss cleanup events.
-        // 
-        // This bug exists in EntityIdRegistry and PropertiesRegistry too. The initialization 
-        // order in AtomicSystem.Initialize() may affect whether this manifests - EntityRegistry
-        // initializes before TagRegistry, so EntityRegistry.OnEvent(ShutdownEvent) should run
-        // first and trigger the cleanup cascade before we unregister.
-        //
-        // Workaround: Manually clear _tagToEntities until proper fix is implemented.
-        // Proper fix would be: Don't unregister in ShutdownEvent, only in destructor/dispose.
-        _tagToEntities.Clear();
-
-        // Unregister from all events to prevent duplicate registrations
-        EventBus<BehaviorAddedEvent<TagsBehavior>>.Unregister(this);
-        EventBus<PreBehaviorUpdatedEvent<TagsBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<TagsBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<TagsBehavior>>.Unregister(this);
-        EventBus<ShutdownEvent>.Unregister(this);
     }
 
     public void OnEvent(BehaviorAddedEvent<TagsBehavior> e)
