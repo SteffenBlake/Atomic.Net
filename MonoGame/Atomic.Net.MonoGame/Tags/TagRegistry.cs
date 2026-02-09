@@ -10,6 +10,7 @@ namespace Atomic.Net.MonoGame.Tags;
 /// </summary>
 public sealed class TagRegistry : ISingleton<TagRegistry>,
     IEventHandler<InitializeEvent>,
+    IEventHandler<ShutdownEvent>,
     IEventHandler<BehaviorAddedEvent<TagsBehavior>>,
     IEventHandler<PreBehaviorUpdatedEvent<TagsBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<TagsBehavior>>,
@@ -47,10 +48,16 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
 
     public void OnEvent(InitializeEvent _)
     {
+        EventBus<ShutdownEvent>.Register(this);
         EventBus<BehaviorAddedEvent<TagsBehavior>>.Register(this);
         EventBus<PreBehaviorUpdatedEvent<TagsBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<TagsBehavior>>.Register(this);
         EventBus<PreBehaviorRemovedEvent<TagsBehavior>>.Register(this);
+    }
+
+    public void OnEvent(ShutdownEvent _)
+    {
+        _tagToEntities.Clear();
     }
 
     public void OnEvent(BehaviorAddedEvent<TagsBehavior> e)

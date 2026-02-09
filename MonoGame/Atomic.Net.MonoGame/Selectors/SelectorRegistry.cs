@@ -9,6 +9,7 @@ namespace Atomic.Net.MonoGame.Selectors;
 public class SelectorRegistry :
     ISingleton<SelectorRegistry>,
     IEventHandler<InitializeEvent>,
+    IEventHandler<ShutdownEvent>,
     IEventHandler<BehaviorAddedEvent<IdBehavior>>,
     IEventHandler<PreBehaviorUpdatedEvent<IdBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<IdBehavior>>,
@@ -362,6 +363,7 @@ public class SelectorRegistry :
 
     public void OnEvent(InitializeEvent e)
     {
+        EventBus<ShutdownEvent>.Register(Instance);
         EventBus<BehaviorAddedEvent<IdBehavior>>.Register(Instance);
         EventBus<PreBehaviorUpdatedEvent<IdBehavior>>.Register(Instance);
         EventBus<PostBehaviorUpdatedEvent<IdBehavior>>.Register(Instance);
@@ -370,6 +372,19 @@ public class SelectorRegistry :
         EventBus<PreBehaviorUpdatedEvent<TagsBehavior>>.Register(Instance);
         EventBus<PostBehaviorUpdatedEvent<TagsBehavior>>.Register(Instance);
         EventBus<PreBehaviorRemovedEvent<TagsBehavior>>.Register(Instance);
+    }
+
+    public void OnEvent(ShutdownEvent e)
+    {
+        _unionSelectorRegistry.Clear();
+        _idSelectorRegistry.Clear();
+        _tagSelectorRegistry.Clear();
+        _enterSelectorRegistry.Clear();
+        _exitSelectorRegistry.Clear();
+        _idSelectorLookup.Clear();
+        _tagSelectorLookup.Clear();
+        _rootSelectors.Clear();
+        _unionPartsBuffer.Clear();
     }
 
     /// <summary>
