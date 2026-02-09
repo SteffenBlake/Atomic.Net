@@ -302,12 +302,11 @@ public class HierarchyRegistry :
         // Get the child's ParentBehavior (may have been removed)
         if (!child.TryGetBehavior<ParentBehavior>(out var behavior))
         {
-            // BUG-01 FIX: ParentBehavior was removed - clean up ALL old parents from stack
+            // ParentBehavior was removed - clean up ALL old parents from stack
             if (_oldParentStack.TryGetValue(childIndex, out var stack))
             {
-                while (stack.Count > 0)
+                while (stack.TryPop(out var oldParentIdx))
                 {
-                    var oldParentIdx = stack.Pop();
                     UntrackChild(EntityRegistry.Instance[oldParentIdx], child);
                 }
                 _oldParentStack.Remove(childIndex);
@@ -326,14 +325,12 @@ public class HierarchyRegistry :
             ));
         }
 
-        // BUG-01 FIX: Clean up ALL old parent relationships from stack
+        // Clean up ALL old parent relationships from stack
         if (_oldParentStack.TryGetValue(childIndex, out var oldParentStack))
         {
             // Process all old parents in the stack
-            while (oldParentStack.Count > 0)
+            while (oldParentStack.TryPop(out var oldParentIdx))
             {
-                var oldParentIdx = oldParentStack.Pop();
-
                 // Only untrack if this parent is different from the new one
                 if (!hasNewParent || newParent!.Value.Index != oldParentIdx)
                 {

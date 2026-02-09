@@ -138,6 +138,7 @@ When you discover a limitation, constraint, or "gotcha" through trial and error,
 - **Group:** usings → namespace → type
 - **Order members:** static → instance, fields → props → ctors → methods
 - Related files in feature folders (`BlockMaps/`, `Hierarchy/`, `Sprites/`)
+- **NO #region/#endregion directives** - Regions are banned across the entire codebase. Use comments or file organization instead.
 
 ### Patterns
 - Singleton via `ISingleton<T>` with static `Instance` property
@@ -315,6 +316,28 @@ Assert.True(TryGetBar(out var bar));
 
 **Example:**
 If a test expects `{ value: 100, percent: true }` to work on a root container, DON'T change the JSON to use explicit pixels. Instead, FIX the flex system to handle percentage dimensions on root containers correctly (treat as explicit values when no parent exists).
+
+## DO NOT Commit Note/Status/Progress Markdown Files
+**CRITICAL RULE:** Do NOT commit markdown files that are just notes, status updates, progress trackers, or temporary documentation.
+
+**Forbidden file patterns:**
+- Files like `NOTES.md`, `STATUS.md`, `TODO.md`, `PROGRESS.md`
+- Files like `*_COMPLETE.md`, `*_NOTE.md`, `*_STATUS.md`
+- Any markdown files that document your process rather than the codebase itself
+
+**What's allowed:**
+- ✅ `README.md` - Project documentation
+- ✅ `.github/agents/*.md` - Agent instructions
+- ✅ Sprint files in `.github/agents/sprints/` - Formal sprint planning
+- ✅ `ROADMAP.md`, `DISCOVERIES.md` - Official project documentation
+
+**What's forbidden:**
+- ❌ `FLEXSHARP_PERCENTAGE_REVERT_COMPLETE.md` - Status/progress file
+- ❌ `SCHEMA_REVERT_COMPLETE.md` - Status/progress file
+- ❌ `UNTRACKED_FILES_NOTE.md` - Note file
+- ❌ Any other temporary documentation files
+
+If you need to track progress or take notes, do it in memory or in comments within the actual code. Don't litter the repository root with status files.
 
 ## CRITICAL: UNDERSTAND, ABOVE ALL ELSE
 Take the time to UNDERSTAND the system. Its INCREDIBLY common you agents will just start making wild assumptions about how things work without first reading and understanding not just the 1 chunk of code but HOW IT FITS INTO EVERYTHING

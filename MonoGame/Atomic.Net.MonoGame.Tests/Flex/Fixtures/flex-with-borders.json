@@ -9,18 +9,10 @@
       "flexHeight": {
         "value": 100
       },
-      "flexBorderLeft": {
-        "value": 5
-      },
-      "flexBorderTop": {
-        "value": 10
-      },
-      "flexBorderRight": {
-        "value": 15
-      },
-      "flexBorderBottom": {
-        "value": 20
-      }
+      "flexBorderLeft": 5,
+      "flexBorderTop": 10,
+      "flexBorderRight": 15,
+      "flexBorderBottom": 20
     },
     {
       "id": "child",

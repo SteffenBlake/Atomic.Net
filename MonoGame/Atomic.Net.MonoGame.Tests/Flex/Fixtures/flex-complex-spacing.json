@@ -9,30 +9,14 @@
       "flexHeight": {
         "value": 500
       },
-      "flexPaddingLeft": {
-        "value": 15
-      },
-      "flexPaddingTop": {
-        "value": 20
-      },
-      "flexPaddingRight": {
-        "value": 15
-      },
-      "flexPaddingBottom": {
-        "value": 20
-      },
-      "flexBorderLeft": {
-        "value": 3
-      },
-      "flexBorderTop": {
-        "value": 3
-      },
-      "flexBorderRight": {
-        "value": 3
-      },
-      "flexBorderBottom": {
-        "value": 3
-      }
+      "flexPaddingLeft": 15,
+      "flexPaddingTop": 20,
+      "flexPaddingRight": 15,
+      "flexPaddingBottom": 20,
+      "flexBorderLeft": 3,
+      "flexBorderTop": 3,
+      "flexBorderRight": 3,
+      "flexBorderBottom": 3
     },
     {
       "id": "child1",
@@ -43,9 +27,7 @@
       "flexHeight": {
         "value": 100
       },
-      "flexMarginBottom": {
-        "value": 10
-      }
+      "flexMarginBottom": 10
     },
     {
       "id": "child2",
@@ -56,9 +38,7 @@
       "flexHeight": {
         "value": 100
       },
-      "flexMarginBottom": {
-        "value": 10
-      }
+      "flexMarginBottom": 10
     },
     {
       "id": "child3",

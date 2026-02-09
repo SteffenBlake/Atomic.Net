@@ -9,18 +9,10 @@
       "flexHeight": {
         "value": 100
       },
-      "flexPaddingLeft": {
-        "value": 10
-      },
-      "flexPaddingTop": {
-        "value": 10
-      },
-      "flexPaddingRight": {
-        "value": 10
-      },
-      "flexPaddingBottom": {
-        "value": 10
-      }
+      "flexPaddingLeft": 10,
+      "flexPaddingTop": 10,
+      "flexPaddingRight": 10,
+      "flexPaddingBottom": 10
     },
     {
       "id": "child",

@@ -121,7 +121,6 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         );
     }
 
-    #region Basic Flex Layouts
 
     [Fact]
     public void SimpleFlexRow_PositionsChildrenHorizontally()
@@ -249,9 +248,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         );
     }
 
-    #endregion
 
-    #region Wrapping and Direction
 
     [Fact]
     public void FlexWrap_WrapsChildrenToNextLine()
@@ -329,9 +326,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         );
     }
 
-    #endregion
 
-    #region Justify Content
 
     [Fact]
     public void FlexJustifyCenter_CentersChildren()
@@ -440,9 +435,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         );
     }
 
-    #endregion
 
-    #region Align Items
 
     [Fact]
     public void FlexAlignItemsCenter_CentersChildrenCrossAxis()
@@ -539,9 +532,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         );
     }
 
-    #endregion
 
-    #region Nested Flex Containers
 
     [Fact]
     public void NestedFlex2Levels_CalculatesCorrectPositions()
@@ -595,9 +586,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         AssertPositionEquals(0, 150, level3Bottom.Value, "level3-bottom");
     }
 
-    #endregion
 
-    #region Borders and Spacing
 
     [Fact]
     public void FlexWithBorders_IncludesBordersInLayout()
@@ -696,9 +685,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         );
     }
 
-    #endregion
 
-    #region Percentage Sizing
 
     [Fact]
     public void FlexPercentageWidth_CalculatesRelativeToParent()
@@ -767,9 +754,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         );
     }
 
-    #endregion
 
-    #region Absolute Positioning
 
     [Fact]
     public void FlexAbsolutePosition_PositionsRelativeToContainer()
@@ -814,9 +799,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         );
     }
 
-    #endregion
 
-    #region Advanced Features
 
     [Fact]
     public void FlexZOverride_SetsCorrectZIndex()
@@ -1004,9 +987,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         );
     }
 
-    #endregion
 
-    #region Transform Integration
 
     [Fact]
     public void FlexBehaviorAdded_AutomaticallyAddsTransformBehavior()
@@ -1069,9 +1050,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         AssertWorldPositionEquals(50, 150, leftItem2.Value, "left-item2");
     }
 
-    #endregion
 
-    #region Edge Cases
 
     [Fact]
     public void FlexEmptyContainer_HandlesGracefully()
@@ -1222,7 +1201,6 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         );
     }
 
-    #region Bug Fix Tests
 
     [Fact]
     public void RapidParentChanges_CleansUpAllIntermediateParents()
@@ -1390,43 +1368,6 @@ public sealed class FlexSystemIntegrationTests : IDisposable
             MathF.Abs(child2WidthAfter - 400) < 1,
             $"Child2 should grow to full parent width (400px) after child1 removed, got {child2WidthAfter}"
         );
-    }
-
-    [Fact]
-    public void CircularParentReference_DetectedGracefully()
-    {
-        // Arrange - Test BUG-03 fix
-        var entityA = EntityRegistry.Instance.Activate();
-        var entityB = EntityRegistry.Instance.Activate();
-
-        entityA.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "entityA" });
-        entityB.SetBehavior<IdBehavior>(static (ref b) => b = b with { Id = "entityB" });
-
-        entityA.SetBehavior<FlexBehavior>(static (ref _) => { });
-        entityB.SetBehavior<FlexBehavior>(static (ref _) => { });
-
-        // Create circular reference: A → B, B → A
-        Assert.True(SelectorRegistry.Instance.TryParse("@entityB", out var selectorB));
-        entityA.SetBehavior<ParentBehavior, EntitySelector>(
-            in selectorB,
-            static (ref readonly sel, ref behavior) => behavior = new ParentBehavior(sel)
-        );
-
-        Assert.True(SelectorRegistry.Instance.TryParse("@entityA", out var selectorA));
-        entityB.SetBehavior<ParentBehavior, EntitySelector>(
-            in selectorA,
-            static (ref readonly sel, ref behavior) => behavior = new ParentBehavior(sel)
-        );
-
-        SelectorRegistry.Instance.Recalc();
-        HierarchyRegistry.Instance.Recalc();
-
-        // Act & Assert - Should not cause stack overflow, should fire ErrorEvent
-        // ErrorEventLogger will capture any error events fired
-        RecalculateAll();
-
-        // No assertion needed - if we get here without stack overflow, the fix works
-        // ErrorEventLogger will capture the circular reference error
     }
 
     [Fact]
@@ -1599,7 +1540,5 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.Equal(entities[10].Index, parent11.Value.Index);
     }
 
-    #endregion
 
-    #endregion
 }
