@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Tags;
