@@ -291,3 +291,50 @@ You do NOT need to deep clone them to re-parent them however, you just have to r
 parent.Remove("child");
 ```
 this re-enables the ability for you to assign your instance of `child` to a new parent, without having to copy it
+
+---
+
+## FlexRegistry Dirty Flag Contamination Bug (February 2026)
+
+**Problem:** Dirty flags (_dirty and _flexTreeDirty) persisted across test boundaries, causing false recalculations and test contamination. Tests would fail when run after flex tests but pass when run alone.
+
+**Root Cause:** When entities were deactivated during ShutdownEvent/ResetEvent, their behaviors were removed via PreBehaviorRemovedEvent<FlexBehavior>. However, this handler was NOT clearing the dirty flags for those entities. The flags persisted in sparse arrays across test runs.
+
+**Solution:** Clear dirty flags in PreBehaviorRemovedEvent<FlexBehavior> handler:
+```csharp
+public void OnEvent(PreBehaviorRemovedEvent<FlexBehavior> e)
+{
+    // ... existing logic to remove from parent, remove node ...
+    
+    // Clear dirty flags to prevent contamination across scenes
+    _dirty.Remove(e.Entity.Index);
+    _flexTreeDirty.Remove(e.Entity.Index);
+}
+```
+
+**Key Insight:** The cleanup SHOULD happen automatically through the PreBehaviorRemovedEvent cascade. When entities are deactivated:
+1. Entity deactivation triggers BehaviorRemoved events for all behaviors
+2. BehaviorRemoved events fire PreBehaviorRemovedEvent<FlexBehavior>
+3. That handler cleans up ALL state for that entity (nodes + dirty flags)
+
+This is the proper event-driven cleanup pattern - no need for banned event subscriptions like PreEntityDeactivatedEvent or modifications to EntityDisabledEvent.
+
+**Tests Fixed:** 212 failing tests → 2 failing tests (440/442 passing)
+
+**Commit:** `fc954a2 - Fix: Clear dirty flags in PreBehaviorRemovedEvent handler instead of using banned events`
+
+---
+
+## Known Issues: FlexRegistry (February 2026)
+
+### 1. FlexAlignItemsFlexEnd Not Working
+**Test:** FlexAlignItemsFlexEnd_MovesChildrenToEndCrossAxis  
+**Symptom:** Child should be at Y=100 (bottom of 200px container with align-items: flex-end), but is at Y=0  
+**Status:** Unresolved - appears to be a bug in how align-items: flex-end is applied  
+**Note:** FlexAlignItemsCenter works correctly, suggesting the issue is specific to flex-end value
+
+### 2. RemoveFlexBehavior Not Triggering Parent Recalculation
+**Test:** RemoveFlexBehavior_MarksParentDirty  
+**Symptom:** After removing child1's FlexBehavior, child2 should grow from 200px to 400px (full parent width), but stays at 200px  
+**Status:** Unresolved - parent is marked dirty and RemoveFromParentFlexTree is called, but layout doesn't update  
+**Note:** This suggests either the dirty flag isn't being processed, or the Yoga node isn't being removed correctly
