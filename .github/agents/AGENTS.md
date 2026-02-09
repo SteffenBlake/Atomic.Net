@@ -39,6 +39,19 @@ DO NOT DO THIS, STAY IN YOUR TOP LAYER
 
 ---
 
+## PR Comment Resolution Policy
+
+**CRITICAL**: PR comments from SteffenBlake only count as resolved when he marks them `<comment_thread_resolved>`. 
+
+**FORBIDDEN**: Replying to a PR comment claiming "fixed" does NOT resolve it. Future agents reading the thread will see your reply and incorrectly assume it's fixed when it's not.
+
+**REQUIRED**: 
+- Verify each fix is ACTUALLY in the code before replying
+- Do not reply until the code change is committed
+- Include the commit hash in your reply
+
+---
+
 ## Agent Communication System
 
 ### Leaving Comments in Code

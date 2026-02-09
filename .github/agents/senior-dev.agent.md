@@ -115,6 +115,38 @@ THIS IS CRITICAL, you MUST do this
 
 # WHEN IN DOUBT: go look at other samples in the code base to see how it has been done for, and ask yourself if you are following the same patterns.
 
+## Test Failure Investigation & Documentation
+
+When investigating why a test is failing:
+
+### Document Your Discoveries
+Add comments to the test explaining what you found:
+
+```csharp
+[Fact]
+public void SomeTest_ThatWasFailing()
+{
+    // senior-dev: FINDING: This test was failing because [root cause].
+    // The issue was [specific problem]. Fixed by [solution].
+    
+    // Test code here...
+}
+```
+
+### Clean Up When Fixed
+If you fix the test:
+- Update the comment to explain what was wrong
+- Keep the FINDING comment for future reference
+- Include the fix approach for documentation
+
+### Leave Discovery Comments When Can't Fix
+If you can't fix the test but understand why it fails:
+- Document the root cause in a comment
+- Explain what would be needed to fix it
+- Tag with your role name for traceability
+
+**PURPOSE**: Future agents (including yourself) can learn from past investigations instead of re-discovering the same issues.
+
 ## When Implementation is Complete
 - Verify all tests pass
 - Check for compiler warnings
