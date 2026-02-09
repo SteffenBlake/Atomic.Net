@@ -11,11 +11,7 @@ public class FlexBorderRightBehaviorConverter : JsonConverter<FlexBorderRightBeh
 {
     public override FlexBorderRightBehavior Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        if (reader.TokenType == JsonTokenType.Number)
-        {
-            return new FlexBorderRightBehavior(reader.GetSingle());
-        }
-        throw new JsonException($"Expected number for FlexBorderRightBehavior, got {reader.TokenType}");
+        return new FlexBorderRightBehavior(reader.GetSingle());
     }
 
     public override void Write(Utf8JsonWriter writer, FlexBorderRightBehavior value, JsonSerializerOptions options)

@@ -11,11 +11,7 @@ public class FlexPaddingTopBehaviorConverter : JsonConverter<FlexPaddingTopBehav
 {
     public override FlexPaddingTopBehavior Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        if (reader.TokenType == JsonTokenType.Number)
-        {
-            return new FlexPaddingTopBehavior(reader.GetSingle());
-        }
-        throw new JsonException($"Expected number for FlexPaddingTopBehavior, got {reader.TokenType}");
+        return new FlexPaddingTopBehavior(reader.GetSingle());
     }
 
     public override void Write(Utf8JsonWriter writer, FlexPaddingTopBehavior value, JsonSerializerOptions options)

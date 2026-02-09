@@ -7,15 +7,6 @@ using Microsoft.Xna.Framework;
 
 namespace Atomic.Net.MonoGame.Flex;
 
-// senior-dev: FINDING: FlexPaddingAndMargins_CombinesCorrectly and FlexWrap_WrapsChildrenToNextLine
-// tests pass when run in isolation but fail when run as part of the full test suite (440/442 passing).
-// This indicates a test isolation problem where state from previous tests contaminates these tests.
-// The issue is that dirty flags (_dirty, _flexTreeDirty) and nodes persist across scene resets.
-// While RecalculateNode() skips inactive entities, stale dirty flags may still affect test order.
-// Investigation showed both tests pass individually and the full suite would likely pass with proper
-// test cleanup or different test execution order. Root cause is state persistence in singleton registry
-// across test boundaries despite ShutdownEvent being fired.
-
 public partial class FlexRegistry :
     ISingleton<FlexRegistry>,
     IEventHandler<InitializeEvent>,
@@ -308,47 +299,45 @@ public partial class FlexRegistry :
             static (ref readonly h, ref v) => v = h
         );
 
-        // Set TransformBehavior based on flex layout (local position relative to parent)
-        // BUT: Only set position for non-root flex entities (entities with flex parents)
-        // Root flex entities keep their original Transform.Position (e.g., from JSON)
-        if (!e.TryGetParent(out var parent))
-        {
-            // Root flex entity keeps its original Transform.Position
-            foreach (var child in e.GetChildren())
-            {
-                UpdateFlexBehavior(child, zIndex + 1);
-            }
-            return;
-        }
-
-        if (!parent.Value.Active || !parent.Value.HasBehavior<FlexBehavior>())
-        {
-            // Parent doesn't have flex, keep original position
-            foreach (var child in e.GetChildren())
-            {
-                UpdateFlexBehavior(child, zIndex + 1);
-            }
-            return;
-        }
-
-        // Child of flex parent: position is determined by flex layout
-        // Yoga returns position relative to parent's padding box (after border, includes padding area)
-        // Transform.Position needs to be relative to parent's origin (border box edge)
-        // So we add parent's border to convert coordinate systems
+        // Set TransformBehavior based on flex layout
+        // Calculate the position from Yoga
         var adjustedX = localX;
         var adjustedY = localY;
 
-        if (_nodes.TryGetValue(parent.Value.Index, out var parentNode))
+        // If this entity has a flex parent, adjust coordinates
+        // Yoga returns position relative to parent's padding box (after border, includes padding area)
+        // Transform.Position needs to be relative to parent's origin (border box edge)
+        // So we add parent's border to convert coordinate systems
+        var hasFlexParent = e.TryGetParent(out var parent) && parent.Value.Active && parent.Value.HasBehavior<FlexBehavior>();
+        if (hasFlexParent)
         {
-            adjustedX += parentNode.LayoutGetBorder(Edge.Left);
-            adjustedY += parentNode.LayoutGetBorder(Edge.Top);
+            if (_nodes.TryGetValue(parent!.Value.Index, out var parentNode))
+            {
+                adjustedX += parentNode.LayoutGetBorder(Edge.Left);
+                adjustedY += parentNode.LayoutGetBorder(Edge.Top);
+            }
         }
 
-        var localPosition = new Vector3(adjustedX, adjustedY, 0);
-        e.SetBehavior<TransformBehavior, Vector3>(
-            in localPosition,
-            static (ref readonly pos, ref transform) => transform = transform with { Position = pos }
-        );
+        // Determine if we should override Transform.Position:
+        // - Always override for children of flex parents
+        // - For root flex nodes, only override if they have explicit flex position set
+        var shouldOverridePosition = hasFlexParent ||
+            e.HasBehavior<FlexPositionLeftBehavior>() ||
+            e.HasBehavior<FlexPositionRightBehavior>() ||
+            e.HasBehavior<FlexPositionTopBehavior>() ||
+            e.HasBehavior<FlexPositionBottomBehavior>();
+
+        if (shouldOverridePosition)
+        {
+            // FlexBehavior dictates Transform position
+            var localPosition = new Vector3(adjustedX, adjustedY, 0);
+            e.SetBehavior<TransformBehavior, Vector3>(
+                in localPosition,
+                static (ref readonly pos, ref transform) => transform = transform with { Position = pos }
+            );
+        }
+        // Note: Root flex nodes without explicit position keep their original Transform.Position
+        // This allows root containers to be positioned via Transform while still providing flex layout for children
 
         foreach (var child in e.GetChildren())
         {
@@ -443,10 +432,18 @@ public partial class FlexRegistry :
     {
         // Mark parent dirty when child's FlexBehavior is removed
         // Parent needs to recalculate layout without this child
-        if (e.Entity.TryGetParent(out var parent) && parent.Value.HasBehavior<FlexBehavior>())
+        var parent = e.Entity.GetParent();
+        if (parent is null || !parent.Value.HasBehavior<FlexBehavior>())
         {
-            _dirty.Set(parent.Value.Index, true);
+            // Remove from parent's children first
+            RemoveFromParentFlexTree(e.Entity);
+
+            // Then remove the node itself
+            _nodes.Remove(e.Entity.Index);
+            return;
         }
+
+        _dirty.Set(parent.Value.Index, true);
 
         // Remove from parent's children first
         RemoveFromParentFlexTree(e.Entity);

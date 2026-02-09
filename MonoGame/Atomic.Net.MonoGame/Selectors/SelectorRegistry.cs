@@ -324,9 +324,6 @@ public class SelectorRegistry :
             // Guard: cache hit
             if (_enterSelectorRegistry.TryGetValue(hash, out var match))
             {
-                // Mark dirty to ensure Recalc() will recompute matches
-                // This is necessary because selectors persist across tests (no ShutdownEvent cleanup)
-                match.MarkDirty();
                 selector = match;
                 return true;
             }

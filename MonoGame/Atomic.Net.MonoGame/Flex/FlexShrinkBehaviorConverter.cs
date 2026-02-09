@@ -11,11 +11,7 @@ public class FlexShrinkBehaviorConverter : JsonConverter<FlexShrinkBehavior>
 {
     public override FlexShrinkBehavior Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        if (reader.TokenType == JsonTokenType.Number)
-        {
-            return new FlexShrinkBehavior(reader.GetSingle());
-        }
-        throw new JsonException($"Expected number for FlexShrinkBehavior, got {reader.TokenType}");
+        return new FlexShrinkBehavior(reader.GetSingle());
     }
 
     public override void Write(Utf8JsonWriter writer, FlexShrinkBehavior value, JsonSerializerOptions options)

@@ -135,9 +135,9 @@ public void SomeTest_ThatWasFailing()
 
 ### Clean Up When Fixed
 If you fix the test:
-- Update the comment to explain what was wrong
-- Keep the FINDING comment for future reference
-- Include the fix approach for documentation
+- DELETE the FINDING comment to reduce clutter
+- Clean up and remove temporary investigation comments
+- Keep code clean and focused on what matters NOW, not historical debugging
 
 ### Leave Discovery Comments When Can't Fix
 If you can't fix the test but understand why it fails:
