@@ -428,10 +428,17 @@ public partial class FlexRegistry :
             return;
         }
 
-        // Use Node.GetParent() to get the node's current parent in the flex tree
-        // (entity's parent might have already changed, but node's parent hasn't)
-        var parentNode = myNode.GetParent();
-        if (parentNode is null || parentNode.IndexOfChild(myNode) == -1)
+        if (!entity.TryGetParent(out var parent))
+        {
+            return;
+        }
+
+        if (!_nodes.TryGetValue(parent.Value.Index, out var parentNode))
+        {
+            return;
+        }
+
+        if (parentNode.IndexOfChild(myNode) == -1)
         {
             return;
         }
