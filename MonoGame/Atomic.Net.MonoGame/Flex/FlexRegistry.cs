@@ -20,9 +20,7 @@ public partial class FlexRegistry :
     IEventHandler<PreBehaviorRemovedEvent<ParentBehavior>>,
     // Enable/Disable
     IEventHandler<EntityEnabledEvent>,
-    IEventHandler<EntityDisabledEvent>,
-    // Deactivation
-    IEventHandler<PreEntityDeactivatedEvent>
+    IEventHandler<EntityDisabledEvent>
 {
     internal static void Initialize()
     {
@@ -420,6 +418,11 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexBehavior> e)
     {
+        if (!_nodes.TryGetValue(e.Entity.Index, out var myNode))
+        {
+            return;
+        }
+
         // Mark parent dirty when child's FlexBehavior is removed
         // Parent needs to recalculate layout without this child
         var parent = e.Entity.GetParent();
@@ -430,6 +433,10 @@ public partial class FlexRegistry :
 
             // Then remove the node itself
             _nodes.Remove(e.Entity.Index);
+            
+            // Clear dirty flags to prevent contamination across scenes
+            _dirty.Remove(e.Entity.Index);
+            _flexTreeDirty.Remove(e.Entity.Index);
             return;
         }
 
@@ -440,6 +447,10 @@ public partial class FlexRegistry :
 
         // Then remove the node itself
         _nodes.Remove(e.Entity.Index);
+        
+        // Clear dirty flags to prevent contamination across scenes
+        _dirty.Remove(e.Entity.Index);
+        _flexTreeDirty.Remove(e.Entity.Index);
     }
 
     public void OnEvent(EntityEnabledEvent e)
@@ -460,19 +471,8 @@ public partial class FlexRegistry :
             return;
         }
 
-        // Clear dirty flags for this entity (prevents contamination across scenes)
-        _dirty.Remove(e.Entity.Index);
-        _flexTreeDirty.Remove(e.Entity.Index);
-
+        _dirty.Set(e.Entity.Index, true);
         node.StyleSetDisplay(Display.None);
-    }
-
-    public void OnEvent(PreEntityDeactivatedEvent e)
-    {
-        // Clear dirty flags when entity is deactivated (prevents contamination across scenes)
-        // This is critical for test isolation - dirty flags from previous tests must not persist
-        _dirty.Remove(e.Entity.Index);
-        _flexTreeDirty.Remove(e.Entity.Index);
     }
 
 
@@ -609,8 +609,5 @@ public partial class FlexRegistry :
         // Enable/Disable
         EventBus<EntityEnabledEvent>.Register(this);
         EventBus<EntityDisabledEvent>.Register(this);
-
-        // Deactivation
-        EventBus<PreEntityDeactivatedEvent>.Register(this);
     }
 }
