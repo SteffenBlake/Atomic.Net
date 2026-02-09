@@ -20,6 +20,14 @@ The agents are EXTREMELY prone to bad code and choices, you MUST crack down on t
 
 ## Critical Code Review Checks
 
+### MANDATORY: No DebugEvent Usage
+
+- **Check**: Search for `DebugEvent` in all modified files
+- **Command**: `grep -r "DebugEvent" --include="*.cs" MonoGame/`
+- **Requirement**: ZERO results (except the DebugEvent.cs definition file itself)
+- **Rationale**: DebugEvents are for debugging only, must be removed before commit
+- **Action**: If found, REJECT the commit and require removal
+
 ### PR Comment Verification
 When reviewing a PR with comments from SteffenBlake:
 - **VERIFY IN CODE**: Check that each PR comment is ACTUALLY addressed in the code itself

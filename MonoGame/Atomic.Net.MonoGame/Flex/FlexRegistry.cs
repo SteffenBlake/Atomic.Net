@@ -20,7 +20,9 @@ public partial class FlexRegistry :
     IEventHandler<PreBehaviorRemovedEvent<ParentBehavior>>,
     // Enable/Disable
     IEventHandler<EntityEnabledEvent>,
-    IEventHandler<EntityDisabledEvent>
+    IEventHandler<EntityDisabledEvent>,
+    // Deactivation
+    IEventHandler<PreEntityDeactivatedEvent>
 {
     internal static void Initialize()
     {
@@ -458,8 +460,19 @@ public partial class FlexRegistry :
             return;
         }
 
-        _dirty.Set(e.Entity.Index, true);
+        // Clear dirty flags for this entity (prevents contamination across scenes)
+        _dirty.Remove(e.Entity.Index);
+        _flexTreeDirty.Remove(e.Entity.Index);
+
         node.StyleSetDisplay(Display.None);
+    }
+
+    public void OnEvent(PreEntityDeactivatedEvent e)
+    {
+        // Clear dirty flags when entity is deactivated (prevents contamination across scenes)
+        // This is critical for test isolation - dirty flags from previous tests must not persist
+        _dirty.Remove(e.Entity.Index);
+        _flexTreeDirty.Remove(e.Entity.Index);
     }
 
 
@@ -596,5 +609,8 @@ public partial class FlexRegistry :
         // Enable/Disable
         EventBus<EntityEnabledEvent>.Register(this);
         EventBus<EntityDisabledEvent>.Register(this);
+
+        // Deactivation
+        EventBus<PreEntityDeactivatedEvent>.Register(this);
     }
 }

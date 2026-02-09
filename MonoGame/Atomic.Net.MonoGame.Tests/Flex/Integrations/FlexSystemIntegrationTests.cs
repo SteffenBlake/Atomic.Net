@@ -17,19 +17,19 @@ namespace Atomic.Net.MonoGame.Tests.Flex.Integrations;
 [Trait("Category", "Integration")]
 public sealed class FlexSystemIntegrationTests : IDisposable
 {
-    private readonly ErrorEventLogger _errorLogger;
+    private readonly TestEventLogger _testLogger;
     private const float Tolerance = 0.0001f;
 
     public FlexSystemIntegrationTests(ITestOutputHelper output)
     {
-        _errorLogger = new ErrorEventLogger(output);
+        _testLogger = new TestEventLogger(output);
         AtomicSystem.Initialize();
         EventBus<InitializeEvent>.Push(new());
     }
 
     public void Dispose()
     {
-        _errorLogger.Dispose();
+        _testLogger.Dispose();
         EventBus<ShutdownEvent>.Push(new());
     }
 
@@ -252,17 +252,6 @@ public sealed class FlexSystemIntegrationTests : IDisposable
     [Fact]
     public void FlexWrap_WrapsChildrenToNextLine()
     {
-        // senior-dev: FINDING: This test passes when run in isolation but fails when run as part 
-        // of the full test suite (440/442 passing). This indicates a test isolation problem where 
-        // state from previous tests contaminates this test. The issue is that dirty flags (_dirty, 
-        // _flexTreeDirty) and nodes persist across scene resets. While RecalculateNode() skips 
-        // inactive entities, stale dirty flags may still affect test order. Investigation showed 
-        // both tests pass individually and the full suite would likely pass with proper test 
-        // cleanup or different test execution order. Root cause is state persistence in singleton 
-        // registry across test boundaries despite ShutdownEvent being fired.
-        // CRITICAL: FlexRegistry is FORBIDDEN from subscribing to ShutdownEvent/ResetEvent.
-        // Fix must be in test infrastructure, not registry.
-
         // Arrange
         var scenePath = "Flex/Fixtures/flex-wrap.json";
 
@@ -634,17 +623,6 @@ public sealed class FlexSystemIntegrationTests : IDisposable
     [Fact]
     public void FlexPaddingAndMargins_CombinesCorrectly()
     {
-        // senior-dev: FINDING: This test passes when run in isolation but fails when run as part 
-        // of the full test suite (440/442 passing). This indicates a test isolation problem where 
-        // state from previous tests contaminates this test. The issue is that dirty flags (_dirty, 
-        // _flexTreeDirty) and nodes persist across scene resets. While RecalculateNode() skips 
-        // inactive entities, stale dirty flags may still affect test order. Investigation showed 
-        // both tests pass individually and the full suite would likely pass with proper test 
-        // cleanup or different test execution order. Root cause is state persistence in singleton 
-        // registry across test boundaries despite ShutdownEvent being fired.
-        // CRITICAL: FlexRegistry is FORBIDDEN from subscribing to ShutdownEvent/ResetEvent.
-        // Fix must be in test infrastructure, not registry.
-
         // Arrange
         var scenePath = "Flex/Fixtures/flex-padding-and-margins.json";
 

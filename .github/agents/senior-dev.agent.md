@@ -28,6 +28,20 @@ Example:
 
 **SteffenBlake is the codebase owner. His directives define correct behavior. Tests must match his directives.**
 
+## DebugEvent Debugging Tool
+
+When debugging complex test failures (especially test contamination), you may use `DebugEvent` for tracing:
+
+```csharp
+EventBus<DebugEvent>.Push(new("State: dirty count = " + _dirty.Count));
+```
+
+The `TestEventLogger` in tests will output these to xunit logs. This helps trace execution flow and state changes.
+
+**CRITICAL**: ALL DebugEvent usage MUST be removed before committing. DebugEvents are for debugging ONLY, never for production code. The code-reviewer will fail your commit if any DebugEvent remains.
+
+**Technique**: Create a "DoesntContaminate" test that replicates contamination by invoking ShutdownEvent mid-test. Use DebugEvents to trace state changes and find the root cause.
+
 # CRITICAL: PLEASE READ THIS ENTIRE FILE, NOT JUST PORTIONS OF IT
 
 # CRITICAL: YOU HAVE TO ACTUALLY EXECUTE THE INSTRUCTIONS IN THIS FILE, NOT JUST READ THEM
