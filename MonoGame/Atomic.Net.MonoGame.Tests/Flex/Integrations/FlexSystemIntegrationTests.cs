@@ -1059,7 +1059,7 @@ public sealed class FlexSystemIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void FlexNestedWithTransform_CalculatesWorldPositionsCorrectly()
+    public void FlexNestedWithTransform_FlexOverridesTransformInNestedHierarchy()
     {
         // Arrange
         var scenePath = "Flex/Fixtures/flex-nested-with-transform.json";
