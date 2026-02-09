@@ -1,7 +1,6 @@
 using Xunit;
 using Xunit.Abstractions;
 using System.Drawing;
-using Microsoft.Xna.Framework;
 using Atomic.Net.MonoGame.Core;
 using Atomic.Net.MonoGame.BED;
 using Atomic.Net.MonoGame.Flex;
