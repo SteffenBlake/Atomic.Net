@@ -29,9 +29,7 @@
       "flexHeight": {
         "value": 100
       },
-      "flexZOverride": {
-        "zIndex": 10
-      }
+      "flexZOverride": 10
     },
     {
       "id": "child3",
@@ -42,9 +40,7 @@
       "flexHeight": {
         "value": 100
       },
-      "flexZOverride": {
-        "zIndex": 5
-      }
+      "flexZOverride": 5
     }
   ]
 }

@@ -59,40 +59,7 @@ public partial class FlexRegistry :
 
     // Reverse lookup: Node -> Entity Index
     // Enables O(1) parent entity lookup when removing child from flex tree
-    private readonly Dictionary<Node, PartitionIndex> _nodeToEntity = [];
-
-    /// <summary>
-    /// Ensures a flex node exists for the entity and marks it dirty.
-    /// Returns the node for further configuration.
-    /// </summary>
-    protected Node EnsureDirtyNode(PartitionIndex index)
-    {
-        _dirty.Set(index, true);
-
-        // If this entity has a flex parent, mark the parent dirty too
-        // This ensures that when child properties change, the parent's layout is recalculated
-        var entity = EntityRegistry.Instance[index];
-        if (entity.TryGetParent(out var parent))
-        {
-            if (parent.Value.Active && parent.Value.HasBehavior<FlexBehavior>())
-            {
-                _dirty.Set(parent.Value.Index, true);
-            }
-        }
-
-        if (!_nodes.TryGetValue(index, out var node))
-        {
-            node = FlexLayoutSharp.Flex.CreateDefaultNode();
-            _nodes[index] = node;
-            _nodeToEntity[node] = index;
-        }
-        return node;
-    }
-
-    public void Recalculate()
-    {
-        // First, update flex tree for any entities that had parent changes
-        foreach (var (index, _) in _flexTreeDirty.Global)
+    private readonly PartitionedSparseArray<bool> _flexTreeDirty = new(
         {
             UpdateFlexTreeForEntity((ushort)index);
         }

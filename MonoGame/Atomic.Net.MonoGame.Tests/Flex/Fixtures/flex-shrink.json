@@ -19,9 +19,7 @@
       "flexHeight": {
         "value": 100
       },
-      "flexShrink": {
-        "value": 1
-      }
+      "flexShrink": 1
     },
     {
       "id": "child2",
@@ -32,9 +30,7 @@
       "flexHeight": {
         "value": 100
       },
-      "flexShrink": {
-        "value": 2
-      }
+      "flexShrink": 2
     }
   ]
 }
