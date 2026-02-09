@@ -29,7 +29,7 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
     public static TagRegistry Instance { get; private set; } = null!;
 
     // Tag name → entities with that tag (one-to-many)
-    private readonly Dictionary<string, PartitionedSparseArray<bool>> _tagToEntities = new();
+    private readonly Dictionary<string, PartitionedSparseArray<bool>> _tagToEntities = [];
 
     /// <summary>
     /// Attempts to resolve all entities with the given tag.
@@ -130,6 +130,12 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
             if (_tagToEntities.TryGetValue(tag, out var entitySet))
             {
                 entitySet.Remove(entity.Index);
+
+                // Clean up empty tag sets to prevent dictionary bloat
+                if (entitySet.Global.Count == 0 && entitySet.Scene.Count == 0)
+                {
+                    _tagToEntities.Remove(tag);
+                }
             }
         }
     }
