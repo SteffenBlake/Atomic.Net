@@ -45,12 +45,6 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPositionTypeBehavior> e)
     {
-        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
-        if (!e.Entity.HasBehavior<FlexBehavior>())
-        {
-            return;
-        }
-
         SetDirtyNode(e.Entity.Index);
     }
     public void OnEvent(BehaviorAddedEvent<FlexPositionLeftBehavior> e)
@@ -87,12 +81,6 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPositionLeftBehavior> e)
     {
-        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
-        if (!e.Entity.HasBehavior<FlexBehavior>())
-        {
-            return;
-        }
-
         SetDirtyNode(e.Entity.Index);
     }
 
@@ -130,12 +118,6 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPositionRightBehavior> e)
     {
-        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
-        if (!e.Entity.HasBehavior<FlexBehavior>())
-        {
-            return;
-        }
-
         SetDirtyNode(e.Entity.Index);
     }
 
@@ -173,12 +155,6 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPositionTopBehavior> e)
     {
-        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
-        if (!e.Entity.HasBehavior<FlexBehavior>())
-        {
-            return;
-        }
-
         SetDirtyNode(e.Entity.Index);
     }
 
@@ -216,12 +192,6 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPositionBottomBehavior> e)
     {
-        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
-        if (!e.Entity.HasBehavior<FlexBehavior>())
-        {
-            return;
-        }
-
         SetDirtyNode(e.Entity.Index);
     }
 }

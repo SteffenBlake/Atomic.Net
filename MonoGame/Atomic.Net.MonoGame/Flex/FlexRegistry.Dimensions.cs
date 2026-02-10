@@ -48,12 +48,6 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexWidthBehavior> e)
     {
-        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
-        if (!e.Entity.HasBehavior<FlexBehavior>())
-        {
-            return;
-        }
-
         SetDirtyNode(e.Entity.Index);
     }
 
@@ -92,12 +86,6 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexHeightBehavior> e)
     {
-        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
-        if (!e.Entity.HasBehavior<FlexBehavior>())
-        {
-            return;
-        }
-
         SetDirtyNode(e.Entity.Index);
     }
 }
