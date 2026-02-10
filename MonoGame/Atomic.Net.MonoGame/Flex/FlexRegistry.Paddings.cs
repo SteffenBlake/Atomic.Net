@@ -43,9 +43,13 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPaddingLeftBehavior> e)
     {
-        // Step 1: No guard clause - handler must run
-        // Step 6: Pass isRemoval=true to prevent node creation
-        EnsureDirtyNode(e.Entity.Index, isRemoval: true);
+        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
+        if (!e.Entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
+        SetDirtyNode(e.Entity.Index);
     }
 
     // PaddingRight
@@ -69,9 +73,13 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPaddingRightBehavior> e)
     {
-        // Step 1: No guard clause - handler must run
-        // Step 6: Pass isRemoval=true to prevent node creation
-        EnsureDirtyNode(e.Entity.Index, isRemoval: true);
+        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
+        if (!e.Entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
+        SetDirtyNode(e.Entity.Index);
     }
 
     // PaddingTop
@@ -95,9 +103,13 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPaddingTopBehavior> e)
     {
-        // Step 1: No guard clause - handler must run
-        // Step 6: Pass isRemoval=true to prevent node creation
-        EnsureDirtyNode(e.Entity.Index, isRemoval: true);
+        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
+        if (!e.Entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
+        SetDirtyNode(e.Entity.Index);
     }
 
     // PaddingBottom
@@ -121,8 +133,12 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPaddingBottomBehavior> e)
     {
-        // Step 1: No guard clause - handler must run
-        // Step 6: Pass isRemoval=true to prevent node creation
-        EnsureDirtyNode(e.Entity.Index, isRemoval: true);
+        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
+        if (!e.Entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
+        SetDirtyNode(e.Entity.Index);
     }
 }

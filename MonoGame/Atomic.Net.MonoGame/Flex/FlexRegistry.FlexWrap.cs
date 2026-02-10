@@ -28,8 +28,12 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexWrapBehavior> e)
     {
-        // Step 1: No guard clause - handler must run
-        // Step 6: Pass isRemoval=true to prevent node creation
-        EnsureDirtyNode(e.Entity.Index, isRemoval: true);
+        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
+        if (!e.Entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
+        SetDirtyNode(e.Entity.Index);
     }
 }

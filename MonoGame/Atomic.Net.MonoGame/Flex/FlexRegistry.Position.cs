@@ -45,9 +45,13 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPositionTypeBehavior> e)
     {
-        // Step 1: No guard clause - handler must run
-        // Step 6: Pass isRemoval=true to prevent node creation
-        EnsureDirtyNode(e.Entity.Index, isRemoval: true);
+        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
+        if (!e.Entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
+        SetDirtyNode(e.Entity.Index);
     }
     public void OnEvent(BehaviorAddedEvent<FlexPositionLeftBehavior> e)
     {
@@ -83,9 +87,13 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPositionLeftBehavior> e)
     {
-        // Step 1: No guard clause - handler must run
-        // Step 6: Pass isRemoval=true to prevent node creation
-        EnsureDirtyNode(e.Entity.Index, isRemoval: true);
+        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
+        if (!e.Entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
+        SetDirtyNode(e.Entity.Index);
     }
 
     public void OnEvent(BehaviorAddedEvent<FlexPositionRightBehavior> e)
@@ -122,9 +130,13 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPositionRightBehavior> e)
     {
-        // Step 1: No guard clause - handler must run
-        // Step 6: Pass isRemoval=true to prevent node creation
-        EnsureDirtyNode(e.Entity.Index, isRemoval: true);
+        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
+        if (!e.Entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
+        SetDirtyNode(e.Entity.Index);
     }
 
     public void OnEvent(BehaviorAddedEvent<FlexPositionTopBehavior> e)
@@ -161,9 +173,13 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPositionTopBehavior> e)
     {
-        // Step 1: No guard clause - handler must run
-        // Step 6: Pass isRemoval=true to prevent node creation
-        EnsureDirtyNode(e.Entity.Index, isRemoval: true);
+        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
+        if (!e.Entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
+        SetDirtyNode(e.Entity.Index);
     }
 
     public void OnEvent(BehaviorAddedEvent<FlexPositionBottomBehavior> e)
@@ -200,8 +216,12 @@ public partial class FlexRegistry :
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexPositionBottomBehavior> e)
     {
-        // Step 1: No guard clause - handler must run
-        // Step 6: Pass isRemoval=true to prevent node creation
-        EnsureDirtyNode(e.Entity.Index, isRemoval: true);
+        // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
+        if (!e.Entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
+        SetDirtyNode(e.Entity.Index);
     }
 }

@@ -50,20 +50,14 @@ public partial class FlexRegistry :
     );
 
     /// <summary>
-    /// Ensures a flex node exists for the entity and marks it dirty.
-    /// Returns the node for further configuration.
+    /// Marks an existing flex node dirty without creating it.
+    /// Also marks parent dirty if parent has FlexBehavior.
+    /// Used by property removal handlers.
     /// </summary>
-    protected Node EnsureDirtyNode(PartitionIndex index, bool isRemoval = false)
+    protected void SetDirtyNode(PartitionIndex index)
     {
-        // Step 4: Don't create nodes on removal
-        if (isRemoval)
-        {
-            return null!;
-        }
-
         _dirty.Set(index, true);
 
-        // Step 5: Only dirty parent if has FlexBehavior
         // If this entity has a flex parent, mark the parent dirty too
         // This ensures that when child properties change, the parent's layout is recalculated
         var entity = EntityRegistry.Instance[index];
@@ -74,6 +68,16 @@ public partial class FlexRegistry :
                 _dirty.Set(parent.Value.Index, true);
             }
         }
+    }
+
+    /// <summary>
+    /// Ensures a flex node exists for the entity and marks it dirty.
+    /// Returns the node for further configuration.
+    /// Used by property mutation handlers.
+    /// </summary>
+    protected Node EnsureDirtyNode(PartitionIndex index)
+    {
+        SetDirtyNode(index);
 
         if (!_nodes.TryGetValue(index, out var node))
         {
@@ -430,11 +434,10 @@ public partial class FlexRegistry :
             return;
         }
 
-        // Step 7: Mark parent dirty when child's FlexBehavior is removed so layout recalculates
-        // Use isRemoval=false because we want to dirty the parent for recalculation
+        // Mark parent dirty when child's FlexBehavior is removed so layout recalculates
         if (e.Entity.TryGetParent(out var parent) && parent.Value.HasBehavior<FlexBehavior>())
         {
-            EnsureDirtyNode(parent.Value.Index, isRemoval: false);
+            SetDirtyNode(parent.Value.Index);
         }
 
         // Remove from parent's flex tree, then remove the node itself
