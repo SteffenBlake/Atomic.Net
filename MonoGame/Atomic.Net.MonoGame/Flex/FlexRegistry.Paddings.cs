@@ -8,19 +8,19 @@ public partial class FlexRegistry :
     // Padding
     IEventHandler<BehaviorAddedEvent<FlexPaddingLeftBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexPaddingLeftBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexPaddingLeftBehavior>>,
+    IEventHandler<PostBehaviorRemovedEvent<FlexPaddingLeftBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<FlexPaddingRightBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexPaddingRightBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexPaddingRightBehavior>>,
+    IEventHandler<PostBehaviorRemovedEvent<FlexPaddingRightBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<FlexPaddingTopBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexPaddingTopBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexPaddingTopBehavior>>,
+    IEventHandler<PostBehaviorRemovedEvent<FlexPaddingTopBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<FlexPaddingBottomBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexPaddingBottomBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexPaddingBottomBehavior>>
+    IEventHandler<PostBehaviorRemovedEvent<FlexPaddingBottomBehavior>>
 {
     // PaddingLeft
     public void OnEvent(BehaviorAddedEvent<FlexPaddingLeftBehavior> e)
@@ -41,10 +41,9 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexPaddingLeftBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexPaddingLeftBehavior> e)
     {
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetPadding(Edge.Left, float.NaN);
+        SetDirtyNode(e.Entity.Index);
     }
 
     // PaddingRight
@@ -66,10 +65,9 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexPaddingRightBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexPaddingRightBehavior> e)
     {
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetPadding(Edge.Right, float.NaN);
+        SetDirtyNode(e.Entity.Index);
     }
 
     // PaddingTop
@@ -91,10 +89,9 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexPaddingTopBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexPaddingTopBehavior> e)
     {
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetPadding(Edge.Top, float.NaN);
+        SetDirtyNode(e.Entity.Index);
     }
 
     // PaddingBottom
@@ -116,9 +113,8 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexPaddingBottomBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexPaddingBottomBehavior> e)
     {
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetPadding(Edge.Bottom, float.NaN);
+        SetDirtyNode(e.Entity.Index);
     }
 }

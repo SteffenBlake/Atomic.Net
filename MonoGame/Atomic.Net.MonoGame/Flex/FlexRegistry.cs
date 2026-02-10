@@ -1,6 +1,6 @@
 using Atomic.Net.MonoGame.BED;
-using Atomic.Net.MonoGame.Hierarchy;
 using Atomic.Net.MonoGame.Core;
+using Atomic.Net.MonoGame.Hierarchy;
 using Atomic.Net.MonoGame.Transform;
 using FlexLayoutSharp;
 using Microsoft.Xna.Framework;
@@ -15,6 +15,7 @@ public partial class FlexRegistry :
     IEventHandler<PreBehaviorRemovedEvent<FlexBehavior>>,
     // Parent hierarchy for flex tree management
     IEventHandler<BehaviorAddedEvent<ParentBehavior>>,
+    IEventHandler<PreBehaviorUpdatedEvent<ParentBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<ParentBehavior>>,
     IEventHandler<PreBehaviorRemovedEvent<ParentBehavior>>,
     // Enable/Disable
@@ -49,12 +50,48 @@ public partial class FlexRegistry :
     );
 
     /// <summary>
+    /// Marks an existing flex node dirty without creating it.
+    /// Also marks parent dirty if parent has FlexBehavior.
+    /// Used by property removal handlers.
+    /// </summary>
+    protected void SetDirtyNode(PartitionIndex index)
+    {
+        var entity = EntityRegistry.Instance[index];
+
+        // Skip if entity is inactive (being deactivated)
+        if (!entity.Active)
+        {
+            return;
+        }
+
+        // Skip if no flex node exists (FlexBehavior was already removed)
+        if (!_nodes.HasValue(index))
+        {
+            return;
+        }
+
+        _dirty.Set(index, true);
+
+        // If this entity has a flex parent, mark the parent dirty too
+        // This ensures that when child properties change, the parent's layout is recalculated
+        if (entity.TryGetParent(out var parent))
+        {
+            if (parent.Value.Active && parent.Value.HasBehavior<FlexBehavior>())
+            {
+                _dirty.Set(parent.Value.Index, true);
+            }
+        }
+    }
+
+    /// <summary>
     /// Ensures a flex node exists for the entity and marks it dirty.
     /// Returns the node for further configuration.
+    /// Used by property mutation handlers.
     /// </summary>
     protected Node EnsureDirtyNode(PartitionIndex index)
     {
-        _dirty.Set(index, true);
+        SetDirtyNode(index);
+
         if (!_nodes.TryGetValue(index, out var node))
         {
             node = FlexLayoutSharp.Flex.CreateDefaultNode();
@@ -88,16 +125,29 @@ public partial class FlexRegistry :
         }
     }
 
+    /// <summary>
+    /// Updates the flex tree structure for an entity by removing it from its old parent
+    /// and adding it to its new parent if both the entity and parent have FlexBehavior.
+    /// Called during Recalc() when parent relationships change.
+    /// </summary>
+    /// <remarks>
+    /// This method handles complex state management:
+    /// - Removes entity from old parent node (if exists) using Node.GetParent()
+    /// - Adds entity to new parent node only if parent has FlexBehavior
+    /// - Prevents duplicate children by checking IndexOfChild before AddChild
+    /// - Marks parent entities dirty via PreBehaviorUpdatedEvent handler (not here)
+    /// </remarks>
     private void UpdateFlexTreeForEntity(PartitionIndex entityIndex)
     {
         var entity = EntityRegistry.Instance[entityIndex];
-        
+
         if (!entity.Active || !entity.HasBehavior<FlexBehavior>())
         {
             return;
         }
 
-        if (!_nodes.TryGetValue(entityIndex, out var myNode) || myNode is null)
+        // TryGetValue on SparseReferenceArray guarantees non-null on success for reference types
+        if (!_nodes.TryGetValue(entityIndex, out var myNode))
         {
             return;
         }
@@ -106,21 +156,26 @@ public partial class FlexRegistry :
         RemoveFromParentFlexTree(entity);
 
         // Then add to new parent if it has FlexBehavior
-        if (entity.TryGetParent(out var parent) && parent.Value.HasBehavior<FlexBehavior>())
+        if (!entity.TryGetParent(out var parent) || !parent.Value.HasBehavior<FlexBehavior>())
         {
-            if (_nodes.TryGetValue(parent.Value.Index, out var parentNode) && parentNode is not null)
-            {
-                try
-                {
-                    parentNode.AddChild(myNode);
-                    _dirty.Set(parent.Value.Index, true);
-                }
-                catch
-                {
-                    // Already added or other issue - that's fine
-                }
-            }
+            return;
         }
+
+        if (!_nodes.TryGetValue(parent.Value.Index, out var parentNode))
+        {
+            return;
+        }
+
+        // Defensive check: IndexOfChild ensures we don't add duplicate children
+        // This can occur during Recalc when multiple parent change events fire
+        // for the same entity within a single frame
+        if (parentNode.IndexOfChild(myNode) != -1)
+        {
+            return;
+        }
+
+        parentNode.AddChild(myNode);
+        _dirty.Set(parent.Value.Index, true);
     }
 
     private void RecalculateNode(PartitionIndex index)
@@ -131,44 +186,52 @@ public partial class FlexRegistry :
         }
         _dirty.Remove(index);
 
+        var entity = EntityRegistry.Instance[index];
 
-        // Check if we have a flex parent, if so run on that instead
-        if (BehaviorRegistry<ParentBehavior>.Instance.TryGetBehavior(index, out var parentBehavior))
-        {
-            var entity = EntityRegistry.Instance[index];
-            if (parentBehavior.Value.TryFindParent(entity.IsGlobal(), out var parent))
-            {
-                if (parent.Value.HasBehavior<FlexBehavior>())
-                {
-                    RecalculateNode(parent.Value.Index);
-                    return;
-                }
-            }
-        }
-        var root = EntityRegistry.Instance[index];
-
-        // Otherwise we are a root node, so confirm we are a flex node
-        if (!root.HasBehavior<FlexBehavior>())
+        // Skip inactive entities (dirty flags persist across scene resets)
+        if (!entity.Active)
         {
             return;
         }
 
-        if (_nodes.TryGetValue(index, out var node) && node is not null)
+        // Check if we have a flex parent, if so run on that instead
+        if (entity.TryGetParent(out var parent))
+        {
+            if (parent.Value.Active && parent.Value.HasBehavior<FlexBehavior>())
+            {
+                RecalculateNode(parent.Value.Index);
+                return;
+            }
+        }
+
+        // Otherwise we are a root node, so confirm we are a flex node
+        if (!entity.HasBehavior<FlexBehavior>())
+        {
+            return;
+        }
+
+        if (_nodes.TryGetValue(index, out var node))
         {
             node.CalculateLayout(float.NaN, float.NaN, Direction.Inherit);
         }
 
-        UpdateFlexBehavior(root);
+        UpdateFlexBehavior(entity);
     }
 
     private void UpdateFlexBehavior(Entity e, int zIndex = 0)
     {
+        // Skip inactive entities
+        if (!e.Active)
+        {
+            return;
+        }
+
         if (!e.HasBehavior<FlexBehavior>())
         {
             return;
         }
 
-        if (!_nodes.TryGetValue(e.Index, out var node) || node is null)
+        if (!_nodes.TryGetValue(e.Index, out var node))
         {
             return;
         }
@@ -177,27 +240,65 @@ public partial class FlexRegistry :
         var localX = node.LayoutGetLeft();
         var localY = node.LayoutGetTop();
 
-        // Dimensions
-        var paddingWidth = node.LayoutGetWidth();
-        var paddingHeight = node.LayoutGetHeight();
+        // senior-dev: FINDING: Yoga's LayoutGetLeft/Top returns position relative to parent's 
+        // PADDING BOX (after border, but including padding area), NOT relative to parent's 
+        // origin (border box edge). Our Transform system expects positions relative to parent's
+        // origin, so we must add the parent's border offset when setting child positions.
+        // This was discovered via failing tests FlexPaddingAndMargins_CombinesCorrectly and
+        // FlexWrap_WrapsChildrenToNextLine.
 
-        // Margins/paddings relative to local coordinate space (starting at 0,0)
-        var marginLeft = -node.LayoutGetMargin(Edge.Left);
-        var contentLeft = node.LayoutGetPadding(Edge.Left);
+        // senior-dev: FINDING: Yoga's LayoutGetWidth/Height returns BORDER BOX dimensions
+        // (content + padding + border), NOT padding box or content box. This was causing
+        // incorrect calculation of PaddingRect and ContentRect. The correct calculation is:
+        // - borderWidth/Height = LayoutGetWidth/Height() (from Yoga)
+        // - paddingWidth/Height = borderWidth/Height - borderLeft - borderRight/Top/Bottom
+        // - contentWidth/Height = paddingWidth/Height - paddingLeft/Right/Top/Bottom
+        // This matches CSS box-sizing: border-box behavior.
 
-        var marginWidth = paddingWidth + node.LayoutGetMargin(Edge.Left) + node.LayoutGetMargin(Edge.Right);
-        var contentWidth = paddingWidth - node.LayoutGetPadding(Edge.Left) - node.LayoutGetPadding(Edge.Right);
+        // Dimensions from Yoga (content + padding + border, NOT including margin)
+        var borderWidth = node.LayoutGetWidth();
+        var borderHeight = node.LayoutGetHeight();
 
-        var marginTop = -node.LayoutGetMargin(Edge.Top);
-        var contentTop = node.LayoutGetPadding(Edge.Top);
-
-        var marginHeight = paddingHeight + node.LayoutGetMargin(Edge.Top) + node.LayoutGetMargin(Edge.Bottom);
-        var contentHeight = paddingHeight - node.LayoutGetPadding(Edge.Top) - node.LayoutGetPadding(Edge.Bottom);
-
+        // Get border values
         var borderTop = node.LayoutGetBorder(Edge.Top);
         var borderRight = node.LayoutGetBorder(Edge.Right);
         var borderBottom = node.LayoutGetBorder(Edge.Bottom);
         var borderLeft = node.LayoutGetBorder(Edge.Left);
+
+        // Get padding values
+        var paddingTop = node.LayoutGetPadding(Edge.Top);
+        var paddingRight = node.LayoutGetPadding(Edge.Right);
+        var paddingBottom = node.LayoutGetPadding(Edge.Bottom);
+        var paddingLeft = node.LayoutGetPadding(Edge.Left);
+
+        // Get margin values
+        var marginTop = node.LayoutGetMargin(Edge.Top);
+        var marginRight = node.LayoutGetMargin(Edge.Right);
+        var marginBottom = node.LayoutGetMargin(Edge.Bottom);
+        var marginLeft = node.LayoutGetMargin(Edge.Left);
+
+        // Calculate padding box dimensions (border box - borders)
+        var paddingWidth = borderWidth - borderLeft - borderRight;
+        var paddingHeight = borderHeight - borderTop - borderBottom;
+
+        // Calculate content box dimensions (padding box - padding)
+        var contentWidth = paddingWidth - paddingLeft - paddingRight;
+        var contentHeight = paddingHeight - paddingTop - paddingBottom;
+
+        // Calculate rectangle positions and dimensions in local coordinates
+        // MarginRect starts at negative margin offset and includes everything
+        var marginRectX = -marginLeft;
+        var marginRectY = -marginTop;
+        var marginRectWidth = borderWidth + marginLeft + marginRight;
+        var marginRectHeight = borderHeight + marginTop + marginBottom;
+
+        // PaddingRect starts at border offset (inside the border)
+        var paddingRectX = borderLeft;
+        var paddingRectY = borderTop;
+
+        // ContentRect starts at border + padding offset
+        var contentRectX = borderLeft + paddingLeft;
+        var contentRectY = borderTop + paddingTop;
 
         var truezIndex = zIndex;
         if (e.TryGetBehavior<FlexZOverride>(out var zOverride))
@@ -207,9 +308,9 @@ public partial class FlexRegistry :
 
         // Store LOCAL flex rectangles (relative to entity's own position)
         var helper = new FlexBehavior(
-            MarginRect: new(marginLeft, marginTop, marginWidth, marginHeight),
-            PaddingRect: new(0, 0, paddingWidth, paddingHeight), // Padding rect starts at 0,0
-            ContentRect: new(contentLeft, contentTop, contentWidth, contentHeight),
+            MarginRect: new(marginRectX, marginRectY, marginRectWidth, marginRectHeight),
+            PaddingRect: new(paddingRectX, paddingRectY, paddingWidth, paddingHeight),
+            ContentRect: new(contentRectX, contentRectY, contentWidth, contentHeight),
             BorderLeft: borderLeft,
             BorderTop: borderTop,
             BorderRight: borderRight,
@@ -222,8 +323,29 @@ public partial class FlexRegistry :
             static (ref readonly h, ref v) => v = h
         );
 
-        // Set TransformBehavior based on flex layout (local position relative to parent)
-        var localPosition = new Vector3(localX, localY, 0);
+        // Set TransformBehavior based on flex layout
+        // Calculate the position from Yoga
+        var adjustedX = localX;
+        var adjustedY = localY;
+
+        // If this entity has a flex parent, adjust coordinates
+        // Yoga returns position relative to parent's padding box (after border, includes padding area)
+        // Transform.Position needs to be relative to parent's origin (border box edge)
+        // So we add parent's border to convert coordinate systems
+        var hasFlexParent = e.TryGetParent(out var parent) && parent.Value.Active && parent.Value.HasBehavior<FlexBehavior>();
+        if (hasFlexParent)
+        {
+            if (_nodes.TryGetValue(parent!.Value.Index, out var parentNode))
+            {
+                adjustedX += parentNode.LayoutGetBorder(Edge.Left);
+                adjustedY += parentNode.LayoutGetBorder(Edge.Top);
+            }
+        }
+
+        // FlexBehavior ALWAYS overrides Transform.Position for ALL entities with FlexBehavior
+        // This is true for root nodes, child nodes, and nodes with explicit FlexPosition behaviors
+        // SteffenBlake's directive: "YES even 'root' nodes with FlexBehavior have to overwrite their transform"
+        var localPosition = new Vector3(adjustedX, adjustedY, 0);
         e.SetBehavior<TransformBehavior, Vector3>(
             in localPosition,
             static (ref readonly pos, ref transform) => transform = transform with { Position = pos }
@@ -237,11 +359,7 @@ public partial class FlexRegistry :
 
     public void OnEvent(BehaviorAddedEvent<FlexBehavior> e)
     {
-        if (!_nodes.TryGetValue(e.Entity.Index, out var existingNode) || existingNode is null)
-        {
-            _nodes[e.Entity.Index] = FlexLayoutSharp.Flex.CreateDefaultNode();
-        }
-        _dirty.Set(e.Entity.Index, true);
+        EnsureDirtyNode(e.Entity.Index);
         _flexTreeDirty.Set(e.Entity.Index, true); // Mark for flex tree update
 
         // Ensure TransformBehavior exists for flex entities
@@ -257,6 +375,18 @@ public partial class FlexRegistry :
         if (e.Entity.HasBehavior<FlexBehavior>())
         {
             _flexTreeDirty.Set(e.Entity.Index, true);
+        }
+    }
+
+    public void OnEvent(PreBehaviorUpdatedEvent<ParentBehavior> e)
+    {
+        // Mark old parent dirty before parent changes
+        if (e.Entity.HasBehavior<FlexBehavior>())
+        {
+            if (e.Entity.TryGetParent(out var oldParent) && oldParent.Value.HasBehavior<FlexBehavior>())
+            {
+                _dirty.Set(oldParent.Value.Index, true);
+            }
         }
     }
 
@@ -278,44 +408,63 @@ public partial class FlexRegistry :
         }
     }
 
+    /// <summary>
+    /// Removes an entity's flex node from its parent node in the flex tree.
+    /// </summary>
+    /// <remarks>
+    /// Performance characteristics:
+    /// - Node parent lookup: O(1) via Node.GetParent()
+    /// - Child removal: O(n) where n = number of children in parent (FlexLayoutSharp limitation)
+    /// 
+    /// Called when:
+    /// - Entity parent changes (need to remove from old parent before adding to new)
+    /// - FlexBehavior is removed from entity
+    /// 
+    /// Note: Parent entity is marked dirty in PreBehaviorUpdatedEvent handler, not here.
+    /// </remarks>
     private void RemoveFromParentFlexTree(Entity entity)
     {
-        if (!_nodes.TryGetValue(entity.Index, out var myNode) || myNode is null)
+        if (!_nodes.TryGetValue(entity.Index, out var myNode))
         {
             return;
         }
 
-        if (entity.TryGetParent(out var parent))
+        // Use Node.GetParent() to get the node's current parent in the flex tree
+        // (entity's parent might have already changed, but node's parent hasn't)
+        var parentNode = myNode.GetParent();
+        if (parentNode is null || parentNode.IndexOfChild(myNode) == -1)
         {
-            if (_nodes.TryGetValue(parent.Value.Index, out var parentNode) && parentNode is not null)
-            {
-                // Try to remove - will fail silently if not in parent
-                try
-                {
-                    parentNode.RemoveChild(myNode);
-                    _dirty.Set(parent.Value.Index, true);
-                }
-                catch
-                {
-                    // Not in parent - that's fine
-                }
-            }
+            return;
         }
+
+        parentNode.RemoveChild(myNode);
     }
 
     public void OnEvent(PreBehaviorRemovedEvent<FlexBehavior> e)
     {
-        _nodes.Remove(e.Entity.Index);
-        // Special case, because this node isnt even a flex anymore
-        if (e.Entity.TryGetParent(out var parent))
+        if (!_nodes.TryGetValue(e.Entity.Index, out var myNode))
         {
-            _dirty.Set(parent.Value.Index, true);
+            return;
         }
+
+        // Mark parent dirty when child's FlexBehavior is removed so layout recalculates
+        if (e.Entity.TryGetParent(out var parent) && parent.Value.HasBehavior<FlexBehavior>())
+        {
+            SetDirtyNode(parent.Value.Index);
+        }
+
+        // Remove from parent's flex tree, then remove the node itself
+        RemoveFromParentFlexTree(e.Entity);
+        _nodes.Remove(e.Entity.Index);
+
+        // Clear dirty flags to prevent contamination across scenes
+        _dirty.Remove(e.Entity.Index);
+        _flexTreeDirty.Remove(e.Entity.Index);
     }
 
     public void OnEvent(EntityEnabledEvent e)
     {
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node) || node == null)
+        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
         {
             return;
         }
@@ -326,7 +475,7 @@ public partial class FlexRegistry :
 
     public void OnEvent(EntityDisabledEvent e)
     {
-        if (!_nodes.TryGetValue(e.Entity.Index, out var node) || node == null)
+        if (!_nodes.TryGetValue(e.Entity.Index, out var node))
         {
             return;
         }
@@ -335,131 +484,138 @@ public partial class FlexRegistry :
         node.StyleSetDisplay(Display.None);
     }
 
+
+
     public void OnEvent(InitializeEvent _)
     {
+        // Property behavior removal handlers use POST events to prevent contamination
+        // FlexBehavior removal handler uses PRE event and executes first, clearing dirty flags
+        // Then property POST handlers execute, checking if parent still has FlexBehavior
+
         EventBus<BehaviorAddedEvent<FlexBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexBehavior>>.Register(this);
+        EventBus<PreBehaviorRemovedEvent<FlexBehavior>>.Register(this); // PRE for FlexBehavior
 
         EventBus<BehaviorAddedEvent<FlexZOverride>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexZOverride>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexZOverride>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexZOverride>>.Register(this);
 
         // Flex layout properties
         EventBus<BehaviorAddedEvent<FlexDirectionBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexDirectionBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexDirectionBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexDirectionBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexWrapBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexWrapBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexWrapBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexWrapBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexJustifyContentBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexJustifyContentBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexJustifyContentBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexJustifyContentBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexAlignItemsBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexAlignItemsBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexAlignItemsBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexAlignItemsBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<AlignContentBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<AlignContentBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<AlignContentBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<AlignContentBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexAlignSelfBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexAlignSelfBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexAlignSelfBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexAlignSelfBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexGrowBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexGrowBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexGrowBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexGrowBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexShrinkBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexShrinkBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexShrinkBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexShrinkBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexPositionTypeBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexPositionTypeBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPositionTypeBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexPositionTypeBehavior>>.Register(this);
 
         // Position edges
         EventBus<BehaviorAddedEvent<FlexPositionLeftBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexPositionLeftBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPositionLeftBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexPositionLeftBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexPositionRightBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexPositionRightBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPositionRightBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexPositionRightBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexPositionTopBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexPositionTopBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPositionTopBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexPositionTopBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexPositionBottomBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexPositionBottomBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPositionBottomBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexPositionBottomBehavior>>.Register(this);
 
         // Margins
         EventBus<BehaviorAddedEvent<FlexMarginLeftBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexMarginLeftBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexMarginLeftBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexMarginLeftBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexMarginRightBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexMarginRightBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexMarginRightBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexMarginRightBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexMarginTopBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexMarginTopBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexMarginTopBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexMarginTopBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexMarginBottomBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexMarginBottomBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexMarginBottomBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexMarginBottomBehavior>>.Register(this);
 
         // Padding
         EventBus<BehaviorAddedEvent<FlexPaddingLeftBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexPaddingLeftBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPaddingLeftBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexPaddingLeftBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexPaddingRightBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexPaddingRightBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPaddingRightBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexPaddingRightBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexPaddingTopBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexPaddingTopBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPaddingTopBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexPaddingTopBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexPaddingBottomBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexPaddingBottomBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPaddingBottomBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexPaddingBottomBehavior>>.Register(this);
 
         // Borders
         EventBus<BehaviorAddedEvent<FlexBorderLeftBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexBorderLeftBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexBorderLeftBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexBorderLeftBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexBorderRightBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexBorderRightBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexBorderRightBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexBorderRightBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexBorderTopBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexBorderTopBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexBorderTopBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexBorderTopBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexBorderBottomBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexBorderBottomBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexBorderBottomBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexBorderBottomBehavior>>.Register(this);
 
         // Width / Height
         EventBus<BehaviorAddedEvent<FlexWidthBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexWidthBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexWidthBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexWidthBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexHeightBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexHeightBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexHeightBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexHeightBehavior>>.Register(this);
 
         // Parent hierarchy
         EventBus<BehaviorAddedEvent<ParentBehavior>>.Register(this);
+        EventBus<PreBehaviorUpdatedEvent<ParentBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<ParentBehavior>>.Register(this);
         EventBus<PreBehaviorRemovedEvent<ParentBehavior>>.Register(this);
 

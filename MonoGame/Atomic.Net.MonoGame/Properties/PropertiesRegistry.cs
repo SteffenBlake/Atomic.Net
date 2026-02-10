@@ -13,8 +13,7 @@ public sealed class PropertiesRegistry : ISingleton<PropertiesRegistry>,
     IEventHandler<BehaviorAddedEvent<PropertiesBehavior>>,
     IEventHandler<PreBehaviorUpdatedEvent<PropertiesBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<PropertiesBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<PropertiesBehavior>>,
-    IEventHandler<ShutdownEvent>
+    IEventHandler<PreBehaviorRemovedEvent<PropertiesBehavior>>
 {
     internal static void Initialize()
     {
@@ -147,17 +146,6 @@ public sealed class PropertiesRegistry : ISingleton<PropertiesRegistry>,
         EventBus<PreBehaviorUpdatedEvent<PropertiesBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<PropertiesBehavior>>.Register(this);
         EventBus<PreBehaviorRemovedEvent<PropertiesBehavior>>.Register(this);
-        EventBus<ShutdownEvent>.Register(this);
-    }
-
-    public void OnEvent(ShutdownEvent _)
-    {
-        // senior-dev: Unregister from all events to prevent duplicate registrations
-        EventBus<BehaviorAddedEvent<PropertiesBehavior>>.Unregister(this);
-        EventBus<PreBehaviorUpdatedEvent<PropertiesBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<PropertiesBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<PropertiesBehavior>>.Unregister(this);
-        EventBus<ShutdownEvent>.Unregister(this);
     }
 
     public void OnEvent(BehaviorAddedEvent<PropertiesBehavior> e)

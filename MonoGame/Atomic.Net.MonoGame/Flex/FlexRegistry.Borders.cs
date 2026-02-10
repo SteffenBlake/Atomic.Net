@@ -8,19 +8,19 @@ public partial class FlexRegistry :
     // Borders
     IEventHandler<BehaviorAddedEvent<FlexBorderLeftBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexBorderLeftBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexBorderLeftBehavior>>,
+    IEventHandler<PostBehaviorRemovedEvent<FlexBorderLeftBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<FlexBorderRightBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexBorderRightBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexBorderRightBehavior>>,
+    IEventHandler<PostBehaviorRemovedEvent<FlexBorderRightBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<FlexBorderTopBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexBorderTopBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexBorderTopBehavior>>,
+    IEventHandler<PostBehaviorRemovedEvent<FlexBorderTopBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<FlexBorderBottomBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexBorderBottomBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexBorderBottomBehavior>>
+    IEventHandler<PostBehaviorRemovedEvent<FlexBorderBottomBehavior>>
 {
     // BorderLeft
     public void OnEvent(BehaviorAddedEvent<FlexBorderLeftBehavior> e)
@@ -41,10 +41,9 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexBorderLeftBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexBorderLeftBehavior> e)
     {
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetBorder(Edge.Left, float.NaN);
+        SetDirtyNode(e.Entity.Index);
     }
 
     // BorderRight
@@ -66,10 +65,9 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexBorderRightBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexBorderRightBehavior> e)
     {
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetBorder(Edge.Right, float.NaN);
+        SetDirtyNode(e.Entity.Index);
     }
 
     // BorderTop
@@ -91,10 +89,9 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexBorderTopBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexBorderTopBehavior> e)
     {
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetBorder(Edge.Top, float.NaN);
+        SetDirtyNode(e.Entity.Index);
     }
 
     // BorderBottom
@@ -116,9 +113,8 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexBorderBottomBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexBorderBottomBehavior> e)
     {
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetBorder(Edge.Bottom, float.NaN);
+        SetDirtyNode(e.Entity.Index);
     }
 }

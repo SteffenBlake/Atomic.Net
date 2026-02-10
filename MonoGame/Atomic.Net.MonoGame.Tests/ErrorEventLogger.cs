@@ -1,4 +1,5 @@
 using Atomic.Net.MonoGame.Core;
+using Atomic.Net.MonoGame.BED;
 using Xunit.Abstractions;
 
 namespace Atomic.Net.MonoGame.Tests;
@@ -40,5 +41,37 @@ public sealed class ErrorEventLogger : IEventHandler<ErrorEvent>, IDisposable
     public void Dispose()
     {
         EventBus<ErrorEvent>.Unregister(this);
+    }
+}
+
+/// <summary>
+/// Test event logger that captures and logs both ErrorEvents and DebugEvents during tests.
+/// DebugEvents are for temporary debugging only and MUST be removed before committing.
+/// </summary>
+public sealed class TestEventLogger : IEventHandler<ErrorEvent>, IEventHandler<DebugEvent>, IDisposable
+{
+    private readonly ITestOutputHelper _output;
+
+    public TestEventLogger(ITestOutputHelper output)
+    {
+        _output = output;
+        EventBus<ErrorEvent>.Register(this);
+        EventBus<DebugEvent>.Register(this);
+    }
+
+    public void OnEvent(ErrorEvent e)
+    {
+        _output.WriteLine($"[ERROR] {e.Message}");
+    }
+
+    public void OnEvent(DebugEvent e)
+    {
+        _output.WriteLine($"[DEBUG] {e.Message}");
+    }
+
+    public void Dispose()
+    {
+        EventBus<ErrorEvent>.Unregister(this);
+        EventBus<DebugEvent>.Unregister(this);
     }
 }

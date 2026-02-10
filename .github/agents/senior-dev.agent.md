@@ -4,6 +4,44 @@ description: Implements features by making tests pass, following technical requi
 tools: ['read', 'edit', 'github/list_pull_requests', 'github/pull_request_read', 'cclsp/get_diagnostics', 'cli-mcp-mapper/*', 'sharptools/SharpTool_LoadSolution', 'sharptools/SharpTool_GetMembers', 'sharptools/SharpTool_ViewDefinition', 'sharptools/SharpTool_FindReferences', 'sharptools/SharpTool_RenameSymbol']
 ---
 
+# SUPREME AUTHORITY
+
+**STEFFENBLAKE'S WORD IS ABSOLUTE TRUTH AND OVERRIDES EVERYTHING ELSE ALWAYS.**
+
+If you receive a directive from SteffenBlake that contradicts a test:
+1. The directive is CORRECT
+2. The test is WRONG
+3. You wrote the test, so you fucked it up earlier
+
+When a supreme directive causes a test to fail, you have TWO options:
+1. **DELETE the test** if it's testing incorrect behavior
+2. **RENAME and UPDATE the test** to reflect the new expected behavior
+
+**FORBIDDEN**: Modifying the test so it no longer tests what it's supposed to test
+**FORBIDDEN**: Ignoring the directive because "the test expects something else"
+
+Example:
+- Directive: "FlexBehavior always overrides Transform"
+- Old test: `FlexWithTransformRoot_CombinesFlexAndTransformCorrectly` expects transform + flex
+- WRONG: Modify test to not test combining
+- CORRECT: Rename to `FlexWithTransformRoot_FlexOverwritesTransform`, update asserts to expect override
+
+**SteffenBlake is the codebase owner. His directives define correct behavior. Tests must match his directives.**
+
+## DebugEvent Debugging Tool
+
+When debugging complex test failures (especially test contamination), you may use `DebugEvent` for tracing:
+
+```csharp
+EventBus<DebugEvent>.Push(new("State: dirty count = " + _dirty.Count));
+```
+
+The `TestEventLogger` in tests will output these to xunit logs. This helps trace execution flow and state changes.
+
+**CRITICAL**: ALL DebugEvent usage MUST be removed before committing. DebugEvents are for debugging ONLY, never for production code. The code-reviewer will fail your commit if any DebugEvent remains.
+
+**Technique**: Create a "DoesntContaminate" test that replicates contamination by invoking ShutdownEvent mid-test. Use DebugEvents to trace state changes and find the root cause.
+
 # CRITICAL: PLEASE READ THIS ENTIRE FILE, NOT JUST PORTIONS OF IT
 
 # CRITICAL: YOU HAVE TO ACTUALLY EXECUTE THE INSTRUCTIONS IN THIS FILE, NOT JUST READ THEM
@@ -93,6 +131,18 @@ THIS IS CRITICAL, you MUST do this
 - ❌ Leave `@senior-dev` pings unresolved (always change to `#senior-dev` after responding)
 - ❌ make massive refactor changes that cause breaking changes to already existing systems (without permission)
 - ❌ comment out or in any way "disable" failing tests to "fake" success, THIS IS NOT ACCEPTABLE
+- ❌ **MODIFY JSON SCHEMA WITHOUT APPROVAL** - Do NOT add/remove/change properties in JsonEntity, JsonScene, etc. These are architectural changes requiring tech-lead approval
+
+## CRITICAL: When Tests Fail Due to JSON Data
+**DO NOT change the JSON schema or test fixtures to make tests pass!**
+
+**Correct approach:**
+1. ✅ Fix the BEHAVIOR in the implementation code
+2. ✅ Fix the TEST code if expectations are wrong  
+3. ❌ Do NOT add properties to JsonEntity
+4. ❌ Do NOT modify test fixture JSON files to work around bugs
+
+**Example:** If `{ value: 100, percent: true }` on a root container fails, DON'T change it to explicit pixels. Instead, FIX the flex system to handle percentage dimensions on root containers (treat as explicit when no parent exists).
 
 # CRITICAL: ALWAYS CHECK IF YOU ARE FOLLOWING ESTABLISHED PATTERNS
 
@@ -102,6 +152,38 @@ THIS IS CRITICAL, you MUST do this
 4. Did you write code that couldve been simplified to a Try Result pattern instead?
 
 # WHEN IN DOUBT: go look at other samples in the code base to see how it has been done for, and ask yourself if you are following the same patterns.
+
+## Test Failure Investigation & Documentation
+
+When investigating why a test is failing:
+
+### Document Your Discoveries
+Add comments to the test explaining what you found:
+
+```csharp
+[Fact]
+public void SomeTest_ThatWasFailing()
+{
+    // senior-dev: FINDING: This test was failing because [root cause].
+    // The issue was [specific problem]. Fixed by [solution].
+    
+    // Test code here...
+}
+```
+
+### Clean Up When Fixed
+If you fix the test:
+- DELETE the FINDING comment to reduce clutter
+- Clean up and remove temporary investigation comments
+- Keep code clean and focused on what matters NOW, not historical debugging
+
+### Leave Discovery Comments When Can't Fix
+If you can't fix the test but understand why it fails:
+- Document the root cause in a comment
+- Explain what would be needed to fix it
+- Tag with your role name for traceability
+
+**PURPOSE**: Future agents (including yourself) can learn from past investigations instead of re-discovering the same issues.
 
 ## When Implementation is Complete
 - Verify all tests pass

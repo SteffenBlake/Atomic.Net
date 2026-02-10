@@ -10,11 +10,11 @@ namespace Atomic.Net.MonoGame.Tags;
 /// </summary>
 public sealed class TagRegistry : ISingleton<TagRegistry>,
     IEventHandler<InitializeEvent>,
+    IEventHandler<ShutdownEvent>,
     IEventHandler<BehaviorAddedEvent<TagsBehavior>>,
     IEventHandler<PreBehaviorUpdatedEvent<TagsBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<TagsBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<TagsBehavior>>,
-    IEventHandler<ShutdownEvent>
+    IEventHandler<PreBehaviorRemovedEvent<TagsBehavior>>
 {
     internal static void Initialize()
     {
@@ -30,7 +30,7 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
     public static TagRegistry Instance { get; private set; } = null!;
 
     // Tag name → entities with that tag (one-to-many)
-    private readonly Dictionary<string, PartitionedSparseArray<bool>> _tagToEntities = new();
+    private readonly Dictionary<string, PartitionedSparseArray<bool>> _tagToEntities = [];
 
     /// <summary>
     /// Attempts to resolve all entities with the given tag.
@@ -43,47 +43,21 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
     )
     {
         var normalizedTag = tag.ToLower();
-
-        if (_tagToEntities.TryGetValue(normalizedTag, out entities))
-        {
-            return true;
-        }
-
-        entities = null;
-        return false;
+        return _tagToEntities.TryGetValue(normalizedTag, out entities);
     }
 
     public void OnEvent(InitializeEvent _)
     {
+        EventBus<ShutdownEvent>.Register(this);
         EventBus<BehaviorAddedEvent<TagsBehavior>>.Register(this);
         EventBus<PreBehaviorUpdatedEvent<TagsBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<TagsBehavior>>.Register(this);
         EventBus<PreBehaviorRemovedEvent<TagsBehavior>>.Register(this);
-        EventBus<ShutdownEvent>.Register(this);
     }
 
     public void OnEvent(ShutdownEvent _)
     {
-        // senior-dev: FINDING: Unregistering from PreBehaviorRemovedEvent in ShutdownEvent
-        // creates a potential race condition. EntityRegistry.OnEvent(ShutdownEvent) deactivates 
-        // entities, which should trigger PreBehaviorRemovedEvent for cleanup. However, if we
-        // unregister here before the cascade completes, we miss cleanup events.
-        // 
-        // This bug exists in EntityIdRegistry and PropertiesRegistry too. The initialization 
-        // order in AtomicSystem.Initialize() may affect whether this manifests - EntityRegistry
-        // initializes before TagRegistry, so EntityRegistry.OnEvent(ShutdownEvent) should run
-        // first and trigger the cleanup cascade before we unregister.
-        //
-        // Workaround: Manually clear _tagToEntities until proper fix is implemented.
-        // Proper fix would be: Don't unregister in ShutdownEvent, only in destructor/dispose.
         _tagToEntities.Clear();
-
-        // Unregister from all events to prevent duplicate registrations
-        EventBus<BehaviorAddedEvent<TagsBehavior>>.Unregister(this);
-        EventBus<PreBehaviorUpdatedEvent<TagsBehavior>>.Unregister(this);
-        EventBus<PostBehaviorUpdatedEvent<TagsBehavior>>.Unregister(this);
-        EventBus<PreBehaviorRemovedEvent<TagsBehavior>>.Unregister(this);
-        EventBus<ShutdownEvent>.Unregister(this);
     }
 
     public void OnEvent(BehaviorAddedEvent<TagsBehavior> e)
@@ -152,6 +126,12 @@ public sealed class TagRegistry : ISingleton<TagRegistry>,
             if (_tagToEntities.TryGetValue(tag, out var entitySet))
             {
                 entitySet.Remove(entity.Index);
+
+                // Clean up empty tag sets to prevent dictionary bloat
+                if (entitySet.Global.Count == 0 && entitySet.Scene.Count == 0)
+                {
+                    _tagToEntities.Remove(tag);
+                }
             }
         }
     }

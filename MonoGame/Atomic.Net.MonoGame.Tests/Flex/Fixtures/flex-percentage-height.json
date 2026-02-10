@@ -7,15 +7,15 @@
         "value": 400
       },
       "flexHeight": {
-        "value": 100,
-        "percent": true
+        "value": 400
       }
     },
     {
       "id": "child",
       "parent": "@container",
       "flexWidth": {
-        "value": 400
+        "value": 100,
+        "percent": true
       },
       "flexHeight": {
         "value": 50,

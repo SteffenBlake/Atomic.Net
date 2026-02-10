@@ -291,3 +291,112 @@ You do NOT need to deep clone them to re-parent them however, you just have to r
 parent.Remove("child");
 ```
 this re-enables the ability for you to assign your instance of `child` to a new parent, without having to copy it
+
+---
+
+## FlexRegistry Dirty Flag Contamination Bug - RESOLVED (February 2026)
+
+**Problem:** Dirty flags (_dirty and _flexTreeDirty) persisted across test boundaries, causing false recalculations and test contamination. Tests would fail when run after flex tests but pass when run alone.
+
+**Root Cause (Initial):** When entities were deactivated during ShutdownEvent/ResetEvent, their behaviors were removed via PreBehaviorRemovedEvent<FlexBehavior>. The handler was NOT clearing the dirty flags for those entities. The flags persisted in sparse arrays across test runs.
+
+**Root Cause (Deeper):** The initial fix cleared dirty flags in PreBehaviorRemovedEvent<FlexBehavior>, but other flex property handlers (FlexWidth, FlexHeight, FlexDirection, etc.) were ALSO firing PreBehaviorRemovedEvent handlers that called EnsureDirtyNode() AFTER the FlexBehavior handler had cleaned up. This re-marked entities as dirty even though they were being deactivated.
+
+**Solution:** All PreBehaviorRemovedEvent<T> handlers now check if the entity still has FlexBehavior before calling EnsureDirtyNode():
+```csharp
+public void OnEvent(PreBehaviorRemovedEvent<FlexWidthBehavior> e)
+{
+    // If entity no longer has FlexBehavior, skip - the FlexBehavior removal handler will clean up
+    if (!e.Entity.HasBehavior<FlexBehavior>())
+    {
+        return;
+    }
+    
+    var node = EnsureDirtyNode(e.Entity.Index);
+    node.StyleSetWidth(float.NaN);
+}
+```
+
+**Key Insight:** During entity deactivation, behaviors are removed in an undefined order. When a flex property behavior (like FlexWidth) is removed AFTER FlexBehavior, it should NOT mark the entity dirty because the entity is being torn down. The pattern is:
+1. If entity still has FlexBehavior → mark dirty and update node (property is being removed individually)
+2. If entity doesn't have FlexBehavior → skip (entity is being deactivated, FlexBehavior handler already cleaned everything)
+
+This prevents dirty flag contamination while still allowing individual property removal during gameplay.
+
+**Code Quality Improvements:**
+- Simplified PreBehaviorRemovedEvent<FlexBehavior> from 35 lines to 19 lines
+- Used entity.TryGetParent(out var parent) instead of GetParent()
+- Removed duplicate cleanup logic
+- Inverted if clause for early return pattern
+
+**Tests Fixed:** 440/442 → 442/442 passing (100%)
+
+**Commits:** 
+- `fc954a2` - Initial fix: Clear dirty flags in PreBehaviorRemovedEvent handler
+- `5b3e245` - Complete fix: Prevent dirty flag re-contamination from property handlers
+
+---
+
+## Known Issues: FlexRegistry (February 2026)
+
+### ~~1. FlexAlignItemsFlexEnd Not Working~~ - RESOLVED
+**Test:** FlexAlignItemsFlexEnd_MovesChildrenToEndCrossAxis  
+**Status:** FIXED by contamination bug fix
+
+### ~~2. RemoveFlexBehavior Not Triggering Parent Recalculation~~ - RESOLVED
+**Test:** RemoveFlexBehavior_MarksParentDirty  
+**Status:** FIXED by contamination bug fix
+
+---
+
+## FlexRegistry Guard Clauses Removed (February 2026)
+
+**Per SteffenBlake's directive:** Guard clauses checking `!e.Entity.HasBehavior<FlexBehavior>()` in PreBehaviorRemovedEvent handlers were WRONG.
+
+**Why they were wrong:**
+- Entities can have MULTIPLE behaviors (FlexBehavior + properties like FlexPaddingLeft)
+- When removing a property while FlexBehavior still exists, we MUST mark dirty
+- PreBehaviorRemovedEvent fires BEFORE behavior is removed from registry, so `HasBehavior()` checks pass even if removal event already fired for parent's FlexBehavior
+- This causes parent contamination during entity deactivation
+
+**Solution:** Changed ALL property removal handlers from Pre to Post events, and removed ALL guard clauses.
+
+**Event ordering fix:**
+1. PreBehaviorRemovedEvent<FlexBehavior> fires → clears dirty flags → removes node from _nodes
+2. FlexBehavior removed from BehaviorRegistry  
+3. PostBehaviorRemovedEvent<Property> fires → calls SetDirtyNode() → checks if node exists → skips if node was removed
+
+**Final Fix (February 2026):** SetDirtyNode now checks if the node exists in _nodes before setting dirty flags:
+```csharp
+protected void SetDirtyNode(PartitionIndex index)
+{
+    var entity = EntityRegistry.Instance[index];
+    
+    // Skip if entity is inactive (being deactivated)
+    if (!entity.Active)
+    {
+        return;
+    }
+    
+    // Skip if no flex node exists (FlexBehavior was already removed)
+    if (!_nodes.HasValue(index))
+    {
+        return;
+    }
+    
+    _dirty.Set(index, true);
+    // ... mark parent dirty too
+}
+```
+
+**Key Insight:** When FlexBehavior is removed, the node is removed from _nodes. Property removal handlers fire AFTER this, but SetDirtyNode now skips if there's no node. This prevents dirty flag re-contamination without using banned HasBehavior checks.
+
+**Commits:**
+- `05fa244` - Remove ALL guard clauses (28 handlers)
+- `4845b3f` - Change to PostBehaviorRemovedEvent + entity.Active check
+- `<new>` - Final fix: SetDirtyNode checks if node exists
+
+**Tests:** 440/442 → 443/443 passing (100%)
+- Added DoesntContaminate_PropertyRemoval_AfterFlexBehaviorRemoved test
+- FlexAlignItemsFlexEnd_MovesChildrenToEndCrossAxis now passing
+- RemoveFlexBehavior_MarksParentDirty now passing

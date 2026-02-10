@@ -9,6 +9,7 @@ namespace Atomic.Net.MonoGame.Selectors;
 public class SelectorRegistry :
     ISingleton<SelectorRegistry>,
     IEventHandler<InitializeEvent>,
+    IEventHandler<ShutdownEvent>,
     IEventHandler<BehaviorAddedEvent<IdBehavior>>,
     IEventHandler<PreBehaviorUpdatedEvent<IdBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<IdBehavior>>,
@@ -16,8 +17,7 @@ public class SelectorRegistry :
     IEventHandler<BehaviorAddedEvent<TagsBehavior>>,
     IEventHandler<PreBehaviorUpdatedEvent<TagsBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<TagsBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<TagsBehavior>>,
-    IEventHandler<ShutdownEvent>
+    IEventHandler<PreBehaviorRemovedEvent<TagsBehavior>>
 {
     public static SelectorRegistry Instance { get; private set; } = null!;
 
@@ -184,6 +184,8 @@ public class SelectorRegistry :
 
         if (_unionSelectorRegistry.TryGetValue(hash, out var cached))
         {
+            // Union recalcs when children recalc, and children are already marked dirty
+            // via TryGetOrCreate* methods, so no need to mark union dirty
             return cached;
         }
 
@@ -358,6 +360,7 @@ public class SelectorRegistry :
 
     public void OnEvent(InitializeEvent e)
     {
+        EventBus<ShutdownEvent>.Register(Instance);
         EventBus<BehaviorAddedEvent<IdBehavior>>.Register(Instance);
         EventBus<PreBehaviorUpdatedEvent<IdBehavior>>.Register(Instance);
         EventBus<PostBehaviorUpdatedEvent<IdBehavior>>.Register(Instance);
@@ -366,25 +369,10 @@ public class SelectorRegistry :
         EventBus<PreBehaviorUpdatedEvent<TagsBehavior>>.Register(Instance);
         EventBus<PostBehaviorUpdatedEvent<TagsBehavior>>.Register(Instance);
         EventBus<PreBehaviorRemovedEvent<TagsBehavior>>.Register(Instance);
-        EventBus<ShutdownEvent>.Register(Instance);
     }
 
-    /// <summary>
-    /// Resets scene partition by recalculating all selectors.
-    /// Called by ResetDriver during scene transitions.
-    /// </summary>
-    public void Reset()
+    public void OnEvent(ShutdownEvent e)
     {
-        // senior-dev: On Reset, recalc all selectors to update Matches for non-persistent entities
-        // Scene entities (>= MaxGlobalEntities) are deactivated by EntityRegistry
-        // Their IdBehaviors are removed, marking selectors dirty
-        // We recalc here to update all selector Matches arrays
-        Recalc();
-    }
-
-    public void OnEvent(ShutdownEvent _)
-    {
-        // senior-dev: Shutdown clears EVERYTHING (used between tests)
         _unionSelectorRegistry.Clear();
         _idSelectorRegistry.Clear();
         _tagSelectorRegistry.Clear();
@@ -393,17 +381,20 @@ public class SelectorRegistry :
         _idSelectorLookup.Clear();
         _tagSelectorLookup.Clear();
         _rootSelectors.Clear();
+        _unionPartsBuffer.Clear();
+    }
 
-        // Unregister from all events to prevent duplicate registrations
-        EventBus<BehaviorAddedEvent<IdBehavior>>.Unregister(Instance);
-        EventBus<PreBehaviorUpdatedEvent<IdBehavior>>.Unregister(Instance);
-        EventBus<PostBehaviorUpdatedEvent<IdBehavior>>.Unregister(Instance);
-        EventBus<PreBehaviorRemovedEvent<IdBehavior>>.Unregister(Instance);
-        EventBus<BehaviorAddedEvent<TagsBehavior>>.Unregister(Instance);
-        EventBus<PreBehaviorUpdatedEvent<TagsBehavior>>.Unregister(Instance);
-        EventBus<PostBehaviorUpdatedEvent<TagsBehavior>>.Unregister(Instance);
-        EventBus<PreBehaviorRemovedEvent<TagsBehavior>>.Unregister(Instance);
-        EventBus<ShutdownEvent>.Unregister(Instance);
+    /// <summary>
+    /// Resets scene partition by recalculating all selectors.
+    /// Called by ResetDriver during scene transitions.
+    /// </summary>
+    public void Reset()
+    {
+        // On Reset, recalc all selectors to update Matches for non-persistent entities
+        // Scene entities (>= MaxGlobalEntities) are deactivated by EntityRegistry
+        // Their IdBehaviors are removed, marking selectors dirty
+        // We recalc here to update all selector Matches arrays
+        Recalc();
     }
 
     public void OnEvent(BehaviorAddedEvent<IdBehavior> e)

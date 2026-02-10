@@ -7,23 +7,23 @@ namespace Atomic.Net.MonoGame.Flex;
 public partial class FlexRegistry :
     IEventHandler<BehaviorAddedEvent<FlexPositionTypeBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexPositionTypeBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexPositionTypeBehavior>>,
+    IEventHandler<PostBehaviorRemovedEvent<FlexPositionTypeBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<FlexPositionLeftBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexPositionLeftBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexPositionLeftBehavior>>,
+    IEventHandler<PostBehaviorRemovedEvent<FlexPositionLeftBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<FlexPositionRightBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexPositionRightBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexPositionRightBehavior>>,
+    IEventHandler<PostBehaviorRemovedEvent<FlexPositionRightBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<FlexPositionTopBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexPositionTopBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexPositionTopBehavior>>,
+    IEventHandler<PostBehaviorRemovedEvent<FlexPositionTopBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<FlexPositionBottomBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexPositionBottomBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexPositionBottomBehavior>>
+    IEventHandler<PostBehaviorRemovedEvent<FlexPositionBottomBehavior>>
 {
     public void OnEvent(BehaviorAddedEvent<FlexPositionTypeBehavior> e)
     {
@@ -43,10 +43,9 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexPositionTypeBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexPositionTypeBehavior> e)
     {
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetPositionType(default);
+        SetDirtyNode(e.Entity.Index);
     }
     public void OnEvent(BehaviorAddedEvent<FlexPositionLeftBehavior> e)
     {
@@ -80,10 +79,9 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexPositionLeftBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexPositionLeftBehavior> e)
     {
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetPosition(Edge.Left, float.NaN);
+        SetDirtyNode(e.Entity.Index);
     }
 
     public void OnEvent(BehaviorAddedEvent<FlexPositionRightBehavior> e)
@@ -118,10 +116,9 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexPositionRightBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexPositionRightBehavior> e)
     {
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetPosition(Edge.Right, float.NaN);
+        SetDirtyNode(e.Entity.Index);
     }
 
     public void OnEvent(BehaviorAddedEvent<FlexPositionTopBehavior> e)
@@ -156,10 +153,9 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexPositionTopBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexPositionTopBehavior> e)
     {
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetPosition(Edge.Top, float.NaN);
+        SetDirtyNode(e.Entity.Index);
     }
 
     public void OnEvent(BehaviorAddedEvent<FlexPositionBottomBehavior> e)
@@ -194,9 +190,8 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexPositionBottomBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexPositionBottomBehavior> e)
     {
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetPosition(Edge.Bottom, float.NaN);
+        SetDirtyNode(e.Entity.Index);
     }
 }

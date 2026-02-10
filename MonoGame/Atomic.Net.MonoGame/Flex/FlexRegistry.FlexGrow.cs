@@ -6,7 +6,7 @@ namespace Atomic.Net.MonoGame.Flex;
 public partial class FlexRegistry :
     IEventHandler<BehaviorAddedEvent<FlexGrowBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexGrowBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexGrowBehavior>>
+    IEventHandler<PostBehaviorRemovedEvent<FlexGrowBehavior>>
 {
     public void OnEvent(BehaviorAddedEvent<FlexGrowBehavior> e)
     {
@@ -26,9 +26,8 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexGrowBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexGrowBehavior> e)
     {
-        var node = EnsureDirtyNode(e.Entity.Index);
-        node.StyleSetFlexGrow(float.NaN);
+        SetDirtyNode(e.Entity.Index);
     }
 }

@@ -39,6 +39,19 @@ DO NOT DO THIS, STAY IN YOUR TOP LAYER
 
 ---
 
+## PR Comment Resolution Policy
+
+**CRITICAL**: PR comments from SteffenBlake only count as resolved when he marks them `<comment_thread_resolved>`. 
+
+**FORBIDDEN**: Replying to a PR comment claiming "fixed" does NOT resolve it. Future agents reading the thread will see your reply and incorrectly assume it's fixed when it's not.
+
+**REQUIRED**: 
+- Verify each fix is ACTUALLY in the code before replying
+- Do not reply until the code change is committed
+- Include the commit hash in your reply
+
+---
+
 ## Agent Communication System
 
 ### Leaving Comments in Code
@@ -138,6 +151,7 @@ When you discover a limitation, constraint, or "gotcha" through trial and error,
 - **Group:** usings → namespace → type
 - **Order members:** static → instance, fields → props → ctors → methods
 - Related files in feature folders (`BlockMaps/`, `Hierarchy/`, `Sprites/`)
+- **NO #region/#endregion directives** - Regions are banned across the entire codebase. Use comments or file organization instead.
 
 ### Patterns
 - Singleton via `ISingleton<T>` with static `Instance` property
@@ -298,6 +312,46 @@ Assert.True(TryGetBar(out var bar));
 - If an existing test conflicts with the human's directives, its likely the test was just written wrong
 - If existing domain layer code conflicts with the human's directives, its likely the domain layer code having been implemented wrong
 
+## NEVER Modify JSON Schema Without Explicit Approval
+**CRITICAL RULE:** Do NOT add, remove, or modify properties in JsonEntity, JsonScene, or any JSON schema classes without explicit tech-lead approval.
+
+**Why:** JSON schema changes are architectural decisions that:
+1. Break existing game content (all JSON files need updates)
+2. Require documentation updates
+3. Impact external tooling (editors, validators)
+4. Must be planned and coordinated
+
+**When tests fail due to JSON data:**
+- ✅ **FIX THE BEHAVIOR** - Update the implementation to handle edge cases correctly
+- ✅ **FIX THE TEST** - Update test code if expectations are wrong
+- ❌ **DO NOT change JSON schema** - That's an architectural change requiring approval
+- ❌ **DO NOT change test fixtures** - That often hides the real bug
+
+**Example:**
+If a test expects `{ value: 100, percent: true }` to work on a root container, DON'T change the JSON to use explicit pixels. Instead, FIX the flex system to handle percentage dimensions on root containers correctly (treat as explicit values when no parent exists).
+
+## DO NOT Commit Note/Status/Progress Markdown Files
+**CRITICAL RULE:** Do NOT commit markdown files that are just notes, status updates, progress trackers, or temporary documentation.
+
+**Forbidden file patterns:**
+- Files like `NOTES.md`, `STATUS.md`, `TODO.md`, `PROGRESS.md`
+- Files like `*_COMPLETE.md`, `*_NOTE.md`, `*_STATUS.md`
+- Any markdown files that document your process rather than the codebase itself
+
+**What's allowed:**
+- ✅ `README.md` - Project documentation
+- ✅ `.github/agents/*.md` - Agent instructions
+- ✅ Sprint files in `.github/agents/sprints/` - Formal sprint planning
+- ✅ `ROADMAP.md`, `DISCOVERIES.md` - Official project documentation
+
+**What's forbidden:**
+- ❌ `FLEXSHARP_PERCENTAGE_REVERT_COMPLETE.md` - Status/progress file
+- ❌ `SCHEMA_REVERT_COMPLETE.md` - Status/progress file
+- ❌ `UNTRACKED_FILES_NOTE.md` - Note file
+- ❌ Any other temporary documentation files
+
+If you need to track progress or take notes, do it in memory or in comments within the actual code. Don't litter the repository root with status files.
+
 ## CRITICAL: UNDERSTAND, ABOVE ALL ELSE
 Take the time to UNDERSTAND the system. Its INCREDIBLY common you agents will just start making wild assumptions about how things work without first reading and understanding not just the 1 chunk of code but HOW IT FITS INTO EVERYTHING
 
@@ -347,6 +401,100 @@ PR Comments are not commited as markdown files or code in the Repo, the above is
       // use partitionIdx...
   }
   ```
+
+## O(1) Reverse Lookups for Performance
+
+When you need to look up an entity from a reference-type object (like a Node), use a reverse lookup Dictionary:
+
+DO NOT DO THIS (O(n) iteration through all entities):
+```csharp
+// BAD - iterates through ALL entities to find which one owns this node
+foreach (var (idx, node) in _nodes.Global)
+{
+    if (ReferenceEquals(node, targetNode))
+    {
+        // found it...
+    }
+}
+```
+
+DO THIS INSTEAD (O(1) dictionary lookup):
+```csharp
+// GOOD - maintain reverse lookup dictionary
+private readonly Dictionary<Node, PartitionIndex> _nodeToEntity = new();
+
+// Update when creating nodes
+_nodes[index] = newNode;
+_nodeToEntity[newNode] = index;
+
+// Update when removing nodes
+if (_nodes.TryGetValue(index, out var node))
+{
+    _nodeToEntity.Remove(node);
+}
+_nodes.Remove(index);
+
+// O(1) lookup when needed
+if (_nodeToEntity.TryGetValue(targetNode, out var entityIndex))
+{
+    // found it instantly
+}
+```
+
+See HierarchyRegistry._childToParentLookup and FlexRegistry._nodeToEntity for examples.
+
+## Null Checking Consistency
+
+Use consistent null checking patterns throughout a file. Prefer `is not null` pattern matching:
+
+DO NOT DO THIS (mixing multiple patterns):
+```csharp
+if (foo is null) { } // pattern 1
+if (bar != null) { } // pattern 2  
+if (baz is not null) { } // pattern 3
+```
+
+DO THIS INSTEAD (consistent pattern):
+```csharp
+if (foo is not null) { }
+if (bar is not null) { }
+if (baz is not null) { }
+```
+
+For TryGetValue on SparseReferenceArray with reference types, the null check is redundant:
+```csharp
+// REDUNDANT - TryGetValue guarantees non-null on success for reference types
+if (!_nodes.TryGetValue(index, out var node) || node is null)
+
+// CORRECT - TryGetValue already ensures node is not null
+if (!_nodes.TryGetValue(index, out var node))
+```
+
+Document in comments when redundant checks are intentionally defensive.
+
+## NEVER Second-Guess Third-Party Libraries
+
+**CRITICAL RULE:** Do NOT add logic to "fix" or "work around" well-tested third-party libraries like FlexSharp (Yoga).
+
+**Why:** Libraries like FlexSharp are extremely well-tested implementations of established standards (HTML/CSS flexbox). They are the **source of truth**, not our code.
+
+**What to do instead:**
+- ✅ **TRUST THE LIBRARY** - If FlexSharp returns a value, that's the correct value
+- ✅ **FIX THE TEST** - Update test assertions to match library behavior
+- ✅ **FIX THE FIXTURE** - Update test data to be valid according to the standard
+- ❌ **DO NOT add workarounds** - Don't add logic like "HasFlexParent()" to change library behavior
+- ❌ **DO NOT question the library** - Don't assume it's broken when tests fail
+
+**Example - The HasFlexParent() Mistake:**
+- ❌ **WRONG:** Added `HasFlexParent()` to convert percentage dimensions to pixels for root elements
+- ✅ **RIGHT:** Trust FlexSharp - percentage dimensions on root elements = 0px (correct HTML/CSS behavior)
+- ✅ **RIGHT:** Fix test fixtures to use explicit pixel dimensions on root containers
+
+**When FlexSharp (or any library) behavior seems "wrong":**
+1. Research the standard (HTML/CSS spec for FlexSharp)
+2. Verify your understanding is correct
+3. Update your code/tests to match the standard
+4. NEVER add workarounds to "fix" the library
 
 ## Loading Symbols for 3rd Party types
 The Sharptools tool `SharpTool_GetMembers` DOES WORK! But, you have to restore and build the whole solution first. Make sure you invoke `SharpTool_LoadSolution` first as well!
