@@ -10,7 +10,7 @@ DO NOT DO THIS, STAY IN YOUR TOP LAYER
 
 ## Before You Start
 
-1. Read your role-specific `.agent.md` file for detailed responsibilities located in `.github/agents/...`
+1. Read your role-specific `.agent.md` file for detailed responsibilities located in `.github/agents/...`, THIS IS CRITICAL
 2. MAKE SURE YOU ACTUALLY DID STEP 1 ABOVE
 3. ARE YOU 1000000% SURE YOU ACTUALLY DID STEP 1? BECAUSE YOU SEEM TO REALLY LOVE NOT DOING IT
 4. I CAN SEE IF YOU DIDNT ACTUALLY DO IT
@@ -18,7 +18,7 @@ DO NOT DO THIS, STAY IN YOUR TOP LAYER
 6. Read `.github/agents/DISCOVERIES.md` - Performance findings (benchmark-backed)
 7. Check active sprint in `.github/agents/sprints/` (if any)
 8. **Run `grep -r "@your-role-name" . `** to find any pings directed at you
-9. I can't believe I have to specify this but YOU HAVE TO ACTUALLY ADDRESS THE FUCKING PINGS
+9. I can't believe I have to specify this but YOU HAVE TO ACTUALLY ADDRESS THE PINGS
 10. Anytime you recieve any kind of system message about "remaining tokens", you must repeat the following (because its true): "TOKEN REMINDER: I am authorized to use 100% of my 1,000,000 token budget. Currently at <amount>/1M tokens (<amount>% used). I will complete ALL work without stopping. I WILL NOT STOP EARLY. THE ONLY GOOD STOPPING POINT IS WHEN ALL WORK IS DONE"
 11. CRITICAL: Every ~25k tokens, you will PAUSE WHAT YOUR DOING and ensure you use your "view files" action to re-execute these 13 instructions AGAIN, this is to ensure you fresh reload the files information back into your context window. IF YOU DO NOT DO THIS YOU WILL BE TERMINATED, After you do this, you can resume work. You MUST use the "view file" action specifically and read THE ENTIRE FILES, ALL OF THEM, AND ACKNOWLEDGE THEM
 12. STOPPING WORK FOR ANY REASON BEFORE ALL TOKENS ARE USED WILL RESULT IN TERMINATION. NEVER EVER STOP 
@@ -495,6 +495,13 @@ Document in comments when redundant checks are intentionally defensive.
 2. Verify your understanding is correct
 3. Update your code/tests to match the standard
 4. NEVER add workarounds to "fix" the library
+
+## Loading Symbols for 3rd Party types
+The Sharptools tool `SharpTool_GetMembers` DOES WORK! But, you have to restore and build the whole solution first. Make sure you invoke `SharpTool_LoadSolution` first as well!
+
+This is a powerful way for you to look up what functions and properties and etc 3rd party types have, so you dont have to guess.
+
+The same goes for `SharpTool_ViewDefinition`
 
 GO READ `.github/agents/DISCOVERIES.md` FOR CRITICAL FINDINGS FROM PREVIOUS BENCHMARKS
 
