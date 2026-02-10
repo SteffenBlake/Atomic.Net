@@ -8,19 +8,19 @@ public partial class FlexRegistry :
     // Margins
     IEventHandler<BehaviorAddedEvent<FlexMarginLeftBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexMarginLeftBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexMarginLeftBehavior>>,
+    IEventHandler<PostBehaviorRemovedEvent<FlexMarginLeftBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<FlexMarginRightBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexMarginRightBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexMarginRightBehavior>>,
+    IEventHandler<PostBehaviorRemovedEvent<FlexMarginRightBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<FlexMarginTopBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexMarginTopBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexMarginTopBehavior>>,
+    IEventHandler<PostBehaviorRemovedEvent<FlexMarginTopBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<FlexMarginBottomBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexMarginBottomBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexMarginBottomBehavior>>
+    IEventHandler<PostBehaviorRemovedEvent<FlexMarginBottomBehavior>>
 {
     // MarginLeft
     public void OnEvent(BehaviorAddedEvent<FlexMarginLeftBehavior> e)
@@ -41,7 +41,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexMarginLeftBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexMarginLeftBehavior> e)
     {
         SetDirtyNode(e.Entity.Index);
     }
@@ -65,7 +65,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexMarginRightBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexMarginRightBehavior> e)
     {
         SetDirtyNode(e.Entity.Index);
     }
@@ -89,7 +89,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexMarginTopBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexMarginTopBehavior> e)
     {
         SetDirtyNode(e.Entity.Index);
     }
@@ -113,7 +113,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexMarginBottomBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexMarginBottomBehavior> e)
     {
         SetDirtyNode(e.Entity.Index);
     }

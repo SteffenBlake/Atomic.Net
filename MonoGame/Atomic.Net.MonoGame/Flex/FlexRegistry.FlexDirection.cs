@@ -6,7 +6,7 @@ namespace Atomic.Net.MonoGame.Flex;
 public partial class FlexRegistry :
     IEventHandler<BehaviorAddedEvent<FlexDirectionBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexDirectionBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexDirectionBehavior>>
+    IEventHandler<PostBehaviorRemovedEvent<FlexDirectionBehavior>>
 {
     public void OnEvent(BehaviorAddedEvent<FlexDirectionBehavior> e)
     {
@@ -26,7 +26,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexDirectionBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexDirectionBehavior> e)
     {
         SetDirtyNode(e.Entity.Index);
     }

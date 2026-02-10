@@ -8,19 +8,19 @@ public partial class FlexRegistry :
     // Borders
     IEventHandler<BehaviorAddedEvent<FlexBorderLeftBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexBorderLeftBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexBorderLeftBehavior>>,
+    IEventHandler<PostBehaviorRemovedEvent<FlexBorderLeftBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<FlexBorderRightBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexBorderRightBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexBorderRightBehavior>>,
+    IEventHandler<PostBehaviorRemovedEvent<FlexBorderRightBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<FlexBorderTopBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexBorderTopBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexBorderTopBehavior>>,
+    IEventHandler<PostBehaviorRemovedEvent<FlexBorderTopBehavior>>,
 
     IEventHandler<BehaviorAddedEvent<FlexBorderBottomBehavior>>,
     IEventHandler<PostBehaviorUpdatedEvent<FlexBorderBottomBehavior>>,
-    IEventHandler<PreBehaviorRemovedEvent<FlexBorderBottomBehavior>>
+    IEventHandler<PostBehaviorRemovedEvent<FlexBorderBottomBehavior>>
 {
     // BorderLeft
     public void OnEvent(BehaviorAddedEvent<FlexBorderLeftBehavior> e)
@@ -41,7 +41,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexBorderLeftBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexBorderLeftBehavior> e)
     {
         SetDirtyNode(e.Entity.Index);
     }
@@ -65,7 +65,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexBorderRightBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexBorderRightBehavior> e)
     {
         SetDirtyNode(e.Entity.Index);
     }
@@ -89,7 +89,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexBorderTopBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexBorderTopBehavior> e)
     {
         SetDirtyNode(e.Entity.Index);
     }
@@ -113,7 +113,7 @@ public partial class FlexRegistry :
         }
     }
 
-    public void OnEvent(PreBehaviorRemovedEvent<FlexBorderBottomBehavior> e)
+    public void OnEvent(PostBehaviorRemovedEvent<FlexBorderBottomBehavior> e)
     {
         SetDirtyNode(e.Entity.Index);
     }

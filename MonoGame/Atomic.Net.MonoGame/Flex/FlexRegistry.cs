@@ -56,11 +56,18 @@ public partial class FlexRegistry :
     /// </summary>
     protected void SetDirtyNode(PartitionIndex index)
     {
+        var entity = EntityRegistry.Instance[index];
+
+        // Skip if entity is inactive (being deactivated)
+        if (!entity.Active)
+        {
+            return;
+        }
+
         _dirty.Set(index, true);
 
         // If this entity has a flex parent, mark the parent dirty too
         // This ensures that when child properties change, the parent's layout is recalculated
-        var entity = EntityRegistry.Instance[index];
         if (entity.TryGetParent(out var parent))
         {
             if (parent.Value.Active && parent.Value.HasBehavior<FlexBehavior>())
@@ -475,129 +482,130 @@ public partial class FlexRegistry :
 
     public void OnEvent(InitializeEvent _)
     {
-        // Step 2: Register property behavior handlers FIRST, FlexBehavior removal handler LAST
-        // This ensures FlexBehavior cleanup happens after all property handlers
+        // Property behavior removal handlers use POST events to prevent contamination
+        // FlexBehavior removal handler uses PRE event and executes first, clearing dirty flags
+        // Then property POST handlers execute, checking if parent still has FlexBehavior
 
         EventBus<BehaviorAddedEvent<FlexBehavior>>.Register(this);
-        // NOTE: FlexBehavior removal registered at the END
+        EventBus<PreBehaviorRemovedEvent<FlexBehavior>>.Register(this); // PRE for FlexBehavior
 
         EventBus<BehaviorAddedEvent<FlexZOverride>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexZOverride>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexZOverride>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexZOverride>>.Register(this);
 
         // Flex layout properties
         EventBus<BehaviorAddedEvent<FlexDirectionBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexDirectionBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexDirectionBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexDirectionBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexWrapBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexWrapBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexWrapBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexWrapBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexJustifyContentBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexJustifyContentBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexJustifyContentBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexJustifyContentBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexAlignItemsBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexAlignItemsBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexAlignItemsBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexAlignItemsBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<AlignContentBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<AlignContentBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<AlignContentBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<AlignContentBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexAlignSelfBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexAlignSelfBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexAlignSelfBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexAlignSelfBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexGrowBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexGrowBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexGrowBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexGrowBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexShrinkBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexShrinkBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexShrinkBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexShrinkBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexPositionTypeBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexPositionTypeBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPositionTypeBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexPositionTypeBehavior>>.Register(this);
 
         // Position edges
         EventBus<BehaviorAddedEvent<FlexPositionLeftBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexPositionLeftBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPositionLeftBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexPositionLeftBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexPositionRightBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexPositionRightBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPositionRightBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexPositionRightBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexPositionTopBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexPositionTopBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPositionTopBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexPositionTopBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexPositionBottomBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexPositionBottomBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPositionBottomBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexPositionBottomBehavior>>.Register(this);
 
         // Margins
         EventBus<BehaviorAddedEvent<FlexMarginLeftBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexMarginLeftBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexMarginLeftBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexMarginLeftBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexMarginRightBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexMarginRightBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexMarginRightBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexMarginRightBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexMarginTopBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexMarginTopBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexMarginTopBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexMarginTopBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexMarginBottomBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexMarginBottomBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexMarginBottomBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexMarginBottomBehavior>>.Register(this);
 
         // Padding
         EventBus<BehaviorAddedEvent<FlexPaddingLeftBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexPaddingLeftBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPaddingLeftBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexPaddingLeftBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexPaddingRightBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexPaddingRightBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPaddingRightBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexPaddingRightBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexPaddingTopBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexPaddingTopBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPaddingTopBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexPaddingTopBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexPaddingBottomBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexPaddingBottomBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexPaddingBottomBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexPaddingBottomBehavior>>.Register(this);
 
         // Borders
         EventBus<BehaviorAddedEvent<FlexBorderLeftBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexBorderLeftBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexBorderLeftBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexBorderLeftBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexBorderRightBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexBorderRightBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexBorderRightBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexBorderRightBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexBorderTopBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexBorderTopBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexBorderTopBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexBorderTopBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexBorderBottomBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexBorderBottomBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexBorderBottomBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexBorderBottomBehavior>>.Register(this);
 
         // Width / Height
         EventBus<BehaviorAddedEvent<FlexWidthBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexWidthBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexWidthBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexWidthBehavior>>.Register(this);
 
         EventBus<BehaviorAddedEvent<FlexHeightBehavior>>.Register(this);
         EventBus<PostBehaviorUpdatedEvent<FlexHeightBehavior>>.Register(this);
-        EventBus<PreBehaviorRemovedEvent<FlexHeightBehavior>>.Register(this);
+        EventBus<PostBehaviorRemovedEvent<FlexHeightBehavior>>.Register(this);
 
         // Parent hierarchy
         EventBus<BehaviorAddedEvent<ParentBehavior>>.Register(this);
@@ -608,8 +616,5 @@ public partial class FlexRegistry :
         // Enable/Disable
         EventBus<EntityEnabledEvent>.Register(this);
         EventBus<EntityDisabledEvent>.Register(this);
-
-        // Step 2: Register FlexBehavior removal handler LAST after all property handlers
-        EventBus<PreBehaviorRemovedEvent<FlexBehavior>>.Register(this);
     }
 }
