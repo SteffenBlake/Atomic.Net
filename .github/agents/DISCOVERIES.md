@@ -346,3 +346,30 @@ This prevents dirty flag contamination while still allowing individual property 
 ### ~~2. RemoveFlexBehavior Not Triggering Parent Recalculation~~ - RESOLVED
 **Test:** RemoveFlexBehavior_MarksParentDirty  
 **Status:** FIXED by contamination bug fix
+
+---
+
+## FlexRegistry Guard Clauses Removed (February 2026)
+
+**Per SteffenBlake's directive:** Guard clauses checking `!e.Entity.HasBehavior<FlexBehavior>()` in PreBehaviorRemovedEvent handlers were WRONG.
+
+**Why they were wrong:**
+- Entities can have MULTIPLE behaviors (FlexBehavior + properties like FlexPaddingLeft)
+- When removing a property while FlexBehavior still exists, we MUST mark dirty
+- PreBehaviorRemovedEvent fires BEFORE behavior is removed from registry, so `HasBehavior()` checks pass even if removal event already fired for parent's FlexBehavior
+- This causes parent contamination during entity deactivation
+
+**Solution:** Changed ALL property removal handlers from Pre to Post events, and removed ALL guard clauses.
+
+**Event ordering fix:**
+1. PreBehaviorRemovedEvent<FlexBehavior> fires → clears dirty flags
+2. FlexBehavior removed from BehaviorRegistry  
+3. PostBehaviorRemovedEvent<Property> fires → checks `parent.HasBehavior<FlexBehavior>()` → FALSE → no contamination
+
+**Additional fix:** SetDirtyNode checks `entity.Active` to skip deactivated entities.
+
+**Commits:**
+- `05fa244` - Remove ALL guard clauses (28 handlers)
+- `4845b3f` - Change to PostBehaviorRemovedEvent + entity.Active check
+
+**Status:** 440/442 tests passing (2 failures under investigation)
