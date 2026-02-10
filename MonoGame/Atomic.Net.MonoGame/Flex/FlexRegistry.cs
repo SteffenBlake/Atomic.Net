@@ -64,6 +64,12 @@ public partial class FlexRegistry :
             return;
         }
 
+        // Skip if no flex node exists (FlexBehavior was already removed)
+        if (!_nodes.HasValue(index))
+        {
+            return;
+        }
+
         _dirty.Set(index, true);
 
         // If this entity has a flex parent, mark the parent dirty too

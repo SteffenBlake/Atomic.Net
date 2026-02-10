@@ -1552,5 +1552,53 @@ public sealed class FlexSystemIntegrationTests : IDisposable
         Assert.Equal(entities[10].Index, parent11.Value.Index);
     }
 
+    [Fact]
+    public void DoesntContaminate_PropertyRemoval_AfterFlexBehaviorRemoved()
+    {
+        // Arrange - Create entity with FlexBehavior + a flex property
+        var entity = EntityRegistry.Instance.Activate();
+        entity.SetBehavior<FlexBehavior>(static (ref _) => { });
+        entity.SetBehavior<FlexPaddingLeftBehavior>(static (ref b) => b = b with { Value = 10 });
+        entity.SetBehavior<FlexWidthBehavior>(static (ref b) => b = b with { Value = 100 });
+        entity.SetBehavior<FlexHeightBehavior>(static (ref b) => b = b with { Value = 100 });
+
+        // Act - Initialize and recalculate (simulates normal scene operation)
+        RecalculateAll();
+
+        // Verify entity is active and has behaviors
+        Assert.True(entity.Active);
+        Assert.True(entity.HasBehavior<FlexBehavior>());
+        Assert.True(entity.HasBehavior<FlexPaddingLeftBehavior>());
+
+        // Act - Shutdown the entity (simulates scene shutdown/deactivation)
+        EventBus<ShutdownEvent>.Push(new());
+
+        // Assert - Dirty flags should NOT be set after shutdown
+        // This tests that PreBehaviorRemovedEvent<FlexBehavior> clears dirty flags BEFORE
+        // PostBehaviorRemovedEvent<FlexPaddingLeft> tries to set them
+        var dirtyField = typeof(FlexRegistry)
+            .GetField("_dirty", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(dirtyField);
+
+        var dirty = dirtyField.GetValue(FlexRegistry.Instance);
+        var hasDirtyMethod = dirty?.GetType().GetMethod("HasValue");
+        Assert.NotNull(hasDirtyMethod);
+
+        var isDirty = (bool)hasDirtyMethod.Invoke(dirty, [entity.Index])!;
+        Assert.False(isDirty, $"Entity {entity.Index} should NOT be marked dirty after shutdown");
+
+        // Also check _flexTreeDirty
+        var flexTreeDirtyField = typeof(FlexRegistry)
+            .GetField("_flexTreeDirty", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(flexTreeDirtyField);
+
+        var flexTreeDirty = flexTreeDirtyField.GetValue(FlexRegistry.Instance);
+        var hasFlexTreeDirtyMethod = flexTreeDirty?.GetType().GetMethod("HasValue");
+        Assert.NotNull(hasFlexTreeDirtyMethod);
+
+        var isFlexTreeDirty = (bool)hasFlexTreeDirtyMethod.Invoke(flexTreeDirty, [entity.Index])!;
+        Assert.False(isFlexTreeDirty, $"Entity {entity.Index} should NOT be marked flex-tree-dirty after shutdown");
+    }
+
 
 }

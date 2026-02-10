@@ -362,14 +362,41 @@ This prevents dirty flag contamination while still allowing individual property 
 **Solution:** Changed ALL property removal handlers from Pre to Post events, and removed ALL guard clauses.
 
 **Event ordering fix:**
-1. PreBehaviorRemovedEvent<FlexBehavior> fires → clears dirty flags
+1. PreBehaviorRemovedEvent<FlexBehavior> fires → clears dirty flags → removes node from _nodes
 2. FlexBehavior removed from BehaviorRegistry  
-3. PostBehaviorRemovedEvent<Property> fires → checks `parent.HasBehavior<FlexBehavior>()` → FALSE → no contamination
+3. PostBehaviorRemovedEvent<Property> fires → calls SetDirtyNode() → checks if node exists → skips if node was removed
 
-**Additional fix:** SetDirtyNode checks `entity.Active` to skip deactivated entities.
+**Final Fix (February 2026):** SetDirtyNode now checks if the node exists in _nodes before setting dirty flags:
+```csharp
+protected void SetDirtyNode(PartitionIndex index)
+{
+    var entity = EntityRegistry.Instance[index];
+    
+    // Skip if entity is inactive (being deactivated)
+    if (!entity.Active)
+    {
+        return;
+    }
+    
+    // Skip if no flex node exists (FlexBehavior was already removed)
+    if (!_nodes.HasValue(index))
+    {
+        return;
+    }
+    
+    _dirty.Set(index, true);
+    // ... mark parent dirty too
+}
+```
+
+**Key Insight:** When FlexBehavior is removed, the node is removed from _nodes. Property removal handlers fire AFTER this, but SetDirtyNode now skips if there's no node. This prevents dirty flag re-contamination without using banned HasBehavior checks.
 
 **Commits:**
 - `05fa244` - Remove ALL guard clauses (28 handlers)
 - `4845b3f` - Change to PostBehaviorRemovedEvent + entity.Active check
+- `<new>` - Final fix: SetDirtyNode checks if node exists
 
-**Status:** 440/442 tests passing (2 failures under investigation)
+**Tests:** 440/442 → 443/443 passing (100%)
+- Added DoesntContaminate_PropertyRemoval_AfterFlexBehaviorRemoved test
+- FlexAlignItemsFlexEnd_MovesChildrenToEndCrossAxis now passing
+- RemoveFlexBehavior_MarksParentDirty now passing
