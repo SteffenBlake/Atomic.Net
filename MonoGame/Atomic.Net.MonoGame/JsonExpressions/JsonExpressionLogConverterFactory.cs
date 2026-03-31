@@ -16,7 +16,7 @@ public sealed class JsonExpressionLogConverterFactory : JsonConverterFactory
         }
 
         var genericDefinition = typeToConvert.GetGenericTypeDefinition();
-        return genericDefinition == typeof(JsonExpressionLog<,>);
+        return genericDefinition == typeof(IJsonExpressionLog<,>);
     }
 
     public override JsonConverter? CreateConverter(

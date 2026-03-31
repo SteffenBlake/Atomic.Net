@@ -6,21 +6,23 @@ using System.Text.Json.Serialization;
 namespace Atomic.Net.MonoGame.JsonExpressions;
 
 /// <summary>
-/// Base class for strongly-typed JSONLogic expressions.
+/// Interface for strongly-typed JSONLogic expressions.
 /// Compiles to Expression trees with zero boxing.
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by this expression</typeparam>
 [JsonConverter(typeof(JsonExpressionConverterFactory))]
-public abstract class JsonExpression<TIn, TOut>
+public interface IJsonExpression<TIn, TOut>
 {
     /// <summary>
-    /// Attempts to compile this expression to a strongly-typed LINQ expression tree.
+    /// Attempts to compile this expression to a LINQ expression body (no lambda wrapper).
     /// </summary>
-    /// <param name="result">Compiled expression if successful</param>
+    /// <param name="parameter">The shared input parameter expression</param>
+    /// <param name="result">Compiled expression body if successful</param>
     /// <returns>True if compilation succeeded and can produce TOut, false otherwise</returns>
-    public abstract bool TryCompile(
+    bool TryCompile(
+        ParameterExpression parameter,
         [NotNullWhen(true)] 
-        out Expression<Func<TIn, TOut>>? result
+        out Expression? result
     );
 }

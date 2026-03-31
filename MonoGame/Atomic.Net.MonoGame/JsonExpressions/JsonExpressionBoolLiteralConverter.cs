@@ -8,9 +8,9 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Requested output type</typeparam>
-public sealed class JsonExpressionBoolLiteralConverter<TIn, TOut> : JsonConverter<JsonExpressionBoolLiteral<TIn, TOut>>
+public sealed class JsonExpressionBoolLiteralConverter<TIn, TOut> : JsonConverter<IJsonExpressionBoolLiteral<TIn, TOut>>
 {
-    public override JsonExpressionBoolLiteral<TIn, TOut>? Read(
+    public override IJsonExpressionBoolLiteral<TIn, TOut>? Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
         JsonSerializerOptions options
@@ -32,7 +32,7 @@ public sealed class JsonExpressionBoolLiteralConverter<TIn, TOut> : JsonConverte
 
     public override void Write(
         Utf8JsonWriter writer,
-        JsonExpressionBoolLiteral<TIn, TOut> value,
+        IJsonExpressionBoolLiteral<TIn, TOut> value,
         JsonSerializerOptions options
     )
     {

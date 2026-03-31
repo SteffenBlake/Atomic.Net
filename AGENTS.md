@@ -345,6 +345,7 @@ Assert.True(TryGetBar(out var bar));
      severities=["error", "warning", "info", "hint"]
    )
    ```
+    If you get a message like "Health Check failed: Error: Failed to connect to VSCode" that means the human needs to restart the MCP Server, pause work and ask them to do that so you can proceed.
 
 3. **Fix ALL diagnostic suggestions** - errors, warnings, info, hints
 

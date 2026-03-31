@@ -20,7 +20,7 @@ public sealed class JsonExpressionConverterFactory : JsonConverterFactory
         }
 
         var genericDefinition = typeToConvert.GetGenericTypeDefinition();
-        return genericDefinition == typeof(JsonExpression<,>);
+        return genericDefinition == typeof(IJsonExpression<,>);
     }
 
     /// <summary>

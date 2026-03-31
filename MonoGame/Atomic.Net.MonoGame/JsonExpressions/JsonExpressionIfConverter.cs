@@ -8,9 +8,9 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by the expression</typeparam>
-public sealed class JsonExpressionIfConverter<TIn, TOut> : JsonConverter<JsonExpressionIf<TIn, TOut>>
+public sealed class JsonExpressionIfConverter<TIn, TOut> : JsonConverter<IJsonExpressionIf<TIn, TOut>>
 {
-    public override JsonExpressionIf<TIn, TOut>? Read(
+    public override IJsonExpressionIf<TIn, TOut>? Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
         JsonSerializerOptions options
@@ -41,9 +41,9 @@ public sealed class JsonExpressionIfConverter<TIn, TOut> : JsonConverter<JsonExp
         if (arrayLength == 3)
         {
             // Simple ternary
-            var condition = JsonSerializer.Deserialize<JsonExpression<TIn, bool>>(root[0], options);
-            var thenBranch = JsonSerializer.Deserialize<JsonExpression<TIn, TOut>>(root[1], options);
-            var elseBranch = JsonSerializer.Deserialize<JsonExpression<TIn, TOut>>(root[2], options);
+            var condition = JsonSerializer.Deserialize<IJsonExpression<TIn, bool>>(root[0], options);
+            var thenBranch = JsonSerializer.Deserialize<IJsonExpression<TIn, TOut>>(root[1], options);
+            var elseBranch = JsonSerializer.Deserialize<IJsonExpression<TIn, TOut>>(root[2], options);
 
             if (condition is null || thenBranch is null || elseBranch is null)
             {
@@ -66,7 +66,7 @@ public sealed class JsonExpressionIfConverter<TIn, TOut> : JsonConverter<JsonExp
         }
 
         // Build from the end backwards
-        var finalElse = JsonSerializer.Deserialize<JsonExpression<TIn, TOut>>(root[arrayLength - 1], options);
+        var finalElse = JsonSerializer.Deserialize<IJsonExpression<TIn, TOut>>(root[arrayLength - 1], options);
         if (finalElse is null)
         {
             throw new JsonException(
@@ -78,8 +78,8 @@ public sealed class JsonExpressionIfConverter<TIn, TOut> : JsonConverter<JsonExp
         var currentElse = finalElse;
         for (int i = arrayLength - 3; i >= 0; i -= 2)
         {
-            var condition = JsonSerializer.Deserialize<JsonExpression<TIn, bool>>(root[i], options);
-            var thenBranch = JsonSerializer.Deserialize<JsonExpression<TIn, TOut>>(root[i + 1], options);
+            var condition = JsonSerializer.Deserialize<IJsonExpression<TIn, bool>>(root[i], options);
+            var thenBranch = JsonSerializer.Deserialize<IJsonExpression<TIn, TOut>>(root[i + 1], options);
 
             if (condition is null || thenBranch is null)
             {
@@ -100,7 +100,7 @@ public sealed class JsonExpressionIfConverter<TIn, TOut> : JsonConverter<JsonExp
 
     public override void Write(
         Utf8JsonWriter writer,
-        JsonExpressionIf<TIn, TOut> value,
+        IJsonExpressionIf<TIn, TOut> value,
         JsonSerializerOptions options
     )
     {

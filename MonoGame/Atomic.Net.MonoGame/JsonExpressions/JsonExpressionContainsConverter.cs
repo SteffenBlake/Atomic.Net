@@ -8,9 +8,9 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by the expression</typeparam>
-public sealed class JsonExpressionContainsConverter<TIn, TOut> : JsonConverter<JsonExpressionContains<TIn, TOut>>
+public sealed class JsonExpressionContainsConverter<TIn, TOut> : JsonConverter<IJsonExpressionContains<TIn, TOut>>
 {
-    public override JsonExpressionContains<TIn, TOut>? Read(
+    public override IJsonExpressionContains<TIn, TOut>? Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
         JsonSerializerOptions options
@@ -34,22 +34,39 @@ public sealed class JsonExpressionContainsConverter<TIn, TOut> : JsonConverter<J
             );
         }
 
-        var collection = JsonSerializer.Deserialize<JsonExpression<TIn, TOut>>(root[0], options);
-        var item = JsonSerializer.Deserialize<JsonExpression<TIn, TOut>>(root[1], options);
-
-        if (collection is null || item is null)
-        {
-            throw new JsonException(
-                $"Expected: Valid expressions for contains collection and item, Actual: One or both are null"
+        // Infer element type from the collection operand (should be TElement[])
+        var collectionType = root[0].InferJsonExpressionType<TIn>();
+        var elementType = collectionType.IsArray
+            ? collectionType.GetElementType()!
+            : throw new JsonException(
+                $"Expected: Array type for contains collection, Actual: {collectionType.Name}"
             );
-        }
 
-        return new JsonExpressionContains<TIn, TOut>(collection, item);
+        var collectionExprType = typeof(IJsonExpression<,>).MakeGenericType(typeof(TIn), collectionType);
+        var itemExprType = typeof(IJsonExpression<,>).MakeGenericType(typeof(TIn), elementType);
+
+        var collection = JsonSerializer.Deserialize(root[0], collectionExprType, options) ??
+            throw new JsonException(
+                $"Expected: Valid expression for contains collection, Actual: null after deserialization"
+            );
+
+        var item = JsonSerializer.Deserialize(root[1], itemExprType, options) ??
+            throw new JsonException(
+                $"Expected: Valid expression for contains item, Actual: null after deserialization"
+            );
+
+        var containsType = typeof(JsonExpressionContains<,,>).MakeGenericType(typeof(TIn), typeof(TOut), elementType);
+        var constructor = containsType.GetConstructor([collectionExprType, itemExprType]) ??
+            throw new JsonException(
+                $"Unable to find constructor for JsonExpressionContains<{typeof(TIn).Name}, {typeof(TOut).Name}, {elementType.Name}>"
+            );
+
+        return (IJsonExpressionContains<TIn, TOut>)constructor.Invoke([collection, item]);
     }
 
     public override void Write(
         Utf8JsonWriter writer,
-        JsonExpressionContains<TIn, TOut> value,
+        IJsonExpressionContains<TIn, TOut> value,
         JsonSerializerOptions options
     )
     {

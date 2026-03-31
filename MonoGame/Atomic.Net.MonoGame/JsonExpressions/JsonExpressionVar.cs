@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using Atomic.Net.MonoGame.Core;
 
@@ -11,59 +10,85 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by this expression</typeparam>
-[JsonConverter(typeof(JsonExpressionVarConverterFactory))]
 public sealed class JsonExpressionVar<TIn, TOut>(
-    string? path,
-    JsonExpression<TIn, TOut>? defaultValue
-) : JsonExpression<TIn, TOut>
+    string[]? properties,
+    int? arrayIndex,
+    IJsonExpression<TIn, TOut>? defaultValue
+) : IJsonExpressionVar<TIn, TOut>
 {
     /// <summary>
-    /// Property path to access (e.g., "Name" or "Address.City").
+    /// Pre-split property path segments (e.g., ["Address", "City"]), or null for identity.
+    /// Parsed at load time by the converter; no string splitting occurs at compile time.
     /// </summary>
-    public string? Path { get; } = path;
+    public string[]? Properties { get; } = properties;
 
     /// <summary>
-    /// Optional default value expression if path doesn't exist.
+    /// Numeric array index for array-element access (e.g., {"var": 1}).
+    /// Mutually exclusive with Properties.
     /// </summary>
-    public JsonExpression<TIn, TOut>? DefaultValue { get; } = defaultValue;
+    public int? ArrayIndex { get; } = arrayIndex;
 
-    public override bool TryCompile(
+    /// <summary>
+    /// Optional default value expression used when the property path cannot be resolved.
+    /// </summary>
+    public IJsonExpression<TIn, TOut>? DefaultValue { get; } = defaultValue;
+
+    public bool TryCompile(
+        ParameterExpression parameter,
         [NotNullWhen(true)]
-        out Expression<Func<TIn, TOut>>? result
+        out Expression? result
     )
     {
-        if (string.IsNullOrEmpty(Path))
+        // Numeric array index: {"var": 1} → input[1]
+        if (ArrayIndex is not null)
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent("Var: Path is null or empty"));
-            result = null;
-            return false;
+            var indexExpr = Expression.ArrayIndex(parameter, Expression.Constant(ArrayIndex.Value));
+            result = indexExpr.Type != typeof(TOut)
+                ? Expression.Convert(indexExpr, typeof(TOut))
+                : indexExpr;
+            return true;
         }
 
-        var parameter = Expression.Parameter(typeof(TIn), "input");
-        
-        // Navigate nested property path (e.g., "Address.City")
-        var properties = Path.Split('.');
+        // Null properties = identity: {"var": ""} → return parameter itself
+        if (Properties is null)
+        {
+            result = parameter.Type != typeof(TOut)
+                ? Expression.Convert(parameter, typeof(TOut))
+                : parameter;
+            return true;
+        }
+
+        // Navigate pre-split property chain — no reflection here, all resolved at load time
         Expression propertyExpr = parameter;
-        
-        foreach (var propertyName in properties)
+
+        foreach (var propertyName in Properties)
         {
             var propertyInfo = propertyExpr.Type.GetProperty(propertyName);
             if (propertyInfo is null)
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent($"Var: Property '{propertyName}' not found on type {propertyExpr.Type.Name}"));
+                // Property not found at compile time: fall back to default if one exists
+                if (DefaultValue is not null)
+                {
+                    return DefaultValue.TryCompile(parameter, out result);
+                }
+
+                EventBus<ErrorEvent>.Push(new ErrorEvent(
+                    $"Var: Property '{propertyName}' not found on type {propertyExpr.Type.Name}"
+                ));
                 result = null;
                 return false;
             }
+
             propertyExpr = Expression.Property(propertyExpr, propertyInfo);
         }
-        
+
         // Convert to TOut if needed
         if (propertyExpr.Type != typeof(TOut))
         {
             propertyExpr = Expression.Convert(propertyExpr, typeof(TOut));
         }
 
-        result = Expression.Lambda<Func<TIn, TOut>>(propertyExpr, parameter);
+        result = propertyExpr;
         return true;
     }
 }

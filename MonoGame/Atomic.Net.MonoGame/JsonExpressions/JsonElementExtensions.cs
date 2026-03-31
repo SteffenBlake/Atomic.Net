@@ -259,63 +259,67 @@ public static class JsonElementExtensions
         // - Array: ["PropertyName"] or ["PropertyName", defaultValue]
         // - Number: 1 (for array indexing)
         // - Empty string: "" (returns entire TIn)
-        
-        string? path = null;
-        
+
+        if (operatorValue.ValueKind == JsonValueKind.Number)
+        {
+            return ResolveArrayIndexType<TIn>();
+        }
+
         if (operatorValue.ValueKind == JsonValueKind.String)
         {
-            path = operatorValue.GetString();
+            return ResolveVarPathType<TIn>(operatorValue.GetString());
         }
-        else if (operatorValue.ValueKind == JsonValueKind.Number)
-        {
-            // Array index - only valid for array types
-            if (!typeof(TIn).IsArray)
-            {
-                throw new JsonException($"Cannot use numeric var index on non-array type {typeof(TIn).Name}");
-            }
-            return typeof(TIn).GetElementType() ?? throw new JsonException("Array element type is null");
-        }
-        else if (operatorValue.ValueKind == JsonValueKind.Array)
+
+        if (operatorValue.ValueKind == JsonValueKind.Array)
         {
             if (operatorValue.GetArrayLength() == 0)
             {
                 throw new JsonException("Cannot infer type from empty var operator array");
             }
-            
+
             var firstElement = operatorValue[0];
+            if (firstElement.ValueKind == JsonValueKind.Number)
+            {
+                return ResolveArrayIndexType<TIn>();
+            }
+
             if (firstElement.ValueKind != JsonValueKind.String)
             {
                 throw new JsonException($"Expected string for var property path, got {firstElement.ValueKind}");
             }
-            
-            path = firstElement.GetString();
+
+            return ResolveVarPathType<TIn>(firstElement.GetString());
         }
-        else
+
+        throw new JsonException($"Invalid var operator value kind: {operatorValue.ValueKind}");
+    }
+
+    private static Type ResolveArrayIndexType<TIn>()
+    {
+        if (!typeof(TIn).IsArray)
         {
-            throw new JsonException($"Invalid var operator value kind: {operatorValue.ValueKind}");
+            throw new JsonException($"Cannot use numeric var index on non-array type {typeof(TIn).Name}");
         }
-        
+
+        return typeof(TIn).GetElementType() ?? throw new JsonException("Array element type is null");
+    }
+
+    private static Type ResolveVarPathType<TIn>(string? path)
+    {
         // Empty string returns entire TIn
         if (string.IsNullOrEmpty(path))
         {
             return typeof(TIn);
         }
-        
-        // Navigate property path
+
+        // Navigate property path using shared helper
         var properties = path.Split('.');
-        var currentType = typeof(TIn);
-        
-        foreach (var propertyName in properties)
+        if (!typeof(TIn).TryResolvePropertyChain(properties, out var chain))
         {
-            var propertyInfo = currentType.GetProperty(propertyName);
-            if (propertyInfo is null)
-            {
-                throw new JsonException($"Property '{propertyName}' not found on type {currentType.Name}");
-            }
-            currentType = propertyInfo.PropertyType;
+            throw new JsonException($"Property '{properties[0]}' not found on type {typeof(TIn).Name}");
         }
-        
-        return currentType;
+
+        return chain[^1].PropertyType;
     }
 }
 

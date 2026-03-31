@@ -11,31 +11,31 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by this expression</typeparam>
-[JsonConverter(typeof(JsonExpressionIfConverterFactory))]
 public sealed class JsonExpressionIf<TIn, TOut>(
-    JsonExpression<TIn, bool>? condition,
-    JsonExpression<TIn, TOut>? thenBranch,
-    JsonExpression<TIn, TOut>? elseBranch
-) : JsonExpression<TIn, TOut>
+    IJsonExpression<TIn, bool>? condition,
+    IJsonExpression<TIn, TOut>? thenBranch,
+    IJsonExpression<TIn, TOut>? elseBranch
+) : IJsonExpressionIf<TIn, TOut>
 {
     /// <summary>
     /// Condition expression.
     /// </summary>
-    public JsonExpression<TIn, bool>? Condition { get; } = condition;
+    public IJsonExpression<TIn, bool>? Condition { get; } = condition;
 
     /// <summary>
     /// Expression to evaluate if condition is true.
     /// </summary>
-    public JsonExpression<TIn, TOut>? ThenBranch { get; } = thenBranch;
+    public IJsonExpression<TIn, TOut>? ThenBranch { get; } = thenBranch;
 
     /// <summary>
     /// Expression to evaluate if condition is false.
     /// </summary>
-    public JsonExpression<TIn, TOut>? ElseBranch { get; } = elseBranch;
+    public IJsonExpression<TIn, TOut>? ElseBranch { get; } = elseBranch;
 
-    public override bool TryCompile(
+    public bool TryCompile(
+        ParameterExpression parameter,
         [NotNullWhen(true)]
-        out Expression<Func<TIn, TOut>>? result
+        out Expression? result
     )
     {
         if (Condition is null || ThenBranch is null || ElseBranch is null)
@@ -45,22 +45,16 @@ public sealed class JsonExpressionIf<TIn, TOut>(
             return false;
         }
 
-        if (!Condition.TryCompile(out var conditionFunc) || 
-            !ThenBranch.TryCompile(out var thenFunc) || 
-            !ElseBranch.TryCompile(out var elseFunc))
+        if (!Condition.TryCompile(parameter, out var conditionExpr) || 
+            !ThenBranch.TryCompile(parameter, out var thenExpr) || 
+            !ElseBranch.TryCompile(parameter, out var elseExpr))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("If: Failed to compile Condition, ThenBranch, or ElseBranch"));
             result = null;
             return false;
         }
 
-        var parameter = Expression.Parameter(typeof(TIn), "input");
-        var conditionExpr = Expression.Invoke(conditionFunc, parameter);
-        var thenExpr = Expression.Invoke(thenFunc, parameter);
-        var elseExpr = Expression.Invoke(elseFunc, parameter);
-        var conditional = Expression.Condition(conditionExpr, thenExpr, elseExpr);
-        
-        result = Expression.Lambda<Func<TIn, TOut>>(conditional, parameter);
+        result = Expression.Condition(conditionExpr, thenExpr, elseExpr);
         return true;
     }
 }

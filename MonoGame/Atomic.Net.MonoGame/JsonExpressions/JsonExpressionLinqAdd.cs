@@ -10,26 +10,27 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// JSONLogic operator expression.
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
-/// <typeparam name="TOut">Output type produced by this expression</typeparam>
-[JsonConverter(typeof(JsonExpressionLinqAddConverterFactory))]
-public sealed class JsonExpressionLinqAdd<TIn, TOut>(
-    JsonExpression<TIn, TOut>? item,
-    JsonExpression<TIn, TOut>? array
-) : JsonExpression<TIn, TOut>
+/// <typeparam name="TOut">Output type produced by this expression (the array type)</typeparam>
+/// <typeparam name="TElement">Element type of the array</typeparam>
+public sealed class JsonExpressionLinqAdd<TIn, TOut, TElement>(
+    IJsonExpression<TIn, TElement>? item,
+    IJsonExpression<TIn, TOut>? array
+) : IJsonExpressionLinqAdd<TIn, TOut>
 {
     /// <summary>
     /// Item to add to the array.
     /// </summary>
-    public JsonExpression<TIn, TOut>? Item { get; } = item;
+    public IJsonExpression<TIn, TElement>? Item { get; } = item;
 
     /// <summary>
     /// Array to add the item to.
     /// </summary>
-    public JsonExpression<TIn, TOut>? Array { get; } = array;
+    public IJsonExpression<TIn, TOut>? Array { get; } = array;
 
-    public override bool TryCompile(
+    public bool TryCompile(
+        ParameterExpression parameter,
         [NotNullWhen(true)]
-        out Expression<Func<TIn, TOut>>? result
+        out Expression? result
     )
     {
         if (Item is null || Array is null)
@@ -39,19 +40,15 @@ public sealed class JsonExpressionLinqAdd<TIn, TOut>(
             return false;
         }
 
-        if (!Item.TryCompile(out var itemFunc) || !Array.TryCompile(out var arrayFunc))
+        if (!Item.TryCompile(parameter, out var itemExpr) || !Array.TryCompile(parameter, out var arrayExpr))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("LinqAdd: Failed to compile Item or Array"));
             result = null;
             return false;
         }
-
-        var parameter = Expression.Parameter(typeof(TIn), "input");
-        var itemExpr = Expression.Invoke(itemFunc, parameter);
-        var arrayExpr = Expression.Invoke(arrayFunc, parameter);
         
         // TOut should be TElement[] where TElement is the array element type
-        var elementType = typeof(TOut).IsArray ? typeof(TOut).GetElementType()! : typeof(TOut);
+        var elementType = typeof(TElement);
         
         // Call Enumerable.Append(array, item).ToArray()
         var appendMethod = typeof(Enumerable).GetMethods()
@@ -61,9 +58,7 @@ public sealed class JsonExpressionLinqAdd<TIn, TOut>(
             .MakeGenericMethod(elementType);
         
         var appendExpr = Expression.Call(appendMethod, arrayExpr, itemExpr);
-        var resultExpr = Expression.Call(toArrayMethod, appendExpr);
-
-        result = Expression.Lambda<Func<TIn, TOut>>(resultExpr, parameter);
+        result = Expression.Call(toArrayMethod, appendExpr);
         return true;
     }
 }

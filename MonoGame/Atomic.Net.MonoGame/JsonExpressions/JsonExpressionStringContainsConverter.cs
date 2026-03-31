@@ -8,9 +8,9 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by the expression</typeparam>
-public sealed class JsonExpressionStringContainsConverter<TIn, TOut> : JsonConverter<JsonExpressionStringContains<TIn, TOut>>
+public sealed class JsonExpressionStringContainsConverter<TIn, TOut> : JsonConverter<IJsonExpressionStringContains<TIn, TOut>>
 {
-    public override JsonExpressionStringContains<TIn, TOut>? Read(
+    public override IJsonExpressionStringContains<TIn, TOut>? Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
         JsonSerializerOptions options
@@ -34,8 +34,8 @@ public sealed class JsonExpressionStringContainsConverter<TIn, TOut> : JsonConve
             );
         }
 
-        var haystack = JsonSerializer.Deserialize<JsonExpression<TIn, string>>(root[0], options);
-        var needle = JsonSerializer.Deserialize<JsonExpression<TIn, string>>(root[1], options);
+        var haystack = JsonSerializer.Deserialize<IJsonExpression<TIn, string>>(root[0], options);
+        var needle = JsonSerializer.Deserialize<IJsonExpression<TIn, string>>(root[1], options);
 
         if (haystack is null || needle is null)
         {
@@ -49,7 +49,7 @@ public sealed class JsonExpressionStringContainsConverter<TIn, TOut> : JsonConve
 
     public override void Write(
         Utf8JsonWriter writer,
-        JsonExpressionStringContains<TIn, TOut> value,
+        IJsonExpressionStringContains<TIn, TOut> value,
         JsonSerializerOptions options
     )
     {

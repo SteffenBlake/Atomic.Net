@@ -11,17 +11,17 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input datatype</typeparam>
 /// <typeparam name="TOut">Requested output type</typeparam>
-[JsonConverter(typeof(JsonExpressionArrayLiteralConverterFactory))]
-public sealed class JsonExpressionArrayLiteral<TIn, TOut>(JsonExpression<TIn, TOut>[]? value) : JsonExpression<TIn, TOut>
+public sealed class JsonExpressionArrayLiteral<TIn, TOut>(IJsonExpression<TIn, TOut>[]? elements) : IJsonExpressionArrayLiteral<TIn, TOut>
 {
     /// <summary>
     /// The array elements (can be any mix of literals and expressions).
     /// </summary>
-    public JsonExpression<TIn, TOut>[]? Value { get; } = value;
+    public IJsonExpression<TIn, TOut>[]? Value { get; } = elements;
 
-    public override bool TryCompile(
+    public bool TryCompile(
+        ParameterExpression parameter,
         [NotNullWhen(true)]
-        out Expression<Func<TIn, TOut>>? result
+        out Expression? result
     )
     {
         if (Value is null)
@@ -31,29 +31,24 @@ public sealed class JsonExpressionArrayLiteral<TIn, TOut>(JsonExpression<TIn, TO
             return false;
         }
 
-        var parameter = Expression.Parameter(typeof(TIn), "input");
         var elementExpressions = new List<Expression>();
 
         // Compile each element expression
         foreach (var element in Value)
         {
-            if (element is null || !element.TryCompile(out var elementFunc))
+            if (element is null || !element.TryCompile(parameter, out var elementExpr))
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent("ArrayLiteral: Element is null or failed to compile"));
                 result = null;
                 return false;
             }
 
-            // Invoke the compiled element function with the input parameter
-            var invocation = Expression.Invoke(elementFunc, parameter);
-            elementExpressions.Add(invocation);
+            elementExpressions.Add(elementExpr);
         }
 
         // Create array initialization expression
         var elementType = typeof(TOut).GetElementType() ?? typeof(object);
-        var arrayInit = Expression.NewArrayInit(elementType, elementExpressions);
-        
-        result = Expression.Lambda<Func<TIn, TOut>>(arrayInit, parameter);
+        result = Expression.NewArrayInit(elementType, elementExpressions);
         return true;
     }
 }

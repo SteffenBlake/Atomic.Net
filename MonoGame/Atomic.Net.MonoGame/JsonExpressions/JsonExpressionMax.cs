@@ -11,17 +11,17 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by this expression</typeparam>
-[JsonConverter(typeof(JsonExpressionMaxConverterFactory))]
-public sealed class JsonExpressionMax<TIn, TOut>(JsonExpression<TIn, TOut>[]? operands) : JsonExpression<TIn, TOut>
+public sealed class JsonExpressionMax<TIn, TOut>(IJsonExpression<TIn, TOut>[]? operands) : IJsonExpressionMax<TIn, TOut>
 {
     /// <summary>
     /// Array of values to compare.
     /// </summary>
-    public JsonExpression<TIn, TOut>[]? Operands { get; } = operands;
+    public IJsonExpression<TIn, TOut>[]? Operands { get; } = operands;
 
-    public override bool TryCompile(
+    public bool TryCompile(
+        ParameterExpression parameter,
         [NotNullWhen(true)]
-        out Expression<Func<TIn, TOut>>? result
+        out Expression? result
     )
     {
         if (Operands is null || Operands.Length == 0)
@@ -31,19 +31,18 @@ public sealed class JsonExpressionMax<TIn, TOut>(JsonExpression<TIn, TOut>[]? op
             return false;
         }
 
-        var parameter = Expression.Parameter(typeof(TIn), "input");
         var operandExprs = new List<Expression>();
 
         foreach (var operand in Operands)
         {
-            if (operand is null || !operand.TryCompile(out var operandFunc))
+            if (operand is null || !operand.TryCompile(parameter, out var operandExpr))
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent("Max: Operand is null or failed to compile"));
                 result = null;
                 return false;
             }
 
-            operandExprs.Add(Expression.Invoke(operandFunc, parameter));
+            operandExprs.Add(operandExpr);
         }
 
         // Build nested Math.Max calls
@@ -55,7 +54,7 @@ public sealed class JsonExpressionMax<TIn, TOut>(JsonExpression<TIn, TOut>[]? op
             maxExpr = Expression.Call(maxMethod, maxExpr, operandExprs[i]);
         }
 
-        result = Expression.Lambda<Func<TIn, TOut>>(maxExpr, parameter);
+        result = maxExpr;
         return true;
     }
 }

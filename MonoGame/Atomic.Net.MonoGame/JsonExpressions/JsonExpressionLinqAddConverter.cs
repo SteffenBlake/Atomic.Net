@@ -8,9 +8,9 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by the expression</typeparam>
-public sealed class JsonExpressionLinqAddConverter<TIn, TOut> : JsonConverter<JsonExpressionLinqAdd<TIn, TOut>>
+public sealed class JsonExpressionLinqAddConverter<TIn, TOut> : JsonConverter<IJsonExpressionLinqAdd<TIn, TOut>>
 {
-    public override JsonExpressionLinqAdd<TIn, TOut>? Read(
+    public override IJsonExpressionLinqAdd<TIn, TOut>? Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
         JsonSerializerOptions options
@@ -34,22 +34,37 @@ public sealed class JsonExpressionLinqAddConverter<TIn, TOut> : JsonConverter<Js
             );
         }
 
-        var item = JsonSerializer.Deserialize<JsonExpression<TIn, TOut>>(root[0], options);
-        var array = JsonSerializer.Deserialize<JsonExpression<TIn, TOut>>(root[1], options);
-
-        if (item is null || array is null)
-        {
+        // Derive element type from TOut (which is the array type TElement[])
+        var elementType = typeof(TOut).GetElementType() ??
             throw new JsonException(
-                $"Expected: Valid expressions for linqAdd item and array, Actual: One or both are null"
+                $"Expected: Array type for linqAdd, Actual: {typeof(TOut).Name}"
             );
-        }
 
-        return new JsonExpressionLinqAdd<TIn, TOut>(item, array);
+        var itemExprType = typeof(IJsonExpression<,>).MakeGenericType(typeof(TIn), elementType);
+        var arrayExprType = typeof(IJsonExpression<,>).MakeGenericType(typeof(TIn), typeof(TOut));
+
+        var item = JsonSerializer.Deserialize(root[0], itemExprType, options) ??
+            throw new JsonException(
+                $"Expected: Valid expression for linqAdd item, Actual: null after deserialization"
+            );
+
+        var array = JsonSerializer.Deserialize(root[1], arrayExprType, options) ??
+            throw new JsonException(
+                $"Expected: Valid expression for linqAdd array, Actual: null after deserialization"
+            );
+
+        var linqAddType = typeof(JsonExpressionLinqAdd<,,>).MakeGenericType(typeof(TIn), typeof(TOut), elementType);
+        var constructor = linqAddType.GetConstructor([itemExprType, arrayExprType]) ??
+            throw new JsonException(
+                $"Unable to find constructor for JsonExpressionLinqAdd<{typeof(TIn).Name}, {typeof(TOut).Name}, {elementType.Name}>"
+            );
+
+        return (IJsonExpressionLinqAdd<TIn, TOut>)constructor.Invoke([item, array]);
     }
 
     public override void Write(
         Utf8JsonWriter writer,
-        JsonExpressionLinqAdd<TIn, TOut> value,
+        IJsonExpressionLinqAdd<TIn, TOut> value,
         JsonSerializerOptions options
     )
     {

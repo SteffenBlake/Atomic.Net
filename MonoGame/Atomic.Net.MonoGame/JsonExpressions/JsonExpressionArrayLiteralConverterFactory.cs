@@ -16,7 +16,7 @@ public sealed class JsonExpressionArrayLiteralConverterFactory : JsonConverterFa
         }
 
         var genericDefinition = typeToConvert.GetGenericTypeDefinition();
-        return genericDefinition == typeof(JsonExpressionArrayLiteral<,>);
+        return genericDefinition == typeof(IJsonExpressionArrayLiteral<,>);
     }
 
     public override JsonConverter? CreateConverter(

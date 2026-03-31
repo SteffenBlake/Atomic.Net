@@ -8,9 +8,9 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by the expression</typeparam>
-public sealed class JsonExpressionOrConverter<TIn, TOut> : JsonConverter<JsonExpressionOr<TIn, TOut>>
+public sealed class JsonExpressionOrConverter<TIn, TOut> : JsonConverter<IJsonExpressionOr<TIn, TOut>>
 {
-    public override JsonExpressionOr<TIn, TOut>? Read(
+    public override IJsonExpressionOr<TIn, TOut>? Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
         JsonSerializerOptions options
@@ -38,10 +38,10 @@ public sealed class JsonExpressionOrConverter<TIn, TOut> : JsonConverter<JsonExp
         }
 
         // Deserialize all operands
-        var operands = new JsonExpression<TIn, TOut>[arrayLength];
+        var operands = new IJsonExpression<TIn, TOut>[arrayLength];
         for (int i = 0; i < arrayLength; i++)
         {
-            var operand = JsonSerializer.Deserialize<JsonExpression<TIn, TOut>>(root[i], options);
+            var operand = JsonSerializer.Deserialize<IJsonExpression<TIn, TOut>>(root[i], options);
             if (operand is null)
             {
                 throw new JsonException(
@@ -56,7 +56,7 @@ public sealed class JsonExpressionOrConverter<TIn, TOut> : JsonConverter<JsonExp
 
     public override void Write(
         Utf8JsonWriter writer,
-        JsonExpressionOr<TIn, TOut> value,
+        IJsonExpressionOr<TIn, TOut> value,
         JsonSerializerOptions options
     )
     {

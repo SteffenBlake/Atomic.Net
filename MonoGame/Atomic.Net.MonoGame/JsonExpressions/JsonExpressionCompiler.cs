@@ -26,8 +26,8 @@ public static class JsonExpressionCompiler
     {
         try
         {
-            // Deserialize JSON to JsonExpression
-            var expression = JsonSerializer.Deserialize<JsonExpression<TIn, TOut>>(
+            // Deserialize JSON to IJsonExpression
+            var expression = JsonSerializer.Deserialize<IJsonExpression<TIn, TOut>>(
                 rule.RootElement.GetRawText()
             );
 
@@ -42,7 +42,15 @@ public static class JsonExpressionCompiler
             }
 
             // Compile expression to LINQ Expression tree
-            return expression.TryCompile(out result);
+            var parameter = Expression.Parameter(typeof(TIn), "input");
+            if (!expression.TryCompile(parameter, out var body))
+            {
+                result = null;
+                return false;
+            }
+
+            result = Expression.Lambda<Func<TIn, TOut>>(body, parameter);
+            return true;
         }
         catch (JsonException ex)
         {

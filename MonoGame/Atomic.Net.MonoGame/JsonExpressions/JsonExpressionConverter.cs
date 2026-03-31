@@ -4,17 +4,17 @@ using System.Text.Json.Serialization;
 namespace Atomic.Net.MonoGame.JsonExpressions;
 
 /// <summary>
-/// Base JSON converter for JsonExpression types.
+/// Base JSON converter for IJsonExpression types.
 /// Handles deserialization of JSONLogic rules into typed expression instances.
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by the expression</typeparam>
-public class JsonExpressionConverter<TIn, TOut> : JsonConverter<JsonExpression<TIn, TOut>>
+public class JsonExpressionConverter<TIn, TOut> : JsonConverter<IJsonExpression<TIn, TOut>>
 {
     /// <summary>
-    /// Reads and converts JSON to a JsonExpression instance.
+    /// Reads and converts JSON to an IJsonExpression instance.
     /// </summary>
-    public override JsonExpression<TIn, TOut>? Read(
+    public override IJsonExpression<TIn, TOut>? Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
         JsonSerializerOptions options
@@ -45,7 +45,7 @@ public class JsonExpressionConverter<TIn, TOut> : JsonConverter<JsonExpression<T
 
         if (root.ValueKind == JsonValueKind.Array)
         {
-            return JsonSerializer.Deserialize<JsonExpressionArrayLiteral<TIn, TOut>>(root, options);
+            return JsonSerializer.Deserialize<IJsonExpressionArrayLiteral<TIn, TOut>>(root, options);
         }
 
         if (root.ValueKind != JsonValueKind.Object)
@@ -70,52 +70,62 @@ public class JsonExpressionConverter<TIn, TOut> : JsonConverter<JsonExpression<T
         return operatorKey switch
         {
             // Comparison operators
-            ">" => JsonSerializer.Deserialize<JsonExpressionGreaterThan<TIn, TOut>>(operatorValue, options),
-            "<" => JsonSerializer.Deserialize<JsonExpressionLessThan<TIn, TOut>>(operatorValue, options),
-            "==" => JsonSerializer.Deserialize<JsonExpressionEquals<TIn, TOut>>(operatorValue, options),
-            "!=" => JsonSerializer.Deserialize<JsonExpressionNotEquals<TIn, TOut>>(operatorValue, options),
-            ">=" => JsonSerializer.Deserialize<JsonExpressionGreaterThanOrEqual<TIn, TOut>>(operatorValue, options),
-            "<=" => JsonSerializer.Deserialize<JsonExpressionLessThanOrEqual<TIn, TOut>>(operatorValue, options),
+            ">" => JsonSerializer.Deserialize<IJsonExpressionSymbolGreaterThan<TIn, TOut>>(operatorValue, options),
+            "<" => JsonSerializer.Deserialize<IJsonExpressionSymbolLessThan<TIn, TOut>>(operatorValue, options),
+            "==" => JsonSerializer.Deserialize<IJsonExpressionSymbolEquals<TIn, TOut>>(operatorValue, options),
+            "!=" => JsonSerializer.Deserialize<IJsonExpressionSymbolNotEquals<TIn, TOut>>(operatorValue, options),
+            ">=" => JsonSerializer.Deserialize<IJsonExpressionSymbolGreaterThanOrEqual<TIn, TOut>>(operatorValue, options),
+            "<=" => JsonSerializer.Deserialize<IJsonExpressionSymbolLessThanOrEqual<TIn, TOut>>(operatorValue, options),
             
             // Logical operators
-            "and" => JsonSerializer.Deserialize<JsonExpressionAnd<TIn, TOut>>(operatorValue, options),
-            "or" => JsonSerializer.Deserialize<JsonExpressionOr<TIn, TOut>>(operatorValue, options),
-            "!" => JsonSerializer.Deserialize<JsonExpressionNot<TIn, TOut>>(operatorValue, options),
+            "and" => JsonSerializer.Deserialize<IJsonExpressionAnd<TIn, TOut>>(operatorValue, options),
+            "or" => JsonSerializer.Deserialize<IJsonExpressionOr<TIn, TOut>>(operatorValue, options),
+            "!" => JsonSerializer.Deserialize<IJsonExpressionSymbolNot<TIn, TOut>>(operatorValue, options),
             
             // Math operators
-            "-" => JsonSerializer.Deserialize<JsonExpressionSubtract<TIn, TOut>>(operatorValue, options),
-            "*" => JsonSerializer.Deserialize<JsonExpressionMultiply<TIn, TOut>>(operatorValue, options),
-            "/" => JsonSerializer.Deserialize<JsonExpressionDivide<TIn, TOut>>(operatorValue, options),
-            "%" => JsonSerializer.Deserialize<JsonExpressionModulo<TIn, TOut>>(operatorValue, options),
-            "+" => JsonSerializer.Deserialize<JsonExpressionSymbolAdd<TIn, TOut>>(operatorValue, options),
+            "-" => JsonSerializer.Deserialize<IJsonExpressionSymbolSubtract<TIn, TOut>>(operatorValue, options),
+            "*" => JsonSerializer.Deserialize<IJsonExpressionSymbolMultiply<TIn, TOut>>(operatorValue, options),
+            "/" => JsonSerializer.Deserialize<IJsonExpressionSymbolDivide<TIn, TOut>>(operatorValue, options),
+            "%" => JsonSerializer.Deserialize<IJsonExpressionSymbolModulo<TIn, TOut>>(operatorValue, options),
+            "+" => JsonSerializer.Deserialize<IJsonExpressionSymbolAdd<TIn, TOut>>(operatorValue, options),
             
             // Control flow
-            "if" => JsonSerializer.Deserialize<JsonExpressionIf<TIn, TOut>>(operatorValue, options),
-            "var" => JsonSerializer.Deserialize<JsonExpressionVar<TIn, TOut>>(operatorValue, options),
+            "if" => JsonSerializer.Deserialize<IJsonExpressionIf<TIn, TOut>>(operatorValue, options),
+            "var" => JsonSerializer.Deserialize<IJsonExpressionVar<TIn, TOut>>(operatorValue, options),
             
             // Array/Math operations
-            "max" => JsonSerializer.Deserialize<JsonExpressionMax<TIn, TOut>>(operatorValue, options),
-            "min" => JsonSerializer.Deserialize<JsonExpressionMin<TIn, TOut>>(operatorValue, options),
-            "append" => JsonSerializer.Deserialize<JsonExpressionAppend<TIn, TOut>>(operatorValue, options),
-            "contains" => JsonSerializer.Deserialize<JsonExpressionContains<TIn, TOut>>(operatorValue, options),
+            "max" => JsonSerializer.Deserialize<IJsonExpressionMax<TIn, TOut>>(operatorValue, options),
+            "min" => JsonSerializer.Deserialize<IJsonExpressionMin<TIn, TOut>>(operatorValue, options),
+            "addRange" => JsonSerializer.Deserialize<IJsonExpressionLinqAddRange<TIn, TOut>>(operatorValue, options),
+            "contains" => JsonSerializer.Deserialize<IJsonExpressionContains<TIn, TOut>>(operatorValue, options),
+
+            // LINQ operators
+            "all" => JsonSerializer.Deserialize<IJsonExpressionLinqAll<TIn, TOut>>(operatorValue, options),
+            "any" => JsonSerializer.Deserialize<IJsonExpressionLinqAny<TIn, TOut>>(operatorValue, options),
+            "none" => JsonSerializer.Deserialize<IJsonExpressionLinqNone<TIn, TOut>>(operatorValue, options),
+            "where" => JsonSerializer.Deserialize<IJsonExpressionLinqWhere<TIn, TOut>>(operatorValue, options),
+            "select" => JsonSerializer.Deserialize<IJsonExpressionLinqSelect<TIn, TOut>>(operatorValue, options),
+            "selectMany" => JsonSerializer.Deserialize<IJsonExpressionLinqSelectMany<TIn, TOut>>(operatorValue, options),
+            "aggregate" => JsonSerializer.Deserialize<IJsonExpressionLinqAggregate<TIn, TOut>>(operatorValue, options),
+            "add" => JsonSerializer.Deserialize<IJsonExpressionLinqAdd<TIn, TOut>>(operatorValue, options),
             
             // String operations
-            "stringContains" => JsonSerializer.Deserialize<JsonExpressionStringContains<TIn, TOut>>(operatorValue, options),
-            "substring" => JsonSerializer.Deserialize<JsonExpressionSubstring<TIn, TOut>>(operatorValue, options),
+            "stringContains" => JsonSerializer.Deserialize<IJsonExpressionStringContains<TIn, TOut>>(operatorValue, options),
+            "substring" => JsonSerializer.Deserialize<IJsonExpressionSubstring<TIn, TOut>>(operatorValue, options),
             
             // Logging
-            "log" => JsonSerializer.Deserialize<JsonExpressionLog<TIn, TOut>>(operatorValue, options),
+            "log" => JsonSerializer.Deserialize<IJsonExpressionLog<TIn, TOut>>(operatorValue, options),
             
             _ => throw new JsonException($"Unknown operator: {operatorKey}")
         };
     }
 
     /// <summary>
-    /// Writes a JsonExpression instance to JSON.
+    /// Writes an IJsonExpression instance to JSON.
     /// </summary>
     public override void Write(
         Utf8JsonWriter writer,
-        JsonExpression<TIn, TOut> value,
+        IJsonExpression<TIn, TOut> value,
         JsonSerializerOptions options
     )
     {

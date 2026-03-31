@@ -8,9 +8,9 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by the expression</typeparam>
-public sealed class JsonExpressionSubstringConverter<TIn, TOut> : JsonConverter<JsonExpressionSubstring<TIn, TOut>>
+public sealed class JsonExpressionSubstringConverter<TIn, TOut> : JsonConverter<IJsonExpressionSubstring<TIn, TOut>>
 {
-    public override JsonExpressionSubstring<TIn, TOut>? Read(
+    public override IJsonExpressionSubstring<TIn, TOut>? Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
         JsonSerializerOptions options
@@ -34,8 +34,8 @@ public sealed class JsonExpressionSubstringConverter<TIn, TOut> : JsonConverter<
             );
         }
 
-        var @string = JsonSerializer.Deserialize<JsonExpression<TIn, string>>(root[0], options);
-        var start = JsonSerializer.Deserialize<JsonExpression<TIn, int>>(root[1], options);
+        var @string = JsonSerializer.Deserialize<IJsonExpression<TIn, string>>(root[0], options);
+        var start = JsonSerializer.Deserialize<IJsonExpression<TIn, int>>(root[1], options);
 
         if (@string is null || start is null)
         {
@@ -44,10 +44,10 @@ public sealed class JsonExpressionSubstringConverter<TIn, TOut> : JsonConverter<
             );
         }
 
-        JsonExpression<TIn, int>? length = null;
+        IJsonExpression<TIn, int>? length = null;
         if (arrayLength == 3)
         {
-            length = JsonSerializer.Deserialize<JsonExpression<TIn, int>>(root[2], options);
+            length = JsonSerializer.Deserialize<IJsonExpression<TIn, int>>(root[2], options);
             if (length is null)
             {
                 throw new JsonException(
@@ -61,7 +61,7 @@ public sealed class JsonExpressionSubstringConverter<TIn, TOut> : JsonConverter<
 
     public override void Write(
         Utf8JsonWriter writer,
-        JsonExpressionSubstring<TIn, TOut> value,
+        IJsonExpressionSubstring<TIn, TOut> value,
         JsonSerializerOptions options
     )
     {

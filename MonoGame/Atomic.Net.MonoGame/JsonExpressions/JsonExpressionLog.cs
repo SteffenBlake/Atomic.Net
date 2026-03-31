@@ -11,17 +11,17 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by this expression</typeparam>
-[JsonConverter(typeof(JsonExpressionLogConverterFactory))]
-public sealed class JsonExpressionLog<TIn, TOut>(JsonExpression<TIn, TOut>? value) : JsonExpression<TIn, TOut>
+public sealed class JsonExpressionLog<TIn, TOut>(IJsonExpression<TIn, TOut>? value) : IJsonExpressionLog<TIn, TOut>
 {
     /// <summary>
     /// Value to log and return.
     /// </summary>
-    public JsonExpression<TIn, TOut>? Value { get; } = value;
+    public IJsonExpression<TIn, TOut>? Value { get; } = value;
 
-    public override bool TryCompile(
+    public bool TryCompile(
+        ParameterExpression parameter,
         [NotNullWhen(true)]
-        out Expression<Func<TIn, TOut>>? result
+        out Expression? result
     )
     {
         if (Value is null)
@@ -31,22 +31,17 @@ public sealed class JsonExpressionLog<TIn, TOut>(JsonExpression<TIn, TOut>? valu
             return false;
         }
 
-        if (!Value.TryCompile(out var valueFunc))
+        if (!Value.TryCompile(parameter, out var valueExpr))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Log: Failed to compile Value"));
             result = null;
             return false;
         }
-
-        var parameter = Expression.Parameter(typeof(TIn), "input");
-        var valueExpr = Expression.Invoke(valueFunc, parameter);
         
         // Log the value and return it
         var logMethod = typeof(JsonExpressionLog<TIn, TOut>).GetMethod(nameof(LogValue), 
             System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!;
-        var log = Expression.Call(logMethod, valueExpr);
-        
-        result = Expression.Lambda<Func<TIn, TOut>>(log, parameter);
+        result = Expression.Call(logMethod, valueExpr);
         return true;
     }
 

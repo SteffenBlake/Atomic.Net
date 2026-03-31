@@ -16,7 +16,7 @@ public sealed class JsonExpressionMaxConverterFactory : JsonConverterFactory
         }
 
         var genericDefinition = typeToConvert.GetGenericTypeDefinition();
-        return genericDefinition == typeof(JsonExpressionMax<,>);
+        return genericDefinition == typeof(IJsonExpressionMax<,>);
     }
 
     public override JsonConverter? CreateConverter(

@@ -11,25 +11,25 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by this expression</typeparam>
-[JsonConverter(typeof(JsonExpressionStringContainsConverterFactory))]
 public sealed class JsonExpressionStringContains<TIn, TOut>(
-    JsonExpression<TIn, string>? haystack,
-    JsonExpression<TIn, string>? needle
-) : JsonExpression<TIn, TOut>
+    IJsonExpression<TIn, string>? haystack,
+    IJsonExpression<TIn, string>? needle
+) : IJsonExpressionStringContains<TIn, TOut>
 {
     /// <summary>
     /// String to search in (haystack).
     /// </summary>
-    public JsonExpression<TIn, string>? Haystack { get; } = haystack;
+    public IJsonExpression<TIn, string>? Haystack { get; } = haystack;
 
     /// <summary>
     /// String to search for (needle).
     /// </summary>
-    public JsonExpression<TIn, string>? Needle { get; } = needle;
+    public IJsonExpression<TIn, string>? Needle { get; } = needle;
 
-    public override bool TryCompile(
+    public bool TryCompile(
+        ParameterExpression parameter,
         [NotNullWhen(true)]
-        out Expression<Func<TIn, TOut>>? result
+        out Expression? result
     )
     {
         if (Haystack is null || Needle is null)
@@ -39,21 +39,16 @@ public sealed class JsonExpressionStringContains<TIn, TOut>(
             return false;
         }
 
-        if (!Haystack.TryCompile(out var haystackFunc) || !Needle.TryCompile(out var needleFunc))
+        if (!Haystack.TryCompile(parameter, out var haystackExpr) || !Needle.TryCompile(parameter, out var needleExpr))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("StringContains: Failed to compile Haystack or Needle"));
             result = null;
             return false;
         }
 
-        var parameter = Expression.Parameter(typeof(TIn), "input");
-        var haystackExpr = Expression.Invoke(haystackFunc, parameter);
-        var needleExpr = Expression.Invoke(needleFunc, parameter);
-        
         var containsMethod = typeof(string).GetMethod(nameof(string.Contains), [typeof(string)])!;
-        var contains = Expression.Call(haystackExpr, containsMethod, needleExpr);
         
-        result = Expression.Lambda<Func<TIn, TOut>>(contains, parameter);
+        result = Expression.Call(haystackExpr, containsMethod, needleExpr);
         return true;
     }
 }

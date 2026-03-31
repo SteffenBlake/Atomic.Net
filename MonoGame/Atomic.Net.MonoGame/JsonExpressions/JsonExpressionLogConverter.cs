@@ -8,9 +8,9 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by the expression</typeparam>
-public sealed class JsonExpressionLogConverter<TIn, TOut> : JsonConverter<JsonExpressionLog<TIn, TOut>>
+public sealed class JsonExpressionLogConverter<TIn, TOut> : JsonConverter<IJsonExpressionLog<TIn, TOut>>
 {
-    public override JsonExpressionLog<TIn, TOut>? Read(
+    public override IJsonExpressionLog<TIn, TOut>? Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
         JsonSerializerOptions options
@@ -20,7 +20,7 @@ public sealed class JsonExpressionLogConverter<TIn, TOut> : JsonConverter<JsonEx
         var root = doc.RootElement;
 
         // Log can be direct value or 1-element array
-        JsonExpression<TIn, TOut>? value;
+        IJsonExpression<TIn, TOut>? value;
 
         if (root.ValueKind == JsonValueKind.Array)
         {
@@ -32,12 +32,12 @@ public sealed class JsonExpressionLogConverter<TIn, TOut> : JsonConverter<JsonEx
                 );
             }
 
-            value = JsonSerializer.Deserialize<JsonExpression<TIn, TOut>>(root[0], options);
+            value = JsonSerializer.Deserialize<IJsonExpression<TIn, TOut>>(root[0], options);
         }
         else
         {
             // Direct value (could be literal, object, etc.)
-            value = JsonSerializer.Deserialize<JsonExpression<TIn, TOut>>(root, options);
+            value = JsonSerializer.Deserialize<IJsonExpression<TIn, TOut>>(root, options);
         }
 
         if (value is null)
@@ -52,7 +52,7 @@ public sealed class JsonExpressionLogConverter<TIn, TOut> : JsonConverter<JsonEx
 
     public override void Write(
         Utf8JsonWriter writer,
-        JsonExpressionLog<TIn, TOut> value,
+        IJsonExpressionLog<TIn, TOut> value,
         JsonSerializerOptions options
     )
     {

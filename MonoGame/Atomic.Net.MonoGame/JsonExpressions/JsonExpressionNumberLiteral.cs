@@ -10,24 +10,22 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Requested output type</typeparam>
-[JsonConverter(typeof(JsonExpressionNumberLiteralConverterFactory))]
-public sealed class JsonExpressionNumberLiteral<TIn, TOut>(float value) : JsonExpression<TIn, TOut>
+public sealed class JsonExpressionNumberLiteral<TIn, TOut>(float value) : IJsonExpressionNumberLiteral<TIn, TOut>
 {
     /// <summary>
     /// The literal numeric value.
     /// </summary>
     public float Value { get; } = value;
 
-    public override bool TryCompile(
+    public bool TryCompile(
+        ParameterExpression parameter,
         [NotNullWhen(true)]
-        out Expression<Func<TIn, TOut>>? result
+        out Expression? result
     )
     {
         // Convert number to TOut type
         var converted = Convert.ChangeType(Value, typeof(TOut));
-        var constant = Expression.Constant(converted, typeof(TOut));
-        var parameter = Expression.Parameter(typeof(TIn), "input");
-        result = Expression.Lambda<Func<TIn, TOut>>(constant, parameter);
+        result = Expression.Constant(converted, typeof(TOut));
         return true;
     }
 }

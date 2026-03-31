@@ -11,25 +11,26 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by this expression</typeparam>
-[JsonConverter(typeof(JsonExpressionContainsConverterFactory))]
-public sealed class JsonExpressionContains<TIn, TOut>(
-    JsonExpression<TIn, TOut>? collection,
-    JsonExpression<TIn, TOut>? item
-) : JsonExpression<TIn, TOut>
+/// <typeparam name="TElement">Element type of the collection</typeparam>
+public sealed class JsonExpressionContains<TIn, TOut, TElement>(
+    IJsonExpression<TIn, TElement[]>? collection,
+    IJsonExpression<TIn, TElement>? item
+) : IJsonExpressionContains<TIn, TOut>
 {
     /// <summary>
     /// Collection to search in.
     /// </summary>
-    public JsonExpression<TIn, TOut>? Collection { get; } = collection;
+    public IJsonExpression<TIn, TElement[]>? Collection { get; } = collection;
 
     /// <summary>
     /// Item to search for.
     /// </summary>
-    public JsonExpression<TIn, TOut>? Item { get; } = item;
+    public IJsonExpression<TIn, TElement>? Item { get; } = item;
 
-    public override bool TryCompile(
+    public bool TryCompile(
+        ParameterExpression parameter,
         [NotNullWhen(true)]
-        out Expression<Func<TIn, TOut>>? result
+        out Expression? result
     )
     {
         if (Collection is null || Item is null)
@@ -39,23 +40,18 @@ public sealed class JsonExpressionContains<TIn, TOut>(
             return false;
         }
 
-        if (!Collection.TryCompile(out var collectionFunc) || !Item.TryCompile(out var itemFunc))
+        if (!Collection.TryCompile(parameter, out var collectionExpr) || !Item.TryCompile(parameter, out var itemExpr))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Contains: Failed to compile Collection or Item"));
             result = null;
             return false;
         }
 
-        var parameter = Expression.Parameter(typeof(TIn), "input");
-        var collectionExpr = Expression.Invoke(collectionFunc, parameter);
-        var itemExpr = Expression.Invoke(itemFunc, parameter);
-        
         var containsMethod = typeof(Enumerable).GetMethods()
             .First(m => m.Name == nameof(Enumerable.Contains) && m.GetParameters().Length == 2)
-            .MakeGenericMethod(itemExpr.Type);
-        var contains = Expression.Call(containsMethod, collectionExpr, itemExpr);
+            .MakeGenericMethod(typeof(TElement));
         
-        result = Expression.Lambda<Func<TIn, TOut>>(contains, parameter);
+        result = Expression.Call(containsMethod, collectionExpr, itemExpr);
         return true;
     }
 }

@@ -8,9 +8,9 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by the expression</typeparam>
-public sealed class JsonExpressionMaxConverter<TIn, TOut> : JsonConverter<JsonExpressionMax<TIn, TOut>>
+public sealed class JsonExpressionMaxConverter<TIn, TOut> : JsonConverter<IJsonExpressionMax<TIn, TOut>>
 {
-    public override JsonExpressionMax<TIn, TOut>? Read(
+    public override IJsonExpressionMax<TIn, TOut>? Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
         JsonSerializerOptions options
@@ -34,10 +34,10 @@ public sealed class JsonExpressionMaxConverter<TIn, TOut> : JsonConverter<JsonEx
             );
         }
 
-        var operands = new JsonExpression<TIn, TOut>[arrayLength];
+        var operands = new IJsonExpression<TIn, TOut>[arrayLength];
         for (int i = 0; i < arrayLength; i++)
         {
-            var operand = JsonSerializer.Deserialize<JsonExpression<TIn, TOut>>(root[i], options);
+            var operand = JsonSerializer.Deserialize<IJsonExpression<TIn, TOut>>(root[i], options);
             if (operand is null)
             {
                 throw new JsonException(
@@ -52,7 +52,7 @@ public sealed class JsonExpressionMaxConverter<TIn, TOut> : JsonConverter<JsonEx
 
     public override void Write(
         Utf8JsonWriter writer,
-        JsonExpressionMax<TIn, TOut> value,
+        IJsonExpressionMax<TIn, TOut> value,
         JsonSerializerOptions options
     )
     {

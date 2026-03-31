@@ -11,17 +11,17 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Requested output type</typeparam>
-[JsonConverter(typeof(JsonExpressionStringLiteralConverterFactory))]
-public sealed class JsonExpressionStringLiteral<TIn, TOut>(string? value) : JsonExpression<TIn, TOut>
+public sealed class JsonExpressionStringLiteral<TIn, TOut>(string? value) : IJsonExpressionStringLiteral<TIn, TOut>
 {
     /// <summary>
     /// The literal string value.
     /// </summary>
     public string? Value { get; } = value;
 
-    public override bool TryCompile(
+    public bool TryCompile(
+        ParameterExpression parameter,
         [NotNullWhen(true)]
-        out Expression<Func<TIn, TOut>>? result
+        out Expression? result
     )
     {
         if (Value is null)
@@ -33,9 +33,7 @@ public sealed class JsonExpressionStringLiteral<TIn, TOut>(string? value) : Json
 
         // Convert string to TOut type
         var converted = (TOut)(object)Value;
-        var constant = Expression.Constant(converted, typeof(TOut));
-        var parameter = Expression.Parameter(typeof(TIn), "input");
-        result = Expression.Lambda<Func<TIn, TOut>>(constant, parameter);
+        result = Expression.Constant(converted, typeof(TOut));
         return true;
     }
 }
