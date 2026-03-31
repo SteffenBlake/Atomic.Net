@@ -9,7 +9,7 @@ namespace Atomic.Net.MonoGame.Tests.Persistence.Integrations;
 
 /// <summary>
 /// Integration tests for disk persistence lifecycle edge cases.
-/// Tests: ResetEvent, ShutdownEvent, entity deactivation, behavior removal handling.
+/// Tests: ResetDriver, ShutdownEvent, entity deactivation, behavior removal handling.
 /// </summary>
 /// <remarks>
 /// test-architect: These tests validate that disk data persists across entity lifecycle events.
@@ -45,7 +45,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
     }
 
     [Fact]
-    public void ResetEvent_WithPersistentEntity_DoesNotDeleteFromDisk()
+    public void ResetDriver_WithPersistentEntity_DoesNotDeleteFromDisk()
     {
         // Arrange: Create entity with PersistToDiskBehavior in scene partition
         var entity = EntityRegistry.Instance.Activate(); // Fixed - entities must be activated first
@@ -58,7 +58,7 @@ public sealed class PersistenceLifecycleTests : IDisposable
             behavior = behavior with { Properties = behavior.Properties.With("health", 100f) };
         });
 
-        // Act: Flush to write to disk, then fire ResetEvent
+        // Act: Flush to write to disk, then fire ResetDriver
         DatabaseRegistry.Instance.Flush();
         ResetDriver.Instance.Run();
 

@@ -8,7 +8,7 @@ namespace Atomic.Net.MonoGame.Core;
 
 /// <summary>
 /// Driver that resets scene partition across all registries.
-/// Replaces ResetEvent-based pattern with direct method calls for thread safety.
+/// Uses direct method calls for thread safety.
 /// </summary>
 public sealed class ResetDriver : ISingleton<ResetDriver>
 {

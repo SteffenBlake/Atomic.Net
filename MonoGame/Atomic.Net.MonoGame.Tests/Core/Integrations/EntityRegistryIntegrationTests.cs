@@ -276,7 +276,7 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void ResetEvent_DeactivatesOnlySceneEntities()
+    public void ResetDriver_DeactivatesOnlySceneEntities()
     {
         // Arrange
         var globalPath = "Core/Fixtures/single-global-entity.json";
@@ -300,7 +300,7 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void ResetEvent_AllowsSceneEntityReuse()
+    public void ResetDriver_AllowsSceneEntityReuse()
     {
         // Arrange
         var scenePath = "Core/Fixtures/single-scene-entity.json";
@@ -319,7 +319,7 @@ public sealed class EntityRegistryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void ResetEvent_DoesNotPollute_BasicCheck()
+    public void ResetDriver_DoesNotPollute_BasicCheck()
     {
         // Arrange
         var scenePath = "Core/Fixtures/single-scene-entity.json";

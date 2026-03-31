@@ -87,7 +87,7 @@ public sealed class BehaviorRegistryUnitTests : IDisposable
     }
 
     [Fact]
-    public void ResetEvent_DoesNotPolluteBehaviors()
+    public void ResetDriver_DoesNotPolluteBehaviors()
     {
         // Arrange
         var entity1 = EntityRegistry.Instance.Activate();

@@ -128,7 +128,7 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void ResetEvent_ClearsSceneEntityHierarchy()
+    public void ResetDriver_ClearsSceneEntityHierarchy()
     {
         // Arrange
         var scenePath = "BED/Fixtures/parent-child.json";
@@ -148,7 +148,7 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void ResetEvent_PreservesGlobalEntityHierarchy()
+    public void ResetDriver_PreservesGlobalEntityHierarchy()
     {
         // Arrange
         var scenePath = "BED/Fixtures/parent-child.json";
@@ -171,7 +171,7 @@ public sealed class HierarchyRegistryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void ResetEvent_DoesNotPolluteHierarchy()
+    public void ResetDriver_DoesNotPolluteHierarchy()
     {
         // Arrange
         var scenePath = "BED/Fixtures/parent-child.json";

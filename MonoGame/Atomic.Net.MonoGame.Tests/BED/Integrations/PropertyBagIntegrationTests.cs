@@ -261,7 +261,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void ResetEvent_ClearsAllProperties()
+    public void ResetDriver_ClearsAllProperties()
     {
         // Arrange
         var scenePath = "BED/Fixtures/properties-basic.json";
@@ -288,7 +288,7 @@ public sealed class PropertyBagIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void ResetEvent_DoesNotPolluteProperties()
+    public void ResetDriver_DoesNotPolluteProperties()
     {
         // Arrange
         var scenePath = "BED/Fixtures/properties-basic.json";

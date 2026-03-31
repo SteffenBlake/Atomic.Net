@@ -250,7 +250,7 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void ResetEvent_ClearsEntityIdRegistry()
+    public void ResetDriver_ClearsEntityIdRegistry()
     {
         // Arrange
         var scenePath = "Scenes/Fixtures/basic-scene.json";
@@ -267,7 +267,7 @@ public sealed class SceneLoaderIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void ResetEvent_DoesNotPollute_SceneLoading()
+    public void ResetDriver_DoesNotPollute_SceneLoading()
     {
         // Arrange: Load scene first time
         var scenePath = "Scenes/Fixtures/basic-scene.json";

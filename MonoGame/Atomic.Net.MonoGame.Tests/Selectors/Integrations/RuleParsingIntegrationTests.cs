@@ -288,7 +288,7 @@ public sealed class RuleParsingIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void ResetEvent_ClearsSceneRulesOnly()
+    public void ResetDriver_ClearsSceneRulesOnly()
     {
         // Arrange
         var globalScenePath = "Selectors/Fixtures/poison-rule.json";

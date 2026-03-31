@@ -65,7 +65,7 @@ public class SceneLoadingBenchmark
     public void IterationSetup()
     {
         // Reset entities between iterations
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
     }
 
     /// <summary>

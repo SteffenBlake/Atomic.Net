@@ -41,13 +41,13 @@ public class TransformBenchmark
     [GlobalCleanup]
     public void GlobalCleanup()
     {
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
     }
 
     [IterationSetup]
     public void IterationSetup()
     {
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         _manualResults = new Matrix[EntityCount];
         _transformData = new TransformData[EntityCount];

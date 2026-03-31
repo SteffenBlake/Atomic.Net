@@ -200,7 +200,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
 
         DatabaseRegistry.Instance.Flush();
 
-        // Act: Fire ResetEvent (should NOT deactivate global partition)
+        // Act: Fire ResetDriver (should NOT deactivate global partition)
         ResetDriver.Instance.Run();
 
         // Assert: Entity should still be active in-memory
@@ -235,7 +235,7 @@ public sealed class PersistenceDiskCorruptionTests : IDisposable
 
         DatabaseRegistry.Instance.Flush();
 
-        // Act: Fire ResetEvent (should deactivate scene partition)
+        // Act: Fire ResetDriver (should deactivate scene partition)
         ResetDriver.Instance.Run();
 
         // Assert: Entity should be deactivated in-memory

@@ -33,13 +33,13 @@ public class SparsePoisonSequenceBenchmark
     [GlobalCleanup]
     public void GlobalCleanup()
     {
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
     }
 
     [IterationSetup]
     public void IterationSetup()
     {
-        EventBus<ResetEvent>.Push(new());
+        ResetDriver.Instance.Run();
 
         var random = new Random(42); // Fixed seed for reproducibility (same as sparse-poison-rule)
 

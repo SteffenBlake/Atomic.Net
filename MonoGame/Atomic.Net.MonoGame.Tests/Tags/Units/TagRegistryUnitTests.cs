@@ -311,7 +311,7 @@ public sealed class TagRegistryUnitTests : IDisposable
     #region Partition Tests
 
     [Fact]
-    public void TagRegistry_ResetEvent_ClearsSceneTagsOnly()
+    public void TagRegistry_ResetDriver_ClearsSceneTagsOnly()
     {
         // Arrange
         var globalEntity = EntityRegistry.Instance.ActivateGlobal();
@@ -323,7 +323,7 @@ public sealed class TagRegistryUnitTests : IDisposable
             static (ref b) => b = b with { Tags = b.Tags.With("enemy") }
         );
 
-        // Act - ResetEvent clears scene entities
+        // Act - ResetDriver clears scene entities
         ResetDriver.Instance.Run();
 
         // Assert - Global tag persists, scene tag cleared
