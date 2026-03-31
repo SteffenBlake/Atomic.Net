@@ -16,8 +16,41 @@ public sealed class JsonExpressionNotConverter<TIn, TOut> : JsonConverter<JsonEx
         JsonSerializerOptions options
     )
     {
-        // TODO: Implement JSON parsing logic
-        throw new NotImplementedException();
+        // Use the built-in fast path from Utf8JsonReader to JsonDocument
+        using var doc = JsonDocument.ParseValue(ref reader);
+        var root = doc.RootElement;
+
+        JsonElement operandElement;
+
+        // Not can be either a single value or an array with one element
+        if (root.ValueKind == JsonValueKind.Array)
+        {
+            // Array format: {"!": [value]}
+            var arrayLength = root.GetArrayLength();
+            if (arrayLength != 1)
+            {
+                throw new JsonException(
+                    $"Expected: Array with 1 element for '!' operator, Actual: {arrayLength} elements"
+                );
+            }
+            operandElement = root[0];
+        }
+        else
+        {
+            // Direct value format: {"!": value}
+            operandElement = root;
+        }
+
+        // Deserialize the operand as bool expression
+        var operand = JsonSerializer.Deserialize<JsonExpression<TIn, bool>>(operandElement, options);
+        if (operand is null)
+        {
+            throw new JsonException(
+                $"Expected: Valid expression for operand of '!', Actual: null after deserialization"
+            );
+        }
+
+        return new JsonExpressionNot<TIn, TOut>(operand);
     }
 
     public override void Write(

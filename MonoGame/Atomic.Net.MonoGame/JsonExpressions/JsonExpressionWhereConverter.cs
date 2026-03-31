@@ -16,8 +16,35 @@ public sealed class JsonExpressionWhereConverter<TIn, TSource> : JsonConverter<J
         JsonSerializerOptions options
     )
     {
-        // TODO: Implement JSON parsing logic
-        throw new NotImplementedException();
+        using var doc = JsonDocument.ParseValue(ref reader);
+        var root = doc.RootElement;
+
+        if (root.ValueKind != JsonValueKind.Array)
+        {
+            throw new JsonException(
+                $"Expected: Array for where operator, Actual: {root.ValueKind}"
+            );
+        }
+
+        var arrayLength = root.GetArrayLength();
+        if (arrayLength != 2)
+        {
+            throw new JsonException(
+                $"Expected: Array with 2 elements for where operator, Actual: Array with {arrayLength} elements"
+            );
+        }
+
+        var source = JsonSerializer.Deserialize<JsonExpression<TIn, TSource[]>>(root[0], options);
+        var predicate = JsonSerializer.Deserialize<JsonExpression<TSource, bool>>(root[1], options);
+
+        if (source is null || predicate is null)
+        {
+            throw new JsonException(
+                $"Expected: Valid expressions for where source and predicate, Actual: One or both are null"
+            );
+        }
+
+        return new JsonExpressionWhere<TIn, TSource>(source, predicate);
     }
 
     public override void Write(

@@ -16,8 +16,18 @@ public sealed class JsonExpressionStringLiteralConverter<TIn, TOut> : JsonConver
         JsonSerializerOptions options
     )
     {
-        // TODO: Implement JSON parsing logic
-        throw new NotImplementedException();
+        // Validate that we're reading a string
+        if (reader.TokenType != JsonTokenType.String)
+        {
+            throw new JsonException(
+                $"Expected: String token for string literal, Actual: {reader.TokenType}"
+            );
+        }
+
+        // Parse the string value
+        var value = reader.GetString();
+
+        return new JsonExpressionStringLiteral<TIn, TOut>(value);
     }
 
     public override void Write(

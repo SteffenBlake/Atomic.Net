@@ -16,8 +16,42 @@ public sealed class JsonExpressionAndConverter<TIn, TOut> : JsonConverter<JsonEx
         JsonSerializerOptions options
     )
     {
-        // TODO: Implement JSON parsing logic
-        throw new NotImplementedException();
+        // Use the built-in fast path from Utf8JsonReader to JsonDocument
+        using var doc = JsonDocument.ParseValue(ref reader);
+        var root = doc.RootElement;
+
+        // Validate: must be an array (parent already parsed the "and" key)
+        if (root.ValueKind != JsonValueKind.Array)
+        {
+            throw new JsonException(
+                $"Expected: Array of operands for 'and' operator, Actual: {root.ValueKind}"
+            );
+        }
+
+        // Validate: array must have at least 1 element
+        var arrayLength = root.GetArrayLength();
+        if (arrayLength == 0)
+        {
+            throw new JsonException(
+                $"Expected: Array with at least 1 element for 'and' operator, Actual: 0 elements"
+            );
+        }
+
+        // Deserialize all operands
+        var operands = new JsonExpression<TIn, TOut>[arrayLength];
+        for (int i = 0; i < arrayLength; i++)
+        {
+            var operand = JsonSerializer.Deserialize<JsonExpression<TIn, TOut>>(root[i], options);
+            if (operand is null)
+            {
+                throw new JsonException(
+                    $"Expected: Valid expression for operand {i} of 'and', Actual: null after deserialization"
+                );
+            }
+            operands[i] = operand;
+        }
+
+        return new JsonExpressionAnd<TIn, TOut>(operands);
     }
 
     public override void Write(

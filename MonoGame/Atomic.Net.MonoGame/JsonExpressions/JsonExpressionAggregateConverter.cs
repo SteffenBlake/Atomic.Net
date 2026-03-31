@@ -17,8 +17,36 @@ public sealed class JsonExpressionAggregateConverter<TIn, TSource, TAccumulate> 
         JsonSerializerOptions options
     )
     {
-        // TODO: Implement JSON parsing logic
-        throw new NotImplementedException();
+        using var doc = JsonDocument.ParseValue(ref reader);
+        var root = doc.RootElement;
+
+        if (root.ValueKind != JsonValueKind.Array)
+        {
+            throw new JsonException(
+                $"Expected: Array for aggregate operator, Actual: {root.ValueKind}"
+            );
+        }
+
+        var arrayLength = root.GetArrayLength();
+        if (arrayLength != 3)
+        {
+            throw new JsonException(
+                $"Expected: Array with 3 elements for aggregate operator, Actual: Array with {arrayLength} elements"
+            );
+        }
+
+        var source = JsonSerializer.Deserialize<JsonExpression<TIn, TSource[]>>(root[0], options);
+        var accumulator = JsonSerializer.Deserialize<JsonExpression<TSource, TAccumulate>>(root[1], options);
+        var initialValue = JsonSerializer.Deserialize<JsonExpression<TIn, TAccumulate>>(root[2], options);
+
+        if (source is null || accumulator is null || initialValue is null)
+        {
+            throw new JsonException(
+                $"Expected: Valid expressions for aggregate source, accumulator, and initialValue, Actual: One or more are null"
+            );
+        }
+
+        return new JsonExpressionAggregate<TIn, TSource, TAccumulate>(source, accumulator, initialValue);
     }
 
     public override void Write(

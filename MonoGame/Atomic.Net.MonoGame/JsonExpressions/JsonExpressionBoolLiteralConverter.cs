@@ -16,8 +16,18 @@ public sealed class JsonExpressionBoolLiteralConverter<TIn, TOut> : JsonConverte
         JsonSerializerOptions options
     )
     {
-        // TODO: Implement JSON parsing logic
-        throw new NotImplementedException();
+        // Validate that we're reading a boolean
+        if (reader.TokenType != JsonTokenType.True && reader.TokenType != JsonTokenType.False)
+        {
+            throw new JsonException(
+                $"Expected: Boolean token for bool literal, Actual: {reader.TokenType}"
+            );
+        }
+
+        // Parse the boolean value
+        var value = reader.GetBoolean();
+
+        return new JsonExpressionBoolLiteral<TIn, TOut>(value);
     }
 
     public override void Write(

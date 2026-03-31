@@ -16,8 +16,47 @@ public sealed class JsonExpressionSubstringConverter<TIn, TOut> : JsonConverter<
         JsonSerializerOptions options
     )
     {
-        // TODO: Implement JSON parsing logic
-        throw new NotImplementedException();
+        using var doc = JsonDocument.ParseValue(ref reader);
+        var root = doc.RootElement;
+
+        if (root.ValueKind != JsonValueKind.Array)
+        {
+            throw new JsonException(
+                $"Expected: Array for substring operator, Actual: {root.ValueKind}"
+            );
+        }
+
+        var arrayLength = root.GetArrayLength();
+        if (arrayLength is < 2 or > 3)
+        {
+            throw new JsonException(
+                $"Expected: Array with 2 or 3 elements for substring operator, Actual: Array with {arrayLength} elements"
+            );
+        }
+
+        var @string = JsonSerializer.Deserialize<JsonExpression<TIn, string>>(root[0], options);
+        var start = JsonSerializer.Deserialize<JsonExpression<TIn, int>>(root[1], options);
+
+        if (@string is null || start is null)
+        {
+            throw new JsonException(
+                $"Expected: Valid expressions for substring string and start, Actual: One or both are null"
+            );
+        }
+
+        JsonExpression<TIn, int>? length = null;
+        if (arrayLength == 3)
+        {
+            length = JsonSerializer.Deserialize<JsonExpression<TIn, int>>(root[2], options);
+            if (length is null)
+            {
+                throw new JsonException(
+                    $"Expected: Valid expression for substring length, Actual: null"
+                );
+            }
+        }
+
+        return new JsonExpressionSubstring<TIn, TOut>(@string, start, length);
     }
 
     public override void Write(

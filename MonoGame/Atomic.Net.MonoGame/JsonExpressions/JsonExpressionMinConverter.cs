@@ -16,8 +16,38 @@ public sealed class JsonExpressionMinConverter<TIn, TOut> : JsonConverter<JsonEx
         JsonSerializerOptions options
     )
     {
-        // TODO: Implement JSON parsing logic
-        throw new NotImplementedException();
+        using var doc = JsonDocument.ParseValue(ref reader);
+        var root = doc.RootElement;
+
+        if (root.ValueKind != JsonValueKind.Array)
+        {
+            throw new JsonException(
+                $"Expected: Array for min operator, Actual: {root.ValueKind}"
+            );
+        }
+
+        var arrayLength = root.GetArrayLength();
+        if (arrayLength < 1)
+        {
+            throw new JsonException(
+                $"Expected: Array with at least 1 element for min operator, Actual: Array with {arrayLength} elements"
+            );
+        }
+
+        var operands = new JsonExpression<TIn, TOut>[arrayLength];
+        for (int i = 0; i < arrayLength; i++)
+        {
+            var operand = JsonSerializer.Deserialize<JsonExpression<TIn, TOut>>(root[i], options);
+            if (operand is null)
+            {
+                throw new JsonException(
+                    $"Expected: Valid expression for min operand at index {i}, Actual: null"
+                );
+            }
+            operands[i] = operand;
+        }
+
+        return new JsonExpressionMin<TIn, TOut>(operands);
     }
 
     public override void Write(

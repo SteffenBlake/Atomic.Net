@@ -16,8 +16,35 @@ public sealed class JsonExpressionStringContainsConverter<TIn, TOut> : JsonConve
         JsonSerializerOptions options
     )
     {
-        // TODO: Implement JSON parsing logic
-        throw new NotImplementedException();
+        using var doc = JsonDocument.ParseValue(ref reader);
+        var root = doc.RootElement;
+
+        if (root.ValueKind != JsonValueKind.Array)
+        {
+            throw new JsonException(
+                $"Expected: Array for stringContains operator, Actual: {root.ValueKind}"
+            );
+        }
+
+        var arrayLength = root.GetArrayLength();
+        if (arrayLength != 2)
+        {
+            throw new JsonException(
+                $"Expected: Array with 2 elements for stringContains operator, Actual: Array with {arrayLength} elements"
+            );
+        }
+
+        var haystack = JsonSerializer.Deserialize<JsonExpression<TIn, string>>(root[0], options);
+        var needle = JsonSerializer.Deserialize<JsonExpression<TIn, string>>(root[1], options);
+
+        if (haystack is null || needle is null)
+        {
+            throw new JsonException(
+                $"Expected: Valid expressions for stringContains haystack and needle, Actual: One or both are null"
+            );
+        }
+
+        return new JsonExpressionStringContains<TIn, TOut>(haystack, needle);
     }
 
     public override void Write(

@@ -20,7 +20,7 @@ public sealed class JsonExpressionGreaterThanConverter<TIn, TOut> : JsonConverte
         if (typeof(TOut) != typeof(bool))
         {
             throw new JsonException(
-                $"Expected: TOut type 'bool' for '>' operator, Actual: '{typeof(TOut).Name}'"
+                $"Unable to convert 'bool' operation of '>' operator to requested type of '{typeof(TOut).Name}'"
             );
         }
 

@@ -16,8 +16,35 @@ public sealed class JsonExpressionLinqAddConverter<TIn, TOut> : JsonConverter<Js
         JsonSerializerOptions options
     )
     {
-        // TODO: Implement JSON parsing logic
-        throw new NotImplementedException();
+        using var doc = JsonDocument.ParseValue(ref reader);
+        var root = doc.RootElement;
+
+        if (root.ValueKind != JsonValueKind.Array)
+        {
+            throw new JsonException(
+                $"Expected: Array for linqAdd operator, Actual: {root.ValueKind}"
+            );
+        }
+
+        var arrayLength = root.GetArrayLength();
+        if (arrayLength != 2)
+        {
+            throw new JsonException(
+                $"Expected: Array with 2 elements for linqAdd operator, Actual: Array with {arrayLength} elements"
+            );
+        }
+
+        var item = JsonSerializer.Deserialize<JsonExpression<TIn, TOut>>(root[0], options);
+        var array = JsonSerializer.Deserialize<JsonExpression<TIn, TOut>>(root[1], options);
+
+        if (item is null || array is null)
+        {
+            throw new JsonException(
+                $"Expected: Valid expressions for linqAdd item and array, Actual: One or both are null"
+            );
+        }
+
+        return new JsonExpressionLinqAdd<TIn, TOut>(item, array);
     }
 
     public override void Write(

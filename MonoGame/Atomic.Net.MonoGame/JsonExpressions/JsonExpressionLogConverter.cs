@@ -16,8 +16,38 @@ public sealed class JsonExpressionLogConverter<TIn, TOut> : JsonConverter<JsonEx
         JsonSerializerOptions options
     )
     {
-        // TODO: Implement JSON parsing logic
-        throw new NotImplementedException();
+        using var doc = JsonDocument.ParseValue(ref reader);
+        var root = doc.RootElement;
+
+        // Log can be direct value or 1-element array
+        JsonExpression<TIn, TOut>? value;
+
+        if (root.ValueKind == JsonValueKind.Array)
+        {
+            var arrayLength = root.GetArrayLength();
+            if (arrayLength != 1)
+            {
+                throw new JsonException(
+                    $"Expected: Array with 1 element for log operator, Actual: Array with {arrayLength} elements"
+                );
+            }
+
+            value = JsonSerializer.Deserialize<JsonExpression<TIn, TOut>>(root[0], options);
+        }
+        else
+        {
+            // Direct value (could be literal, object, etc.)
+            value = JsonSerializer.Deserialize<JsonExpression<TIn, TOut>>(root, options);
+        }
+
+        if (value is null)
+        {
+            throw new JsonException(
+                $"Expected: Valid expression for log value, Actual: null"
+            );
+        }
+
+        return new JsonExpressionLog<TIn, TOut>(value);
     }
 
     public override void Write(
