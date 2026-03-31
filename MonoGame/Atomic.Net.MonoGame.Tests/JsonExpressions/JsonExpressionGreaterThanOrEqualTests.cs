@@ -10,6 +10,7 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 /// <summary>
 /// Tests for JSONLogic '>=' operator.
 /// </summary>
+[Collection("NonParallel")]
 public sealed class JsonExpressionGreaterThanOrEqualTests : IDisposable
 {
     private readonly record struct TestInput(int Value);
@@ -35,7 +36,7 @@ public sealed class JsonExpressionGreaterThanOrEqualTests : IDisposable
         // Arrange
         var json = """{">=": [2, 1]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -52,7 +53,7 @@ public sealed class JsonExpressionGreaterThanOrEqualTests : IDisposable
         // Arrange
         var json = """{">=": [1, 1]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -69,7 +70,7 @@ public sealed class JsonExpressionGreaterThanOrEqualTests : IDisposable
         // Arrange
         var json = """{">=": [1, 2]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -86,7 +87,7 @@ public sealed class JsonExpressionGreaterThanOrEqualTests : IDisposable
         // Arrange
         var json = """{">=": [{"var": "Value"}, 42]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42);
 
@@ -96,4 +97,13 @@ public sealed class JsonExpressionGreaterThanOrEqualTests : IDisposable
         // Assert
         Assert.True(result);
     }
-}
+    [Fact]
+    public void GreaterThanOrEqual_WrongOutputType_Fails()
+    {
+        // Arrange - >= returns bool, but requesting string
+        var json = """{ ">=": [2, 1]}""";
+        var doc = JsonDocument.Parse(json);
+        
+        // Assert
+        Assert.False(JsonExpression.TryCompile<TestInput, string>(doc, out _));
+    }}

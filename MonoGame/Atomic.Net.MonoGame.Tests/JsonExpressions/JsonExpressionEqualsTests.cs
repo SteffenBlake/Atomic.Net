@@ -10,6 +10,7 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 /// <summary>
 /// Tests for JSONLogic '==' operator (equality with type coercion).
 /// </summary>
+[Collection("NonParallel")]
 public sealed class JsonExpressionEqualsTests : IDisposable
 {
     private readonly record struct TestInput(int Value, string Name);
@@ -35,7 +36,7 @@ public sealed class JsonExpressionEqualsTests : IDisposable
         // Arrange
         var json = """{"==": [1, 1]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, "");
 
@@ -52,7 +53,7 @@ public sealed class JsonExpressionEqualsTests : IDisposable
         // Arrange
         var json = """{"==": [1, 2]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, "");
 
@@ -66,35 +67,23 @@ public sealed class JsonExpressionEqualsTests : IDisposable
     [Fact]
     public void Equals_IntegerAndString_WithCoercion_ReturnsTrue()
     {
-        // Arrange
-        var json = """{"==": [1, "1"]}""";
+        // Arrange - comparing int and string not supported in C# semantics (no coercion)
+        var json = """{ "==": [1, "1"]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
-        var func = expr.Compile();
-        var data = new TestInput(0, "");
-
-        // Act
-        var result = func(data);
-
-        // Assert
-        Assert.True(result);
+        
+        // Assert - should fail to compile
+        Assert.False(JsonExpression.TryCompile<TestInput, bool>(doc, out _));
     }
 
     [Fact]
     public void Equals_ZeroAndFalse_WithCoercion_ReturnsTrue()
     {
-        // Arrange
-        var json = """{"==": [0, false]}""";
+        // Arrange - comparing int and bool not supported in C# semantics (no coercion)
+        var json = """{ "==": [0, false]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
-        var func = expr.Compile();
-        var data = new TestInput(0, "");
-
-        // Act
-        var result = func(data);
-
-        // Assert
-        Assert.True(result);
+        
+        // Assert - should fail to compile
+        Assert.False(JsonExpression.TryCompile<TestInput, bool>(doc, out _));
     }
 
     [Fact]
@@ -103,7 +92,7 @@ public sealed class JsonExpressionEqualsTests : IDisposable
         // Arrange
         var json = """{"==": [{"var": "Value"}, 42]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42, "test");
 
@@ -120,7 +109,7 @@ public sealed class JsonExpressionEqualsTests : IDisposable
         // Arrange
         var json = """{"==": [{"var": "Name"}, "test"]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42, "test");
 
@@ -137,7 +126,7 @@ public sealed class JsonExpressionEqualsTests : IDisposable
         // Arrange
         var json = """{"==": [{"var": "Name"}, "other"]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42, "test");
 
@@ -147,4 +136,13 @@ public sealed class JsonExpressionEqualsTests : IDisposable
         // Assert
         Assert.False(result);
     }
-}
+    [Fact]
+    public void Equals_WrongOutputType_Fails()
+    {
+        // Arrange - equals returns bool, but requesting int
+        var json = """{ "==": [1, 1]}""";
+        var doc = JsonDocument.Parse(json);
+        
+        // Assert
+        Assert.False(JsonExpression.TryCompile<TestInput, int>(doc, out _));
+    }}

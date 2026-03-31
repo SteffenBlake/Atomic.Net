@@ -10,6 +10,7 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 /// <summary>
 /// Tests for JSONLogic '!=' operator (inequality with type coercion).
 /// </summary>
+[Collection("NonParallel")]
 public sealed class JsonExpressionNotEqualsTests : IDisposable
 {
     private readonly record struct TestInput(int Value, string Name);
@@ -35,7 +36,7 @@ public sealed class JsonExpressionNotEqualsTests : IDisposable
         // Arrange
         var json = """{"!=": [1, 2]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, "");
 
@@ -52,7 +53,7 @@ public sealed class JsonExpressionNotEqualsTests : IDisposable
         // Arrange
         var json = """{"!=": [1, 1]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, "");
 
@@ -66,18 +67,12 @@ public sealed class JsonExpressionNotEqualsTests : IDisposable
     [Fact]
     public void NotEquals_IntegerAndString_WithCoercion_ReturnsFalse()
     {
-        // Arrange
+        // Arrange - comparing int and string not supported in C# semantics (no coercion)
         var json = """{"!=": [1, "1"]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
-        var func = expr.Compile();
-        var data = new TestInput(0, "");
-
-        // Act
-        var result = func(data);
-
-        // Assert
-        Assert.False(result);
+        
+        // Assert - should fail to compile
+        Assert.False(JsonExpression.TryCompile<TestInput, bool>(doc, out _));
     }
 
     [Fact]
@@ -86,7 +81,7 @@ public sealed class JsonExpressionNotEqualsTests : IDisposable
         // Arrange
         var json = """{"!=": [{"var": "Value"}, 100]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42, "test");
 
@@ -103,7 +98,7 @@ public sealed class JsonExpressionNotEqualsTests : IDisposable
         // Arrange
         var json = """{"!=": [{"var": "Value"}, 42]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42, "test");
 
@@ -113,4 +108,13 @@ public sealed class JsonExpressionNotEqualsTests : IDisposable
         // Assert
         Assert.False(result);
     }
-}
+    [Fact]
+    public void NotEquals_WrongOutputType_Fails()
+    {
+        // Arrange - not equals returns bool, but requesting string
+        var json = """{ "!=": [1, 2]}""";
+        var doc = JsonDocument.Parse(json);
+        
+        // Assert
+        Assert.False(JsonExpression.TryCompile<TestInput, string>(doc, out _));
+    }}

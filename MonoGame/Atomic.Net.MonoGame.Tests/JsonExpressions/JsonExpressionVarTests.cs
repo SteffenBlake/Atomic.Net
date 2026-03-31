@@ -10,6 +10,7 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 /// <summary>
 /// Tests for JSONLogic 'var' operator (data access).
 /// </summary>
+[Collection("NonParallel")]
 public sealed class JsonExpressionVarTests : IDisposable
 {
     private readonly record struct TestInput(int A, int B, string Name);
@@ -37,7 +38,7 @@ public sealed class JsonExpressionVarTests : IDisposable
         // Arrange
         var json = """{"var": "A"}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, int>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42, 100, "test");
 
@@ -54,7 +55,7 @@ public sealed class JsonExpressionVarTests : IDisposable
         // Arrange
         var json = """{"var": ["B"]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, int>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42, 100, "test");
 
@@ -71,7 +72,7 @@ public sealed class JsonExpressionVarTests : IDisposable
         // Arrange
         var json = """{"var": ["Z", 999]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, int>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42, 100, "test");
 
@@ -88,7 +89,7 @@ public sealed class JsonExpressionVarTests : IDisposable
         // Arrange
         var json = """{"var": "Child.Value"}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<NestedInput, int>(doc);
+        Assert.True(JsonExpression.TryCompile<NestedInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new NestedInput("parent", new ChildData(123, "child"));
 
@@ -105,7 +106,7 @@ public sealed class JsonExpressionVarTests : IDisposable
         // Arrange
         var json = """{"var": ""}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, TestInput>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, TestInput>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42, 100, "test");
 
@@ -122,7 +123,7 @@ public sealed class JsonExpressionVarTests : IDisposable
         // Arrange
         var json = """{"var": 1}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<int[], int>(doc);
+        Assert.True(JsonExpression.TryCompile<int[], int>(doc, out var expr));
         var func = expr.Compile();
         var data = new[] { 10, 20, 30 };
 
@@ -139,7 +140,7 @@ public sealed class JsonExpressionVarTests : IDisposable
         // Arrange
         var json = """{"var": "NonExistent"}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, int?>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, int?>(doc, out var expr));
 
         // Act
         var result = expr;
@@ -148,4 +149,13 @@ public sealed class JsonExpressionVarTests : IDisposable
         Assert.Null(result);
         Assert.True(_errorListener.ReceivedEvents.Count > 0, "Should fire at least one ErrorEvent for invalid property");
     }
-}
+    [Fact]
+    public void Var_WrongOutputType_Fails()
+    {
+        // Arrange - var returns int, but requesting string
+        var json = """{ "var": "A"}""";
+        var doc = JsonDocument.Parse(json);
+        
+        // Assert
+        Assert.False(JsonExpression.TryCompile<TestInput, string>(doc, out _));
+    }}

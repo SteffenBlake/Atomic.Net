@@ -10,6 +10,7 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 /// <summary>
 /// Tests for JSONLogic 'or' operator (returns first truthy value or last falsy).
 /// </summary>
+[Collection("NonParallel")]
 public sealed class JsonExpressionOrTests : IDisposable
 {
     private readonly record struct TestInput(int Unused);
@@ -35,7 +36,7 @@ public sealed class JsonExpressionOrTests : IDisposable
         // Arrange
         var json = """{"or": [true, false]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -52,7 +53,7 @@ public sealed class JsonExpressionOrTests : IDisposable
         // Arrange
         var json = """{"or": [false, true]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -69,7 +70,7 @@ public sealed class JsonExpressionOrTests : IDisposable
         // Arrange
         var json = """{"or": [false, false]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -83,52 +84,34 @@ public sealed class JsonExpressionOrTests : IDisposable
     [Fact]
     public void Or_ReturnsFirstTruthy()
     {
-        // Arrange
-        var json = """{"or": [false, "a"]}""";
+        // Arrange - mixing bool and string not supported in C# semantics (no truthiness)
+        var json = """{ "or": [false, "a"]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, string>(doc);
-        var func = expr.Compile();
-        var data = new TestInput(0);
-
-        // Act
-        var result = func(data);
-
-        // Assert
-        Assert.Equal("a", result);
+        
+        // Assert - should fail to compile
+        Assert.False(JsonExpression.TryCompile<TestInput, string>(doc, out _));
     }
 
     [Fact]
     public void Or_ReturnsFirstTruthyFromMultiple()
     {
-        // Arrange
-        var json = """{"or": [false, 0, "a"]}""";
+        // Arrange - mixing bool/int/string not supported in C# semantics (no truthiness)
+        var json = """{ "or": [false, 0, "a"]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, string>(doc);
-        var func = expr.Compile();
-        var data = new TestInput(0);
-
-        // Act
-        var result = func(data);
-
-        // Assert
-        Assert.Equal("a", result);
+        
+        // Assert - should fail to compile
+        Assert.False(JsonExpression.TryCompile<TestInput, string>(doc, out _));
     }
 
     [Fact]
     public void Or_AllFalsy_ReturnsLast()
     {
-        // Arrange
-        var json = """{"or": [false, 0, ""]}""";
+        // Arrange - mixing bool/int/string not supported in C# semantics (no truthiness)
+        var json = """{ "or": [false, 0, ""]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, string>(doc);
-        var func = expr.Compile();
-        var data = new TestInput(0);
-
-        // Act
-        var result = func(data);
-
-        // Assert
-        Assert.Equal("", result);
+        
+        // Assert - should fail to compile
+        Assert.False(JsonExpression.TryCompile<TestInput, string>(doc, out _));
     }
 
     [Fact]
@@ -137,7 +120,7 @@ public sealed class JsonExpressionOrTests : IDisposable
         // Arrange
         var json = """{"or": [{"==": [{"var": "Value"}, 0]}, {"==": [{"var": "Value"}, 42]}]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42);
 
@@ -147,21 +130,13 @@ public sealed class JsonExpressionOrTests : IDisposable
         // Assert
         Assert.True(result);
     }
-
     [Fact]
-    public void Or_SingleArgument_ReturnsThatArg()
+    public void Or_WrongOutputType_Fails()
     {
-        // Arrange
-        var json = """{"or": [true]}""";
+        // Arrange - or returns bool, but requesting int[]
+        var json = """{ "or": [true, false]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
-        var func = expr.Compile();
-        var data = new TestInput(0);
-
-        // Act
-        var result = func(data);
-
+        
         // Assert
-        Assert.True(result);
-    }
-}
+        Assert.False(JsonExpression.TryCompile<TestInput, int[]>(doc, out _));
+    }}

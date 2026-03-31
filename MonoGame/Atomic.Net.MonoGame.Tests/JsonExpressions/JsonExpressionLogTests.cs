@@ -10,6 +10,7 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 /// <summary>
 /// Tests for JSONLogic 'log' operator (pass-through with side effect).
 /// </summary>
+[Collection("NonParallel")]
 public sealed class JsonExpressionLogTests : IDisposable
 {
     private readonly record struct TestInput(int Value);
@@ -38,7 +39,7 @@ public sealed class JsonExpressionLogTests : IDisposable
         // Arrange
         var json = """{"log": "apple"}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, string>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -57,7 +58,7 @@ public sealed class JsonExpressionLogTests : IDisposable
         // Arrange
         var json = """{"log": 42}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, int>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -76,7 +77,7 @@ public sealed class JsonExpressionLogTests : IDisposable
         // Arrange
         var json = """{"log": {"var": "Value"}}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, int>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(100);
 
@@ -95,7 +96,7 @@ public sealed class JsonExpressionLogTests : IDisposable
         // Arrange
         var json = """{"log": true}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -114,7 +115,7 @@ public sealed class JsonExpressionLogTests : IDisposable
         // Arrange
         var json = """{"log": {"+": [1, 2]}}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, int>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -126,4 +127,13 @@ public sealed class JsonExpressionLogTests : IDisposable
         Assert.True(_logListener.ReceivedEvents.Count > 0);
         Assert.Contains(_logListener.ReceivedEvents, e => e.Message.Contains("3"));
     }
-}
+    [Fact]
+    public void Log_WrongOutputType_Fails()
+    {
+        // Arrange - log returns int, but requesting bool
+        var json = """{ "log": 42}""";
+        var doc = JsonDocument.Parse(json);
+        
+        // Assert
+        Assert.False(JsonExpression.TryCompile<TestInput, bool>(doc, out _));
+    }}

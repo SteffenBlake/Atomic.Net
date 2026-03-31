@@ -10,6 +10,7 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 /// <summary>
 /// Tests for JSONLogic 'all' operator (all elements pass test).
 /// </summary>
+[Collection("NonParallel")]
 public sealed class JsonExpressionAllTests : IDisposable
 {
     private readonly record struct TestInput(int Unused);
@@ -35,7 +36,7 @@ public sealed class JsonExpressionAllTests : IDisposable
         // Arrange
         var json = """{"all": [[1, 2, 3], {">": [{"var": ""}, 0]}]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -52,7 +53,7 @@ public sealed class JsonExpressionAllTests : IDisposable
         // Arrange
         var json = """{"all": [[-1, 2, 3], {">": [{"var": ""}, 0]}]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -69,7 +70,7 @@ public sealed class JsonExpressionAllTests : IDisposable
         // Arrange
         var json = """{"all": [[], {">": [{"var": ""}, 0]}]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -86,7 +87,7 @@ public sealed class JsonExpressionAllTests : IDisposable
         // Arrange
         var json = """{"all": [[10, 20, 30], {"and": [{">": [{"var": ""}, 0]}, {"<": [{"var": ""}, 100]}]}]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -103,7 +104,7 @@ public sealed class JsonExpressionAllTests : IDisposable
         // Arrange
         var json = """{"all": [[2, 4, 6], {"==": [{"%": [{"var": ""}, 2]}, 0]}]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -113,4 +114,13 @@ public sealed class JsonExpressionAllTests : IDisposable
         // Assert
         Assert.True(result);
     }
-}
+    [Fact]
+    public void All_WrongOutputType_Fails()
+    {
+        // Arrange - all returns bool, but requesting int
+        var json = """{ "all": [[1, 2, 3], {">": [{"var": ""}, 0]}]}""";
+        var doc = JsonDocument.Parse(json);
+        
+        // Assert
+        Assert.False(JsonExpression.TryCompile<TestInput, int>(doc, out _));
+    }}

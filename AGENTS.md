@@ -26,6 +26,24 @@ DO NOT DO THIS, STAY IN YOUR TOP LAYER
 
 ---
 
+## Reading Files Properly
+
+**CRITICAL:** When instructed to read ENTIRE files, ALWAYS use `10000` as the endLine parameter. Do NOT read files "piecewise" or in chunks.
+
+**CORRECT:**
+```
+read_file(filePath="/path/to/file.cs", startLine=1, endLine=10000)
+```
+
+**WRONG:**
+```
+read_file(filePath="/path/to/file.cs", startLine=1, endLine=150)  // Only reads partial file!
+```
+
+If you need to read a file in its entirety, use 10000 as the line number. This ensures you have complete context instead of making incorrect assumptions based on partial information.
+
+---
+
 ## Core Principles (NEVER VIOLATE)
 
 - **Zero allocations during gameplay** (all allocations at load time)

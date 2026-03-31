@@ -10,6 +10,7 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 /// <summary>
 /// Tests for JSONLogic '/' operator (division).
 /// </summary>
+[Collection("NonParallel")]
 public sealed class JsonExpressionDivideTests : IDisposable
 {
     private readonly record struct TestInput(int A, int B);
@@ -35,7 +36,7 @@ public sealed class JsonExpressionDivideTests : IDisposable
         // Arrange
         var json = """{"/": [4, 2]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, int>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -52,7 +53,7 @@ public sealed class JsonExpressionDivideTests : IDisposable
         // Arrange
         var json = """{"/": [{"var": "A"}, {"var": "B"}]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, int>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(84, 2);
 
@@ -69,7 +70,7 @@ public sealed class JsonExpressionDivideTests : IDisposable
         // Arrange
         var json = """{"/": [7.5, 2.5]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, double>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, double>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -86,7 +87,7 @@ public sealed class JsonExpressionDivideTests : IDisposable
         // Arrange
         var json = """{"/": [5, 2]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, double>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, double>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -103,7 +104,7 @@ public sealed class JsonExpressionDivideTests : IDisposable
         // Arrange
         var json = """{"/": [-10, 2]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, int>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -120,7 +121,7 @@ public sealed class JsonExpressionDivideTests : IDisposable
         // Arrange
         var json = """{"/": [42, 0]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, double?>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, double?>(doc, out var expr));
 
         // Act
         var result = expr;
@@ -128,5 +129,16 @@ public sealed class JsonExpressionDivideTests : IDisposable
         // Assert
         Assert.Null(result);
         Assert.True(_errorListener.ReceivedEvents.Count > 0, "Should fire at least one ErrorEvent for division by zero");
+    }
+
+    [Fact]
+    public void Divide_WrongOutputType_Fails()
+    {
+        // Arrange - divide returns int, but requesting string[]
+        var json = """{"/": [10, 2]}""";
+        var doc = JsonDocument.Parse(json);
+        
+        // Assert
+        Assert.False(JsonExpression.TryCompile<TestInput, string[]>(doc, out _));
     }
 }

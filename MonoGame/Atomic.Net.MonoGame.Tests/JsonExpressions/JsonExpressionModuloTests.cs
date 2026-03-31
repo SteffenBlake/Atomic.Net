@@ -10,6 +10,7 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 /// <summary>
 /// Tests for JSONLogic '%' operator (modulo).
 /// </summary>
+[Collection("NonParallel")]
 public sealed class JsonExpressionModuloTests : IDisposable
 {
     private readonly record struct TestInput(int Value);
@@ -35,7 +36,7 @@ public sealed class JsonExpressionModuloTests : IDisposable
         // Arrange
         var json = """{"%": [101, 2]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, int>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -52,7 +53,7 @@ public sealed class JsonExpressionModuloTests : IDisposable
         // Arrange
         var json = """{"%": [100, 2]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, int>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -69,7 +70,7 @@ public sealed class JsonExpressionModuloTests : IDisposable
         // Arrange
         var json = """{"%": [{"var": "Value"}, 10]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, int>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42);
 
@@ -86,7 +87,7 @@ public sealed class JsonExpressionModuloTests : IDisposable
         // Arrange
         var json = """{"%": [5, 10]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, int>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -103,7 +104,7 @@ public sealed class JsonExpressionModuloTests : IDisposable
         // Arrange
         var json = """{"%": [-7, 3]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, int>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -120,7 +121,7 @@ public sealed class JsonExpressionModuloTests : IDisposable
         // Arrange
         var json = """{"%": [42, 0]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, int?>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, int?>(doc, out var expr));
 
         // Act
         var result = expr;
@@ -129,4 +130,13 @@ public sealed class JsonExpressionModuloTests : IDisposable
         Assert.Null(result);
         Assert.True(_errorListener.ReceivedEvents.Count > 0, "Should fire at least one ErrorEvent for modulo by zero");
     }
-}
+    [Fact]
+    public void Modulo_WrongOutputType_Fails()
+    {
+        // Arrange - modulo returns int, but requesting double
+        var json = """{"%": [10, 3]}""";
+        var doc = JsonDocument.Parse(json);
+        
+        // Assert
+        Assert.False(JsonExpression.TryCompile<TestInput, double>(doc, out _));
+    }}

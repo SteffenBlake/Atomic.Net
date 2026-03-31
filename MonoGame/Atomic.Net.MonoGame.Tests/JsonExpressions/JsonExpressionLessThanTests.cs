@@ -10,6 +10,7 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 /// <summary>
 /// Tests for JSONLogic '<' operator.
 /// </summary>
+[Collection("NonParallel")]
 public sealed class JsonExpressionLessThanTests : IDisposable
 {
     private readonly record struct TestInput(int Value);
@@ -35,7 +36,7 @@ public sealed class JsonExpressionLessThanTests : IDisposable
         // Arrange
         var json = """{"<": [1, 2]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -52,7 +53,7 @@ public sealed class JsonExpressionLessThanTests : IDisposable
         // Arrange
         var json = """{"<": [2, 1]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -69,7 +70,7 @@ public sealed class JsonExpressionLessThanTests : IDisposable
         // Arrange
         var json = """{"<": [1, 1]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -83,69 +84,45 @@ public sealed class JsonExpressionLessThanTests : IDisposable
     [Fact]
     public void LessThan_BetweenExclusive_ReturnsTrue()
     {
-        // Arrange
+        // Arrange - C# does not support chained comparisons (must use && for multiple checks)
         var json = """{"<": [1, 2, 3]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
-        var func = expr.Compile();
-        var data = new TestInput(0);
-
-        // Act
-        var result = func(data);
-
-        // Assert
-        Assert.True(result);
+        
+        // Assert - should fail to compile
+        Assert.False(JsonExpression.TryCompile<TestInput, bool>(doc, out _));
     }
 
     [Fact]
     public void LessThan_BetweenExclusive_EqualToFirst_ReturnsFalse()
     {
-        // Arrange
+        // Arrange - C# does not support chained comparisons (must use && for multiple checks)
         var json = """{"<": [1, 1, 3]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
-        var func = expr.Compile();
-        var data = new TestInput(0);
-
-        // Act
-        var result = func(data);
-
-        // Assert
-        Assert.False(result);
+        
+        // Assert - should fail to compile
+        Assert.False(JsonExpression.TryCompile<TestInput, bool>(doc, out _));
     }
 
     [Fact]
     public void LessThan_BetweenExclusive_OutOfRange_ReturnsFalse()
     {
-        // Arrange
+        // Arrange - C# does not support chained comparisons (must use && for multiple checks)
         var json = """{"<": [1, 4, 3]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
-        var func = expr.Compile();
-        var data = new TestInput(0);
-
-        // Act
-        var result = func(data);
-
-        // Assert
-        Assert.False(result);
+        
+        // Assert - should fail to compile
+        Assert.False(JsonExpression.TryCompile<TestInput, bool>(doc, out _));
     }
 
     [Fact]
     public void LessThan_BetweenWithVarData_ReturnsCorrectResult()
     {
-        // Arrange
+        // Arrange - C# does not support chained comparisons (must use && for multiple checks)
         var json = """{"<": [0, {"var": "Value"}, 100]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
-        var func = expr.Compile();
-        var data = new TestInput(37);
-
-        // Act
-        var result = func(data);
-
-        // Assert
-        Assert.True(result);
+        
+        // Assert - should fail to compile
+        Assert.False(JsonExpression.TryCompile<TestInput, bool>(doc, out _));
     }
 
     [Fact]
@@ -154,7 +131,7 @@ public sealed class JsonExpressionLessThanTests : IDisposable
         // Arrange
         var json = """{"<": [{"var": "Value"}, 100]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, bool>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42);
 
@@ -164,4 +141,13 @@ public sealed class JsonExpressionLessThanTests : IDisposable
         // Assert
         Assert.True(result);
     }
-}
+    [Fact]
+    public void LessThan_WrongOutputType_Fails()
+    {
+        // Arrange - less than returns bool, but requesting double
+        var json = """{ "<": [1, 2]}""";
+        var doc = JsonDocument.Parse(json);
+        
+        // Assert
+        Assert.False(JsonExpression.TryCompile<TestInput, double>(doc, out _));
+    }}

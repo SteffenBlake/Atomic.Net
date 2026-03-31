@@ -10,6 +10,7 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 /// <summary>
 /// Tests for JSONLogic 'if' operator (conditional).
 /// </summary>
+[Collection("NonParallel")]
 public sealed class JsonExpressionIfTests : IDisposable
 {
     private readonly record struct TestInput(int Value, string Name);
@@ -35,7 +36,7 @@ public sealed class JsonExpressionIfTests : IDisposable
         // Arrange
         var json = """{"if": [true, "yes", "no"]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, string>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42, "test");
 
@@ -52,7 +53,7 @@ public sealed class JsonExpressionIfTests : IDisposable
         // Arrange
         var json = """{"if": [false, "yes", "no"]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, string>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42, "test");
 
@@ -69,7 +70,7 @@ public sealed class JsonExpressionIfTests : IDisposable
         // Arrange
         var json = """{"if": [{"==": [{"var": "Value"}, 42]}, "found", "not found"]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, string>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42, "test");
 
@@ -86,7 +87,7 @@ public sealed class JsonExpressionIfTests : IDisposable
         // Arrange
         var json = """{"if": [{"<": [{"var": "Value"}, 0]}, "negative", {"<": [{"var": "Value"}, 100]}, "small", "large"]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, string>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(50, "test");
 
@@ -103,7 +104,7 @@ public sealed class JsonExpressionIfTests : IDisposable
         // Arrange
         var json = """{"if": [{"<": [{"var": "Value"}, 0]}, "negative", {"<": [{"var": "Value"}, 10]}, "small", "large"]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, string>(doc);
+        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(100, "test");
 
@@ -117,34 +118,33 @@ public sealed class JsonExpressionIfTests : IDisposable
     [Fact]
     public void If_TruthyValue_ReturnsThenBranch()
     {
-        // Arrange
-        var json = """{"if": [1, "truthy", "falsy"]}""";
+        // Arrange - if condition must be bool in C# semantics (no truthiness)
+        var json = """{ "if": [1, "truthy", "falsy"]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, string>(doc);
-        var func = expr.Compile();
-        var data = new TestInput(42, "test");
-
-        // Act
-        var result = func(data);
-
-        // Assert
-        Assert.Equal("truthy", result);
+        
+        // Assert - should fail to compile
+        Assert.False(JsonExpression.TryCompile<TestInput, string>(doc, out _));
     }
 
     [Fact]
     public void If_FalsyValue_ReturnsElseBranch()
     {
-        // Arrange
-        var json = """{"if": [0, "truthy", "falsy"]}""";
+        // Arrange - if condition must be bool in C# semantics (no truthiness)
+        var json = """{ "if": [0, "truthy", "falsy"]}""";
         var doc = JsonDocument.Parse(json);
-        var expr = JsonExpression.Compile<TestInput, string>(doc);
-        var func = expr.Compile();
-        var data = new TestInput(42, "test");
+        
+        // Assert - should fail to compile
+        Assert.False(JsonExpression.TryCompile<TestInput, string>(doc, out _));
+    }
 
-        // Act
-        var result = func(data);
-
+    [Fact]
+    public void If_WrongOutputType_Fails()
+    {
+        // Arrange - if returns string, but requesting int
+        var json = """{ "if": [true, "yes", "no"]}""";
+        var doc = JsonDocument.Parse(json);
+        
         // Assert
-        Assert.Equal("falsy", result);
+        Assert.False(JsonExpression.TryCompile<TestInput, int>(doc, out _));
     }
 }
