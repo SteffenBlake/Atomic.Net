@@ -8,8 +8,18 @@ using Atomic.Net.MonoGame.BED;
 namespace Atomic.Net.MonoGame.JsonExpressions;
 
 /// <summary>
+/// Generic context object for reduce operations with strongly-typed current element and accumulator.
+/// </summary>
+public sealed class ReduceContext<TCurrent, TAccum>
+{
+    public TCurrent? Current { get; set; }
+    public TAccum? Accumulator { get; set; }
+}
+
+/// <summary>
 /// Context object for reduce operations with current element and accumulator.
 /// </summary>
+[Obsolete("Use ReduceContext<TCurrent, TAccum> instead for zero-boxing")]
 public sealed class ReduceContext
 {
     public object? Current { get; set; }
@@ -253,7 +263,7 @@ public static class JsonExpression
             
             case JsonValueKind.Null:
             case JsonValueKind.Undefined:
-                return Expression.Constant(null, typeof(object));
+                return Expression.Constant(null, typeof(string));
             
             case JsonValueKind.Number:
                 return CompileLiteralNumber(element);
@@ -263,30 +273,118 @@ public static class JsonExpression
             
             case JsonValueKind.Array:
                 // Arrays are valid data values in JSONLogic
-                // Convert to object[] runtime constant
+                // Infer array element type at compile time, create properly typed array
                 var arrayLength = element.GetArrayLength();
-                var arrayElements = new object?[arrayLength];
-                var index = 0;
+                if (arrayLength == 0)
+                {
+                    return Expression.Constant(Array.Empty<string>(), typeof(string[]));
+                }
+                
+                // Analyze all elements to determine common type
+                var hasInt = false;
+                var hasDouble = false;
+                var hasBool = false;
+                var hasString = false;
+                var hasNull = false;
+                
                 foreach (var item in element.EnumerateArray())
                 {
-                    arrayElements[index++] = item.ValueKind switch
+                    switch (item.ValueKind)
                     {
-                        JsonValueKind.True => true,
-                        JsonValueKind.False => false,
-                        JsonValueKind.Null or JsonValueKind.Undefined => null,
-                        JsonValueKind.Number => item.GetDouble(),
-                        JsonValueKind.String => item.GetString(),
-                        _ => null
-                    };
+                        case JsonValueKind.Number:
+                            if (item.TryGetInt32(out _))
+                            {
+                                hasInt = true;
+                            }
+                            else
+                            {
+                                hasDouble = true;
+                            }
+                            break;
+                        case JsonValueKind.True:
+                        case JsonValueKind.False:
+                            hasBool = true;
+                            break;
+                        case JsonValueKind.String:
+                            hasString = true;
+                            break;
+                        case JsonValueKind.Null:
+                        case JsonValueKind.Undefined:
+                            hasNull = true;
+                            break;
+                    }
                 }
-                return Expression.Constant(arrayElements, typeof(object[]));
+                
+                // Determine target type (prefer most specific)
+                if (hasString || hasNull)
+                {
+                    // String array (can hold nulls)
+                    var strArray = new string?[arrayLength];
+                    var idx = 0;
+                    foreach (var item in element.EnumerateArray())
+                    {
+                        strArray[idx++] = item.ValueKind switch
+                        {
+                            JsonValueKind.String => item.GetString(),
+                            JsonValueKind.Number => item.GetDouble().ToString(),
+                            JsonValueKind.True => "true",
+                            JsonValueKind.False => "false",
+                            _ => null
+                        };
+                    }
+                    return Expression.Constant(strArray, typeof(string[]));
+                }
+                else if (hasBool && !hasInt && !hasDouble)
+                {
+                    // Pure bool array
+                    var boolArray = new bool[arrayLength];
+                    var idx = 0;
+                    foreach (var item in element.EnumerateArray())
+                    {
+                        boolArray[idx++] = item.ValueKind == JsonValueKind.True;
+                    }
+                    return Expression.Constant(boolArray, typeof(bool[]));
+                }
+                else if (hasDouble || (hasInt && hasBool))
+                {
+                    // Double array (widest numeric type)
+                    var doubleArray = new double[arrayLength];
+                    var idx = 0;
+                    foreach (var item in element.EnumerateArray())
+                    {
+                        doubleArray[idx++] = item.ValueKind switch
+                        {
+                            JsonValueKind.Number => item.GetDouble(),
+                            JsonValueKind.True => 1.0,
+                            JsonValueKind.False => 0.0,
+                            _ => 0.0
+                        };
+                    }
+                    return Expression.Constant(doubleArray, typeof(double[]));
+                }
+                else if (hasInt)
+                {
+                    // Int array
+                    var intArray = new int[arrayLength];
+                    var idx = 0;
+                    foreach (var item in element.EnumerateArray())
+                    {
+                        intArray[idx++] = item.GetInt32();
+                    }
+                    return Expression.Constant(intArray, typeof(int[]));
+                }
+                else
+                {
+                    // Empty or unknown - default to string[]
+                    return Expression.Constant(Array.Empty<string>(), typeof(string[]));
+                }
             
             case JsonValueKind.Object:
                 return CompileOperation(element, dataParam);
             
             default:
                 EventBus<ErrorEvent>.Push(new ErrorEvent($"Unsupported JSON value kind: {element.ValueKind}"));
-                return Expression.Constant(null, typeof(object));
+                return Expression.Constant(null, typeof(string));
         }
     }
 
@@ -340,96 +438,6 @@ public static class JsonExpression
     /// Unifies two numeric expressions to a common type for arithmetic operations.
     /// Returns tuple of (left, right) with unified types.
     /// </summary>
-    private static (Expression Left, Expression Right) UnifyNumericTypes(Expression left, Expression right)
-    {
-        if (left.Type == right.Type)
-        {
-            return (left, right);
-        }
-
-        // Determine the wider type (double > float > long > int)
-        var targetType = typeof(int);
-        
-        if (left.Type == typeof(double) || right.Type == typeof(double))
-        {
-            targetType = typeof(double);
-        }
-        else if (left.Type == typeof(float) || right.Type == typeof(float))
-        {
-            targetType = typeof(float);
-        }
-        else if (left.Type == typeof(long) || right.Type == typeof(long))
-        {
-            targetType = typeof(long);
-        }
-
-        // Convert both to target type
-        var leftConverted = left.Type == targetType ? left : Expression.Convert(left, targetType);
-        var rightConverted = right.Type == targetType ? right : Expression.Convert(right, targetType);
-
-        return (leftConverted, rightConverted);
-    }
-
-    /// <summary>
-    /// Helper to convert any expression to bool following JSONLogic truthiness rules.
-    /// Falsy: false, null, 0, "", []
-    /// Truthy: everything else
-    /// </summary>
-    private static Expression ToBool(Expression expr)
-    {
-        if (expr.Type == typeof(bool))
-        {
-            return expr;
-        }
-
-        // For numeric types, check != 0
-        if (expr.Type == typeof(int) || expr.Type == typeof(long) || expr.Type == typeof(double) || expr.Type == typeof(float))
-        {
-            var zero = Expression.Constant(Convert.ChangeType(0, expr.Type));
-            return Expression.NotEqual(expr, zero);
-        }
-
-        // For string, check Length > 0
-        if (expr.Type == typeof(string))
-        {
-            var lengthProp = typeof(string).GetProperty(nameof(string.Length))!;
-            return Expression.GreaterThan(
-                Expression.Property(expr, lengthProp),
-                Expression.Constant(0)
-            );
-        }
-
-        // For arrays (object[]), check Length > 0
-        if (expr.Type == typeof(object[]))
-        {
-            var lengthProp = typeof(Array).GetProperty(nameof(Array.Length))!;
-            return Expression.GreaterThan(
-                Expression.Property(expr, lengthProp),
-                Expression.Constant(0)
-            );
-        }
-
-        // For nullable types, check HasValue && Value is truthy
-        if (Nullable.GetUnderlyingType(expr.Type) is Type underlyingType)
-        {
-            var hasValueProp = expr.Type.GetProperty(nameof(Nullable<int>.HasValue))!;
-            var valueProp = expr.Type.GetProperty(nameof(Nullable<int>.Value))!;
-            return Expression.AndAlso(
-                Expression.Property(expr, hasValueProp),
-                ToBool(Expression.Property(expr, valueProp))
-            );
-        }
-
-        // For objects, check != null
-        if (!expr.Type.IsValueType)
-        {
-            return Expression.NotEqual(expr, Expression.Constant(null, expr.Type));
-        }
-
-        // Value types are always truthy (except 0 which is handled above)
-        return Expression.Constant(true);
-    }
-
     /// <summary>
     /// Compile JSONLogic operation (object with single property = operator).
     /// Strategy pattern - dispatch to operation-specific handler.
@@ -624,7 +632,8 @@ public static class JsonExpression
     private static Expression CompileVar(JsonElement args, ParameterExpression dataParam)
     {
         // var can be: string, array with string, or number (for array index)
-        string? propertyPath;
+        string? propertyPath = null;
+        int? arrayIndex = null;
         Expression? defaultValueExpr = null;
 
         if (args.ValueKind == JsonValueKind.String)
@@ -633,9 +642,8 @@ public static class JsonExpression
         }
         else if (args.ValueKind == JsonValueKind.Number)
         {
-            // Array index access - not implemented yet
-            EventBus<ErrorEvent>.Push(new ErrorEvent("var with numeric index not yet implemented"));
-            return Expression.Constant(null);
+            // Array index access
+            arrayIndex = args.GetInt32();
         }
         else if (args.ValueKind == JsonValueKind.Array)
         {
@@ -643,7 +651,7 @@ public static class JsonExpression
             if (!arrayEnum.MoveNext())
             {
                 EventBus<ErrorEvent>.Push(new ErrorEvent("var requires at least one argument"));
-                return Expression.Constant(null);
+                return Expression.Constant(null, typeof(string));
             }
 
             var firstArg = arrayEnum.Current;
@@ -651,10 +659,14 @@ public static class JsonExpression
             {
                 propertyPath = firstArg.GetString();
             }
+            else if (firstArg.ValueKind == JsonValueKind.Number)
+            {
+                arrayIndex = firstArg.GetInt32();
+            }
             else
             {
-                EventBus<ErrorEvent>.Push(new ErrorEvent("var first argument must be string"));
-                return Expression.Constant(null);
+                EventBus<ErrorEvent>.Push(new ErrorEvent("var first argument must be string or number"));
+                return Expression.Constant(null, typeof(string));
             }
 
             // Second argument is default value
@@ -666,10 +678,42 @@ public static class JsonExpression
         else
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent($"var argument must be string or array, got {args.ValueKind}"));
-            return Expression.Constant(null, typeof(object));
+            return Expression.Constant(null, typeof(string));
         }
 
-        // Empty string means return entire data object
+        // Handle array index access
+        if (arrayIndex.HasValue)
+        {
+            if (dataParam.Type.IsArray)
+            {
+                var lengthProp = Expression.Property(dataParam, nameof(Array.Length));
+                var indexConst = Expression.Constant(arrayIndex.Value);
+                
+                // Check bounds: index >= 0 && index < length
+                var inBounds = Expression.AndAlso(
+                    Expression.GreaterThanOrEqual(indexConst, Expression.Constant(0)),
+                    Expression.LessThan(indexConst, lengthProp)
+                );
+                
+                var elemType = dataParam.Type.GetElementType()!;
+                var indexAccess = Expression.ArrayIndex(dataParam, indexConst);
+                
+                if (defaultValueExpr is not null)
+                {
+                    // Unify types between index access and default
+                    var (unifiedIndex, unifiedDefault) = ExpressionExtensions.UnifyExpressionTypes(indexAccess, defaultValueExpr);
+                    return Expression.Condition(inBounds, unifiedIndex, unifiedDefault);
+                }
+                
+                // No default - return typed null on out of bounds
+                return Expression.Condition(inBounds, indexAccess, Expression.Constant(null, elemType));
+            }
+            
+            // Not an array but got index - return default or null
+            return defaultValueExpr ?? Expression.Constant(null, typeof(string));
+        }
+
+        // Handle property path access
         if (string.IsNullOrEmpty(propertyPath))
         {
             return dataParam;
@@ -681,16 +725,38 @@ public static class JsonExpression
             var prop = dataParam.Type.GetProperty(propertyPath, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
             if (prop is null)
             {
-                // Property not found - return default value or null (not an error, just missing data)
-                return defaultValueExpr ?? Expression.Constant(null, typeof(object));
+                // Property not found - return default value or null with string type
+                return defaultValueExpr ?? Expression.Constant(null, typeof(string));
             }
 
             // Return property as-is without conversion
             return Expression.Property(dataParam, prop);
         }
 
-        // Nested property access (with dots) - not implemented yet, return default/null
-        return defaultValueExpr ?? Expression.Constant(null, typeof(object));
+        // Nested property access (with dots) - walk the path
+        var parts = propertyPath.Split('.');
+        Expression currentExpr = dataParam;
+        Type? currentType = dataParam.Type;
+        
+        foreach (var part in parts)
+        {
+            if (currentType is null)
+            {
+                break;
+            }
+            
+            var prop = currentType.GetProperty(part, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            if (prop is null)
+            {
+                // Property not found in chain - return default or null
+                return defaultValueExpr ?? Expression.Constant(null, typeof(string));
+            }
+            
+            currentExpr = Expression.Property(currentExpr, prop);
+            currentType = prop.PropertyType;
+        }
+        
+        return currentExpr;
     }
 
     private static Expression CompileMissing(JsonElement args, ParameterExpression dataParam)
@@ -913,7 +979,7 @@ public static class JsonExpression
             next = ToNumber(next);
             
             // Unify types before multiplication
-            (result, next) = UnifyNumericTypes(result, next);
+            (result, next) = ExpressionExtensions.UnifyNumericTypes(result, next);
             result = Expression.Multiply(result, next);
         }
 
@@ -1156,7 +1222,7 @@ public static class JsonExpression
             : args;
         
         var expr = CompileCore(arg, dataParam);
-        expr = ToBool(expr);
+        expr = ExpressionExtensions.ToBool(expr);
         return Expression.Not(expr);
     }
 
@@ -1169,7 +1235,7 @@ public static class JsonExpression
             : args;
         
         var expr = CompileCore(arg, dataParam);
-        return ToBool(expr);
+        return ExpressionExtensions.ToBool(expr);
     }
 
     private static Expression CompileAnd(JsonElement args, ParameterExpression dataParam)
@@ -1180,32 +1246,58 @@ public static class JsonExpression
             return Expression.Constant(false);
         }
 
-        var arrayEnum = args.EnumerateArray();
-        if (!arrayEnum.MoveNext())
+        var elements = args.EnumerateArray().ToArray();
+        if (elements.Length == 0)
         {
             return Expression.Constant(false);
         }
 
-        // And returns first falsy value, or last value if all truthy
-        // Need to evaluate each arg and return the value (not just bool)
-        var first = CompileCore(arrayEnum.Current, dataParam);
-        Expression result = first;
-        
-        while (arrayEnum.MoveNext())
+        if (elements.Length == 1)
         {
-            var next = CompileCore(arrayEnum.Current, dataParam);
-            // Ensure both result and next are object type for Expression.Condition
-            var resultAsObj = result.Type == typeof(object) ? result : Expression.Convert(result, typeof(object));
-            var nextAsObj = next.Type == typeof(object) ? next : Expression.Convert(next, typeof(object));
-            // If current result is falsy, return it; else continue to next
-            result = Expression.Condition(
-                ToBool(result),
-                nextAsObj,      // result is truthy, continue to next
-                resultAsObj     // result is falsy, short-circuit and return it
-            );
+            return CompileCore(elements[0], dataParam);
         }
 
-        return result;
+        // And returns first falsy value, or last value if all truthy
+        // Compile all elements first to determine final return type
+        var compiledExprs = elements.Select(e => CompileCore(e, dataParam)).ToArray();
+        
+        // Find common type among all expressions
+        var firstType = compiledExprs[0].Type;
+        var allSameType = compiledExprs.All(e => e.Type == firstType);
+        
+        if (allSameType)
+        {
+            // All same type - build nested conditions
+            Expression result = compiledExprs[0];
+            for (var i = 1; i < compiledExprs.Length; i++)
+            {
+                var current = result;
+                var next = compiledExprs[i];
+                result = Expression.Condition(
+                    ExpressionExtensions.ToBool(current),
+                    next,      // current is truthy, continue to next
+                    current    // current is falsy, return it
+                );
+            }
+            return result;
+        }
+        else
+        {
+            // Heterogeneous types - unify pairwise
+            Expression result = compiledExprs[0];
+            for (var i = 1; i < compiledExprs.Length; i++)
+            {
+                var current = result;
+                var next = compiledExprs[i];
+                var (unifiedCurrent, unifiedNext) = ExpressionExtensions.UnifyExpressionTypes(current, next);
+                result = Expression.Condition(
+                    ExpressionExtensions.ToBool(current),
+                    unifiedNext,       // current is truthy, return next
+                    unifiedCurrent     // current is falsy, return current
+                );
+            }
+            return result;
+        }
     }
 
     private static Expression CompileOr(JsonElement args, ParameterExpression dataParam)
@@ -1216,32 +1308,58 @@ public static class JsonExpression
             return Expression.Constant(false);
         }
 
-        var arrayEnum = args.EnumerateArray();
-        if (!arrayEnum.MoveNext())
+        var elements = args.EnumerateArray().ToArray();
+        if (elements.Length == 0)
         {
             return Expression.Constant(false);
         }
 
-        // Or returns first truthy value, or last value if all falsy
-        // Need to evaluate each arg and return the value (not just bool)
-        var first = CompileCore(arrayEnum.Current, dataParam);
-        Expression result = first;
-        
-        while (arrayEnum.MoveNext())
+        if (elements.Length == 1)
         {
-            var next = CompileCore(arrayEnum.Current, dataParam);
-            // Ensure both result and next are object type for Expression.Condition
-            var resultAsObj = result.Type == typeof(object) ? result : Expression.Convert(result, typeof(object));
-            var nextAsObj = next.Type == typeof(object) ? next : Expression.Convert(next, typeof(object));
-            // If current result is truthy, return it; else continue to next
-            result = Expression.Condition(
-                ToBool(result),
-                resultAsObj,    // result is truthy, short-circuit and return it
-                nextAsObj       // result is falsy, continue to next
-            );
+            return CompileCore(elements[0], dataParam);
         }
 
-        return result;
+        // Or returns first truthy value, or last value if all falsy
+        // Compile all elements first to determine final return type
+        var compiledExprs = elements.Select(e => CompileCore(e, dataParam)).ToArray();
+        
+        // Find common type among all expressions
+        var firstType = compiledExprs[0].Type;
+        var allSameType = compiledExprs.All(e => e.Type == firstType);
+        
+        if (allSameType)
+        {
+            // All same type - build nested conditions
+            Expression result = compiledExprs[0];
+            for (var i = 1; i < compiledExprs.Length; i++)
+            {
+                var current = result;
+                var next = compiledExprs[i];
+                result = Expression.Condition(
+                    ExpressionExtensions.ToBool(current),
+                    current,   // current is truthy, return it
+                    next       // current is falsy, continue to next
+                );
+            }
+            return result;
+        }
+        else
+        {
+            // Heterogeneous types - unify pairwise
+            Expression result = compiledExprs[0];
+            for (var i = 1; i < compiledExprs.Length; i++)
+            {
+                var current = result;
+                var next = compiledExprs[i];
+                var (unifiedCurrent, unifiedNext) = ExpressionExtensions.UnifyExpressionTypes(current, next);
+                result = Expression.Condition(
+                    ExpressionExtensions.ToBool(current),
+                    unifiedCurrent,    // current is truthy, return current
+                    unifiedNext        // current is falsy, return next
+                );
+            }
+            return result;
+        }
     }
 
     private static Expression CompileIf(JsonElement args, ParameterExpression dataParam)
@@ -1249,25 +1367,25 @@ public static class JsonExpression
         if (args.ValueKind != JsonValueKind.Array)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("if requires array of arguments"));
-            return Expression.Constant(null, typeof(object));
+            return Expression.Constant(null, typeof(string));
         }
 
         var arrayEnum = args.EnumerateArray();
         if (!arrayEnum.MoveNext())
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("if requires at least one argument"));
-            return Expression.Constant(null, typeof(object));
+            return Expression.Constant(null, typeof(string));
         }
 
         // Build nested if-then-else chain
         // Pattern: if(condition, then) or if(condition, then, else) or if(cond1, then1, cond2, then2, ..., else)
         var firstCondition = CompileCore(arrayEnum.Current, dataParam);
-        var conditionBool = ToBool(firstCondition);
+        var conditionBool = ExpressionExtensions.ToBool(firstCondition);
 
         if (!arrayEnum.MoveNext())
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("if requires at least 2 arguments (condition and then)"));
-            return Expression.Constant(null, typeof(object));
+            return Expression.Constant(null, typeof(string));
         }
 
         var thenBranch = CompileCore(arrayEnum.Current, dataParam);
@@ -1275,13 +1393,8 @@ public static class JsonExpression
         // Check if there's an else branch or more condition pairs
         if (!arrayEnum.MoveNext())
         {
-            // No else branch - need to create null with matching type
-            var nullElse = Expression.Constant(null, typeof(object));
-            if (thenBranch.Type != typeof(object))
-            {
-                // Unify types - convert then to object
-                thenBranch = Expression.Convert(thenBranch, typeof(object));
-            }
+            // No else branch - return null with matching type of then branch
+            var nullElse = Expression.Constant(null, thenBranch.Type);
             return Expression.Condition(conditionBool, thenBranch, nullElse);
         }
 
@@ -1307,18 +1420,11 @@ public static class JsonExpression
             elseBranch = CompileIf(elseArgsJson, dataParam);
         }
 
-        // Unify types between then and else branches
+        // Unify types between then and else branches using type-safe unification
         if (thenBranch.Type != elseBranch.Type)
         {
-            // Convert both to object for compatibility
-            if (thenBranch.Type != typeof(object))
-            {
-                thenBranch = Expression.Convert(thenBranch, typeof(object));
-            }
-            if (elseBranch.Type != typeof(object))
-            {
-                elseBranch = Expression.Convert(elseBranch, typeof(object));
-            }
+            var (unifiedThen, unifiedElse) = ExpressionExtensions.UnifyExpressionTypes(thenBranch, elseBranch);
+            return Expression.Condition(conditionBool, unifiedThen, unifiedElse);
         }
 
         return Expression.Condition(conditionBool, thenBranch, elseBranch);
@@ -1350,8 +1456,8 @@ public static class JsonExpression
         var second = CompileCore(arrayEnum.Current, dataParam);
 
         // Loose equality: convert both to strings for type-coerced comparison
-        var firstStr = first.Type == typeof(string) ? first : Expression.Call(first, typeof(object).GetMethod(nameof(ToString))!);
-        var secondStr = second.Type == typeof(string) ? second : Expression.Call(second, typeof(object).GetMethod(nameof(ToString))!);
+        var firstStr = ExpressionExtensions.ToStringExpr(first);
+        var secondStr = ExpressionExtensions.ToStringExpr(second);
         return Expression.Equal(firstStr, secondStr);
     }
 
@@ -1410,8 +1516,8 @@ public static class JsonExpression
         var second = CompileCore(arrayEnum.Current, dataParam);
 
         // Loose inequality: convert both to strings for type-coerced comparison
-        var firstStr = first.Type == typeof(string) ? first : Expression.Call(first, typeof(object).GetMethod(nameof(ToString))!);
-        var secondStr = second.Type == typeof(string) ? second : Expression.Call(second, typeof(object).GetMethod(nameof(ToString))!);
+        var firstStr = ExpressionExtensions.ToStringExpr(first);
+        var secondStr = ExpressionExtensions.ToStringExpr(second);
         return Expression.NotEqual(firstStr, secondStr);
     }
 
@@ -1451,7 +1557,7 @@ public static class JsonExpression
             var expr = CompileCore(args, dataParam);
             if (expr.Type != typeof(string))
             {
-                expr = Expression.Call(expr, typeof(object).GetMethod(nameof(ToString))!);
+                expr = ExpressionExtensions.ToStringExpr(expr);
             }
             return expr;
         }
@@ -1466,19 +1572,13 @@ public static class JsonExpression
         var stringConcatMethod = typeof(string).GetMethod(nameof(string.Concat), [typeof(string), typeof(string)])!;
         
         var first = CompileCore(arrayEnum.Current, dataParam);
-        if (first.Type != typeof(string))
-        {
-            first = Expression.Call(first, typeof(object).GetMethod(nameof(ToString))!);
-        }
+        first = ExpressionExtensions.ToStringExpr(first);
 
         Expression result = first;
         while (arrayEnum.MoveNext())
         {
             var next = CompileCore(arrayEnum.Current, dataParam);
-            if (next.Type != typeof(string))
-            {
-                next = Expression.Call(next, typeof(object).GetMethod(nameof(ToString))!);
-            }
+            next = ExpressionExtensions.ToStringExpr(next);
             result = Expression.Call(stringConcatMethod, result, next);
         }
 
@@ -1501,10 +1601,7 @@ public static class JsonExpression
         }
 
         var str = CompileCore(arrayEnum.Current, dataParam);
-        if (str.Type != typeof(string))
-        {
-            str = Expression.Call(str, typeof(object).GetMethod(nameof(ToString))!);
-        }
+        str = ExpressionExtensions.ToStringExpr(str);
 
         if (!arrayEnum.MoveNext())
         {
@@ -1562,24 +1659,39 @@ public static class JsonExpression
 
         var haystack = CompileCore(arrayEnum.Current, dataParam);
 
-        // Check if haystack is an array (array contains) or string (string contains)
-        // Use runtime type check with Expression.TypeIs
-        var isArrayCheck = Expression.TypeIs(haystack, typeof(object[]));
+        // Check if haystack is an array type
+        var haystackIsArray = haystack.Type.IsArray;
         
-        // Array contains branch using Array.IndexOf - only convert if it's actually an array
-        var arrayIndexOfMethod = typeof(Array).GetMethod(nameof(Array.IndexOf), [typeof(Array), typeof(object)])!;
-        var haystackAsArray = Expression.TypeAs(haystack, typeof(object[]));
-        var indexOf = Expression.Call(arrayIndexOfMethod, haystackAsArray, needle);
-        var arrayContains = Expression.GreaterThanOrEqual(indexOf, Expression.Constant(0));
-
-        // String contains branch - convert both to strings
-        var needleStr = needle.Type == typeof(string) ? needle : Expression.Call(needle, typeof(object).GetMethod(nameof(ToString))!);
-        var haystackStr = haystack.Type == typeof(string) ? haystack : Expression.Call(haystack, typeof(object).GetMethod(nameof(ToString))!);
-        var containsMethod = typeof(string).GetMethod(nameof(string.Contains), [typeof(string)])!;
-        var stringContains = Expression.Call(haystackStr, containsMethod, needleStr);
-
-        // Return conditional: if haystack is array, use array contains, else use string contains
-        return Expression.Condition(isArrayCheck, arrayContains, stringContains);
+        if (haystackIsArray)
+        {
+            // Array contains - check using array methods based on actual array type
+            var elemType = haystack.Type.GetElementType()!;
+            var arrayIndexOfMethod = typeof(Array).GetMethod(nameof(Array.IndexOf), [typeof(Array), typeof(object)])!;
+            
+            // Check if needle needs to be unified with array element type
+            Expression needleForArray;
+            if (needle.Type == elemType)
+            {
+                needleForArray = needle;
+            }
+            else
+            {
+                // Unify types
+                var (unifiedNeedle, _) = ExpressionExtensions.UnifyExpressionTypes(needle, Expression.Default(elemType));
+                needleForArray = unifiedNeedle;
+            }
+            
+            var indexOf = Expression.Call(arrayIndexOfMethod, haystack, needleForArray);
+            return Expression.GreaterThanOrEqual(indexOf, Expression.Constant(0));
+        }
+        else
+        {
+            // String contains - convert both to strings
+            var needleStr = ExpressionExtensions.ToStringExpr(needle);
+            var haystackStr = ExpressionExtensions.ToStringExpr(haystack);
+            var containsMethod = typeof(string).GetMethod(nameof(string.Contains), [typeof(string)])!;
+            return Expression.Call(haystackStr, containsMethod, needleStr);
+        }
     }
 
     private static Expression CompileMerge(JsonElement args, ParameterExpression dataParam)
@@ -1588,7 +1700,7 @@ public static class JsonExpression
         if (args.ValueKind != JsonValueKind.Array)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("merge requires array of arguments"));
-            return Expression.Constant(Array.Empty<object>(), typeof(object[]));
+            return Expression.Constant(Array.Empty<string>(), typeof(string[]));
         }
 
         var arrays = new List<Expression>();
@@ -1601,61 +1713,112 @@ public static class JsonExpression
 
         if (arrays.Count == 0)
         {
-            return Expression.Constant(Array.Empty<object>(), typeof(object[]));
+            return Expression.Constant(Array.Empty<string>(), typeof(string[]));
         }
 
         if (arrays.Count == 1)
         {
-            // Single element - if it's an array return it, otherwise wrap it
+            // Single element - if it's an array return it, otherwise wrap it in array of its type
             var singleExpr = arrays[0];
             if (singleExpr.Type.IsArray)
             {
                 return singleExpr;
             }
-            return Expression.NewArrayInit(typeof(object), Expression.Convert(singleExpr, typeof(object)));
+            return Expression.NewArrayInit(singleExpr.Type, singleExpr);
         }
 
-        // Multiple arrays - merge them all as object[] (common base type)
+        // Find common type among all arrays
+        Type? commonElemType = null;
+        
+        foreach (var arr in arrays)
+        {
+            if (arr.Type.IsArray)
+            {
+                var elemType = arr.Type.GetElementType()!;
+                if (commonElemType is null)
+                {
+                    commonElemType = elemType;
+                }
+                else if (commonElemType != elemType)
+                {
+                    // Different array types - need to unify to string (most general)
+                    commonElemType = typeof(string);
+                }
+            }
+            else
+            {
+                // Non-array element - treat as single-element array of its type
+                if (commonElemType is null)
+                {
+                    commonElemType = arr.Type;
+                }
+                else if (commonElemType != arr.Type)
+                {
+                    // Different types - unify to string
+                    commonElemType = typeof(string);
+                }
+            }
+        }
+
+        // Default to string[] if we couldn't determine
+        commonElemType ??= typeof(string);
+
+        // Build block to merge arrays
         var statements = new List<Expression>();
         var arrayVars = new List<ParameterExpression>();
         var totalLengthVar = Expression.Variable(typeof(int), "totalLength");
-        var resultVar = Expression.Variable(typeof(object[]), "result");
+        var resultVar = Expression.Variable(commonElemType.MakeArrayType(), "result");
         var indexVar = Expression.Variable(typeof(int), "index");
 
         Expression lengthSum = Expression.Constant(0);
         
-        // For each array argument, convert to object[] and track length
+        // Convert each expression to array of common type
         for (var i = 0; i < arrays.Count; i++)
         {
-            var arrVar = Expression.Variable(typeof(object[]), $"arr{i}");
+            var arrVar = Expression.Variable(commonElemType.MakeArrayType(), $"arr{i}");
             arrayVars.Add(arrVar);
             
             var arrayExpr = arrays[i];
             if (arrayExpr.Type.IsArray)
             {
-                // Convert typed array to object[]
                 var elemType = arrayExpr.Type.GetElementType()!;
-                var convertAllMethod = typeof(Array).GetMethod("ConvertAll")!.MakeGenericMethod(elemType, typeof(object));
-                var xParam = Expression.Parameter(elemType, "x");
-                var converterType = typeof(Converter<,>).MakeGenericType(elemType, typeof(object));
-                var converter = Expression.Lambda(
-                    converterType,
-                    Expression.Convert(xParam, typeof(object)),
-                    xParam
-                ).Compile();
-                statements.Add(Expression.Assign(arrVar, Expression.Call(convertAllMethod, arrayExpr, Expression.Constant(converter, converterType))));
+                if (elemType == commonElemType)
+                {
+                    // Same type - use directly
+                    statements.Add(Expression.Assign(arrVar, arrayExpr));
+                }
+                else
+                {
+                    // Different type - need to convert each element
+                    // Use LINQ Select to convert (will be compiled to efficient loop)
+                    var selectMethod = typeof(Enumerable).GetMethods()
+                        .First(m => m.Name == "Select" && m.GetParameters().Length == 2)
+                        .MakeGenericMethod(elemType, commonElemType);
+                    var toArrayMethod = typeof(Enumerable).GetMethod("ToArray")!.MakeGenericMethod(commonElemType);
+                    var xParam = Expression.Parameter(elemType, "x");
+                    var (converted, _) = ExpressionExtensions.UnifyExpressionTypes(xParam, Expression.Default(commonElemType));
+                    var converter = Expression.Lambda(converted, xParam);
+                    var selected = Expression.Call(selectMethod, arrayExpr, converter);
+                    statements.Add(Expression.Assign(arrVar, Expression.Call(toArrayMethod, selected)));
+                }
             }
             else
             {
-                // Not an array - wrap as single element
-                statements.Add(Expression.Assign(arrVar, Expression.NewArrayInit(typeof(object), Expression.Convert(arrayExpr, typeof(object)))));
+                // Not an array - wrap as single-element array
+                Expression elem = arrayExpr;
+                if (arrayExpr.Type != commonElemType)
+                {
+                    var (converted, _) = ExpressionExtensions.UnifyExpressionTypes(arrayExpr, Expression.Default(commonElemType));
+                    elem = converted;
+                }
+                statements.Add(Expression.Assign(arrVar, Expression.NewArrayInit(commonElemType, elem)));
             }
             
             lengthSum = Expression.Add(lengthSum, Expression.Property(arrVar, "Length"));
         }
 
         statements.Add(Expression.Assign(totalLengthVar, lengthSum));
-        statements.Add(Expression.Assign(resultVar, Expression.NewArrayBounds(typeof(object), totalLengthVar)));
+        statements.Add(Expression.Assign(resultVar, Expression.NewArrayBounds(commonElemType, totalLengthVar)));
         statements.Add(Expression.Assign(indexVar, Expression.Constant(0)));
 
         // Copy each array using Array.Copy
@@ -1756,32 +1919,22 @@ public static class JsonExpression
         if (args.ValueKind != JsonValueKind.Array)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("map requires array of arguments"));
-            return Expression.Constant(Array.Empty<object>(), typeof(object[]));
+            return Expression.Constant(Array.Empty<string>(), typeof(string[]));
         }
 
         var arrayEnum = args.EnumerateArray();
         if (!arrayEnum.MoveNext())
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("map requires at least 2 arguments (array and transform)"));
-            return Expression.Constant(Array.Empty<object>(), typeof(object[]));
+            return Expression.Constant(Array.Empty<string>(), typeof(string[]));
         }
 
-        // Get the array expression - try to preserve actual array type
-        // First compile without type constraint to see actual type
         var arrayExprTest = CompileCore(arrayEnum.Current, dataParam);
         
         Expression arrayExpr;
         Type arrayType;
         
-        // If result was boxed to object, we need to handle it specially
-        if (arrayExprTest.Type == typeof(object))
-        {
-            // Try to get array type through reflection on the property/var access
-            // For now, treat as object[] - will need runtime type checking
-            arrayExpr = arrayExprTest;
-            arrayType = typeof(object[]);
-        }
-        else if (arrayExprTest.Type.IsArray)
+        if (arrayExprTest.Type.IsArray)
         {
             arrayExpr = arrayExprTest;
             arrayType = arrayExprTest.Type;
@@ -1796,7 +1949,7 @@ public static class JsonExpression
         if (!arrayEnum.MoveNext())
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("map requires at least 2 arguments (array and transform)"));
-            return Expression.Constant(Array.Empty<object>(), typeof(object[]));
+            return Expression.Constant(Array.Empty<string>(), typeof(string[]));
         }
 
         var elementType = arrayType.GetElementType()!;
@@ -1849,14 +2002,14 @@ public static class JsonExpression
         if (args.ValueKind != JsonValueKind.Array)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("filter requires array of arguments"));
-            return Expression.Constant(Array.Empty<object>(), typeof(object[]));
+            return Expression.Constant(Array.Empty<string>(), typeof(string[]));
         }
 
         var arrayEnum = args.EnumerateArray();
         if (!arrayEnum.MoveNext())
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("filter requires at least 2 arguments (array and condition)"));
-            return Expression.Constant(Array.Empty<object>(), typeof(object[]));
+            return Expression.Constant(Array.Empty<string>(), typeof(string[]));
         }
 
         // Get the array expression with its actual type
@@ -1865,13 +2018,13 @@ public static class JsonExpression
         if (!arrayEnum.MoveNext())
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("filter requires at least 2 arguments (array and condition)"));
-            return Expression.Constant(Array.Empty<object>(), typeof(object[]));
+            return Expression.Constant(Array.Empty<string>(), typeof(string[]));
         }
 
         var arrayType = arrayExpr.Type;
         if (!arrayType.IsArray)
         {
-            return Expression.Constant(Array.Empty<object>(), typeof(object[]));
+            return Expression.Constant(Array.Empty<string>(), typeof(string[]));
         }
 
         var elementType = arrayType.GetElementType()!;
@@ -1881,7 +2034,7 @@ public static class JsonExpression
         // Compile condition with actual element type
         var elementParam = Expression.Parameter(elementType, "element");
         var conditionBody = CompileCore(conditionJson.RootElement, elementParam);
-        var conditionBodyAsBool = ToBool(conditionBody);
+        var conditionBodyAsBool = ExpressionExtensions.ToBool(conditionBody);
         
         // Build inline filter using List<T>
         var listType = typeof(List<>).MakeGenericType(elementType);
@@ -1924,14 +2077,14 @@ public static class JsonExpression
         if (args.ValueKind != JsonValueKind.Array)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("reduce requires array of arguments"));
-            return Expression.Constant(null, typeof(object));
+            return Expression.Constant(null, typeof(string));
         }
 
         var arrayEnum = args.EnumerateArray();
         if (!arrayEnum.MoveNext())
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("reduce requires at least 3 arguments (array, reducer, initial)"));
-            return Expression.Constant(null, typeof(object));
+            return Expression.Constant(null, typeof(string));
         }
 
         // Get the array expression with its actual type
@@ -1940,13 +2093,13 @@ public static class JsonExpression
         if (!arrayEnum.MoveNext())
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("reduce requires at least 3 arguments (array, reducer, initial)"));
-            return Expression.Constant(null, typeof(object));
+            return Expression.Constant(null, typeof(string));
         }
 
         var arrayType = arrayExpr.Type;
         if (!arrayType.IsArray)
         {
-            return Expression.Constant(null, typeof(object));
+            return Expression.Constant(null, typeof(string));
         }
 
         var elementType = arrayType.GetElementType()!;
@@ -1956,15 +2109,15 @@ public static class JsonExpression
         if (!arrayEnum.MoveNext())
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("reduce requires at least 3 arguments (array, reducer, initial)"));
-            return Expression.Constant(null, typeof(object));
+            return Expression.Constant(null, typeof(string));
         }
 
         // Get initial value
         var initialValueExpr = CompileCore(arrayEnum.Current, dataParam);
         var accumType = initialValueExpr.Type;
         
-        // Build ReduceContext type with properties matching element type
-        var contextType = typeof(ReduceContext);
+        // Build generic ReduceContext<elementType, accumType> with fully typed properties
+        var contextType = typeof(ReduceContext<,>).MakeGenericType(elementType, accumType);
         var contextParam = Expression.Parameter(contextType, "context");
         var reducerBody = CompileCore(reducerJson.RootElement, contextParam);
         
@@ -1986,8 +2139,8 @@ public static class JsonExpression
                 Expression.IfThenElse(
                     Expression.LessThan(indexVar, lengthExpr),
                     Expression.Block(
-                        Expression.Assign(Expression.Property(contextVar, currentProp), Expression.Convert(Expression.ArrayIndex(arrayExpr, indexVar), typeof(object))),
-                        Expression.Assign(Expression.Property(contextVar, accumProp), Expression.Convert(accumVar, typeof(object))),
+                        Expression.Assign(Expression.Property(contextVar, currentProp), Expression.ArrayIndex(arrayExpr, indexVar)),
+                        Expression.Assign(Expression.Property(contextVar, accumProp), accumVar),
                         Expression.Assign(
                             accumVar,
                             Expression.Convert(
@@ -2043,7 +2196,7 @@ public static class JsonExpression
         
         var elementParam = Expression.Parameter(elementType, "element");
         var conditionBody = CompileCore(conditionJson.RootElement, elementParam);
-        var conditionBodyAsBool = ToBool(conditionBody);
+        var conditionBodyAsBool = ExpressionExtensions.ToBool(conditionBody);
 
         // Build inline all check
         var lengthExpr = Expression.ArrayLength(arrayExpr);
@@ -2117,7 +2270,7 @@ public static class JsonExpression
         
         var elementParam = Expression.Parameter(elementType, "element");
         var conditionBody = CompileCore(conditionJson.RootElement, elementParam);
-        var conditionBodyAsBool = ToBool(conditionBody);
+        var conditionBodyAsBool = ExpressionExtensions.ToBool(conditionBody);
 
         // Build inline none check (opposite of some)
         var lengthExpr = Expression.ArrayLength(arrayExpr);
@@ -2189,7 +2342,7 @@ public static class JsonExpression
         
         var elementParam = Expression.Parameter(elementType, "element");
         var conditionBody = CompileCore(conditionJson.RootElement, elementParam);
-        var conditionBodyAsBool = ToBool(conditionBody);
+        var conditionBodyAsBool = ExpressionExtensions.ToBool(conditionBody);
 
         // Build inline some check
         var lengthExpr = Expression.ArrayLength(arrayExpr);
@@ -2238,7 +2391,7 @@ public static class JsonExpression
         // Convert value to string for logging
         var valueAsString = value.Type == typeof(string) 
             ? value 
-            : Expression.Call(value, typeof(object).GetMethod(nameof(ToString))!);
+            : ExpressionExtensions.ToStringExpr(value);
         
         // Create LogEvent instance
         var logEvent = Expression.New(
