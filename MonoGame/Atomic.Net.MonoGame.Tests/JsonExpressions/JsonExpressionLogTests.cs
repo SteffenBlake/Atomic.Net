@@ -39,7 +39,7 @@ public sealed class JsonExpressionLogTests : IDisposable
         // Arrange
         var json = """{"log": "apple"}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -58,7 +58,7 @@ public sealed class JsonExpressionLogTests : IDisposable
         // Arrange
         var json = """{"log": 42}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -77,7 +77,7 @@ public sealed class JsonExpressionLogTests : IDisposable
         // Arrange
         var json = """{"log": {"var": "Value"}}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(100);
 
@@ -96,7 +96,7 @@ public sealed class JsonExpressionLogTests : IDisposable
         // Arrange
         var json = """{"log": true}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -115,7 +115,7 @@ public sealed class JsonExpressionLogTests : IDisposable
         // Arrange
         var json = """{"log": {"+": [1, 2]}}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -135,5 +135,5 @@ public sealed class JsonExpressionLogTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert
-        Assert.False(JsonExpression.TryCompile<TestInput, bool>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
     }}

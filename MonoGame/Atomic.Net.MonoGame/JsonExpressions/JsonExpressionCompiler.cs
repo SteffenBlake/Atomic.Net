@@ -37,13 +37,13 @@ public static class JsonExpressionCompiler
                 EventBus<ErrorEvent>.Push(new ErrorEvent(
                     "Failed to deserialize JSONLogic rule: result was null"
                 ));
-                
+
                 result = null;
                 return false;
             }
 
             // Compile expression to LINQ Expression tree
-            return expression.TryCompile(rule, out result);
+            return expression.TryCompile(out result);
         }
         catch (JsonException ex)
         {

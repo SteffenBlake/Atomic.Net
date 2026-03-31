@@ -36,7 +36,7 @@ public sealed class JsonExpressionSubstringTests : IDisposable
         // Arrange
         var json = """{"substring": ["jsonlogic", 4]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput("");
 
@@ -55,7 +55,7 @@ public sealed class JsonExpressionSubstringTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile
-        Assert.False(JsonExpression.TryCompile<TestInput, string>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public sealed class JsonExpressionSubstringTests : IDisposable
         // Arrange
         var json = """{"substring": ["jsonlogic", 1, 3]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput("");
 
@@ -83,7 +83,7 @@ public sealed class JsonExpressionSubstringTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile
-        Assert.False(JsonExpression.TryCompile<TestInput, string>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public sealed class JsonExpressionSubstringTests : IDisposable
         // Arrange
         var json = """{"substring": ["jsonlogic", 0, 4]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput("");
 
@@ -109,7 +109,7 @@ public sealed class JsonExpressionSubstringTests : IDisposable
         // Arrange
         var json = """{"substring": [{"var": "Text"}, 0, 5]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput("Hello World");
 
@@ -126,7 +126,7 @@ public sealed class JsonExpressionSubstringTests : IDisposable
         // Arrange
         var json = """{"substring": ["short", 2, 100]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput("");
 
@@ -143,7 +143,7 @@ public sealed class JsonExpressionSubstringTests : IDisposable
         // Arrange
         var json = """{"substring": ["short", 100]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput("");
 
@@ -161,5 +161,5 @@ public sealed class JsonExpressionSubstringTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert
-        Assert.False(JsonExpression.TryCompile<TestInput, int>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out _));
     }}

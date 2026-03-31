@@ -1847,7 +1847,7 @@ public static class JsonExpressionOld
         if (!arrayEnum.MoveNext())
         {
             // String and start - use SafeSubstring with length = string.Length
-            var safeSubstringMethod = typeof(JsonExpression).GetMethod(nameof(SafeSubstring))!;
+            var safeSubstringMethod = typeof(JsonExpressionOld).GetMethod(nameof(SafeSubstring))!;
             var lengthProp = typeof(string).GetProperty(nameof(string.Length))!;
             return Expression.Call(safeSubstringMethod, str, start, Expression.Property(str, lengthProp));
         }
@@ -1859,7 +1859,7 @@ public static class JsonExpressionOld
         }
 
         // String, start, and length - use SafeSubstring
-        var safeSubstringMethod2 = typeof(JsonExpression).GetMethod(nameof(SafeSubstring))!;
+        var safeSubstringMethod2 = typeof(JsonExpressionOld).GetMethod(nameof(SafeSubstring))!;
         return Expression.Call(safeSubstringMethod2, str, start, length);
     }
 

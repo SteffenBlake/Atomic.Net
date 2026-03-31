@@ -36,7 +36,7 @@ public sealed class JsonExpressionGreaterThanTests : IDisposable
         // Arrange
         var json = """{ ">": [2, 1]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -53,7 +53,7 @@ public sealed class JsonExpressionGreaterThanTests : IDisposable
         // Arrange
         var json = """{">": [1, 2]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -70,7 +70,7 @@ public sealed class JsonExpressionGreaterThanTests : IDisposable
         // Arrange
         var json = """{">": [1, 1]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -87,7 +87,7 @@ public sealed class JsonExpressionGreaterThanTests : IDisposable
         // Arrange
         var json = """{">": [{"var": "Value"}, 10]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42);
 
@@ -104,7 +104,7 @@ public sealed class JsonExpressionGreaterThanTests : IDisposable
         // Arrange
         var json = """{">": [-1, -5]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -121,7 +121,7 @@ public sealed class JsonExpressionGreaterThanTests : IDisposable
         // Arrange
         var json = """{">": [3.14, 2.71]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -139,5 +139,5 @@ public sealed class JsonExpressionGreaterThanTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert
-        Assert.False(JsonExpression.TryCompile<TestInput, int[]>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out _));
     }}

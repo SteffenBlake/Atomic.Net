@@ -15,13 +15,11 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 public abstract class JsonExpression<TIn, TOut>
 {
     /// <summary>
-    /// Attempts to compile a JSONLogic rule to a strongly-typed expression.
+    /// Attempts to compile this expression to a strongly-typed LINQ expression tree.
     /// </summary>
-    /// <param name="rule">JSONLogic rule document</param>
     /// <param name="result">Compiled expression if successful</param>
     /// <returns>True if compilation succeeded and can produce TOut, false otherwise</returns>
     public abstract bool TryCompile(
-        JsonDocument rule,
         [NotNullWhen(true)] 
         out Expression<Func<TIn, TOut>>? result
     );

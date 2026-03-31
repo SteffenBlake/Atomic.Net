@@ -36,7 +36,7 @@ public sealed class JsonExpressionSubtractTests : IDisposable
         // Arrange
         var json = """{"-": [4, 2]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -53,7 +53,7 @@ public sealed class JsonExpressionSubtractTests : IDisposable
         // Arrange
         var json = """{"-": [{"var": "A"}, {"var": "B"}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(50, 8);
 
@@ -70,7 +70,7 @@ public sealed class JsonExpressionSubtractTests : IDisposable
         // Arrange
         var json = """{"-": 2}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -87,7 +87,7 @@ public sealed class JsonExpressionSubtractTests : IDisposable
         // Arrange
         var json = """{"-": -2}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -104,7 +104,7 @@ public sealed class JsonExpressionSubtractTests : IDisposable
         // Arrange
         var json = """{"-": [2, 5]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -121,7 +121,7 @@ public sealed class JsonExpressionSubtractTests : IDisposable
         // Arrange
         var json = """{"-": [5.5, 3.2]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, double>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -139,5 +139,5 @@ public sealed class JsonExpressionSubtractTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert
-        Assert.False(JsonExpression.TryCompile<TestInput, string>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
     }}

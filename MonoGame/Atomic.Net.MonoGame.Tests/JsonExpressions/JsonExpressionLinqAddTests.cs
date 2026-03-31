@@ -36,7 +36,7 @@ public sealed class JsonExpressionLinqAddTests : IDisposable
         // Arrange
        var json = """{"add": [5, [1, 2, 3, 4]]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -53,7 +53,7 @@ public sealed class JsonExpressionLinqAddTests : IDisposable
         // Arrange
         var json = """{"add": [42, []]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -70,7 +70,7 @@ public sealed class JsonExpressionLinqAddTests : IDisposable
         // Arrange
         var json = """{"add": [{"var": "Value"}, [10, 20, 30]]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(99);
 
@@ -87,7 +87,7 @@ public sealed class JsonExpressionLinqAddTests : IDisposable
         // Arrange
         var json = """{"add": ["World", ["Hello"]]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, string[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, string[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -106,7 +106,7 @@ public sealed class JsonExpressionLinqAddTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile
-        Assert.False(JsonExpression.TryCompile<TestInput, int[]>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out _));
     }
 
     [Fact]
@@ -117,7 +117,7 @@ public sealed class JsonExpressionLinqAddTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile
-        Assert.False(JsonExpression.TryCompile<TestInput, int[]>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out _));
     }
 
     [Fact]
@@ -128,7 +128,7 @@ public sealed class JsonExpressionLinqAddTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile
-        Assert.False(JsonExpression.TryCompile<TestInput, int[]>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out _));
     }
 
     [Fact]
@@ -139,7 +139,7 @@ public sealed class JsonExpressionLinqAddTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile
-        Assert.False(JsonExpression.TryCompile<TestInput, int[]>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out _));
     }
 
     [Fact]
@@ -150,7 +150,7 @@ public sealed class JsonExpressionLinqAddTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile (first arg must be scalar, second must be array)
-        Assert.False(JsonExpression.TryCompile<TestInput, int[]>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out _));
     }
     [Fact]
     public void LinqAdd_WrongOutputType_Fails()
@@ -160,5 +160,5 @@ public sealed class JsonExpressionLinqAddTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert
-        Assert.False(JsonExpression.TryCompile<TestInput, string>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
     }}

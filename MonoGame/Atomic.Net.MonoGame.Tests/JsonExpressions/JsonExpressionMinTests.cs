@@ -36,7 +36,7 @@ public sealed class JsonExpressionMinTests : IDisposable
         // Arrange
         var json = """{"min": [1, 2, 3]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0, 0);
 
@@ -53,7 +53,7 @@ public sealed class JsonExpressionMinTests : IDisposable
         // Arrange
         var json = """{"min": [5, 2]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0, 0);
 
@@ -70,7 +70,7 @@ public sealed class JsonExpressionMinTests : IDisposable
         // Arrange
         var json = """{"min": [-5, -2, -10]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0, 0);
 
@@ -87,7 +87,7 @@ public sealed class JsonExpressionMinTests : IDisposable
         // Arrange
         var json = """{"min": [{"var": "A"}, {"var": "B"}, {"var": "C"}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(10, 50, 30);
 
@@ -104,7 +104,7 @@ public sealed class JsonExpressionMinTests : IDisposable
         // Arrange
         var json = """{"min": [1.5, 2.7, 0.3]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, double>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0, 0);
 
@@ -121,7 +121,7 @@ public sealed class JsonExpressionMinTests : IDisposable
         // Arrange
         var json = """{"min": [42]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0, 0);
 
@@ -139,5 +139,5 @@ public sealed class JsonExpressionMinTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert
-        Assert.False(JsonExpression.TryCompile<TestInput, bool>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
     }}

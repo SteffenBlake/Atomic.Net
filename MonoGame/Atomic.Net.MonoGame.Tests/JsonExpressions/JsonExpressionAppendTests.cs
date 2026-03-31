@@ -36,7 +36,7 @@ public sealed class JsonExpressionAppendTests : IDisposable
         // Arrange
         var json = """{"addRange": [[1, 2], [3, 4]]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -55,7 +55,7 @@ public sealed class JsonExpressionAppendTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile (takes only 2 arrays, not 3)
-        Assert.False(JsonExpression.TryCompile<TestInput, int[]>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out _));
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public sealed class JsonExpressionAppendTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile
-        Assert.False(JsonExpression.TryCompile<TestInput, int[]>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out _));
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public sealed class JsonExpressionAppendTests : IDisposable
         // Arrange
         var json = """{"addRange": [[], []]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -94,7 +94,7 @@ public sealed class JsonExpressionAppendTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile (needs 2 arrays)
-        Assert.False(JsonExpression.TryCompile<TestInput, int[]>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out _));
     }
     [Fact]
     public void Append_WrongOutputType_Fails()
@@ -104,5 +104,5 @@ public sealed class JsonExpressionAppendTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert
-        Assert.False(JsonExpression.TryCompile<TestInput, bool>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
     }}

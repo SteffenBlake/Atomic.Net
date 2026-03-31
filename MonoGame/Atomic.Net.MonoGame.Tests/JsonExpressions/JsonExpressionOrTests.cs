@@ -36,7 +36,7 @@ public sealed class JsonExpressionOrTests : IDisposable
         // Arrange
         var json = """{"or": [true, false]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -53,7 +53,7 @@ public sealed class JsonExpressionOrTests : IDisposable
         // Arrange
         var json = """{"or": [false, true]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -70,7 +70,7 @@ public sealed class JsonExpressionOrTests : IDisposable
         // Arrange
         var json = """{"or": [false, false]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -89,7 +89,7 @@ public sealed class JsonExpressionOrTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile
-        Assert.False(JsonExpression.TryCompile<TestInput, string>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public sealed class JsonExpressionOrTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile
-        Assert.False(JsonExpression.TryCompile<TestInput, string>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
     }
 
     [Fact]
@@ -111,7 +111,7 @@ public sealed class JsonExpressionOrTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile
-        Assert.False(JsonExpression.TryCompile<TestInput, string>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
     }
 
     [Fact]
@@ -120,7 +120,7 @@ public sealed class JsonExpressionOrTests : IDisposable
         // Arrange
         var json = """{"or": [{"==": [{"var": "Value"}, 0]}, {"==": [{"var": "Value"}, 42]}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42);
 
@@ -138,5 +138,5 @@ public sealed class JsonExpressionOrTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert
-        Assert.False(JsonExpression.TryCompile<TestInput, int[]>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out _));
     }}

@@ -36,7 +36,7 @@ public sealed class JsonExpressionSymbolAddTests : IDisposable
         // Arrange
         var json = """{"+": [4, 2]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -53,7 +53,7 @@ public sealed class JsonExpressionSymbolAddTests : IDisposable
         // Arrange
         var json = """{"+": [2, 2, 2, 2, 2]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -70,7 +70,7 @@ public sealed class JsonExpressionSymbolAddTests : IDisposable
         // Arrange
         var json = """{"+": [{"var": "A"}, {"var": "B"}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(10, 32);
 
@@ -87,7 +87,7 @@ public sealed class JsonExpressionSymbolAddTests : IDisposable
         // Arrange
         var json = """{"+": [-5, 3]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -104,7 +104,7 @@ public sealed class JsonExpressionSymbolAddTests : IDisposable
         // Arrange
         var json = """{"+": [3.14, 2.86]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, double>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -121,7 +121,7 @@ public sealed class JsonExpressionSymbolAddTests : IDisposable
         // Arrange
         var json = """{"+": 42}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -140,7 +140,7 @@ public sealed class JsonExpressionSymbolAddTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile
-        Assert.False(JsonExpression.TryCompile<TestInput, double>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
     }
 
     [Fact]
@@ -151,7 +151,7 @@ public sealed class JsonExpressionSymbolAddTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile
-        Assert.False(JsonExpression.TryCompile<TestInput, string>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
     }
 
     [Fact]
@@ -160,7 +160,7 @@ public sealed class JsonExpressionSymbolAddTests : IDisposable
         // Arrange
         var json = """{"+": ["Hello", " World"]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -177,7 +177,7 @@ public sealed class JsonExpressionSymbolAddTests : IDisposable
         // Arrange
         var json = """{"+": ["A", "B", "C", "D"]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -195,7 +195,7 @@ public sealed class JsonExpressionSymbolAddTests : IDisposable
         var record = new PersonRecord("John", "Doe");
         var json = """{"+": [{"var": "FirstName"}, " ", {"var": "LastName"}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<PersonRecord, string>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<PersonRecord, string>(doc, out var expr));
         var func = expr.Compile();
 
         // Act
@@ -213,7 +213,7 @@ public sealed class JsonExpressionSymbolAddTests : IDisposable
         // Arrange
         var json = """{"+": ["", ""]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -231,7 +231,7 @@ public sealed class JsonExpressionSymbolAddTests : IDisposable
         // Arrange
         var json = """{"+": ["Value: ", 42]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 

@@ -40,7 +40,7 @@ public sealed class JsonExpressionSelectManyTests : IDisposable
         // Arrange
         var json = """{"selectMany": [{"var": "Teams"}, {"var": "Members"}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestData, string[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestData, string[]>(doc, out var expr));
         var func = expr.Compile();
         
         var data = new TestData(new[]
@@ -63,7 +63,7 @@ public sealed class JsonExpressionSelectManyTests : IDisposable
         // Arrange
         var json = """{"selectMany": [{"var": "People"}, {"var": "Scores"}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<ScoreData, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<ScoreData, int[]>(doc, out var expr));
         var func = expr.Compile();
         
         var data = new ScoreData(new[]
@@ -86,7 +86,7 @@ public sealed class JsonExpressionSelectManyTests : IDisposable
         // Arrange
         var json = """{"selectMany": [{"var": "Teams"}, {"var": "Members"}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestData, string[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestData, string[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestData(Array.Empty<Team>());
 
@@ -103,7 +103,7 @@ public sealed class JsonExpressionSelectManyTests : IDisposable
         // Arrange
         var json = """{"selectMany": [{"var": "Teams"}, {"var": "Members"}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestData, string[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestData, string[]>(doc, out var expr));
         var func = expr.Compile();
         
         var data = new TestData(new[]
@@ -126,7 +126,7 @@ public sealed class JsonExpressionSelectManyTests : IDisposable
         // Arrange
         var json = """{"selectMany": [{"var": "Teams"}, {"var": "Members"}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestData, string[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestData, string[]>(doc, out var expr));
         var func = expr.Compile();
         
         var data = new TestData(new[]
@@ -148,7 +148,7 @@ public sealed class JsonExpressionSelectManyTests : IDisposable
         // Arrange - multiply each score by 2, then flatten
         var json = """{"selectMany": [{"var": "People"}, {"map": [{"var": "Scores"}, {"*": [{"var": ""}, 2]}]}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<ScoreData, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<ScoreData, int[]>(doc, out var expr));
         var func = expr.Compile();
         
         var data = new ScoreData(new[]
@@ -170,7 +170,7 @@ public sealed class JsonExpressionSelectManyTests : IDisposable
         // Arrange
         var json = """{"selectMany": [{"var": "Teams"}, {"var": "Members"}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestData, string[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestData, string[]>(doc, out var expr));
         var func = expr.Compile();
         
         var data = new TestData(new[]
@@ -197,7 +197,7 @@ public sealed class JsonExpressionSelectManyTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert
-        Assert.False(JsonExpression.TryCompile<TestData, string[]>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestData, string[]>(doc, out _));
     }
 
     [Fact]
@@ -208,7 +208,7 @@ public sealed class JsonExpressionSelectManyTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert
-        Assert.False(JsonExpression.TryCompile<TestData, string[]>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestData, string[]>(doc, out _));
     }
 
     [Fact]
@@ -219,7 +219,7 @@ public sealed class JsonExpressionSelectManyTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert
-        Assert.False(JsonExpression.TryCompile<TestData, string[]>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestData, string[]>(doc, out _));
     }
 
     [Fact]
@@ -230,7 +230,7 @@ public sealed class JsonExpressionSelectManyTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert
-        Assert.False(JsonExpression.TryCompile<TestData, string[]>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestData, string[]>(doc, out _));
     }
 
     [Fact]
@@ -241,7 +241,7 @@ public sealed class JsonExpressionSelectManyTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail because selector must return array type
-        Assert.False(JsonExpression.TryCompile<TestData, string[]>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestData, string[]>(doc, out _));
     }
 
     [Fact]
@@ -252,7 +252,7 @@ public sealed class JsonExpressionSelectManyTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert
-        Assert.False(JsonExpression.TryCompile<TestData, int[]>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestData, int[]>(doc, out _));
     }
 
     [Fact]
@@ -263,7 +263,7 @@ public sealed class JsonExpressionSelectManyTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert
-        Assert.False(JsonExpression.TryCompile<TestData, string[]>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestData, string[]>(doc, out _));
     }
 
     [Fact]
@@ -274,6 +274,6 @@ public sealed class JsonExpressionSelectManyTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert
-        Assert.False(JsonExpression.TryCompile<TestData, string[]>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestData, string[]>(doc, out _));
     }
 }

@@ -36,7 +36,7 @@ public sealed class JsonExpressionStringContainsTests : IDisposable
         // Arrange
         var json = """{"contains": ["Spring", "Springfield"]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput("");
 
@@ -53,7 +53,7 @@ public sealed class JsonExpressionStringContainsTests : IDisposable
         // Arrange
         var json = """{"contains": ["Summer", "Springfield"]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput("");
 
@@ -70,7 +70,7 @@ public sealed class JsonExpressionStringContainsTests : IDisposable
         // Arrange
         var json = """{"contains": ["", "test"]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput("");
 
@@ -87,7 +87,7 @@ public sealed class JsonExpressionStringContainsTests : IDisposable
         // Arrange
         var json = """{"contains": ["SPRING", "Springfield"]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput("");
 
@@ -104,7 +104,7 @@ public sealed class JsonExpressionStringContainsTests : IDisposable
         // Arrange
         var json = """{"contains": ["test", {"var": "Text"}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput("This is a test string");
 
@@ -121,7 +121,7 @@ public sealed class JsonExpressionStringContainsTests : IDisposable
         // Arrange
         var json = """{"contains": ["Hello", "Hello World"]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput("");
 
@@ -138,7 +138,7 @@ public sealed class JsonExpressionStringContainsTests : IDisposable
         // Arrange
         var json = """{"contains": ["World", "Hello World"]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput("");
 
@@ -157,6 +157,6 @@ public sealed class JsonExpressionStringContainsTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert
-        Assert.False(JsonExpression.TryCompile<TestInput, int[]>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out _));
     }
 }

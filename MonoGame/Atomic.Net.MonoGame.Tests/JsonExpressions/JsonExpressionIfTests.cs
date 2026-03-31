@@ -36,7 +36,7 @@ public sealed class JsonExpressionIfTests : IDisposable
         // Arrange
         var json = """{"if": [true, "yes", "no"]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42, "test");
 
@@ -53,7 +53,7 @@ public sealed class JsonExpressionIfTests : IDisposable
         // Arrange
         var json = """{"if": [false, "yes", "no"]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42, "test");
 
@@ -70,7 +70,7 @@ public sealed class JsonExpressionIfTests : IDisposable
         // Arrange
         var json = """{"if": [{"==": [{"var": "Value"}, 42]}, "found", "not found"]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42, "test");
 
@@ -87,7 +87,7 @@ public sealed class JsonExpressionIfTests : IDisposable
         // Arrange
         var json = """{"if": [{"<": [{"var": "Value"}, 0]}, "negative", {"<": [{"var": "Value"}, 100]}, "small", "large"]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(50, "test");
 
@@ -104,7 +104,7 @@ public sealed class JsonExpressionIfTests : IDisposable
         // Arrange
         var json = """{"if": [{"<": [{"var": "Value"}, 0]}, "negative", {"<": [{"var": "Value"}, 10]}, "small", "large"]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, string>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(100, "test");
 
@@ -123,7 +123,7 @@ public sealed class JsonExpressionIfTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile
-        Assert.False(JsonExpression.TryCompile<TestInput, string>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
     }
 
     [Fact]
@@ -134,7 +134,7 @@ public sealed class JsonExpressionIfTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile
-        Assert.False(JsonExpression.TryCompile<TestInput, string>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
     }
 
     [Fact]
@@ -145,6 +145,6 @@ public sealed class JsonExpressionIfTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert
-        Assert.False(JsonExpression.TryCompile<TestInput, int>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out _));
     }
 }

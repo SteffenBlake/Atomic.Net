@@ -17,8 +17,23 @@ public sealed class JsonExpressionNumberLiteralConverter<TIn, TOut> : JsonConver
         JsonSerializerOptions options
     )
     {
-        // TODO: Implement JSON parsing logic
-        throw new NotImplementedException();
+        // Validate that we're reading a number
+        if (reader.TokenType != JsonTokenType.Number)
+        {
+            throw new JsonException(
+                $"Expected: Number token for number literal, Actual: {reader.TokenType}"
+            );
+        }
+
+        // Parse the number value as float
+        if (!reader.TryGetSingle(out var value))
+        {
+            throw new JsonException(
+                $"Expected: Valid float number, Actual: Could not parse '{reader.GetString()}' as float"
+            );
+        }
+
+        return new JsonExpressionNumberLiteral<TIn, TOut>(value);
     }
 
     public override void Write(

@@ -36,7 +36,7 @@ public sealed class JsonExpressionAndTests : IDisposable
         // Arrange
         var json = """{"and": [true, true]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -53,7 +53,7 @@ public sealed class JsonExpressionAndTests : IDisposable
         // Arrange
         var json = """{"and": [true, false]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -72,7 +72,7 @@ public sealed class JsonExpressionAndTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile
-        Assert.False(JsonExpression.TryCompile<TestInput, int>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out _));
     }
 
     [Fact]
@@ -83,7 +83,7 @@ public sealed class JsonExpressionAndTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile
-        Assert.False(JsonExpression.TryCompile<TestInput, string>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public sealed class JsonExpressionAndTests : IDisposable
         // Arrange
         var json = """{"and": [{">": [{"var": "Value"}, 0]}, {"<": [{"var": "Value"}, 100]}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42);
 
@@ -109,7 +109,7 @@ public sealed class JsonExpressionAndTests : IDisposable
         // Arrange
         var json = """{"and": [{">": [{"var": "Value"}, 0]}, {"<": [{"var": "Value"}, 10]}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, bool>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42);
 
@@ -128,7 +128,7 @@ public sealed class JsonExpressionAndTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile
-        Assert.False(JsonExpression.TryCompile<TestInput, int[]>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out _));
     }
     [Fact]
     public void And_WrongOutputType_Fails()
@@ -138,5 +138,5 @@ public sealed class JsonExpressionAndTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert
-        Assert.False(JsonExpression.TryCompile<TestInput, string>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
     }}

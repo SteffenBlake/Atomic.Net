@@ -36,7 +36,7 @@ public sealed class JsonExpressionSelectTests : IDisposable
         // Arrange
         var json = """{"select": [{"var": "Numbers"}, {"*": [{"var": ""}, 2]}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(new[] { 1, 2, 3, 4, 5 });
 
@@ -53,7 +53,7 @@ public sealed class JsonExpressionSelectTests : IDisposable
         // Arrange
         var json = """{"select": [{"var": "Numbers"}, {"+": [{"var": ""}, 10]}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(new[] { 1, 2, 3 });
 
@@ -70,7 +70,7 @@ public sealed class JsonExpressionSelectTests : IDisposable
         // Arrange
         var json = """{"select": [{"var": "Numbers"}, {"*": [{"var": ""}, 2]}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(Array.Empty<int>());
 
@@ -87,7 +87,7 @@ public sealed class JsonExpressionSelectTests : IDisposable
         // Arrange
         var json = """{"select": [{"var": "Numbers"}, {"*": [{"var": ""}, {"var": ""}]}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(new[] { 2, 3, 4 });
 
@@ -105,5 +105,5 @@ public sealed class JsonExpressionSelectTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert
-        Assert.False(JsonExpression.TryCompile<TestInput, string>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
     }}

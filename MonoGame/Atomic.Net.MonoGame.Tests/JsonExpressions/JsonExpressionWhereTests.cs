@@ -36,7 +36,7 @@ public sealed class JsonExpressionWhereTests : IDisposable
         // Arrange - where predicate must return bool (modulo returns int, so wrap in equality check)
         var json = """{"where": [{"var": "Numbers"}, {"!=": [{"%": [{"var": ""}, 2]}, 0]}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(new[] { 1, 2, 3, 4, 5 });
 
@@ -53,7 +53,7 @@ public sealed class JsonExpressionWhereTests : IDisposable
         // Arrange
         var json = """{"where": [{"var": "Numbers"}, {">": [{"var": ""}, 0]}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(new[] { -2, -1, 0, 1, 2 });
 
@@ -70,7 +70,7 @@ public sealed class JsonExpressionWhereTests : IDisposable
         // Arrange
         var json = """{"where": [{"var": "Numbers"}, {">": [{"var": ""}, 100]}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(new[] { 1, 2, 3, 4, 5 });
 
@@ -87,7 +87,7 @@ public sealed class JsonExpressionWhereTests : IDisposable
         // Arrange
         var json = """{"where": [{"var": "Numbers"}, {">": [{"var": ""}, 0]}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(new[] { 1, 2, 3, 4, 5 });
 
@@ -104,7 +104,7 @@ public sealed class JsonExpressionWhereTests : IDisposable
         // Arrange
         var json = """{"where": [{"var": "Numbers"}, {">": [{"var": ""}, 0]}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpression.TryCompile<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(Array.Empty<int>());
 
@@ -122,5 +122,5 @@ public sealed class JsonExpressionWhereTests : IDisposable
         var doc = JsonDocument.Parse(json);
         
         // Assert
-        Assert.False(JsonExpression.TryCompile<TestInput, bool>(doc, out _));
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
     }}
