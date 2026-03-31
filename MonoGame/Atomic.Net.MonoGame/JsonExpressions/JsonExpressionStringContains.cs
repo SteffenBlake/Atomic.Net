@@ -50,7 +50,7 @@ public sealed class JsonExpressionStringContains<TIn, TOut>(
         var haystackExpr = Expression.Invoke(haystackFunc, parameter);
         var needleExpr = Expression.Invoke(needleFunc, parameter);
         
-        var containsMethod = typeof(string).GetMethod(nameof(string.Contains), new[] { typeof(string) })!;
+        var containsMethod = typeof(string).GetMethod(nameof(string.Contains), [typeof(string)])!;
         var contains = Expression.Call(haystackExpr, containsMethod, needleExpr);
         
         result = Expression.Lambda<Func<TIn, TOut>>(contains, parameter);

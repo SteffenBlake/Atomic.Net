@@ -48,7 +48,7 @@ public sealed class JsonExpressionMax<TIn, TOut>(JsonExpression<TIn, TOut>[]? op
 
         // Build nested Math.Max calls
         Expression maxExpr = operandExprs[0];
-        var maxMethod = typeof(Math).GetMethod(nameof(Math.Max), new[] { maxExpr.Type, maxExpr.Type })!;
+        var maxMethod = typeof(Math).GetMethod(nameof(Math.Max), [maxExpr.Type, maxExpr.Type])!;
         
         for (int i = 1; i < operandExprs.Count; i++)
         {

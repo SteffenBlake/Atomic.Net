@@ -48,7 +48,7 @@ public sealed class JsonExpressionMin<TIn, TOut>(JsonExpression<TIn, TOut>[]? op
 
         // Build nested Math.Min calls
         Expression minExpr = operandExprs[0];
-        var minMethod = typeof(Math).GetMethod(nameof(Math.Min), new[] { minExpr.Type, minExpr.Type })!;
+        var minMethod = typeof(Math).GetMethod(nameof(Math.Min), [minExpr.Type, minExpr.Type])!;
         
         for (int i = 1; i < operandExprs.Count; i++)
         {

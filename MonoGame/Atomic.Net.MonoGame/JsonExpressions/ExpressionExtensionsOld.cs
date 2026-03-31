@@ -1,4 +1,3 @@
-using System;
 using System.Linq.Expressions;
 
 namespace Atomic.Net.MonoGame.JsonExpressions;
