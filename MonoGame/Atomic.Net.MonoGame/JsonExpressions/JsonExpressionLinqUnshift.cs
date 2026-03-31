@@ -1,0 +1,54 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Linq.Expressions;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Atomic.Net.MonoGame.Core;
+
+namespace Atomic.Net.MonoGame.JsonExpressions;
+
+/// <summary>
+/// JSONLogic operator expression.
+/// </summary>
+/// <typeparam name="TIn">Input data type</typeparam>
+/// <typeparam name="TOut">Output type produced by this expression (the array type)</typeparam>
+/// <typeparam name="TElement">Element type of the array</typeparam>
+public sealed class JsonExpressionLinqUnshift<TIn, TOut, TElement>(
+    IJsonExpression<TIn, TElement>? item,
+    IJsonExpression<TIn, TOut>? array
+) : IJsonExpressionLinqUnshift<TIn, TOut>
+{
+    public bool TryCompile(
+        ParameterExpression parameter,
+        [NotNullWhen(true)]
+        out Expression? result
+    )
+    {
+        if (item is null || array is null)
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("LinqUnshift: Item or Array is null"));
+            result = null;
+            return false;
+        }
+
+        if (!item.TryCompile(parameter, out var itemExpr) || !array.TryCompile(parameter, out var arrayExpr))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("LinqUnshift: Failed to compile Item or Array"));
+            result = null;
+            return false;
+        }
+        
+        // TOut should be TElement[] where TElement is the array element type
+        var elementType = typeof(TElement);
+        
+        // Call Enumerable.Prepend(array, item).ToArray()
+        var prependMethod = typeof(Enumerable).GetMethods()
+            .First(m => m.Name == nameof(Enumerable.Prepend) && m.GetParameters().Length == 2)
+            .MakeGenericMethod(elementType);
+        var toArrayMethod = typeof(Enumerable).GetMethod(nameof(Enumerable.ToArray))!
+            .MakeGenericMethod(elementType);
+        
+        var prependExpr = Expression.Call(prependMethod, arrayExpr, itemExpr);
+        result = Expression.Call(toArrayMethod, prependExpr);
+        return true;
+    }
+}

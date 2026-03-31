@@ -126,6 +126,7 @@ public class JsonExpressionConverter<TIn, TOut> : JsonConverter<IJsonExpression<
             "selectMany" => JsonSerializer.Deserialize<IJsonExpressionLinqSelectMany<TIn, TOut>>(operatorValue, options),
             "aggregate" => JsonSerializer.Deserialize<IJsonExpressionLinqAggregate<TIn, TOut>>(operatorValue, options),
             "push" => JsonSerializer.Deserialize<IJsonExpressionLinqAdd<TIn, TOut>>(operatorValue, options),
+            "unshift" => JsonSerializer.Deserialize<IJsonExpressionLinqUnshift<TIn, TOut>>(operatorValue, options),
             
             // String operations
             "contains" => JsonSerializer.Deserialize<IJsonExpressionContains<TIn, TOut>>(operatorValue, options),

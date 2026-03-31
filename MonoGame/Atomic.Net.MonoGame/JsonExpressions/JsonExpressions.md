@@ -265,6 +265,50 @@ Appends a single item to the **end** of an array and returns the new array. The 
 
 ---
 
+## LinqUnshift (unshift)
+
+**Key:** `"unshift"`  
+**Output:** `T[]`
+
+Prepends a single item to the **start** of an array and returns the new array. The arguments are `[item, array]` — item first, array second. This is the inverse of `push` which appends to the end.
+
+**Shape:** `{"unshift": [item, array]}`
+
+**Accepts:**
+- Exactly 2 arguments: `[scalar, array]`
+- `item` must be a scalar expression matching the array element type
+- `array` must resolve to an array type (`T[]`)
+- Either argument may be a `{"var": ...}` expression
+
+**Rejects:**
+- Non-array value for the outer JSON (e.g. `{"unshift": "not-an-array"}`) → compile failure
+- Exactly 1 argument → compile failure
+- More than 2 arguments → compile failure
+- Arguments in wrong order `[array, scalar]` → compile failure (first arg must be scalar)
+- Both arguments as arrays (`[array, array]`) → compile failure (use `addRange` instead)
+- `TOut` other than an array type → compile failure
+
+**Examples:**
+```json
+{"unshift": [5, [1, 2, 3, 4]]}
+// TOut=float[] → [5, 1, 2, 3, 4]  (item prepended to start)
+
+{"unshift": [42, []]}
+// TOut=float[] → [42]
+
+{"unshift": [{"var": "Value"}, [10, 20, 30]]}
+// TOut=float[], Value=99 → [99, 10, 20, 30]
+
+{"unshift": ["Hello", ["World"]]}
+// TOut=string[] → ["Hello", "World"]
+
+// Compare with push:
+{"push": [5, [1, 2, 3]]}    // → [1, 2, 3, 5]  (appends to end)
+{"unshift": [5, [1, 2, 3]]} // → [5, 1, 2, 3]  (prepends to start)
+```
+
+---
+
 ## LinqAddRange (addRange)
 
 **Key:** `"addRange"`  
