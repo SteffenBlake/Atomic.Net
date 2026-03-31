@@ -34,10 +34,10 @@ public sealed class JsonExpressionContainsConverter<TIn, TOut> : JsonConverter<I
         }
 
         var arrayLength = root.GetArrayLength();
-        if (arrayLength != 2)
+        if (arrayLength < 2 || arrayLength > 3)
         {
             throw new JsonException(
-                $"Expected: Array with 2 elements for 'contains' operator, Actual: Array with {arrayLength} elements"
+                $"Expected: Array with 2 or 3 elements for 'contains' operator, Actual: Array with {arrayLength} elements"
             );
         }
 
@@ -51,7 +51,20 @@ public sealed class JsonExpressionContainsConverter<TIn, TOut> : JsonConverter<I
             );
         }
 
-        return new JsonExpressionContains<TIn, TOut>(text, substring);
+        // Optional third parameter: case sensitivity (defaults to true if not provided)
+        IJsonExpression<TIn, bool>? caseSensitive = null;
+        if (arrayLength == 3)
+        {
+            caseSensitive = JsonSerializer.Deserialize<IJsonExpression<TIn, bool>>(root[2], options);
+            if (caseSensitive is null)
+            {
+                throw new JsonException(
+                    $"Expected: Valid boolean expression for 'contains' case sensitivity, Actual: null"
+                );
+            }
+        }
+
+        return new JsonExpressionContains<TIn, TOut>(text, substring, caseSensitive);
     }
 
     public override void Write(

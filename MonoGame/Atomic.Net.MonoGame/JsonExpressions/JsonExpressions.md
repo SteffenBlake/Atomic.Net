@@ -97,36 +97,48 @@ false
 **Key:** `"contains"`  
 **Output:** `bool`
 
-Tests whether a string (the needle) appears as a substring inside another string (the haystack). The check is **case-sensitive**.
+Tests whether a string (the substring) appears within another string (the text). Supports optional case sensitivity control.
 
-The argument array is `[substring, text]`.
+The argument array is `[substring, text]` or `[substring, text, caseSensitive]`.
 
 **Accepts:**
-- Array of exactly 2 string expressions: `[substring, text]`
-  - `substring` is the string to search for
-  - `text` is the string to search within
-- Either argument may be a `{"var": ...}` or any other string-producing expression
+- Array of 2 or 3 elements:
+  - `[substring, text]` - case-sensitive search (default)
+  - `[substring, text, caseSensitive]` - with case sensitivity control
+- `substring` is the string to search for
+- `text` is the string to search within
+- `caseSensitive` (optional) is a boolean expression:
+  - `true` = case-sensitive search (default if omitted)
+  - `false` = case-insensitive search
+- Any argument may be a `{"var": ...}` or any other expression producing the correct type
 - Empty string substring always returns `true`
 
 **Rejects:**
 - Non-array value (e.g. `{"contains": "not-an-array"}`) → compile failure
 - Array with fewer than 2 elements → compile failure
-- Array with more than 2 elements → compile failure
+- Array with more than 3 elements → compile failure
+- Non-boolean third parameter → compile failure
 - `TOut` other than `bool` → compile failure
 
 **Examples:**
 ```json
 {"contains": ["Spring", "Springfield"]}
-// → true  (case-sensitive match)
+// → true  (case-sensitive match, default)
 
 {"contains": ["SPRING", "Springfield"]}
 // → false  (case-sensitive, no match)
+
+{"contains": ["SPRING", "Springfield", false]}
+// → true  (case-insensitive match)
 
 {"contains": ["test", {"var": "Text"}]}
 // → true when Text = "This is a test string"
 
 {"contains": ["", "anything"]}
 // → true  (empty substring always matches)
+
+{"contains": ["spring", "Springfield", true]}
+// → false  (explicit case-sensitive)
 ```
 
 ---

@@ -77,8 +77,42 @@ public sealed class JsonExpressionContainsTests(ITestOutputHelper output) : IDis
     [Fact]
     public void StringContains_CaseSensitive_ReturnsFalse()
     {
-        // Arrange
-        var json = """{"contains": ["SPRING", "Springfield"]}""";
+        // Arrange - default case sensitive
+        var json = """{ "contains": ["SPRING", "Springfield"]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
+        var func = expr.Compile();
+        var data = new TestInput("");
+
+        // Act
+        var result = func(data);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void StringContains_CaseInsensitive_ReturnsTrue()
+    {
+        // Arrange - explicit case insensitive (third param = false)
+        var json = """{ "contains": ["SPRING", "Springfield", false]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
+        var func = expr.Compile();
+        var data = new TestInput("");
+
+        // Act
+        var result = func(data);
+
+        // Assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    public void StringContains_ExplicitCaseSensitive_ReturnsFalse()
+    {
+        // Arrange - explicit case sensitive (third param = true)
+        var json = """{ "contains": ["SPRING", "Springfield", true]}""";
         var doc = JsonDocument.Parse(json);
         Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
@@ -178,8 +212,8 @@ public sealed class JsonExpressionContainsTests(ITestOutputHelper output) : IDis
     [Fact]
     public void StringContains_TooManyArguments_Fails()
     {
-        // Arrange - requires exactly 2 arguments
-        var json = """{"contains": ["a", "b", "c"]}""";
+        // Arrange - requires 2 or 3 arguments, not 4
+        var json = """{ "contains": ["a", "b", "c", "d"]}""";
         var doc = JsonDocument.Parse(json);
 
         // Assert
