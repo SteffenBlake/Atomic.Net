@@ -76,37 +76,25 @@ public sealed class JsonExpressionIfTests(ITestOutputHelper output) : IDisposabl
     }
 
     [Fact]
-    public void If_MultipleElseIf_ReturnCorrectBranch()
+    public void If_MultipleElseIf_Fails()
     {
-        // Arrange
+        // Arrange - 'if' requires exactly 3 elements, not else-if chains
         var json = """{"if": [{"<": [{"var": "Value"}, 0]}, "negative", {"<": [{"var": "Value"}, 100]}, "small", "large"]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out var expr));
-        var func = expr.Compile();
-        var data = new TestInput(50, "test");
-
-        // Act
-        var result = func(data);
 
         // Assert
-        Assert.Equal("small", result);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
     }
 
     [Fact]
-    public void If_MultipleElseIf_FallsToFinalElse()
+    public void If_FiveOrMoreElements_Fails()
     {
-        // Arrange
+        // Arrange - 'if' requires exactly 3 elements, not else-if chains
         var json = """{"if": [{"<": [{"var": "Value"}, 0]}, "negative", {"<": [{"var": "Value"}, 10]}, "small", "large"]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out var expr));
-        var func = expr.Compile();
-        var data = new TestInput(100, "test");
-
-        // Act
-        var result = func(data);
 
         // Assert
-        Assert.Equal("large", result);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
     }
 
     [Fact]
@@ -140,5 +128,38 @@ public sealed class JsonExpressionIfTests(ITestOutputHelper output) : IDisposabl
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out _));
+    }
+
+    [Fact]
+    public void If_NotAnArray_Fails()
+    {
+        // Arrange - value must be an array, not a string
+        var json = """{"if": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
+    }
+
+    [Fact]
+    public void If_TooFewArguments_Fails()
+    {
+        // Arrange - requires at least 3 arguments (condition, then, else)
+        var json = """{"if": [true, "yes"]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
+    }
+
+    [Fact]
+    public void If_EvenNumberOfArguments_Fails()
+    {
+        // Arrange - else-if chain must have odd number (condition-value pairs + final else)
+        var json = """{"if": [true, "a", false, "b"]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
     }
 }

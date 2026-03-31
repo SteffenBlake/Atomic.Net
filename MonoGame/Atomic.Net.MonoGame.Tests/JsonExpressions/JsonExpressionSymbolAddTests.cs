@@ -134,6 +134,39 @@ public sealed class JsonExpressionSymbolAddTests(ITestOutputHelper output) : IDi
     }
 
     [Fact]
+    public void Add_ArrayOutputType_Fails()
+    {
+        // Arrange - + cannot produce array type TOut
+        var json = """{"+": [1, 2]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out _));
+    }
+
+    [Fact]
+    public void Add_NotAnArrayOrNumber_Fails()
+    {
+        // Arrange - value of '+' must be a number (unary) or array; a boolean is neither
+        var json = """{"+": true}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+
+    [Fact]
+    public void Add_EmptyArray_Fails()
+    {
+        // Arrange - '+' requires at least 1 operand
+        var json = """{"+": []}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+
+    [Fact]
     public void Add_UnaryString_CastsToNumber()
     {
         // Arrange - C# does not support unary + on strings

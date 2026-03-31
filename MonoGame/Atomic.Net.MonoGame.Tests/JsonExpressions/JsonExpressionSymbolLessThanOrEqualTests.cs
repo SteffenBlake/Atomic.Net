@@ -143,4 +143,21 @@ public sealed class JsonExpressionSymbolLessThanOrEqualTests(ITestOutputHelper o
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out _));
-    }}
+    }
+
+    [Fact]
+    public void LessThanOrEqual_NotAnArray_Fails()
+    {
+        var json = """{"<=": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void LessThanOrEqual_TooFewArguments_Fails()
+    {
+        var json = """{"<=": [1]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+}

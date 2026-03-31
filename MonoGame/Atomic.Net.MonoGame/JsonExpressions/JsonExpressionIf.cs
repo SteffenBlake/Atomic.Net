@@ -17,37 +17,22 @@ public sealed class JsonExpressionIf<TIn, TOut>(
     IJsonExpression<TIn, TOut>? elseBranch
 ) : IJsonExpressionIf<TIn, TOut>
 {
-    /// <summary>
-    /// Condition expression.
-    /// </summary>
-    public IJsonExpression<TIn, bool>? Condition { get; } = condition;
-
-    /// <summary>
-    /// Expression to evaluate if condition is true.
-    /// </summary>
-    public IJsonExpression<TIn, TOut>? ThenBranch { get; } = thenBranch;
-
-    /// <summary>
-    /// Expression to evaluate if condition is false.
-    /// </summary>
-    public IJsonExpression<TIn, TOut>? ElseBranch { get; } = elseBranch;
-
     public bool TryCompile(
         ParameterExpression parameter,
         [NotNullWhen(true)]
         out Expression? result
     )
     {
-        if (Condition is null || ThenBranch is null || ElseBranch is null)
+        if (condition is null || thenBranch is null || elseBranch is null)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("If: Condition, ThenBranch, or ElseBranch is null"));
             result = null;
             return false;
         }
 
-        if (!Condition.TryCompile(parameter, out var conditionExpr) || 
-            !ThenBranch.TryCompile(parameter, out var thenExpr) || 
-            !ElseBranch.TryCompile(parameter, out var elseExpr))
+        if (!condition.TryCompile(parameter, out var conditionExpr) || 
+            !thenBranch.TryCompile(parameter, out var thenExpr) || 
+            !elseBranch.TryCompile(parameter, out var elseExpr))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("If: Failed to compile Condition, ThenBranch, or ElseBranch"));
             result = null;

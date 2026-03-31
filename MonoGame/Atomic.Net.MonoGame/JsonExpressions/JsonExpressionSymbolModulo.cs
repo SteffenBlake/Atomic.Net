@@ -16,30 +16,20 @@ public sealed class JsonExpressionSymbolModulo<TIn, TOut>(
     IJsonExpression<TIn, TOut>? divisor
 ) : IJsonExpressionSymbolModulo<TIn, TOut>
 {
-    /// <summary>
-    /// Dividend (value to be divided).
-    /// </summary>
-    public IJsonExpression<TIn, TOut>? Dividend { get; init; } = dividend;
-
-    /// <summary>
-    /// Divisor (modulo value).
-    /// </summary>
-    public IJsonExpression<TIn, TOut>? Divisor { get; init; } = divisor;
-
     public bool TryCompile(
         ParameterExpression parameter,
         [NotNullWhen(true)]
         out Expression? result
     )
     {
-        if (Dividend is null || Divisor is null)
+        if (dividend is null || divisor is null)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Modulo: Dividend or Divisor is null"));
             result = null;
             return false;
         }
 
-        if (!Dividend.TryCompile(parameter, out var dividendExpr) || !Divisor.TryCompile(parameter, out var divisorExpr))
+        if (!dividend.TryCompile(parameter, out var dividendExpr) || !divisor.TryCompile(parameter, out var divisorExpr))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Modulo: Failed to compile Dividend or Divisor"));
             result = null;

@@ -16,30 +16,20 @@ public sealed class JsonExpressionSymbolSubtract<TIn, TOut>(
     IJsonExpression<TIn, TOut>? subtrahend
 ) : IJsonExpressionSymbolSubtract<TIn, TOut>
 {
-    /// <summary>
-    /// Minuend (value to subtract from).
-    /// </summary>
-    public IJsonExpression<TIn, TOut>? Minuend { get; } = minuend;
-
-    /// <summary>
-    /// Subtrahend (value to subtract).
-    /// </summary>
-    public IJsonExpression<TIn, TOut>? Subtrahend { get; } = subtrahend;
-
     public bool TryCompile(
         ParameterExpression parameter,
         [NotNullWhen(true)]
         out Expression? result
     )
     {
-        if (Minuend is null)
+        if (minuend is null)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Subtract: Minuend is null"));
             result = null;
             return false;
         }
 
-        if (!Minuend.TryCompile(parameter, out var minuendExpr))
+        if (!minuend.TryCompile(parameter, out var minuendExpr))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Subtract: Failed to compile Minuend"));
             result = null;
@@ -47,13 +37,13 @@ public sealed class JsonExpressionSymbolSubtract<TIn, TOut>(
         }
 
         // Unary negation: {"-": value}
-        if (Subtrahend is null)
+        if (subtrahend is null)
         {
             result = Expression.Negate(minuendExpr);
             return true;
         }
 
-        if (!Subtrahend.TryCompile(parameter, out var subtrahendExpr))
+        if (!subtrahend.TryCompile(parameter, out var subtrahendExpr))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Subtract: Failed to compile Subtrahend"));
             result = null;

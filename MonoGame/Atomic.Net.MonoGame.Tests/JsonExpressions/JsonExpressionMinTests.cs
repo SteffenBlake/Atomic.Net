@@ -133,4 +133,27 @@ public sealed class JsonExpressionMinTests(ITestOutputHelper output) : IDisposab
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
-    }}
+    }
+
+    [Fact]
+    public void Min_NotAnArray_Fails()
+    {
+        // Arrange - value of 'min' must be an array, not a string
+        var json = """{"min": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+
+    [Fact]
+    public void Min_EmptyArray_Fails()
+    {
+        // Arrange - min requires at least 1 element
+        var json = """{"min": []}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+}

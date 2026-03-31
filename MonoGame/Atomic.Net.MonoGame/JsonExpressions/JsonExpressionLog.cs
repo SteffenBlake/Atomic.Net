@@ -11,27 +11,24 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by this expression</typeparam>
-public sealed class JsonExpressionLog<TIn, TOut>(IJsonExpression<TIn, TOut>? value) : IJsonExpressionLog<TIn, TOut>
+public sealed class JsonExpressionLog<TIn, TOut>(
+    IJsonExpression<TIn, TOut>? value
+) : IJsonExpressionLog<TIn, TOut>
 {
-    /// <summary>
-    /// Value to log and return.
-    /// </summary>
-    public IJsonExpression<TIn, TOut>? Value { get; } = value;
-
     public bool TryCompile(
         ParameterExpression parameter,
         [NotNullWhen(true)]
         out Expression? result
     )
     {
-        if (Value is null)
+        if (value is null)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Log: Value is null"));
             result = null;
             return false;
         }
 
-        if (!Value.TryCompile(parameter, out var valueExpr))
+        if (!value.TryCompile(parameter, out var valueExpr))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Log: Failed to compile Value"));
             result = null;

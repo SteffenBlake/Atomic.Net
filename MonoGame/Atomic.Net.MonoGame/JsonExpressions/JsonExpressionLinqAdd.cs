@@ -17,30 +17,20 @@ public sealed class JsonExpressionLinqAdd<TIn, TOut, TElement>(
     IJsonExpression<TIn, TOut>? array
 ) : IJsonExpressionLinqAdd<TIn, TOut>
 {
-    /// <summary>
-    /// Item to add to the array.
-    /// </summary>
-    public IJsonExpression<TIn, TElement>? Item { get; } = item;
-
-    /// <summary>
-    /// Array to add the item to.
-    /// </summary>
-    public IJsonExpression<TIn, TOut>? Array { get; } = array;
-
     public bool TryCompile(
         ParameterExpression parameter,
         [NotNullWhen(true)]
         out Expression? result
     )
     {
-        if (Item is null || Array is null)
+        if (item is null || array is null)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("LinqAdd: Item or Array is null"));
             result = null;
             return false;
         }
 
-        if (!Item.TryCompile(parameter, out var itemExpr) || !Array.TryCompile(parameter, out var arrayExpr))
+        if (!item.TryCompile(parameter, out var itemExpr) || !array.TryCompile(parameter, out var arrayExpr))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("LinqAdd: Failed to compile Item or Array"));
             result = null;

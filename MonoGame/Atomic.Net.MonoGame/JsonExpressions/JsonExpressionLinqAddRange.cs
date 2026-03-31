@@ -16,30 +16,20 @@ public sealed class JsonExpressionLinqAddRange<TIn, TOut>(
     IJsonExpression<TIn, TOut>? second
 ) : IJsonExpressionLinqAddRange<TIn, TOut>
 {
-    /// <summary>
-    /// First array expression.
-    /// </summary>
-    public IJsonExpression<TIn, TOut>? First { get; } = first;
-
-    /// <summary>
-    /// Second array expression to concatenate.
-    /// </summary>
-    public IJsonExpression<TIn, TOut>? Second { get; } = second;
-
     public bool TryCompile(
         ParameterExpression parameter,
         [NotNullWhen(true)]
         out Expression? result
     )
     {
-        if (First is null || Second is null)
+        if (first is null || second is null)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Append: First or Second is null"));
             result = null;
             return false;
         }
 
-        if (!First.TryCompile(parameter, out var firstExpr) || !Second.TryCompile(parameter, out var secondExpr))
+        if (!first.TryCompile(parameter, out var firstExpr) || !second.TryCompile(parameter, out var secondExpr))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Append: Failed to compile First or Second"));
             result = null;

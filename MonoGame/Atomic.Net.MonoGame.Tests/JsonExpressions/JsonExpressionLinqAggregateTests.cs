@@ -116,4 +116,48 @@ public sealed class JsonExpressionLinqAggregateTests(ITestOutputHelper output) :
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string[]>(doc, out _));
     }
+
+    [Fact]
+    public void Aggregate_NotAnArray_Fails()
+    {
+        // Arrange - value of 'aggregate' must be an array, not a string
+        var json = """{"aggregate": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+
+    [Fact]
+    public void Aggregate_TooFewArguments_Fails()
+    {
+        // Arrange - aggregate requires exactly 3 elements; 2 is invalid
+        var json = """{"aggregate": [{"var": "Numbers"}, {"+": [{"var": "current"}, {"var": "accumulator"}]}]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+
+    [Fact]
+    public void Aggregate_TooManyArguments_Fails()
+    {
+        // Arrange - aggregate requires exactly 3 elements; 4 is invalid
+        var json = """{"aggregate": [{"var": "Numbers"}, {"+": [{"var": "current"}, {"var": "accumulator"}]}, 0, "extra"]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+
+    [Fact]
+    public void Aggregate_SourceNotArrayType_Fails()
+    {
+        // Arrange - first element must resolve to an array type; a literal number is not
+        var json = """{"aggregate": [42, {"+": [{"var": "current"}, {"var": "accumulator"}]}, 0]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
 }

@@ -159,4 +159,39 @@ public sealed class JsonExpressionVarTests(ITestOutputHelper output) : IDisposab
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
-    }}
+    }
+
+    [Fact]
+    public void Var_BooleanValue_Fails()
+    {
+        // Neither number, string, nor array
+        var json = """{"var": true}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+
+    [Fact]
+    public void Var_EmptyArray_Fails()
+    {
+        var json = """{"var": []}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+
+    [Fact]
+    public void Var_TooManyArrayElements_Fails()
+    {
+        var json = """{"var": ["A", 0, "extra"]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+
+    [Fact]
+    public void Var_ArrayWithNonStringNonNumberPath_Fails()
+    {
+        // First element is boolean, not string or number
+        var json = """{"var": [true]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+}

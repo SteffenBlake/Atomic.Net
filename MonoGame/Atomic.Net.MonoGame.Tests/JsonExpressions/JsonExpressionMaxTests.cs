@@ -133,4 +133,27 @@ public sealed class JsonExpressionMaxTests(ITestOutputHelper output) : IDisposab
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string[]>(doc, out _));
-    }}
+    }
+
+    [Fact]
+    public void Max_NotAnArray_Fails()
+    {
+        // Arrange - value of 'max' must be an array, not a string
+        var json = """{"max": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+
+    [Fact]
+    public void Max_EmptyArray_Fails()
+    {
+        // Arrange - max requires at least 1 element
+        var json = """{"max": []}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+}

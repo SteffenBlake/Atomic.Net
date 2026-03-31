@@ -128,4 +128,27 @@ public sealed class JsonExpressionLogTests(ITestOutputHelper output) : IDisposab
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
-    }}
+    }
+
+    [Fact]
+    public void Log_EmptyArray_Fails()
+    {
+        // Arrange - array form of log requires exactly 1 element; empty array is invalid
+        var json = """{"log": []}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+
+    [Fact]
+    public void Log_TooManyElements_Fails()
+    {
+        // Arrange - array form of log requires exactly 1 element; 2 elements is invalid
+        var json = """{"log": [42, 99]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+}

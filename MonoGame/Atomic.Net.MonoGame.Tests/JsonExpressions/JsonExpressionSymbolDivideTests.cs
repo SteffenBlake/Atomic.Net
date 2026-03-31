@@ -133,4 +133,59 @@ public sealed class JsonExpressionSymbolDivideTests(ITestOutputHelper output) : 
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string[]>(doc, out _));
     }
+
+    [Fact]
+    public void Divide_BoolOutputType_Fails()
+    {
+        // Arrange - '/' requires numeric TOut; bool is not numeric
+        var json = """{"/": [10, 2]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void Divide_StringOutputType_Fails()
+    {
+        // Arrange - '/' requires numeric TOut; string is not numeric
+        var json = """{"/": [10, 2]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
+    }
+
+    [Fact]
+    public void Divide_NotAnArray_Fails()
+    {
+        // Arrange - value of '/' must be an array
+        var json = """{"/": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+
+    [Fact]
+    public void Divide_TooFewArguments_Fails()
+    {
+        // Arrange - '/' requires exactly 2 elements; 1 is invalid
+        var json = """{"/": [10]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+
+    [Fact]
+    public void Divide_TooManyArguments_Fails()
+    {
+        // Arrange - '/' requires exactly 2 elements; 3 is invalid
+        var json = """{"/": [10, 2, 5]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
 }

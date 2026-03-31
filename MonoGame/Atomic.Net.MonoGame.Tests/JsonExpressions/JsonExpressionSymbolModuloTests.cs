@@ -133,4 +133,44 @@ public sealed class JsonExpressionSymbolModuloTests(ITestOutputHelper output) : 
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string[]>(doc, out _));
     }
+
+    [Fact]
+    public void Modulo_BoolOutputType_Fails()
+    {
+        var json = """{"%": [10, 3]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void Modulo_StringOutputType_Fails()
+    {
+        var json = """{"%": [10, 3]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
+    }
+
+    [Fact]
+    public void Modulo_NotAnArray_Fails()
+    {
+        var json = """{"%": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+
+    [Fact]
+    public void Modulo_TooFewArguments_Fails()
+    {
+        var json = """{"%": [10]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+
+    [Fact]
+    public void Modulo_TooManyArguments_Fails()
+    {
+        var json = """{"%": [10, 3, 2]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
 }

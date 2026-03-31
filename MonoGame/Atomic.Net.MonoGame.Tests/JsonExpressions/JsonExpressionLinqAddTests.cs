@@ -25,7 +25,7 @@ public sealed class JsonExpressionLinqAddTests(ITestOutputHelper output) : IDisp
     public void Add_ValueToArray_ReturnsArrayWithValue()
     {
         // Arrange
-       var json = """{"add": [5, [1, 2, 3, 4]]}""";
+       var json = """{"push": [5, [1, 2, 3, 4]]}""";
         var doc = JsonDocument.Parse(json);
         Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out var expr));
         var func = expr.Compile();
@@ -42,7 +42,7 @@ public sealed class JsonExpressionLinqAddTests(ITestOutputHelper output) : IDisp
     public void Add_ValueToEmptyArray_ReturnsArrayWithSingleValue()
     {
         // Arrange
-        var json = """{"add": [42, []]}""";
+        var json = """{"push": [42, []]}""";
         var doc = JsonDocument.Parse(json);
         Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out var expr));
         var func = expr.Compile();
@@ -59,7 +59,7 @@ public sealed class JsonExpressionLinqAddTests(ITestOutputHelper output) : IDisp
     public void Add_ValueWithVarData_ReturnsArrayWithValue()
     {
         // Arrange
-        var json = """{"add": [{"var": "Value"}, [10, 20, 30]]}""";
+        var json = """{"push": [{"var": "Value"}, [10, 20, 30]]}""";
         var doc = JsonDocument.Parse(json);
         Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out var expr));
         var func = expr.Compile();
@@ -76,7 +76,7 @@ public sealed class JsonExpressionLinqAddTests(ITestOutputHelper output) : IDisp
     public void Add_StringToStringArray_ReturnsArrayWithString()
     {
         // Arrange
-        var json = """{"add": ["World", ["Hello"]]}""";
+        var json = """{"push": ["World", ["Hello"]]}""";
         var doc = JsonDocument.Parse(json);
         Assert.True(JsonExpressionCompiler.TryBuild<TestInput, string[]>(doc, out var expr));
         var func = expr.Compile();
@@ -93,7 +93,7 @@ public sealed class JsonExpressionLinqAddTests(ITestOutputHelper output) : IDisp
     public void Add_TwoNonArrayValues_Fails()
     {
         // Arrange - add requires [value, array], not [value, value]
-        var json = """{"add": [1, 2]}""";
+        var json = """{"push": [1, 2]}""";
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile
@@ -104,7 +104,7 @@ public sealed class JsonExpressionLinqAddTests(ITestOutputHelper output) : IDisp
     public void Add_TwoArrays_Fails()
     {
         // Arrange - add requires [value, array], not [array, array] (use addRange for that)
-        var json = """{"add": [[1, 2], [3, 4]]}""";
+        var json = """{"push": [[1, 2], [3, 4]]}""";
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile
@@ -115,7 +115,7 @@ public sealed class JsonExpressionLinqAddTests(ITestOutputHelper output) : IDisp
     public void Add_ThreeArguments_Fails()
     {
         // Arrange - add takes exactly 2 arguments
-        var json = """{"add": [1, [2, 3], [4, 5]]}""";
+        var json = """{"push": [1, [2, 3], [4, 5]]}""";
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile
@@ -126,7 +126,7 @@ public sealed class JsonExpressionLinqAddTests(ITestOutputHelper output) : IDisp
     public void Add_SingleArgument_Fails()
     {
         // Arrange - add requires 2 arguments
-        var json = """{"add": [[1, 2, 3]]}""";
+        var json = """{"push": [[1, 2, 3]]}""";
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile
@@ -137,7 +137,7 @@ public sealed class JsonExpressionLinqAddTests(ITestOutputHelper output) : IDisp
     public void Add_WrongOrder_ArrayThenValue_Fails()
     {
         // Arrange - add expects [value, array], not [array, value]
-        var json = """{"add": [[1, 2, 3], 4]}""";
+        var json = """{"push": [[1, 2, 3], 4]}""";
         var doc = JsonDocument.Parse(json);
         
         // Assert - should fail to compile (first arg must be scalar, second must be array)
@@ -147,9 +147,21 @@ public sealed class JsonExpressionLinqAddTests(ITestOutputHelper output) : IDisp
     public void LinqAdd_WrongOutputType_Fails()
     {
         // Arrange - add returns int[], but requesting string
-        var json = """{ "add": [5, [1, 2, 3]]}""";
+        var json = """{ "push": [5, [1, 2, 3]]}""";
         var doc = JsonDocument.Parse(json);
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
-    }}
+    }
+
+    [Fact]
+    public void LinqAdd_NotAnArray_Fails()
+    {
+        // Arrange - value of 'add' must be an array, not a string
+        var json = """{"push": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out _));
+    }
+}

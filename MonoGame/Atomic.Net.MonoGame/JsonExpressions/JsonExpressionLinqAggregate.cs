@@ -17,35 +17,20 @@ public sealed class JsonExpressionLinqAggregate<TIn, TOut, TInner>(
     IJsonExpression<TIn, TOut>? initialValue
 ) : IJsonExpressionLinqAggregate<TIn, TOut>
 {
-    /// <summary>
-    /// Source array expression.
-    /// </summary>
-    public IJsonExpression<TIn, TInner[]>? Source { get; } = source;
-
-    /// <summary>
-    /// Accumulator expression — receives a JsonAggregateContext with current element and running accumulator.
-    /// </summary>
-    public IJsonExpression<JsonAggregateContext<TInner, TOut>, TOut>? Accumulator { get; } = accumulator;
-
-    /// <summary>
-    /// Initial value for the accumulator.
-    /// </summary>
-    public IJsonExpression<TIn, TOut>? InitialValue { get; } = initialValue;
-
     public bool TryCompile(
         ParameterExpression parameter,
         [NotNullWhen(true)]
         out Expression? result
     )
     {
-        if (Source is null || Accumulator is null || InitialValue is null)
+        if (source is null || accumulator is null || initialValue is null)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Aggregate: Source, Accumulator, or InitialValue is null"));
             result = null;
             return false;
         }
 
-        if (!Source.TryCompile(parameter, out var sourceExpr) || !InitialValue.TryCompile(parameter, out var initialValueExpr))
+        if (!source.TryCompile(parameter, out var sourceExpr) || !initialValue.TryCompile(parameter, out var initialValueExpr))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Aggregate: Failed to compile Source or InitialValue"));
             result = null;
@@ -55,7 +40,7 @@ public sealed class JsonExpressionLinqAggregate<TIn, TOut, TInner>(
         // Compile the reducer to a delegate (load-time, not game-time)
         var ctxType = typeof(JsonAggregateContext<TInner, TOut>);
         var ctxParam = Expression.Parameter(ctxType, "ctx");
-        if (!Accumulator.TryCompile(ctxParam, out var accBody))
+        if (!accumulator.TryCompile(ctxParam, out var accBody))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Aggregate: Failed to compile Accumulator"));
             result = null;

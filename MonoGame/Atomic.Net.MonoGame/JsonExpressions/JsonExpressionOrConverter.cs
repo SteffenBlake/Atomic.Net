@@ -35,12 +35,12 @@ public sealed class JsonExpressionOrConverter<TIn, TOut> : JsonConverter<IJsonEx
             );
         }
 
-        // Validate: array must have at least 1 element
+        // Validate: array must have exactly 2 elements
         var arrayLength = root.GetArrayLength();
-        if (arrayLength == 0)
+        if (arrayLength != 2)
         {
             throw new JsonException(
-                $"Expected: Array with at least 1 element for 'or' operator, Actual: 0 elements"
+                $"Expected: Array with exactly 2 elements for 'or' operator, Actual: {arrayLength} elements"
             );
         }
 

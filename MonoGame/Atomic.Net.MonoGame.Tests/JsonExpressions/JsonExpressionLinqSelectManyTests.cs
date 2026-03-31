@@ -243,6 +243,28 @@ public sealed class JsonExpressionLinqSelectManyTests(ITestOutputHelper output) 
     }
 
     [Fact]
+    public void SelectMany_OutputTypeNotAnArray_Fails()
+    {
+        // Arrange - TOut must be an array type; string is not
+        var json = """{"selectMany": [{"var": "Teams"}, {"var": "Members"}]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestData, string>(doc, out _));
+    }
+
+    [Fact]
+    public void SelectMany_RootNotAnArray_Fails()
+    {
+        // Arrange - value of 'selectMany' must be a JSON array, not a string
+        var json = """{"selectMany": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestData, string[]>(doc, out _));
+    }
+
+    [Fact]
     public void SelectMany_InvalidSelectorExpression_Fails()
     {
         // Arrange - var expects string path, not object

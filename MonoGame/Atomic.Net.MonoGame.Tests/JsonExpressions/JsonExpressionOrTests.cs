@@ -132,4 +132,49 @@ public sealed class JsonExpressionOrTests(ITestOutputHelper output) : IDisposabl
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out _));
-    }}
+    }
+
+    [Fact]
+    public void Or_NotAnArray_Fails()
+    {
+        // Arrange - value of 'or' must be an array, not a string
+        var json = """{"or": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void Or_EmptyArray_Fails()
+    {
+        // Arrange - 'or' requires exactly 2 operands
+        var json = """{ "or": []}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void Or_SingleOperand_Fails()
+    {
+        // Arrange - 'or' requires exactly 2 operands
+        var json = """{ "or": [true]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void Or_ThreeOperands_Fails()
+    {
+        // Arrange - 'or' requires exactly 2 operands
+        var json = """{ "or": [true, false, true]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+}

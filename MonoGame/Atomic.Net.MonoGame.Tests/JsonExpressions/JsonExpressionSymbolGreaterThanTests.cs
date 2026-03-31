@@ -133,4 +133,38 @@ public sealed class JsonExpressionSymbolGreaterThanTests(ITestOutputHelper outpu
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out _));
-    }}
+    }
+
+    [Fact]
+    public void GreaterThan_NotAnArray_Fails()
+    {
+        // Arrange - value of '>' must be an array
+        var json = """{">": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void GreaterThan_TooFewArguments_Fails()
+    {
+        // Arrange - '>' requires exactly 2 elements; 1 is invalid
+        var json = """{">": [1]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void GreaterThan_TooManyArguments_Fails()
+    {
+        // Arrange - '>' requires exactly 2 elements; 3 is invalid
+        var json = """{">": [1, 2, 3]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+}

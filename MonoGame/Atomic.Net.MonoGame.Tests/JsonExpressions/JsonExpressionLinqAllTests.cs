@@ -116,4 +116,49 @@ public sealed class JsonExpressionLinqAllTests(ITestOutputHelper output) : IDisp
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out _));
-    }}
+    }
+
+    [Fact]
+    public void All_NotAnArray_Fails()
+    {
+        // Arrange - value of 'all' must be an array, not a string
+        var json = """{"all": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void All_TooFewArguments_Fails()
+    {
+        // Arrange - all requires exactly 2 elements; 1 is invalid
+        var json = """{"all": [[1, 2, 3]]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void All_TooManyArguments_Fails()
+    {
+        // Arrange - all requires exactly 2 elements; 3 is invalid
+        var json = """{"all": [[1, 2, 3], {">": [{"var": ""}, 0]}, "extra"]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void All_SourceNotArrayType_Fails()
+    {
+        // Arrange - source (var Unused) resolves to float, not an array type
+        var json = """{"all": [{"var": "Unused"}, {">": [{"var": ""}, 0]}]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+}

@@ -133,4 +133,46 @@ public sealed class JsonExpressionSymbolSubtractTests(ITestOutputHelper output) 
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
-    }}
+    }
+
+    [Fact]
+    public void Subtract_BoolOutputType_Fails()
+    {
+        var json = """{"-": [10, 5]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void Subtract_ArrayOutputType_Fails()
+    {
+        var json = """{"-": [10, 5]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out _));
+    }
+
+    [Fact]
+    public void Subtract_NotAnArray_Fails()
+    {
+        // String value is neither a number (unary path) nor an array
+        var json = """{"-": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+
+    [Fact]
+    public void Subtract_TooFewArguments_Fails()
+    {
+        var json = """{"-": [10]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+
+    [Fact]
+    public void Subtract_TooManyArguments_Fails()
+    {
+        var json = """{"-": [10, 5, 2]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+}

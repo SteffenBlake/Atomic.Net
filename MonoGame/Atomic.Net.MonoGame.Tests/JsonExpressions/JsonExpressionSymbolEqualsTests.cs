@@ -138,4 +138,38 @@ public sealed class JsonExpressionSymbolEqualsTests(ITestOutputHelper output) : 
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out _));
-    }}
+    }
+
+    [Fact]
+    public void Equals_NotAnArray_Fails()
+    {
+        // Arrange - value of '==' must be an array
+        var json = """{"==": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void Equals_TooFewArguments_Fails()
+    {
+        // Arrange - '==' requires exactly 2 elements; 1 is invalid
+        var json = """{"==": [1]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void Equals_TooManyArguments_Fails()
+    {
+        // Arrange - '==' requires exactly 2 elements; 3 is invalid
+        var json = """{"==": [1, 1, 1]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+}

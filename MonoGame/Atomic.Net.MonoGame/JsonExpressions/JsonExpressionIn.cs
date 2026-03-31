@@ -17,30 +17,20 @@ public sealed class JsonExpressionIn<TIn, TOut, TElement>(
     IJsonExpression<TIn, TElement>? item
 ) : IJsonExpressionIn<TIn, TOut>
 {
-    /// <summary>
-    /// Collection to search in.
-    /// </summary>
-    public IJsonExpression<TIn, TElement[]>? Collection { get; } = collection;
-
-    /// <summary>
-    /// Item to search for.
-    /// </summary>
-    public IJsonExpression<TIn, TElement>? Item { get; } = item;
-
     public bool TryCompile(
         ParameterExpression parameter,
         [NotNullWhen(true)]
         out Expression? result
     )
     {
-        if (Collection is null || Item is null)
+        if (collection is null || item is null)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("In: Collection or Item is null"));
             result = null;
             return false;
         }
 
-        if (!Collection.TryCompile(parameter, out var collectionExpr) || !Item.TryCompile(parameter, out var itemExpr))
+        if (!collection.TryCompile(parameter, out var collectionExpr) || !item.TryCompile(parameter, out var itemExpr))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("In: Failed to compile Collection or Item"));
             result = null;

@@ -155,4 +155,38 @@ public sealed class JsonExpressionSubstringTests(ITestOutputHelper output) : IDi
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out _));
-    }}
+    }
+
+    [Fact]
+    public void Substring_NotAnArray_Fails()
+    {
+        // Arrange - value of 'substring' must be an array, not a string
+        var json = """{"substring": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
+    }
+
+    [Fact]
+    public void Substring_TooFewArguments_Fails()
+    {
+        // Arrange - substring requires 2 or 3 elements; 1 is invalid
+        var json = """{"substring": ["hello"]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
+    }
+
+    [Fact]
+    public void Substring_TooManyArguments_Fails()
+    {
+        // Arrange - substring requires 2 or 3 elements; 4 is invalid
+        var json = """{"substring": ["hello", 0, 3, "extra"]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
+    }
+}

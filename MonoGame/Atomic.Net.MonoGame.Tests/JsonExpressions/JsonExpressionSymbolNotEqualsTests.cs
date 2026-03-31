@@ -110,4 +110,29 @@ public sealed class JsonExpressionSymbolNotEqualsTests(ITestOutputHelper output)
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
-    }}
+    }
+
+    [Fact]
+    public void NotEquals_NotAnArray_Fails()
+    {
+        var json = """{"!=": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void NotEquals_TooFewArguments_Fails()
+    {
+        var json = """{"!=": [1]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void NotEquals_TooManyArguments_Fails()
+    {
+        var json = """{"!=": [1, 2, 3]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+}

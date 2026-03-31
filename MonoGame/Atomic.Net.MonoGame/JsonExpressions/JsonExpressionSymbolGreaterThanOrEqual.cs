@@ -17,30 +17,20 @@ public sealed class JsonExpressionSymbolGreaterThanOrEqual<TIn, TCompare, TOut>(
     IJsonExpression<TIn, TCompare>? right
 ) : IJsonExpressionSymbolGreaterThanOrEqual<TIn, TOut>
 {
-    /// <summary>
-    /// Left side of comparison.
-    /// </summary>
-    public IJsonExpression<TIn, TCompare>? Left { get; } = left;
-
-    /// <summary>
-    /// Right side of comparison.
-    /// </summary>
-    public IJsonExpression<TIn, TCompare>? Right { get; } = right;
-
     public bool TryCompile(
         ParameterExpression parameter,
         [NotNullWhen(true)]
         out Expression? result
     )
     {
-        if (Left is null || Right is null)
+        if (left is null || right is null)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("GreaterThanOrEqual: Left or Right operand is null"));
             result = null;
             return false;
         }
 
-        if (!Left.TryCompile(parameter, out var leftExpr) || !Right.TryCompile(parameter, out var rightExpr))
+        if (!left.TryCompile(parameter, out var leftExpr) || !right.TryCompile(parameter, out var rightExpr))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("GreaterThanOrEqual: Failed to compile Left or Right operand"));
             result = null;

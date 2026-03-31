@@ -11,27 +11,24 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by this expression</typeparam>
-public sealed class JsonExpressionSymbolNot<TIn, TOut>(IJsonExpression<TIn, bool>? operand) : IJsonExpressionSymbolNot<TIn, TOut>
+public sealed class JsonExpressionSymbolNot<TIn, TOut>(
+    IJsonExpression<TIn, bool>? operand
+) : IJsonExpressionSymbolNot<TIn, TOut>
 {
-    /// <summary>
-    /// Expression to negate.
-    /// </summary>
-    public IJsonExpression<TIn, bool>? Operand { get; } = operand;
-
     public bool TryCompile(
         ParameterExpression parameter,
         [NotNullWhen(true)]
         out Expression? result
     )
     {
-        if (Operand is null)
+        if (operand is null)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Not: Operand is null"));
             result = null;
             return false;
         }
 
-        if (!Operand.TryCompile(parameter, out var operandExpr))
+        if (!operand.TryCompile(parameter, out var operandExpr))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Not: Failed to compile Operand"));
             result = null;

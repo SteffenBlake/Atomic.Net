@@ -10,13 +10,10 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Requested output type</typeparam>
-public sealed class JsonExpressionNumberLiteral<TIn, TOut>(float value) : IJsonExpressionNumberLiteral<TIn, TOut>
+public sealed class JsonExpressionNumberLiteral<TIn, TOut>(
+    float value
+) : IJsonExpressionNumberLiteral<TIn, TOut>
 {
-    /// <summary>
-    /// The literal numeric value.
-    /// </summary>
-    public float Value { get; } = value;
-
     public bool TryCompile(
         ParameterExpression parameter,
         [NotNullWhen(true)]
@@ -24,7 +21,7 @@ public sealed class JsonExpressionNumberLiteral<TIn, TOut>(float value) : IJsonE
     )
     {
         // Convert number to TOut type
-        var converted = Convert.ChangeType(Value, typeof(TOut));
+        var converted = Convert.ChangeType(value, typeof(TOut));
         result = Expression.Constant(converted, typeof(TOut));
         return true;
     }

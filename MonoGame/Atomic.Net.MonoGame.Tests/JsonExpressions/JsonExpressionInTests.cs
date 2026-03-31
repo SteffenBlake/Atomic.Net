@@ -116,4 +116,49 @@ public sealed class JsonExpressionInTests(ITestOutputHelper output) : IDisposabl
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
-    }}
+    }
+
+    [Fact]
+    public void In_NotAnArray_Fails()
+    {
+        // Arrange - value must be an array
+        var json = """{"in": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void In_TooFewArguments_Fails()
+    {
+        // Arrange - requires exactly 2 arguments
+        var json = """{"in": [1]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void In_TooManyArguments_Fails()
+    {
+        // Arrange - requires exactly 2 arguments
+        var json = """{"in": [1, [1, 2], [3, 4]]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void In_CollectionNotAnArrayType_Fails()
+    {
+        // Arrange - second argument (collection) must be an array type, not a scalar
+        var json = """{"in": [1, 42]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+}

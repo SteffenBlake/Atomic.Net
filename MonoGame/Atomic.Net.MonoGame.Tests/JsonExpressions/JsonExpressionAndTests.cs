@@ -132,4 +132,49 @@ public sealed class JsonExpressionAndTests(ITestOutputHelper output) : IDisposab
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
-    }}
+    }
+
+    [Fact]
+    public void And_NotAnArray_Fails()
+    {
+        // Arrange - 'and' value must be an array, not an object
+        var json = """{"and": {"a": true}}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void And_EmptyArray_Fails()
+    {
+        // Arrange - 'and' requires exactly 2 operands
+        var json = """{"and": []}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void And_SingleOperand_Fails()
+    {
+        // Arrange - 'and' requires exactly 2 operands
+        var json = """{"and": [true]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void And_ThreeOperands_Fails()
+    {
+        // Arrange - 'and' requires exactly 2 operands
+        var json = """{"and": [true, false, true]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+}

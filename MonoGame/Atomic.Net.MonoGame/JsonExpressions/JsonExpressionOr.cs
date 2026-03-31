@@ -11,41 +11,38 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by this expression</typeparam>
-public sealed class JsonExpressionOr<TIn, TOut>(IJsonExpression<TIn, TOut>[]? operands) : IJsonExpressionOr<TIn, TOut>
+public sealed class JsonExpressionOr<TIn, TOut>(
+    IJsonExpression<TIn, TOut>[]? operands
+) : IJsonExpressionOr<TIn, TOut>
 {
-    /// <summary>
-    /// Array of conditions to evaluate (returns first truthy value or last falsy).
-    /// </summary>
-    public IJsonExpression<TIn, TOut>[]? Operands { get; } = operands;
-
     public bool TryCompile(
         ParameterExpression parameter,
         [NotNullWhen(true)]
         out Expression? result
     )
     {
-        if (Operands is null || Operands.Length == 0)
+        if (operands is null || operands.Length != 2)
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent("Or: Operands array is null or empty"));
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Or: Requires exactly 2 operands"));
             result = null;
             return false;
         }
 
-        Expression? orExpr = null;
-
-        foreach (var operand in Operands)
+        if (!operands[0].TryCompile(parameter, out var leftExpr))
         {
-            if (operand is null || !operand.TryCompile(parameter, out var operandExpr))
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent("Or: Operand is null or failed to compile"));
-                result = null;
-                return false;
-            }
-
-            orExpr = orExpr is null ? operandExpr : Expression.OrElse(orExpr, operandExpr);
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Or: Left operand failed to compile"));
+            result = null;
+            return false;
         }
 
-        result = orExpr!;
+        if (!operands[1].TryCompile(parameter, out var rightExpr))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Or: Right operand failed to compile"));
+            result = null;
+            return false;
+        }
+
+        result = Expression.OrElse(leftExpr, rightExpr);
         return true;
     }
 }

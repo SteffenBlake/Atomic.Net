@@ -116,4 +116,49 @@ public sealed class JsonExpressionLinqWhereTests(ITestOutputHelper output) : IDi
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
-    }}
+    }
+
+    [Fact]
+    public void Where_NotAnArray_Fails()
+    {
+        // Arrange - value of 'where' must be a JSON array, not a string
+        var json = """{"where": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out _));
+    }
+
+    [Fact]
+    public void Where_TooFewArguments_Fails()
+    {
+        // Arrange - where requires exactly 2 elements; 1 is invalid
+        var json = """{"where": [{"var": "Numbers"}]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out _));
+    }
+
+    [Fact]
+    public void Where_TooManyArguments_Fails()
+    {
+        // Arrange - where requires exactly 2 elements; 3 is invalid
+        var json = """{"where": [{"var": "Numbers"}, {">": [{"var": ""}, 0]}, "extra"]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out _));
+    }
+
+    [Fact]
+    public void Where_SourceNotArrayType_Fails()
+    {
+        // Arrange - source is a numeric literal (float), not an array type
+        var json = """{"where": [42, {">": [{"var": ""}, 0]}]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out _));
+    }
+}

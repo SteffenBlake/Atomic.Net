@@ -11,41 +11,38 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by this expression</typeparam>
-public sealed class JsonExpressionAnd<TIn, TOut>(IJsonExpression<TIn, TOut>[]? operands) : IJsonExpressionAnd<TIn, TOut>
+public sealed class JsonExpressionAnd<TIn, TOut>(
+    IJsonExpression<TIn, TOut>[]? operands
+) : IJsonExpressionAnd<TIn, TOut>
 {
-    /// <summary>
-    /// Array of conditions to evaluate (returns last truthy value or first falsy).
-    /// </summary>
-    public IJsonExpression<TIn, TOut>[]? Operands { get; } = operands;
-
     public bool TryCompile(
         ParameterExpression parameter,
         [NotNullWhen(true)]
         out Expression? result
     )
     {
-        if (Operands is null || Operands.Length == 0)
+        if (operands is null || operands.Length != 2)
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent("And: Operands array is null or empty"));
+            EventBus<ErrorEvent>.Push(new ErrorEvent("And: Requires exactly 2 operands"));
             result = null;
             return false;
         }
 
-        Expression? andExpr = null;
-
-        foreach (var operand in Operands)
+        if (!operands[0].TryCompile(parameter, out var leftExpr))
         {
-            if (operand is null || !operand.TryCompile(parameter, out var operandExpr))
-            {
-                EventBus<ErrorEvent>.Push(new ErrorEvent("And: Operand is null or failed to compile"));
-                result = null;
-                return false;
-            }
-
-            andExpr = andExpr is null ? operandExpr : Expression.AndAlso(andExpr, operandExpr);
+            EventBus<ErrorEvent>.Push(new ErrorEvent("And: Left operand failed to compile"));
+            result = null;
+            return false;
         }
 
-        result = andExpr!;
+        if (!operands[1].TryCompile(parameter, out var rightExpr))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("And: Right operand failed to compile"));
+            result = null;
+            return false;
+        }
+
+        result = Expression.AndAlso(leftExpr, rightExpr);
         return true;
     }
 }

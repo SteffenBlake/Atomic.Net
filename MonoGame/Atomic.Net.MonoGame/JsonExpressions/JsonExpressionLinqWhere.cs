@@ -17,30 +17,20 @@ public sealed class JsonExpressionLinqWhere<TIn, TOut, TElement>(
     IJsonExpression<TElement, bool>? predicate
 ) : IJsonExpressionLinqWhere<TIn, TOut>
 {
-    /// <summary>
-    /// Source array expression.
-    /// </summary>
-    public IJsonExpression<TIn, TElement[]>? Source { get; } = source;
-
-    /// <summary>
-    /// Predicate expression (tests which elements to include).
-    /// </summary>
-    public IJsonExpression<TElement, bool>? Predicate { get; } = predicate;
-
     public bool TryCompile(
         ParameterExpression parameter,
         [NotNullWhen(true)]
         out Expression? result
     )
     {
-        if (Source is null || Predicate is null)
+        if (source is null || predicate is null)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Where: Source or Predicate is null"));
             result = null;
             return false;
         }
 
-        if (!Source.TryCompile(parameter, out var sourceExpr))
+        if (!source.TryCompile(parameter, out var sourceExpr))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Where: Failed to compile Source or Predicate"));
             result = null;
@@ -48,7 +38,7 @@ public sealed class JsonExpressionLinqWhere<TIn, TOut, TElement>(
         }
 
         var itemParam = Expression.Parameter(typeof(TElement), "item");
-        if (!Predicate.TryCompile(itemParam, out var predicateBody))
+        if (!predicate.TryCompile(itemParam, out var predicateBody))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Where: Failed to compile Source or Predicate"));
             result = null;

@@ -11,20 +11,17 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by this expression</typeparam>
-public sealed class JsonExpressionSymbolAdd<TIn, TOut>(IJsonExpression<TIn, TOut>[]? operands) : IJsonExpressionSymbolAdd<TIn, TOut>
+public sealed class JsonExpressionSymbolAdd<TIn, TOut>(
+    IJsonExpression<TIn, TOut>[]? operands
+) : IJsonExpressionSymbolAdd<TIn, TOut>
 {
-    /// <summary>
-    /// Array of values to add/concatenate.
-    /// </summary>
-    public IJsonExpression<TIn, TOut>[]? Operands { get; } = operands;
-
     public bool TryCompile(
         ParameterExpression parameter,
         [NotNullWhen(true)]
         out Expression? result
     )
     {
-        if (Operands is null || Operands.Length == 0)
+        if (operands is null || operands.Length == 0)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("SymbolAdd: Operands array is null or empty"));
             result = null;
@@ -38,7 +35,7 @@ public sealed class JsonExpressionSymbolAdd<TIn, TOut>(IJsonExpression<TIn, TOut
             ? typeof(string).GetMethod(nameof(string.Concat), [typeof(string), typeof(string)])
             : null;
 
-        foreach (var operand in Operands)
+        foreach (var operand in operands)
         {
             if (operand is null || !operand.TryCompile(parameter, out var operandExpr))
             {

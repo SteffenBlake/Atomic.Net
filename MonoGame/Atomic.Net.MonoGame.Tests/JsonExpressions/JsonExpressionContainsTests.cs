@@ -152,4 +152,37 @@ public sealed class JsonExpressionContainsTests(ITestOutputHelper output) : IDis
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out _));
     }
+
+    [Fact]
+    public void StringContains_NotAnArray_Fails()
+    {
+        // Arrange - value must be an array
+        var json = """{"contains": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void StringContains_TooFewArguments_Fails()
+    {
+        // Arrange - requires exactly 2 arguments
+        var json = """{"contains": ["only-one"]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void StringContains_TooManyArguments_Fails()
+    {
+        // Arrange - requires exactly 2 arguments
+        var json = """{"contains": ["a", "b", "c"]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
 }

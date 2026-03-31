@@ -143,4 +143,13 @@ public sealed class JsonExpressionSymbolNotTests(ITestOutputHelper output) : IDi
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
-    }}
+    }
+
+    [Fact]
+    public void Not_TooManyArguments_Fails()
+    {
+        var json = """{"!": [true, false]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+}

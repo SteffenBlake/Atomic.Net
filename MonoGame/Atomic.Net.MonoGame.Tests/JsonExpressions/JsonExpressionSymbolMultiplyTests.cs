@@ -134,4 +134,45 @@ public sealed class JsonExpressionSymbolMultiplyTests(ITestOutputHelper output) 
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
-    }}
+    }
+
+    [Fact]
+    public void Multiply_StringOutputType_Fails()
+    {
+        var json = """{"*": [2, 3]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
+    }
+
+    [Fact]
+    public void Multiply_ArrayOutputType_Fails()
+    {
+        var json = """{"*": [2, 3]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out _));
+    }
+
+    [Fact]
+    public void Multiply_NotAnArray_Fails()
+    {
+        var json = """{"*": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+
+    [Fact]
+    public void Multiply_TooFewArguments_Fails()
+    {
+        var json = """{"*": [2]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+
+    [Fact]
+    public void Multiply_TooManyArguments_Fails()
+    {
+        var json = """{"*": [2, 3, 4]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
+    }
+}

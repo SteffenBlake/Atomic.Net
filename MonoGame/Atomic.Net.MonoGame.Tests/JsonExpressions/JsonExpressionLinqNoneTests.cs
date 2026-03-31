@@ -116,4 +116,49 @@ public sealed class JsonExpressionLinqNoneTests(ITestOutputHelper output) : IDis
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
-    }}
+    }
+
+    [Fact]
+    public void None_NotAnArray_Fails()
+    {
+        // Arrange - value of 'none' must be an array, not a string
+        var json = """{"none": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void None_TooFewArguments_Fails()
+    {
+        // Arrange - none requires exactly 2 elements; 1 is invalid
+        var json = """{"none": [[1, 2, 3]]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void None_TooManyArguments_Fails()
+    {
+        // Arrange - none requires exactly 2 elements; 3 is invalid
+        var json = """{"none": [[1, 3, 5], {"==": [{"%": [{"var": ""}, 2]}, 0]}, "extra"]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+
+    [Fact]
+    public void None_SourceNotArrayType_Fails()
+    {
+        // Arrange - source (var Unused) resolves to float, not an array type
+        var json = """{"none": [{"var": "Unused"}, {">": [{"var": ""}, 0]}]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
+    }
+}

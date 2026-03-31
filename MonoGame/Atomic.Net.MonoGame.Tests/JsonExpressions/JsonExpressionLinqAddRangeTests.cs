@@ -98,4 +98,16 @@ public sealed class JsonExpressionLinqAddRangeTests(ITestOutputHelper output) : 
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
-    }}
+    }
+
+    [Fact]
+    public void Append_NotAnArray_Fails()
+    {
+        // Arrange - value must be an array, not a string
+        var json = """{"addRange": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out _));
+    }
+}

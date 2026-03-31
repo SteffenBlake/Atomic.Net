@@ -17,30 +17,20 @@ public sealed class JsonExpressionLinqSelect<TIn, TOut, TInner>(
     IJsonExpression<TInner, TOut>? selector
 ) : IJsonExpressionLinqSelect<TIn, TOut[]>
 {
-    /// <summary>
-    /// Source array expression.
-    /// </summary>
-    public IJsonExpression<TIn, TInner[]>? Source { get; } = source;
-
-    /// <summary>
-    /// Selector expression (maps each element to result type).
-    /// </summary>
-    public IJsonExpression<TInner, TOut>? Selector { get; } = selector;
-
     public bool TryCompile(
         ParameterExpression parameter,
         [NotNullWhen(true)]
         out Expression? result
     )
     {
-        if (Source is null || Selector is null)
+        if (source is null || selector is null)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Select: Source or Selector is null"));
             result = null;
             return false;
         }
 
-        if (!Source.TryCompile(parameter, out var sourceExpr))
+        if (!source.TryCompile(parameter, out var sourceExpr))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Select: Failed to compile Source or Selector"));
             result = null;
@@ -48,7 +38,7 @@ public sealed class JsonExpressionLinqSelect<TIn, TOut, TInner>(
         }
 
         var itemParam = Expression.Parameter(typeof(TInner), "item");
-        if (!Selector.TryCompile(itemParam, out var selectorBody))
+        if (!selector.TryCompile(itemParam, out var selectorBody))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Select: Failed to compile Source or Selector"));
             result = null;

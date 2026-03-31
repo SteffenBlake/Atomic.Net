@@ -12,43 +12,33 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by this expression</typeparam>
 public sealed class JsonExpressionContains<TIn, TOut>(
-    IJsonExpression<TIn, string>? haystack,
-    IJsonExpression<TIn, string>? needle
+    IJsonExpression<TIn, string>? text,
+    IJsonExpression<TIn, string>? substring
 ) : IJsonExpressionContains<TIn, TOut>
 {
-    /// <summary>
-    /// String to search in (haystack).
-    /// </summary>
-    public IJsonExpression<TIn, string>? Haystack { get; } = haystack;
-
-    /// <summary>
-    /// String to search for (needle).
-    /// </summary>
-    public IJsonExpression<TIn, string>? Needle { get; } = needle;
-
     public bool TryCompile(
         ParameterExpression parameter,
         [NotNullWhen(true)]
         out Expression? result
     )
     {
-        if (Haystack is null || Needle is null)
+        if (text is null || substring is null)
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent("Contains: Haystack or Needle is null"));
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Contains: Text or Substring is null"));
             result = null;
             return false;
         }
 
-        if (!Haystack.TryCompile(parameter, out var haystackExpr) || !Needle.TryCompile(parameter, out var needleExpr))
+        if (!text.TryCompile(parameter, out var textExpr) || !substring.TryCompile(parameter, out var substringExpr))
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent("Contains: Failed to compile Haystack or Needle"));
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Contains: Failed to compile Text or Substring"));
             result = null;
             return false;
         }
 
         var containsMethod = typeof(string).GetMethod(nameof(string.Contains), [typeof(string)])!;
         
-        result = Expression.Call(haystackExpr, containsMethod, needleExpr);
+        result = Expression.Call(textExpr, containsMethod, substringExpr);
         return true;
     }
 }

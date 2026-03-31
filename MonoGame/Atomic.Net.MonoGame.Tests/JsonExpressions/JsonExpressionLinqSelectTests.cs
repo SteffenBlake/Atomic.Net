@@ -99,4 +99,49 @@ public sealed class JsonExpressionLinqSelectTests(ITestOutputHelper output) : ID
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
-    }}
+    }
+
+    [Fact]
+    public void Select_NotAnArray_Fails()
+    {
+        // Arrange - value of 'select' must be an array, not a string
+        var json = """{"select": "not-an-array"}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out _));
+    }
+
+    [Fact]
+    public void Select_TooFewArguments_Fails()
+    {
+        // Arrange - select requires exactly 2 elements; 1 is invalid
+        var json = """{"select": [{"var": "Numbers"}]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out _));
+    }
+
+    [Fact]
+    public void Select_TooManyArguments_Fails()
+    {
+        // Arrange - select requires exactly 2 elements; 3 is invalid
+        var json = """{"select": [{"var": "Numbers"}, {"*": [{"var": ""}, 2]}, "extra"]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out _));
+    }
+
+    [Fact]
+    public void Select_SourceNotArrayType_Fails()
+    {
+        // Arrange - source is a numeric literal (float), not an array type
+        var json = """{"select": [42, {"*": [{"var": ""}, 2]}]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out _));
+    }
+}

@@ -15,35 +15,20 @@ public sealed class JsonExpressionSubstring<TIn, TOut>(
     IJsonExpression<TIn, float>? length
 ) : IJsonExpressionSubstring<TIn, TOut>
 {
-    /// <summary>
-    /// String expression to extract substring from.
-    /// </summary>
-    public IJsonExpression<TIn, string>? String { get; } = @string;
-
-    /// <summary>
-    /// Start index expression (stored as float, converted to int at compile time).
-    /// </summary>
-    public IJsonExpression<TIn, float>? Start { get; } = start;
-
-    /// <summary>
-    /// Optional length expression (stored as float, converted to int at compile time).
-    /// </summary>
-    public IJsonExpression<TIn, float>? Length { get; } = length;
-
     public bool TryCompile(
         ParameterExpression parameter,
         [NotNullWhen(true)]
         out Expression? result
     )
     {
-        if (String is null || Start is null)
+        if (@string is null || start is null)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Substring: String or Start is null"));
             result = null;
             return false;
         }
 
-        if (!String.TryCompile(parameter, out var stringExpr) || !Start.TryCompile(parameter, out var startFloatExpr))
+        if (!@string.TryCompile(parameter, out var stringExpr) || !start.TryCompile(parameter, out var startFloatExpr))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Substring: Failed to compile String or Start"));
             result = null;
@@ -53,7 +38,7 @@ public sealed class JsonExpressionSubstring<TIn, TOut>(
         var startExpr = Expression.Convert(startFloatExpr, typeof(int));
         Expression substringExpr;
         
-        if (Length is not null && Length.TryCompile(parameter, out var lengthFloatExpr))
+        if (length is not null && length.TryCompile(parameter, out var lengthFloatExpr))
         {
             var lengthExpr = Expression.Convert(lengthFloatExpr, typeof(int));
             var safeMethod = typeof(JsonExpressionSubstringHelpers)

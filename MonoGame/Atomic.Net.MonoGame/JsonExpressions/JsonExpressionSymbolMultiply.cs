@@ -16,30 +16,20 @@ public sealed class JsonExpressionSymbolMultiply<TIn, TOut>(
     IJsonExpression<TIn, TOut>? right
 ) : IJsonExpressionSymbolMultiply<TIn, TOut>
 {
-    /// <summary>
-    /// Left multiplicand.
-    /// </summary>
-    public IJsonExpression<TIn, TOut>? Left { get; } = left;
-
-    /// <summary>
-    /// Right multiplicand.
-    /// </summary>
-    public IJsonExpression<TIn, TOut>? Right { get; } = right;
-
     public bool TryCompile(
         ParameterExpression parameter,
         [NotNullWhen(true)]
         out Expression? result
     )
     {
-        if (Left is null || Right is null)
+        if (left is null || right is null)
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Multiply: Left or Right operand is null"));
             result = null;
             return false;
         }
 
-        if (!Left.TryCompile(parameter, out var leftExpr) || !Right.TryCompile(parameter, out var rightExpr))
+        if (!left.TryCompile(parameter, out var leftExpr) || !right.TryCompile(parameter, out var rightExpr))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Multiply: Failed to compile Left or Right operand"));
             result = null;

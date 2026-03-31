@@ -41,17 +41,17 @@ public sealed class JsonExpressionContainsConverter<TIn, TOut> : JsonConverter<I
             );
         }
 
-        var needle = JsonSerializer.Deserialize<IJsonExpression<TIn, string>>(root[0], options);
-        var haystack = JsonSerializer.Deserialize<IJsonExpression<TIn, string>>(root[1], options);
+        var substring = JsonSerializer.Deserialize<IJsonExpression<TIn, string>>(root[0], options);
+        var text = JsonSerializer.Deserialize<IJsonExpression<TIn, string>>(root[1], options);
 
-        if (haystack is null || needle is null)
+        if (text is null || substring is null)
         {
             throw new JsonException(
-                $"Expected: Valid expressions for 'contains' haystack and needle, Actual: One or both are null"
+                $"Expected: Valid expressions for 'contains' text and substring, Actual: One or both are null"
             );
         }
 
-        return new JsonExpressionContains<TIn, TOut>(haystack, needle);
+        return new JsonExpressionContains<TIn, TOut>(text, substring);
     }
 
     public override void Write(

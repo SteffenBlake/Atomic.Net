@@ -16,23 +16,6 @@ public sealed class JsonExpressionVar<TIn, TOut>(
     IJsonExpression<TIn, TOut>? defaultValue
 ) : IJsonExpressionVar<TIn, TOut>
 {
-    /// <summary>
-    /// Pre-split property path segments (e.g., ["Address", "City"]), or null for identity.
-    /// Parsed at load time by the converter; no string splitting occurs at compile time.
-    /// </summary>
-    public string[]? Properties { get; } = properties;
-
-    /// <summary>
-    /// Numeric array index for array-element access (e.g., {"var": 1}).
-    /// Mutually exclusive with Properties.
-    /// </summary>
-    public int? ArrayIndex { get; } = arrayIndex;
-
-    /// <summary>
-    /// Optional default value expression used when the property path cannot be resolved.
-    /// </summary>
-    public IJsonExpression<TIn, TOut>? DefaultValue { get; } = defaultValue;
-
     public bool TryCompile(
         ParameterExpression parameter,
         [NotNullWhen(true)]
@@ -40,9 +23,9 @@ public sealed class JsonExpressionVar<TIn, TOut>(
     )
     {
         // Numeric array index: {"var": 1} → input[1]
-        if (ArrayIndex is not null)
+        if (arrayIndex is not null)
         {
-            var indexExpr = Expression.ArrayIndex(parameter, Expression.Constant(ArrayIndex.Value));
+            var indexExpr = Expression.ArrayIndex(parameter, Expression.Constant(arrayIndex.Value));
             result = indexExpr.Type != typeof(TOut)
                 ? Expression.Convert(indexExpr, typeof(TOut))
                 : indexExpr;
@@ -50,7 +33,7 @@ public sealed class JsonExpressionVar<TIn, TOut>(
         }
 
         // Null properties = identity: {"var": ""} → return parameter itself
-        if (Properties is null)
+        if (properties is null)
         {
             result = parameter.Type != typeof(TOut)
                 ? Expression.Convert(parameter, typeof(TOut))
@@ -61,15 +44,15 @@ public sealed class JsonExpressionVar<TIn, TOut>(
         // Navigate pre-split property chain — no reflection here, all resolved at load time
         Expression propertyExpr = parameter;
 
-        foreach (var propertyName in Properties)
+        foreach (var propertyName in properties)
         {
             var propertyInfo = propertyExpr.Type.GetProperty(propertyName);
             if (propertyInfo is null)
             {
                 // Property not found at compile time: fall back to default if one exists
-                if (DefaultValue is not null)
+                if (defaultValue is not null)
                 {
-                    return DefaultValue.TryCompile(parameter, out result);
+                    return defaultValue.TryCompile(parameter, out result);
                 }
 
                 EventBus<ErrorEvent>.Push(new ErrorEvent(
@@ -88,9 +71,9 @@ public sealed class JsonExpressionVar<TIn, TOut>(
             propertyExpr = Expression.Convert(propertyExpr, typeof(TOut));
         }
 
-        if (DefaultValue is not null)
+        if (defaultValue is not null)
         {
-            if (!DefaultValue.TryCompile(parameter, out var defaultExpr))
+            if (!defaultValue.TryCompile(parameter, out var defaultExpr))
             {
                 result = null;
                 return false;

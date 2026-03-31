@@ -8,7 +8,9 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// Used by the '+' operator when mixing float operands inside a string concatenation.
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
-public sealed class JsonExpressionFloatToString<TIn>(IJsonExpression<TIn, float> inner) : IJsonExpression<TIn, string>
+public sealed class JsonExpressionFloatToString<TIn>(
+    IJsonExpression<TIn, float> inner
+) : IJsonExpression<TIn, string>
 {
     public bool TryCompile(
         ParameterExpression parameter,
