@@ -5,11 +5,11 @@ using System.Text.Json.Serialization;
 namespace Atomic.Net.MonoGame.JsonExpressions;
 
 /// <summary>
-/// Interface for string contains expression.
+/// Interface for array contains expression.
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by this expression</typeparam>
-[JsonConverter(typeof(JsonExpressionStringContainsConverterFactory))]
-public interface IJsonExpressionStringContains<TIn, TOut> : IJsonExpression<TIn, TOut>
+[JsonConverter(typeof(JsonExpressionInConverterFactory))]
+public interface IJsonExpressionIn<TIn, TOut> : IJsonExpression<TIn, TOut>
 {
 }

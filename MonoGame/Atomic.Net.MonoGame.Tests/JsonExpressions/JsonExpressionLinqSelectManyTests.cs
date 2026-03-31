@@ -15,7 +15,7 @@ public sealed class JsonExpressionLinqSelectManyTests(ITestOutputHelper output) 
     private readonly record struct Team(string Name, string[] Members);
     private readonly record struct TestData(Team[] Teams);
     
-    private readonly record struct Person(string Name, int[] Scores);
+    private readonly record struct Person(string Name, float[] Scores);
     private readonly record struct ScoreData(Person[] People);
 
     private readonly ErrorEventLogger _errorLogger = new(output);
@@ -55,7 +55,7 @@ public sealed class JsonExpressionLinqSelectManyTests(ITestOutputHelper output) 
         // Arrange
         var json = """{"selectMany": [{"var": "People"}, {"var": "Scores"}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<ScoreData, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<ScoreData, float[]>(doc, out var expr));
         var func = expr.Compile();
         
         var data = new ScoreData([
@@ -68,7 +68,7 @@ public sealed class JsonExpressionLinqSelectManyTests(ITestOutputHelper output) 
         var result = func(data);
 
         // Assert
-        Assert.Equal([90, 85, 92, 78, 88, 95], result);
+        Assert.Equal(new float[] { 90, 85, 92, 78, 88, 95 }, result);
     }
 
     [Fact]
@@ -137,7 +137,7 @@ public sealed class JsonExpressionLinqSelectManyTests(ITestOutputHelper output) 
         // Arrange - multiply each score by 2, then flatten
         var json = """{"selectMany": [{"var": "People"}, {"map": [{"var": "Scores"}, {"*": [{"var": ""}, 2]}]}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<ScoreData, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<ScoreData, float[]>(doc, out var expr));
         var func = expr.Compile();
         
         var data = new ScoreData([
@@ -149,7 +149,7 @@ public sealed class JsonExpressionLinqSelectManyTests(ITestOutputHelper output) 
         var result = func(data);
 
         // Assert
-        Assert.Equal([20, 40, 60], result);
+        Assert.Equal(new float[] { 20, 40, 60 }, result);
     }
 
     [Fact]

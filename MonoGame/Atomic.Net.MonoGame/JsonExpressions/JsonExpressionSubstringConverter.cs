@@ -16,6 +16,13 @@ public sealed class JsonExpressionSubstringConverter<TIn, TOut> : JsonConverter<
         JsonSerializerOptions options
     )
     {
+        if (typeof(TOut) != typeof(string))
+        {
+            throw new JsonException(
+                $"'substring' operator requires TOut=string, got TOut={typeof(TOut).Name}"
+            );
+        }
+
         using var doc = JsonDocument.ParseValue(ref reader);
         var root = doc.RootElement;
 
@@ -35,7 +42,14 @@ public sealed class JsonExpressionSubstringConverter<TIn, TOut> : JsonConverter<
         }
 
         var @string = JsonSerializer.Deserialize<IJsonExpression<TIn, string>>(root[0], options);
-        var start = JsonSerializer.Deserialize<IJsonExpression<TIn, int>>(root[1], options);
+
+        // Reject negative start literals at compile time (C# does not support negative indices)
+        if (root[1].ValueKind == JsonValueKind.Number && root[1].GetSingle() < 0)
+        {
+            throw new JsonException("Substring start cannot be negative");
+        }
+
+        var start = JsonSerializer.Deserialize<IJsonExpression<TIn, float>>(root[1], options);
 
         if (@string is null || start is null)
         {
@@ -44,10 +58,16 @@ public sealed class JsonExpressionSubstringConverter<TIn, TOut> : JsonConverter<
             );
         }
 
-        IJsonExpression<TIn, int>? length = null;
+        IJsonExpression<TIn, float>? length = null;
         if (arrayLength == 3)
         {
-            length = JsonSerializer.Deserialize<IJsonExpression<TIn, int>>(root[2], options);
+            // Reject negative length literals at compile time
+            if (root[2].ValueKind == JsonValueKind.Number && root[2].GetSingle() < 0)
+            {
+                throw new JsonException("Substring length cannot be negative");
+            }
+
+            length = JsonSerializer.Deserialize<IJsonExpression<TIn, float>>(root[2], options);
             if (length is null)
             {
                 throw new JsonException(

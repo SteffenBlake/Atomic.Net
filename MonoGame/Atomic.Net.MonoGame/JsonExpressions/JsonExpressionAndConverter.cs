@@ -16,6 +16,13 @@ public sealed class JsonExpressionAndConverter<TIn, TOut> : JsonConverter<IJsonE
         JsonSerializerOptions options
     )
     {
+        if (typeof(TOut) != typeof(bool))
+        {
+            throw new JsonException(
+                $"'and' operator requires TOut=bool, got TOut={typeof(TOut).Name}"
+            );
+        }
+
         // Use the built-in fast path from Utf8JsonReader to JsonDocument
         using var doc = JsonDocument.ParseValue(ref reader);
         var root = doc.RootElement;

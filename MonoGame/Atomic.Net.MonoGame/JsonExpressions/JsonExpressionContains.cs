@@ -11,21 +11,20 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
 /// <typeparam name="TOut">Output type produced by this expression</typeparam>
-/// <typeparam name="TElement">Element type of the collection</typeparam>
-public sealed class JsonExpressionContains<TIn, TOut, TElement>(
-    IJsonExpression<TIn, TElement[]>? collection,
-    IJsonExpression<TIn, TElement>? item
+public sealed class JsonExpressionContains<TIn, TOut>(
+    IJsonExpression<TIn, string>? haystack,
+    IJsonExpression<TIn, string>? needle
 ) : IJsonExpressionContains<TIn, TOut>
 {
     /// <summary>
-    /// Collection to search in.
+    /// String to search in (haystack).
     /// </summary>
-    public IJsonExpression<TIn, TElement[]>? Collection { get; } = collection;
+    public IJsonExpression<TIn, string>? Haystack { get; } = haystack;
 
     /// <summary>
-    /// Item to search for.
+    /// String to search for (needle).
     /// </summary>
-    public IJsonExpression<TIn, TElement>? Item { get; } = item;
+    public IJsonExpression<TIn, string>? Needle { get; } = needle;
 
     public bool TryCompile(
         ParameterExpression parameter,
@@ -33,25 +32,23 @@ public sealed class JsonExpressionContains<TIn, TOut, TElement>(
         out Expression? result
     )
     {
-        if (Collection is null || Item is null)
+        if (Haystack is null || Needle is null)
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent("Contains: Collection or Item is null"));
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Contains: Haystack or Needle is null"));
             result = null;
             return false;
         }
 
-        if (!Collection.TryCompile(parameter, out var collectionExpr) || !Item.TryCompile(parameter, out var itemExpr))
+        if (!Haystack.TryCompile(parameter, out var haystackExpr) || !Needle.TryCompile(parameter, out var needleExpr))
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent("Contains: Failed to compile Collection or Item"));
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Contains: Failed to compile Haystack or Needle"));
             result = null;
             return false;
         }
 
-        var containsMethod = typeof(Enumerable).GetMethods()
-            .First(m => m.Name == nameof(Enumerable.Contains) && m.GetParameters().Length == 2)
-            .MakeGenericMethod(typeof(TElement));
+        var containsMethod = typeof(string).GetMethod(nameof(string.Contains), [typeof(string)])!;
         
-        result = Expression.Call(containsMethod, collectionExpr, itemExpr);
+        result = Expression.Call(haystackExpr, containsMethod, needleExpr);
         return true;
     }
 }

@@ -7,10 +7,10 @@ using Atomic.Net.MonoGame.Core;
 namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 
 /// <summary>
-/// Tests for JSONLogic 'and' operator (returns first falsy value or last truthy).
+/// Tests for JSONLogic 'in' operator for arrays (membership test).
 /// </summary>
 [Collection("NonParallel")]
-public sealed class JsonExpressionAndTests(ITestOutputHelper output) : IDisposable
+public sealed class JsonExpressionInTests(ITestOutputHelper output) : IDisposable
 {
     private readonly record struct TestInput(float Unused);
 
@@ -24,10 +24,10 @@ public sealed class JsonExpressionAndTests(ITestOutputHelper output) : IDisposab
     }
 
     [Fact]
-    public void And_BothTrue_ReturnsTrue()
+    public void InArray_ValuePresent_ReturnsTrue()
     {
         // Arrange
-        var json = """{"and": [true, true]}""";
+        var json = """{"in": ["Ringo", ["John", "Paul", "George", "Ringo"]]}""";
         var doc = JsonDocument.Parse(json);
         Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
@@ -41,10 +41,10 @@ public sealed class JsonExpressionAndTests(ITestOutputHelper output) : IDisposab
     }
 
     [Fact]
-    public void And_TrueAndFalse_ReturnsFalse()
+    public void InArray_ValueNotPresent_ReturnsFalse()
     {
         // Arrange
-        var json = """{"and": [true, false]}""";
+        var json = """{"in": ["Pete", ["John", "Paul", "George", "Ringo"]]}""";
         var doc = JsonDocument.Parse(json);
         Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
@@ -58,36 +58,14 @@ public sealed class JsonExpressionAndTests(ITestOutputHelper output) : IDisposab
     }
 
     [Fact]
-    public void And_ReturnsLastWhenAllTruthy()
-    {
-        // Arrange - mixing bool/string/int not supported in C# semantics (no truthiness)
-        var json = """{"and": [true, "a", 3]}""";
-        var doc = JsonDocument.Parse(json);
-        
-        // Assert - should fail to compile
-        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out _));
-    }
-
-    [Fact]
-    public void And_ReturnsFirstFalsy()
-    {
-        // Arrange - mixing bool/string/int not supported in C# semantics (no truthiness)
-        var json = """{"and": [true, "", 3]}""";
-        var doc = JsonDocument.Parse(json);
-        
-        // Assert - should fail to compile
-        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
-    }
-
-    [Fact]
-    public void And_WithVarData_ReturnsTrueWhenBothConditionsTrue()
+    public void InArray_NumberPresent_ReturnsTrue()
     {
         // Arrange
-        var json = """{"and": [{">":  [{"var": "Unused"}, 0]}, {"<": [{"var": "Unused"}, 100]}]}""";
+        var json = """{"in": [3, [1, 2, 3, 4, 5]]}""";
         var doc = JsonDocument.Parse(json);
         Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
-        var data = new TestInput(42);
+        var data = new TestInput(0);
 
         // Act
         var result = func(data);
@@ -97,14 +75,14 @@ public sealed class JsonExpressionAndTests(ITestOutputHelper output) : IDisposab
     }
 
     [Fact]
-    public void And_WithVarData_ReturnsFalseWhenOneConditionFalse()
+    public void InArray_NumberNotPresent_ReturnsFalse()
     {
         // Arrange
-        var json = """{"and": [{">":  [{"var": "Unused"}, 0]}, {"<": [{"var": "Unused"}, 10]}]}""";
+        var json = """{"in": [6, [1, 2, 3, 4, 5]]}""";
         var doc = JsonDocument.Parse(json);
         Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
-        var data = new TestInput(42);
+        var data = new TestInput(0);
 
         // Act
         var result = func(data);
@@ -114,20 +92,26 @@ public sealed class JsonExpressionAndTests(ITestOutputHelper output) : IDisposab
     }
 
     [Fact]
-    public void And_EmptyArrayIsFalsy_ReturnsEmptyArray()
+    public void InArray_EmptyArray_ReturnsFalse()
     {
-        // Arrange - mixing bool and array not supported in C# semantics (no truthiness)
-        var json = """{"and": [true, []]}""";
+        // Arrange
+        var json = """{"in": [1, []]}""";
         var doc = JsonDocument.Parse(json);
-        
-        // Assert - should fail to compile
-        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out _));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
+        var func = expr.Compile();
+        var data = new TestInput(0);
+
+        // Act
+        var result = func(data);
+
+        // Assert
+        Assert.False(result);
     }
     [Fact]
-    public void And_WrongOutputType_Fails()
+    public void In_WrongOutputType_Fails()
     {
-        // Arrange - and returns bool, but requesting string
-        var json = """{ "and": [true, true]}""";
+        // Arrange - 'in' returns bool, but requesting string
+        var json = """{ "in": [3, [1, 2, 3, 4, 5]]}""";
         var doc = JsonDocument.Parse(json);
         
         // Assert

@@ -39,8 +39,9 @@ public sealed class JsonExpressionLog<TIn, TOut>(IJsonExpression<TIn, TOut>? val
         }
         
         // Log the value and return it
-        var logMethod = typeof(JsonExpressionLog<TIn, TOut>).GetMethod(nameof(LogValue), 
-            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!;
+        var logMethod = typeof(JsonExpressionLog<TIn, TOut>)
+            .GetMethod(nameof(LogValue), System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!
+            .MakeGenericMethod(typeof(TOut));
         result = Expression.Call(logMethod, valueExpr);
         return true;
     }

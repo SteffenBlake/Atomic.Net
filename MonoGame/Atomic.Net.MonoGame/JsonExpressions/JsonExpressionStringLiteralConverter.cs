@@ -16,6 +16,13 @@ public sealed class JsonExpressionStringLiteralConverter<TIn, TOut> : JsonConver
         JsonSerializerOptions options
     )
     {
+        if (typeof(TOut) != typeof(string))
+        {
+            throw new JsonException(
+                $"String literal requires TOut=string, got TOut={typeof(TOut).Name}"
+            );
+        }
+
         // Validate that we're reading a string
         if (reader.TokenType != JsonTokenType.String)
         {

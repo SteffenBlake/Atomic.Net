@@ -16,6 +16,13 @@ public sealed class JsonExpressionBoolLiteralConverter<TIn, TOut> : JsonConverte
         JsonSerializerOptions options
     )
     {
+        if (typeof(TOut) != typeof(bool))
+        {
+            throw new JsonException(
+                $"Bool literal requires TOut=bool, got TOut={typeof(TOut).Name}"
+            );
+        }
+
         // Validate that we're reading a boolean
         if (reader.TokenType != JsonTokenType.True && reader.TokenType != JsonTokenType.False)
         {

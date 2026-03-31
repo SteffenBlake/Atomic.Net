@@ -58,11 +58,19 @@ public sealed class JsonExpressionLinqAll<TIn, TOut, TElement>(
         var predicateFunc = Expression.Lambda<Func<TElement, bool>>(predicateBody, itemParam);
         
         // Call Enumerable.All(source, predicate)
+        // JSONLogic semantics: empty array returns false (not vacuously true)
         var allMethod = typeof(Enumerable).GetMethods()
             .First(m => m.Name == nameof(Enumerable.All) && m.GetParameters().Length == 2)
             .MakeGenericMethod(typeof(TElement));
         
-        result = Expression.Call(allMethod, sourceExpr, predicateFunc);
+        var anyMethod = typeof(Enumerable).GetMethods()
+            .First(m => m.Name == nameof(Enumerable.Any) && m.GetParameters().Length == 1)
+            .MakeGenericMethod(typeof(TElement));
+
+        // source.Any() && source.All(predicate)
+        var hasElements = Expression.Call(anyMethod, sourceExpr);
+        var allMatches = Expression.Call(allMethod, sourceExpr, predicateFunc);
+        result = Expression.AndAlso(hasElements, allMatches);
         return true;
     }
 }

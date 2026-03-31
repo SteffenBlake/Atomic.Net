@@ -25,17 +25,15 @@ public sealed class JsonExpressionLinqAggregateConverterFactory : JsonConverterF
     )
     {
         var typeArgs = typeToConvert.GetGenericArguments();
-        if (typeArgs.Length != 3)
+        if (typeArgs.Length != 2)
         {
             return null;
         }
 
         var tIn = typeArgs[0];
-        var tSource = typeArgs[1];
-        var tAccumulate = typeArgs[2];
-        
+        var tOut = typeArgs[1];
 
-        var converterType = typeof(JsonExpressionLinqAggregateConverter<,,>).MakeGenericType(tIn, tSource, tAccumulate);
+        var converterType = typeof(JsonExpressionLinqAggregateConverter<,>).MakeGenericType(tIn, tOut);
         return (JsonConverter?)Activator.CreateInstance(converterType);
     }
 }

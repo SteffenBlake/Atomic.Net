@@ -12,7 +12,7 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 [Collection("NonParallel")]
 public sealed class JsonExpressionOrTests(ITestOutputHelper output) : IDisposable
 {
-    private readonly record struct TestInput(int Unused);
+    private readonly record struct TestInput(float Unused);
 
     private readonly ErrorEventLogger _errorLogger = new(output);
     private readonly FakeEventListener<ErrorEvent> _errorListener = new();
@@ -111,7 +111,7 @@ public sealed class JsonExpressionOrTests(ITestOutputHelper output) : IDisposabl
     public void Or_WithVarData_ReturnsCorrectResult()
     {
         // Arrange
-        var json = """{"or": [{"==": [{"var": "Value"}, 0]}, {"==": [{"var": "Value"}, 42]}]}""";
+        var json = """{"or": [{"==": [{"var": "Unused"}, 0]}, {"==": [{"var": "Unused"}, 42]}]}""";
         var doc = JsonDocument.Parse(json);
         Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();

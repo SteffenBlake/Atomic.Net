@@ -12,24 +12,22 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 [Collection("NonParallel")]
 public sealed class JsonExpressionSymbolDivideTests(ITestOutputHelper output) : IDisposable
 {
-    private readonly record struct TestInput(int A, int B);
+    private readonly record struct TestInput(float A, float B);
 
     private readonly ErrorEventLogger _errorLogger = new(output);
-    private readonly FakeEventListener<ErrorEvent> _errorListener = new();
 
     public void Dispose()
     {
-        _errorListener.Dispose();
         _errorLogger.Dispose();
     }
 
     [Fact]
-    public void Divide_TwoIntegers_ReturnsQuotient()
+    public void Divide_TwoFloats_ReturnsQuotient()
     {
         // Arrange
         var json = """{"/": [4, 2]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -37,7 +35,7 @@ public sealed class JsonExpressionSymbolDivideTests(ITestOutputHelper output) : 
         var result = func(data);
 
         // Assert
-        Assert.Equal(2, result);
+        Assert.Equal(2f, result, 0.001f);
     }
 
     [Fact]
@@ -46,7 +44,7 @@ public sealed class JsonExpressionSymbolDivideTests(ITestOutputHelper output) : 
         // Arrange
         var json = """{"/": [{"var": "A"}, {"var": "B"}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(84, 2);
 
@@ -54,7 +52,7 @@ public sealed class JsonExpressionSymbolDivideTests(ITestOutputHelper output) : 
         var result = func(data);
 
         // Assert
-        Assert.Equal(42, result);
+        Assert.Equal(42f, result, 0.001f);
     }
 
     [Fact]
@@ -97,7 +95,7 @@ public sealed class JsonExpressionSymbolDivideTests(ITestOutputHelper output) : 
         // Arrange
         var json = """{"/": [-10, 2]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -105,23 +103,24 @@ public sealed class JsonExpressionSymbolDivideTests(ITestOutputHelper output) : 
         var result = func(data);
 
         // Assert
-        Assert.Equal(-5, result);
+        Assert.Equal(-5f, result, 0.001f);
     }
 
     [Fact]
-    public void Divide_ByZero_ReturnsNullAndFiresErrorEvent()
+    public void Divide_ByZero_ReturnsInfinity()
     {
-        // Arrange
+        // Arrange - float division by zero yields Infinity per IEEE 754, not an exception
         var json = """{"/": [42, 0]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float?>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
+        var func = expr.Compile();
+        var data = new TestInput(0, 0);
 
         // Act
-        var result = expr;
+        var result = func(data);
 
         // Assert
-        Assert.Null(result);
-        Assert.True(_errorListener.ReceivedEvents.Count > 0, "Should fire at least one ErrorEvent for division by zero");
+        Assert.True(float.IsInfinity(result), $"Expected Infinity but got {result}");
     }
 
     [Fact]

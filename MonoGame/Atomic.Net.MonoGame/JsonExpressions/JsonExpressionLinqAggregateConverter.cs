@@ -7,11 +7,10 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// JSON converter for JsonExpressionLinqAggregate.
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
-/// <typeparam name="TSource">Source array element type</typeparam>
-/// <typeparam name="TAccumulate">Accumulator type</typeparam>
-public sealed class JsonExpressionLinqAggregateConverter<TIn, TSource, TAccumulate> : JsonConverter<IJsonExpressionLinqAggregate<TIn, TAccumulate>>
+/// <typeparam name="TOut">Accumulator / output type</typeparam>
+public sealed class JsonExpressionLinqAggregateConverter<TIn, TOut> : JsonConverter<IJsonExpressionLinqAggregate<TIn, TOut>>
 {
-    public override IJsonExpressionLinqAggregate<TIn, TAccumulate>? Read(
+    public override IJsonExpressionLinqAggregate<TIn, TOut>? Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
         JsonSerializerOptions options
@@ -35,27 +34,33 @@ public sealed class JsonExpressionLinqAggregateConverter<TIn, TSource, TAccumula
             );
         }
 
-        var source = JsonSerializer.Deserialize<IJsonExpression<TIn, TSource[]>>(root[0], options) ??
-            throw new JsonException(
-                $"Expected: Valid expression for aggregate source, Actual: null after deserialization"
-            );
+        var sourceArrayType = root[0].InferJsonExpressionType<TIn>();
+        var sourceElementType = sourceArrayType.IsArray
+            ? sourceArrayType.GetElementType()!
+            : throw new JsonException($"Expected array type for aggregate source, Actual: {sourceArrayType.Name}");
 
-        var accumulator = JsonSerializer.Deserialize<IJsonExpression<TSource, TAccumulate>>(root[1], options) ??
-            throw new JsonException(
-                $"Expected: Valid expression for aggregate accumulator, Actual: null after deserialization"
-            );
+        var sourceExprType = typeof(IJsonExpression<,>).MakeGenericType(typeof(TIn), sourceArrayType);
+        var contextType = typeof(JsonAggregateContext<,>).MakeGenericType(sourceElementType, typeof(TOut));
+        var accumulatorExprType = typeof(IJsonExpression<,>).MakeGenericType(contextType, typeof(TOut));
+        var initialValueExprType = typeof(IJsonExpression<,>).MakeGenericType(typeof(TIn), typeof(TOut));
 
-        var initialValue = JsonSerializer.Deserialize<IJsonExpression<TIn, TAccumulate>>(root[2], options) ??
-            throw new JsonException(
-                $"Expected: Valid expression for aggregate initialValue, Actual: null after deserialization"
-            );
+        var source = JsonSerializer.Deserialize(root[0], sourceExprType, options) ??
+            throw new JsonException("Expected: Valid expression for aggregate source, Actual: null after deserialization");
 
-        return new JsonExpressionLinqAggregate<TIn, TAccumulate, TSource>(source, accumulator, initialValue);
+        var accumulator = JsonSerializer.Deserialize(root[1], accumulatorExprType, options) ??
+            throw new JsonException("Expected: Valid expression for aggregate accumulator, Actual: null after deserialization");
+
+        var initialValue = JsonSerializer.Deserialize(root[2], initialValueExprType, options) ??
+            throw new JsonException("Expected: Valid expression for aggregate initialValue, Actual: null after deserialization");
+
+        var concreteType = typeof(JsonExpressionLinqAggregate<,,>).MakeGenericType(typeof(TIn), typeof(TOut), sourceElementType);
+        var ctor = concreteType.GetConstructor([sourceExprType, accumulatorExprType, initialValueExprType])!;
+        return (IJsonExpressionLinqAggregate<TIn, TOut>)ctor.Invoke([source, accumulator, initialValue]);
     }
 
     public override void Write(
         Utf8JsonWriter writer,
-        IJsonExpressionLinqAggregate<TIn, TAccumulate> value,
+        IJsonExpressionLinqAggregate<TIn, TOut> value,
         JsonSerializerOptions options
     )
     {

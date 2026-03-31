@@ -12,14 +12,12 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 [Collection("NonParallel")]
 public sealed class JsonExpressionLinqAddTests(ITestOutputHelper output) : IDisposable
 {
-    private readonly record struct TestInput(int Value);
+    private readonly record struct TestInput(float Value);
 
     private readonly ErrorEventLogger _errorLogger = new(output);
-    private readonly FakeEventListener<ErrorEvent> _errorListener = new();
 
     public void Dispose()
     {
-        _errorListener.Dispose();
         _errorLogger.Dispose();
     }
 
@@ -29,7 +27,7 @@ public sealed class JsonExpressionLinqAddTests(ITestOutputHelper output) : IDisp
         // Arrange
        var json = """{"add": [5, [1, 2, 3, 4]]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -37,7 +35,7 @@ public sealed class JsonExpressionLinqAddTests(ITestOutputHelper output) : IDisp
         var result = func(data);
 
         // Assert
-        Assert.Equal([1, 2, 3, 4, 5], result);
+        Assert.Equal([1f, 2f, 3f, 4f, 5f], result);
     }
 
     [Fact]
@@ -46,7 +44,7 @@ public sealed class JsonExpressionLinqAddTests(ITestOutputHelper output) : IDisp
         // Arrange
         var json = """{"add": [42, []]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -54,7 +52,7 @@ public sealed class JsonExpressionLinqAddTests(ITestOutputHelper output) : IDisp
         var result = func(data);
 
         // Assert
-        Assert.Equal([42], result);
+        Assert.Equal([42f], result);
     }
 
     [Fact]
@@ -63,7 +61,7 @@ public sealed class JsonExpressionLinqAddTests(ITestOutputHelper output) : IDisp
         // Arrange
         var json = """{"add": [{"var": "Value"}, [10, 20, 30]]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(99);
 
@@ -71,7 +69,7 @@ public sealed class JsonExpressionLinqAddTests(ITestOutputHelper output) : IDisp
         var result = func(data);
 
         // Assert
-        Assert.Equal([10, 20, 30, 99], result);
+        Assert.Equal([10f, 20f, 30f, 99f], result);
     }
 
     [Fact]

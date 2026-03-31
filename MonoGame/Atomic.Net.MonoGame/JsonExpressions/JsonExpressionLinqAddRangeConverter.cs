@@ -16,6 +16,13 @@ public sealed class JsonExpressionLinqAddRangeConverter<TIn, TOut> : JsonConvert
         JsonSerializerOptions options
     )
     {
+        if (!typeof(TOut).IsArray)
+        {
+            throw new JsonException(
+                $"'addRange' operator requires TOut to be an array type, got TOut={typeof(TOut).Name}"
+            );
+        }
+
         using var doc = JsonDocument.ParseValue(ref reader);
         var root = doc.RootElement;
 

@@ -2,7 +2,6 @@ using System.Text.Json;
 using Xunit;
 using Xunit.Abstractions;
 using Atomic.Net.MonoGame.JsonExpressions;
-using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 
@@ -12,24 +11,22 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 [Collection("NonParallel")]
 public sealed class JsonExpressionSymbolAddTests(ITestOutputHelper output) : IDisposable
 {
-    private readonly record struct TestInput(int A, int B);
+    private readonly record struct TestInput(float A, float B);
 
     private readonly ErrorEventLogger _errorLogger = new(output);
-    private readonly FakeEventListener<ErrorEvent> _errorListener = new();
 
     public void Dispose()
     {
-        _errorListener.Dispose();
         _errorLogger.Dispose();
     }
 
     [Fact]
-    public void Add_TwoIntegers_ReturnsSum()
+    public void Add_TwoFloats_ReturnsSum()
     {
         // Arrange
         var json = """{"+": [4, 2]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -37,16 +34,16 @@ public sealed class JsonExpressionSymbolAddTests(ITestOutputHelper output) : IDi
         var result = func(data);
 
         // Assert
-        Assert.Equal(6, result);
+        Assert.Equal(6f, result, 0.001f);
     }
 
     [Fact]
-    public void Add_MultipleIntegers_ReturnsSum()
+    public void Add_MultipleFloats_ReturnsSum()
     {
         // Arrange
         var json = """{"+": [2, 2, 2, 2, 2]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -54,7 +51,7 @@ public sealed class JsonExpressionSymbolAddTests(ITestOutputHelper output) : IDi
         var result = func(data);
 
         // Assert
-        Assert.Equal(10, result);
+        Assert.Equal(10f, result, 0.001f);
     }
 
     [Fact]
@@ -63,7 +60,7 @@ public sealed class JsonExpressionSymbolAddTests(ITestOutputHelper output) : IDi
         // Arrange
         var json = """{"+": [{"var": "A"}, {"var": "B"}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(10, 32);
 
@@ -71,7 +68,7 @@ public sealed class JsonExpressionSymbolAddTests(ITestOutputHelper output) : IDi
         var result = func(data);
 
         // Assert
-        Assert.Equal(42, result);
+        Assert.Equal(42f, result, 0.001f);
     }
 
     [Fact]
@@ -80,7 +77,7 @@ public sealed class JsonExpressionSymbolAddTests(ITestOutputHelper output) : IDi
         // Arrange
         var json = """{"+": [-5, 3]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -88,7 +85,7 @@ public sealed class JsonExpressionSymbolAddTests(ITestOutputHelper output) : IDi
         var result = func(data);
 
         // Assert
-        Assert.Equal(-2, result);
+        Assert.Equal(-2f, result, 0.001f);
     }
 
     [Fact]
@@ -109,12 +106,12 @@ public sealed class JsonExpressionSymbolAddTests(ITestOutputHelper output) : IDi
     }
 
     [Fact]
-    public void Add_UnaryInteger_ReturnsInteger()
+    public void Add_UnaryFloat_ReturnsFloat()
     {
         // Arrange
         var json = """{"+": 42}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -122,7 +119,18 @@ public sealed class JsonExpressionSymbolAddTests(ITestOutputHelper output) : IDi
         var result = func(data);
 
         // Assert
-        Assert.Equal(42, result);
+        Assert.Equal(42f, result, 0.001f);
+    }
+
+    [Fact]
+    public void Add_WrongOutputType_Fails()
+    {
+        // Arrange - + returns float, but requesting bool
+        var json = """{"+": [1, 2]}""";
+        var doc = JsonDocument.Parse(json);
+
+        // Assert
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out _));
     }
 
     [Fact]

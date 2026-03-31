@@ -16,6 +16,14 @@ public sealed class JsonExpressionSymbolNotConverter<TIn, TOut> : JsonConverter<
         JsonSerializerOptions options
     )
     {
+        // Validate: TOut must be bool (logical not operator always returns boolean)
+        if (typeof(TOut) != typeof(bool))
+        {
+            throw new JsonException(
+                $"'!' operator always returns bool, but requested output type is '{typeof(TOut).Name}'"
+            );
+        }
+
         // Use the built-in fast path from Utf8JsonReader to JsonDocument
         using var doc = JsonDocument.ParseValue(ref reader);
         var root = doc.RootElement;

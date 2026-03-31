@@ -12,14 +12,12 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 [Collection("NonParallel")]
 public sealed class JsonExpressionSymbolModuloTests(ITestOutputHelper output) : IDisposable
 {
-    private readonly record struct TestInput(int Value);
+    private readonly record struct TestInput(float Value);
 
     private readonly ErrorEventLogger _errorLogger = new(output);
-    private readonly FakeEventListener<ErrorEvent> _errorListener = new();
 
     public void Dispose()
     {
-        _errorListener.Dispose();
         _errorLogger.Dispose();
     }
 
@@ -29,7 +27,7 @@ public sealed class JsonExpressionSymbolModuloTests(ITestOutputHelper output) : 
         // Arrange
         var json = """{"%": [101, 2]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -37,7 +35,7 @@ public sealed class JsonExpressionSymbolModuloTests(ITestOutputHelper output) : 
         var result = func(data);
 
         // Assert
-        Assert.Equal(1, result);
+        Assert.Equal(1f, result, 0.001f);
     }
 
     [Fact]
@@ -46,7 +44,7 @@ public sealed class JsonExpressionSymbolModuloTests(ITestOutputHelper output) : 
         // Arrange
         var json = """{"%": [100, 2]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -54,7 +52,7 @@ public sealed class JsonExpressionSymbolModuloTests(ITestOutputHelper output) : 
         var result = func(data);
 
         // Assert
-        Assert.Equal(0, result);
+        Assert.Equal(0f, result, 0.001f);
     }
 
     [Fact]
@@ -63,7 +61,7 @@ public sealed class JsonExpressionSymbolModuloTests(ITestOutputHelper output) : 
         // Arrange
         var json = """{"%": [{"var": "Value"}, 10]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42);
 
@@ -71,7 +69,7 @@ public sealed class JsonExpressionSymbolModuloTests(ITestOutputHelper output) : 
         var result = func(data);
 
         // Assert
-        Assert.Equal(2, result);
+        Assert.Equal(2f, result, 0.001f);
     }
 
     [Fact]
@@ -80,7 +78,7 @@ public sealed class JsonExpressionSymbolModuloTests(ITestOutputHelper output) : 
         // Arrange
         var json = """{"%": [5, 10]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -88,7 +86,7 @@ public sealed class JsonExpressionSymbolModuloTests(ITestOutputHelper output) : 
         var result = func(data);
 
         // Assert
-        Assert.Equal(5, result);
+        Assert.Equal(5f, result, 0.001f);
     }
 
     [Fact]
@@ -97,7 +95,7 @@ public sealed class JsonExpressionSymbolModuloTests(ITestOutputHelper output) : 
         // Arrange
         var json = """{"%": [-7, 3]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0);
 
@@ -105,31 +103,34 @@ public sealed class JsonExpressionSymbolModuloTests(ITestOutputHelper output) : 
         var result = func(data);
 
         // Assert
-        Assert.Equal(-1, result);
+        Assert.Equal(-1f, result, 0.001f);
     }
 
     [Fact]
-    public void Modulo_ByZero_ReturnsNullAndFiresErrorEvent()
+    public void Modulo_ByZero_ReturnsNaN()
     {
-        // Arrange
+        // Arrange - float modulo by zero yields NaN per IEEE 754, not an exception
         var json = """{"%": [42, 0]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int?>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
+        var func = expr.Compile();
+        var data = new TestInput(0);
 
         // Act
-        var result = expr;
+        var result = func(data);
 
         // Assert
-        Assert.Null(result);
-        Assert.True(_errorListener.ReceivedEvents.Count > 0, "Should fire at least one ErrorEvent for modulo by zero");
+        Assert.True(float.IsNaN(result), $"Expected NaN but got {result}");
     }
+
     [Fact]
     public void Modulo_WrongOutputType_Fails()
     {
-        // Arrange - modulo returns int, but requesting float
+        // Arrange - modulo returns float, but requesting string[]
         var json = """{"%": [10, 3]}""";
         var doc = JsonDocument.Parse(json);
-        
+
         // Assert
-        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out _));
-    }}
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string[]>(doc, out _));
+    }
+}

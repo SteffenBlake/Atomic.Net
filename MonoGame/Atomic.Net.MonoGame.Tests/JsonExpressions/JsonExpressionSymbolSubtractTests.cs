@@ -12,7 +12,7 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 [Collection("NonParallel")]
 public sealed class JsonExpressionSymbolSubtractTests(ITestOutputHelper output) : IDisposable
 {
-    private readonly record struct TestInput(int A, int B);
+    private readonly record struct TestInput(float A, float B);
 
     private readonly ErrorEventLogger _errorLogger = new(output);
     private readonly FakeEventListener<ErrorEvent> _errorListener = new();
@@ -46,7 +46,7 @@ public sealed class JsonExpressionSymbolSubtractTests(ITestOutputHelper output) 
         // Arrange
         var json = """{"-": [{"var": "A"}, {"var": "B"}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(50, 8);
 
@@ -54,7 +54,7 @@ public sealed class JsonExpressionSymbolSubtractTests(ITestOutputHelper output) 
         var result = func(data);
 
         // Assert
-        Assert.Equal(42, result);
+        Assert.Equal(42f, result);
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public sealed class JsonExpressionSymbolSubtractTests(ITestOutputHelper output) 
         // Arrange
         var json = """{"-": 2}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -71,7 +71,7 @@ public sealed class JsonExpressionSymbolSubtractTests(ITestOutputHelper output) 
         var result = func(data);
 
         // Assert
-        Assert.Equal(-2, result);
+        Assert.Equal(-2f, result);
     }
 
     [Fact]
@@ -80,7 +80,7 @@ public sealed class JsonExpressionSymbolSubtractTests(ITestOutputHelper output) 
         // Arrange
         var json = """{"-": -2}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -88,7 +88,7 @@ public sealed class JsonExpressionSymbolSubtractTests(ITestOutputHelper output) 
         var result = func(data);
 
         // Assert
-        Assert.Equal(2, result);
+        Assert.Equal(2f, result);
     }
 
     [Fact]

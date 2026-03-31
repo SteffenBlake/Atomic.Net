@@ -12,7 +12,7 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 [Collection("NonParallel")]
 public sealed class JsonExpressionSymbolNotTests(ITestOutputHelper output) : IDisposable
 {
-    private readonly record struct TestInput(int Unused);
+    private readonly record struct TestInput(float Unused);
 
     private readonly ErrorEventLogger _errorLogger = new(output);
     private readonly FakeEventListener<ErrorEvent> _errorListener = new();
@@ -122,7 +122,7 @@ public sealed class JsonExpressionSymbolNotTests(ITestOutputHelper output) : IDi
     public void Not_WithVarData_ReturnsCorrectResult()
     {
         // Arrange
-        var json = """{"!": {"==": [{"var": "Value"}, 0]}}""";
+        var json = """{"!": {"==": [{"var": "Unused"}, 0]}}""";
         var doc = JsonDocument.Parse(json);
         Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();

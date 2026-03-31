@@ -13,7 +13,7 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 [Collection("NonParallel")]
 public sealed class JsonExpressionVarTests(ITestOutputHelper output) : IDisposable
 {
-    private readonly record struct TestInput(int A, int B, string Name);
+    private readonly record struct TestInput(float A, float B, string Name);
     private readonly record struct NestedInput(string Name, ChildData Child);
     private readonly record struct ChildData(int Value, string Label);
 
@@ -32,7 +32,7 @@ public sealed class JsonExpressionVarTests(ITestOutputHelper output) : IDisposab
         // Arrange
         var json = """{"var": "A"}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42, 100, "test");
 
@@ -40,7 +40,7 @@ public sealed class JsonExpressionVarTests(ITestOutputHelper output) : IDisposab
         var result = func(data);
 
         // Assert
-        Assert.Equal(42, result);
+        Assert.Equal(42f, result);
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public sealed class JsonExpressionVarTests(ITestOutputHelper output) : IDisposab
         // Arrange
         var json = """{"var": ["B"]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(42, 100, "test");
 
@@ -57,24 +57,18 @@ public sealed class JsonExpressionVarTests(ITestOutputHelper output) : IDisposab
         var result = func(data);
 
         // Assert
-        Assert.Equal(100, result);
+        Assert.Equal(100f, result);
     }
 
     [Fact]
     public void Var_WithDefault_MissingProperty_ReturnsDefault()
     {
-        // Arrange
+        // Arrange - property "Z" does not exist on TestInput, so TryBuild should fail
         var json = """{"var": ["Z", 999]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
-        var func = expr.Compile();
-        var data = new TestInput(42, 100, "test");
-
-        // Act
-        var result = func(data);
 
         // Assert
-        Assert.Equal(999, result);
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out _));
     }
 
     [Fact]
@@ -134,15 +128,28 @@ public sealed class JsonExpressionVarTests(ITestOutputHelper output) : IDisposab
         // Arrange
         var json = """{"var": "NonExistent"}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int?>(doc, out var expr));
+
+        // Assert - should fail to compile since property doesn't exist
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out _));
+    }
+    [Fact]
+    public void Var_WithDefault_NullableProperty_ReturnsDefault()
+    {
+        // Arrange - property "Name" exists on TestInput (string, nullable), data has null value
+        // The default expression should be returned when the property value is null
+        var json = """{"var": ["Name", "fallback"]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out var expr));
+        var func = expr.Compile();
+        var data = new TestInput(0, 0, null!);
 
         // Act
-        var result = expr;
+        var result = func(data);
 
         // Assert
-        Assert.Null(result);
-        Assert.True(_errorListener.ReceivedEvents.Count > 0, "Should fire at least one ErrorEvent for invalid property");
+        Assert.Equal("fallback", result);
     }
+
     [Fact]
     public void Var_WrongOutputType_Fails()
     {

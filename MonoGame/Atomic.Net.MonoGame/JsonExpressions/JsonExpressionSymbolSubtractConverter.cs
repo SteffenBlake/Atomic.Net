@@ -16,9 +16,25 @@ public sealed class JsonExpressionSymbolSubtractConverter<TIn, TOut> : JsonConve
         JsonSerializerOptions options
     )
     {
+        // Validate: TOut must be numeric (subtract operator does not support bool, string, or arrays)
+        if (typeof(TOut) == typeof(bool) || typeof(TOut) == typeof(string) || typeof(TOut).IsArray)
+        {
+            throw new JsonException(
+                $"'-' operator requires a numeric output type, but requested output type is '{typeof(TOut).Name}'"
+            );
+        }
+
         // Use the built-in fast path from Utf8JsonReader to JsonDocument
         using var doc = JsonDocument.ParseValue(ref reader);
         var root = doc.RootElement;
+
+        // Unary form: {"-": number} → negate the value
+        if (root.ValueKind == JsonValueKind.Number)
+        {
+            var operand = JsonSerializer.Deserialize<IJsonExpression<TIn, TOut>>(root, options) ??
+                throw new JsonException("Expected: Valid expression for unary '-' operand");
+            return new JsonExpressionSymbolSubtract<TIn, TOut>(operand, null);
+        }
 
         // Validate: must be an array (parent already parsed the "-" key)
         if (root.ValueKind != JsonValueKind.Array)

@@ -7,12 +7,12 @@ using Atomic.Net.MonoGame.Core;
 namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 
 /// <summary>
-/// Tests for JSONLogic 'in' operator for arrays (membership test).
+/// Tests for JSONLogic 'contains' operator for strings (substring test).
 /// </summary>
 [Collection("NonParallel")]
 public sealed class JsonExpressionContainsTests(ITestOutputHelper output) : IDisposable
 {
-    private readonly record struct TestInput(int Unused);
+    private readonly record struct TestInput(string Text);
 
     private readonly ErrorEventLogger _errorLogger = new(output);
     private readonly FakeEventListener<ErrorEvent> _errorListener = new();
@@ -24,14 +24,14 @@ public sealed class JsonExpressionContainsTests(ITestOutputHelper output) : IDis
     }
 
     [Fact]
-    public void InArray_ValuePresent_ReturnsTrue()
+    public void StringContains_SubstringPresent_ReturnsTrue()
     {
         // Arrange
-        var json = """{"contains": ["Ringo", ["John", "Paul", "George", "Ringo"]]}""";
+        var json = """{"contains": ["Spring", "Springfield"]}""";
         var doc = JsonDocument.Parse(json);
         Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
-        var data = new TestInput(0);
+        var data = new TestInput("");
 
         // Act
         var result = func(data);
@@ -41,14 +41,14 @@ public sealed class JsonExpressionContainsTests(ITestOutputHelper output) : IDis
     }
 
     [Fact]
-    public void InArray_ValueNotPresent_ReturnsFalse()
+    public void StringContains_SubstringNotPresent_ReturnsFalse()
     {
         // Arrange
-        var json = """{"contains": ["Pete", ["John", "Paul", "George", "Ringo"]]}""";
+        var json = """{"contains": ["Summer", "Springfield"]}""";
         var doc = JsonDocument.Parse(json);
         Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
-        var data = new TestInput(0);
+        var data = new TestInput("");
 
         // Act
         var result = func(data);
@@ -58,14 +58,14 @@ public sealed class JsonExpressionContainsTests(ITestOutputHelper output) : IDis
     }
 
     [Fact]
-    public void InArray_NumberPresent_ReturnsTrue()
+    public void StringContains_EmptySubstring_ReturnsTrue()
     {
         // Arrange
-        var json = """{"contains": [3, [1, 2, 3, 4, 5]]}""";
+        var json = """{"contains": ["", "test"]}""";
         var doc = JsonDocument.Parse(json);
         Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
-        var data = new TestInput(0);
+        var data = new TestInput("");
 
         // Act
         var result = func(data);
@@ -75,14 +75,14 @@ public sealed class JsonExpressionContainsTests(ITestOutputHelper output) : IDis
     }
 
     [Fact]
-    public void InArray_NumberNotPresent_ReturnsFalse()
+    public void StringContains_CaseSensitive_ReturnsFalse()
     {
         // Arrange
-        var json = """{"contains": [6, [1, 2, 3, 4, 5]]}""";
+        var json = """{"contains": ["SPRING", "Springfield"]}""";
         var doc = JsonDocument.Parse(json);
         Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
-        var data = new TestInput(0);
+        var data = new TestInput("");
 
         // Act
         var result = func(data);
@@ -92,28 +92,64 @@ public sealed class JsonExpressionContainsTests(ITestOutputHelper output) : IDis
     }
 
     [Fact]
-    public void InArray_EmptyArray_ReturnsFalse()
+    public void StringContains_WithVarData_ReturnsCorrectResult()
     {
         // Arrange
-        var json = """{"contains": [1, []]}""";
+        var json = """{"contains": ["test", {"var": "Text"}]}""";
         var doc = JsonDocument.Parse(json);
         Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
         var func = expr.Compile();
-        var data = new TestInput(0);
+        var data = new TestInput("This is a test string");
 
         // Act
         var result = func(data);
 
         // Assert
-        Assert.False(result);
+        Assert.True(result);
     }
+
     [Fact]
-    public void Contains_WrongOutputType_Fails()
+    public void StringContains_AtBeginning_ReturnsTrue()
     {
-        // Arrange - contains returns bool, but requesting string
-        var json = """{ "contains": [3, [1, 2, 3, 4, 5]]}""";
+        // Arrange
+        var json = """{"contains": ["Hello", "Hello World"]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
+        var func = expr.Compile();
+        var data = new TestInput("");
+
+        // Act
+        var result = func(data);
+
+        // Assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    public void StringContains_AtEnd_ReturnsTrue()
+    {
+        // Arrange
+        var json = """{"contains": ["World", "Hello World"]}""";
+        var doc = JsonDocument.Parse(json);
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, bool>(doc, out var expr));
+        var func = expr.Compile();
+        var data = new TestInput("");
+
+        // Act
+        var result = func(data);
+
+        // Assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    public void StringContains_WrongOutputType_Fails()
+    {
+        // Arrange - contains returns bool, but requesting int[]
+        var json = """{"contains": ["test", "This is a test"]}""";
         var doc = JsonDocument.Parse(json);
         
         // Assert
-        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string>(doc, out _));
-    }}
+        Assert.False(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out _));
+    }
+}

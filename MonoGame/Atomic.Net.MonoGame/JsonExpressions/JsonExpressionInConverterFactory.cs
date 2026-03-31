@@ -4,9 +4,9 @@ using System.Text.Json.Serialization;
 namespace Atomic.Net.MonoGame.JsonExpressions;
 
 /// <summary>
-/// Factory for creating JsonExpressionStringContains converters.
+/// Factory for creating JsonExpressionIn converters.
 /// </summary>
-public sealed class JsonExpressionStringContainsConverterFactory : JsonConverterFactory
+public sealed class JsonExpressionInConverterFactory : JsonConverterFactory
 {
     public override bool CanConvert(Type typeToConvert)
     {
@@ -16,7 +16,7 @@ public sealed class JsonExpressionStringContainsConverterFactory : JsonConverter
         }
 
         var genericDefinition = typeToConvert.GetGenericTypeDefinition();
-        return genericDefinition == typeof(IJsonExpressionStringContains<,>);
+        return genericDefinition == typeof(IJsonExpressionIn<,>);
     }
 
     public override JsonConverter? CreateConverter(
@@ -33,7 +33,7 @@ public sealed class JsonExpressionStringContainsConverterFactory : JsonConverter
         var tIn = typeArgs[0];
         var tOut = typeArgs[1];
 
-        var converterType = typeof(JsonExpressionStringContainsConverter<,>).MakeGenericType(tIn, tOut);
+        var converterType = typeof(JsonExpressionInConverter<,>).MakeGenericType(tIn, tOut);
         return (JsonConverter?)Activator.CreateInstance(converterType);
     }
 }

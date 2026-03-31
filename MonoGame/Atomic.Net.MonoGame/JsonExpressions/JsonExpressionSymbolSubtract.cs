@@ -32,16 +32,30 @@ public sealed class JsonExpressionSymbolSubtract<TIn, TOut>(
         out Expression? result
     )
     {
-        if (Minuend is null || Subtrahend is null)
+        if (Minuend is null)
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent("Subtract: Minuend or Subtrahend is null"));
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Subtract: Minuend is null"));
             result = null;
             return false;
         }
 
-        if (!Minuend.TryCompile(parameter, out var minuendExpr) || !Subtrahend.TryCompile(parameter, out var subtrahendExpr))
+        if (!Minuend.TryCompile(parameter, out var minuendExpr))
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent("Subtract: Failed to compile Minuend or Subtrahend"));
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Subtract: Failed to compile Minuend"));
+            result = null;
+            return false;
+        }
+
+        // Unary negation: {"-": value}
+        if (Subtrahend is null)
+        {
+            result = Expression.Negate(minuendExpr);
+            return true;
+        }
+
+        if (!Subtrahend.TryCompile(parameter, out var subtrahendExpr))
+        {
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Subtract: Failed to compile Subtrahend"));
             result = null;
             return false;
         }

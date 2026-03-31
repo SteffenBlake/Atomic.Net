@@ -7,15 +7,22 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// JSON converter for JsonExpressionLinqWhere.
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
-/// <typeparam name="TSource">Array element type</typeparam>
-public sealed class JsonExpressionLinqWhereConverter<TIn, TSource> : JsonConverter<IJsonExpressionLinqWhere<TIn, TSource[]>>
+/// <typeparam name="TOut">Output type (filtered array)</typeparam>
+public sealed class JsonExpressionLinqWhereConverter<TIn, TOut> : JsonConverter<IJsonExpressionLinqWhere<TIn, TOut>>
 {
-    public override IJsonExpressionLinqWhere<TIn, TSource[]>? Read(
+    public override IJsonExpressionLinqWhere<TIn, TOut>? Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
         JsonSerializerOptions options
     )
     {
+        if (!typeof(TOut).IsArray)
+        {
+            throw new JsonException(
+                $"'where' operator requires TOut to be an array type, got TOut={typeof(TOut).Name}"
+            );
+        }
+
         using var doc = JsonDocument.ParseValue(ref reader);
         var root = doc.RootElement;
 
@@ -34,22 +41,28 @@ public sealed class JsonExpressionLinqWhereConverter<TIn, TSource> : JsonConvert
             );
         }
 
-        var source = JsonSerializer.Deserialize<IJsonExpression<TIn, TSource[]>>(root[0], options) ??
-            throw new JsonException(
-                $"Expected: Valid expression for where source, Actual: null after deserialization"
-            );
+        var sourceArrayType = root[0].InferJsonExpressionType<TIn>();
+        var elementType = sourceArrayType.IsArray
+            ? sourceArrayType.GetElementType()!
+            : throw new JsonException($"Expected array type for where source, Actual: {sourceArrayType.Name}");
 
-        var predicate = JsonSerializer.Deserialize<IJsonExpression<TSource, bool>>(root[1], options) ??
-            throw new JsonException(
-                $"Expected: Valid expression for where predicate, Actual: null after deserialization"
-            );
+        var sourceExprType = typeof(IJsonExpression<,>).MakeGenericType(typeof(TIn), sourceArrayType);
+        var predicateExprType = typeof(IJsonExpression<,>).MakeGenericType(elementType, typeof(bool));
 
-        return new JsonExpressionLinqWhere<TIn, TSource[], TSource>(source, predicate);
+        var source = JsonSerializer.Deserialize(root[0], sourceExprType, options) ??
+            throw new JsonException("Expected: Valid expression for where source, Actual: null after deserialization");
+
+        var predicate = JsonSerializer.Deserialize(root[1], predicateExprType, options) ??
+            throw new JsonException("Expected: Valid expression for where predicate, Actual: null after deserialization");
+
+        var concreteType = typeof(JsonExpressionLinqWhere<,,>).MakeGenericType(typeof(TIn), typeof(TOut), elementType);
+        var ctor = concreteType.GetConstructor([sourceExprType, predicateExprType])!;
+        return (IJsonExpressionLinqWhere<TIn, TOut>)ctor.Invoke([source, predicate]);
     }
 
     public override void Write(
         Utf8JsonWriter writer,
-        IJsonExpressionLinqWhere<TIn, TSource[]> value,
+        IJsonExpressionLinqWhere<TIn, TOut> value,
         JsonSerializerOptions options
     )
     {

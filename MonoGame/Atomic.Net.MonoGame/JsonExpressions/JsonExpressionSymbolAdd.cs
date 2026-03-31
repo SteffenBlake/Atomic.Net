@@ -33,6 +33,11 @@ public sealed class JsonExpressionSymbolAdd<TIn, TOut>(IJsonExpression<TIn, TOut
 
         Expression? addExpr = null;
 
+        var isStringConcat = typeof(TOut) == typeof(string);
+        var stringConcatMethod = isStringConcat
+            ? typeof(string).GetMethod(nameof(string.Concat), [typeof(string), typeof(string)])
+            : null;
+
         foreach (var operand in Operands)
         {
             if (operand is null || !operand.TryCompile(parameter, out var operandExpr))
@@ -42,7 +47,18 @@ public sealed class JsonExpressionSymbolAdd<TIn, TOut>(IJsonExpression<TIn, TOut
                 return false;
             }
 
-            addExpr = addExpr is null ? operandExpr : Expression.Add(addExpr, operandExpr);
+            if (addExpr is null)
+            {
+                addExpr = operandExpr;
+            }
+            else if (isStringConcat)
+            {
+                addExpr = Expression.Call(stringConcatMethod!, addExpr, operandExpr);
+            }
+            else
+            {
+                addExpr = Expression.Add(addExpr, operandExpr);
+            }
         }
 
         result = addExpr!;

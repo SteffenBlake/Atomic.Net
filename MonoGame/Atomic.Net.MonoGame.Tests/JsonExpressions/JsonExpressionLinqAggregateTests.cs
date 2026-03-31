@@ -12,14 +12,12 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 [Collection("NonParallel")]
 public sealed class JsonExpressionLinqAggregateTests(ITestOutputHelper output) : IDisposable
 {
-    private readonly record struct TestInput(int[] Numbers);
+    private readonly record struct TestInput(float[] Numbers);
 
     private readonly ErrorEventLogger _errorLogger = new(output);
-    private readonly FakeEventListener<ErrorEvent> _errorListener = new();
 
     public void Dispose()
     {
-        _errorListener.Dispose();
         _errorLogger.Dispose();
     }
 
@@ -29,7 +27,7 @@ public sealed class JsonExpressionLinqAggregateTests(ITestOutputHelper output) :
         // Arrange
         var json = """{"aggregate": [{"var": "Numbers"}, {"+": [{"var": "current"}, {"var": "accumulator"}]}, 0]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput([1, 2, 3, 4, 5]);
 
@@ -37,7 +35,7 @@ public sealed class JsonExpressionLinqAggregateTests(ITestOutputHelper output) :
         var result = func(data);
 
         // Assert
-        Assert.Equal(15, result);
+        Assert.Equal(15f, result, 0.001f);
     }
 
     [Fact]
@@ -46,7 +44,7 @@ public sealed class JsonExpressionLinqAggregateTests(ITestOutputHelper output) :
         // Arrange
         var json = """{"aggregate": [{"var": "Numbers"}, {"*": [{"var": "current"}, {"var": "accumulator"}]}, 1]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput([2, 3, 4]);
 
@@ -54,7 +52,7 @@ public sealed class JsonExpressionLinqAggregateTests(ITestOutputHelper output) :
         var result = func(data);
 
         // Assert
-        Assert.Equal(24, result);
+        Assert.Equal(24f, result, 0.001f);
     }
 
     [Fact]
@@ -63,7 +61,7 @@ public sealed class JsonExpressionLinqAggregateTests(ITestOutputHelper output) :
         // Arrange
         var json = """{"aggregate": [{"var": "Numbers"}, {"+": [{"var": "current"}, {"var": "accumulator"}]}, 100]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput([]);
 
@@ -71,7 +69,7 @@ public sealed class JsonExpressionLinqAggregateTests(ITestOutputHelper output) :
         var result = func(data);
 
         // Assert
-        Assert.Equal(100, result);
+        Assert.Equal(100f, result, 0.001f);
     }
 
     [Fact]
@@ -80,7 +78,7 @@ public sealed class JsonExpressionLinqAggregateTests(ITestOutputHelper output) :
         // Arrange
         var json = """{"aggregate": [{"var": "Numbers"}, {"if": [{">": [{"var": "current"}, {"var": "accumulator"}]}, {"var": "current"}, {"var": "accumulator"}]}, 0]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput([5, 2, 8, 1, 9]);
 
@@ -88,7 +86,7 @@ public sealed class JsonExpressionLinqAggregateTests(ITestOutputHelper output) :
         var result = func(data);
 
         // Assert
-        Assert.Equal(9, result);
+        Assert.Equal(9f, result, 0.001f);
     }
 
     [Fact]
@@ -97,7 +95,7 @@ public sealed class JsonExpressionLinqAggregateTests(ITestOutputHelper output) :
         // Arrange
         var json = """{"aggregate": [{"var": "Numbers"}, {"+": [{"var": "current"}, {"var": "accumulator"}]}, 50]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput([1, 2, 3]);
 
@@ -105,15 +103,17 @@ public sealed class JsonExpressionLinqAggregateTests(ITestOutputHelper output) :
         var result = func(data);
 
         // Assert
-        Assert.Equal(56, result);
+        Assert.Equal(56f, result, 0.001f);
     }
+
     [Fact]
     public void Aggregate_WrongOutputType_Fails()
     {
-        // Arrange - aggregate returns int, but requesting string[]
+        // Arrange - aggregate returns float, but requesting string[]
         var json = """{ "aggregate": [{"var": "Numbers"}, {"+": [{"var": "current"}, {"var": "accumulator"}]}, 0]}""";
         var doc = JsonDocument.Parse(json);
         
         // Assert
         Assert.False(JsonExpressionCompiler.TryBuild<TestInput, string[]>(doc, out _));
-    }}
+    }
+}

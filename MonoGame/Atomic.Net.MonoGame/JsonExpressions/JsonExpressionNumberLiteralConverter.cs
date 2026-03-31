@@ -16,6 +16,13 @@ public sealed class JsonExpressionNumberLiteralConverter<TIn, TOut> : JsonConver
         JsonSerializerOptions options
     )
     {
+        if (typeof(TOut).IsArray)
+        {
+            throw new JsonException(
+                $"Number literal cannot produce array type TOut={typeof(TOut).Name}"
+            );
+        }
+
         // Validate that we're reading a number
         if (reader.TokenType != JsonTokenType.Number)
         {

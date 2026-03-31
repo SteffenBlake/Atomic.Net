@@ -12,7 +12,7 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 [Collection("NonParallel")]
 public sealed class JsonExpressionMinTests(ITestOutputHelper output) : IDisposable
 {
-    private readonly record struct TestInput(int A, int B, int C);
+    private readonly record struct TestInput(float A, float B, float C);
 
     private readonly ErrorEventLogger _errorLogger = new ErrorEventLogger(output);
     private readonly FakeEventListener<ErrorEvent> _errorListener = new FakeEventListener<ErrorEvent>();
@@ -29,7 +29,7 @@ public sealed class JsonExpressionMinTests(ITestOutputHelper output) : IDisposab
         // Arrange
         var json = """{"min": [1, 2, 3]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0, 0);
 
@@ -37,7 +37,7 @@ public sealed class JsonExpressionMinTests(ITestOutputHelper output) : IDisposab
         var result = func(data);
 
         // Assert
-        Assert.Equal(1, result);
+        Assert.Equal(1f, result);
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public sealed class JsonExpressionMinTests(ITestOutputHelper output) : IDisposab
         // Arrange
         var json = """{"min": [5, 2]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0, 0);
 
@@ -54,7 +54,7 @@ public sealed class JsonExpressionMinTests(ITestOutputHelper output) : IDisposab
         var result = func(data);
 
         // Assert
-        Assert.Equal(2, result);
+        Assert.Equal(2f, result);
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public sealed class JsonExpressionMinTests(ITestOutputHelper output) : IDisposab
         // Arrange
         var json = """{"min": [-5, -2, -10]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0, 0);
 
@@ -71,7 +71,7 @@ public sealed class JsonExpressionMinTests(ITestOutputHelper output) : IDisposab
         var result = func(data);
 
         // Assert
-        Assert.Equal(-10, result);
+        Assert.Equal(-10f, result);
     }
 
     [Fact]
@@ -80,7 +80,7 @@ public sealed class JsonExpressionMinTests(ITestOutputHelper output) : IDisposab
         // Arrange
         var json = """{"min": [{"var": "A"}, {"var": "B"}, {"var": "C"}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(10, 50, 30);
 
@@ -88,7 +88,7 @@ public sealed class JsonExpressionMinTests(ITestOutputHelper output) : IDisposab
         var result = func(data);
 
         // Assert
-        Assert.Equal(10, result);
+        Assert.Equal(10f, result);
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public sealed class JsonExpressionMinTests(ITestOutputHelper output) : IDisposab
         var result = func(data);
 
         // Assert
-        Assert.Equal(0.3, result);
+        Assert.Equal(0.3f, result, 0.001f);
     }
 
     [Fact]
@@ -114,7 +114,7 @@ public sealed class JsonExpressionMinTests(ITestOutputHelper output) : IDisposab
         // Arrange
         var json = """{"min": [42]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0, 0);
 
@@ -122,7 +122,7 @@ public sealed class JsonExpressionMinTests(ITestOutputHelper output) : IDisposab
         var result = func(data);
 
         // Assert
-        Assert.Equal(42, result);
+        Assert.Equal(42f, result);
     }
     [Fact]
     public void Min_WrongOutputType_Fails()

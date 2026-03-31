@@ -7,15 +7,22 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// JSON converter for JsonExpressionLinqAny.
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
-/// <typeparam name="TSource">Array element type</typeparam>
-public sealed class JsonExpressionLinqAnyConverter<TIn, TSource> : JsonConverter<IJsonExpressionLinqAny<TIn, bool>>
+/// <typeparam name="TOut">Output type (always bool)</typeparam>
+public sealed class JsonExpressionLinqAnyConverter<TIn, TOut> : JsonConverter<IJsonExpressionLinqAny<TIn, TOut>>
 {
-    public override IJsonExpressionLinqAny<TIn, bool>? Read(
+    public override IJsonExpressionLinqAny<TIn, TOut>? Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
         JsonSerializerOptions options
     )
     {
+        if (typeof(TOut) != typeof(bool))
+        {
+            throw new JsonException(
+                $"'any' operator requires TOut=bool, got TOut={typeof(TOut).Name}"
+            );
+        }
+
         using var doc = JsonDocument.ParseValue(ref reader);
         var root = doc.RootElement;
 
@@ -34,22 +41,32 @@ public sealed class JsonExpressionLinqAnyConverter<TIn, TSource> : JsonConverter
             );
         }
 
-        var source = JsonSerializer.Deserialize<IJsonExpression<TIn, TSource[]>>(root[0], options) ??
-            throw new JsonException(
-                $"Expected: Valid expression for any source, Actual: null after deserialization"
-            );
+        // Infer element type from the source array expression; empty array defaults to float[]
+        var elementType = root[0].ValueKind == JsonValueKind.Array && root[0].GetArrayLength() == 0
+            ? typeof(float)
+            : root[0].InferJsonExpressionType<TIn>() is { IsArray: true } t
+                ? t.GetElementType()!
+                : throw new JsonException($"Expected array type for any source");
 
-        var predicate = JsonSerializer.Deserialize<IJsonExpression<TSource, bool>>(root[1], options) ??
-            throw new JsonException(
-                $"Expected: Valid expression for any predicate, Actual: null after deserialization"
-            );
+        var sourceArrayType = elementType.MakeArrayType();
 
-        return new JsonExpressionLinqAny<TIn, bool, TSource>(source, predicate);
+        var sourceExprType = typeof(IJsonExpression<,>).MakeGenericType(typeof(TIn), sourceArrayType);
+        var predicateExprType = typeof(IJsonExpression<,>).MakeGenericType(elementType, typeof(bool));
+
+        var source = JsonSerializer.Deserialize(root[0], sourceExprType, options) ??
+            throw new JsonException("Expected: Valid expression for any source, Actual: null after deserialization");
+
+        var predicate = JsonSerializer.Deserialize(root[1], predicateExprType, options) ??
+            throw new JsonException("Expected: Valid expression for any predicate, Actual: null after deserialization");
+
+        var concreteType = typeof(JsonExpressionLinqAny<,,>).MakeGenericType(typeof(TIn), typeof(TOut), elementType);
+        var ctor = concreteType.GetConstructor([sourceExprType, predicateExprType])!;
+        return (IJsonExpressionLinqAny<TIn, TOut>)ctor.Invoke([source, predicate]);
     }
 
     public override void Write(
         Utf8JsonWriter writer,
-        IJsonExpressionLinqAny<TIn, bool> value,
+        IJsonExpressionLinqAny<TIn, TOut> value,
         JsonSerializerOptions options
     )
     {

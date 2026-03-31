@@ -82,13 +82,27 @@ public sealed class JsonExpressionVar<TIn, TOut>(
             propertyExpr = Expression.Property(propertyExpr, propertyInfo);
         }
 
-        // Convert to TOut if needed
+        // Convert to TOut if needed, then null-coalesce with default if provided
         if (propertyExpr.Type != typeof(TOut))
         {
             propertyExpr = Expression.Convert(propertyExpr, typeof(TOut));
         }
 
-        result = propertyExpr;
+        if (DefaultValue is not null)
+        {
+            if (!DefaultValue.TryCompile(parameter, out var defaultExpr))
+            {
+                result = null;
+                return false;
+            }
+            // Null-coalesce: return property value if non-null, else default
+            result = Expression.Coalesce(propertyExpr, defaultExpr);
+        }
+        else
+        {
+            result = propertyExpr;
+        }
+
         return true;
     }
 }

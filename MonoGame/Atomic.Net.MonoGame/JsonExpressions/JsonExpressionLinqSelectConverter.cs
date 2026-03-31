@@ -7,16 +7,22 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// JSON converter for JsonExpressionLinqSelect.
 /// </summary>
 /// <typeparam name="TIn">Input data type</typeparam>
-/// <typeparam name="TSource">Source array element type</typeparam>
-/// <typeparam name="TResult">Result element type after transformation</typeparam>
-public sealed class JsonExpressionLinqSelectConverter<TIn, TSource, TResult> : JsonConverter<IJsonExpressionLinqSelect<TIn, TResult[]>>
+/// <typeparam name="TOut">Output type (result array)</typeparam>
+public sealed class JsonExpressionLinqSelectConverter<TIn, TOut> : JsonConverter<IJsonExpressionLinqSelect<TIn, TOut>>
 {
-    public override IJsonExpressionLinqSelect<TIn, TResult[]>? Read(
+    public override IJsonExpressionLinqSelect<TIn, TOut>? Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
         JsonSerializerOptions options
     )
     {
+        if (!typeof(TOut).IsArray)
+        {
+            throw new JsonException(
+                $"'select' operator requires TOut to be an array type, got TOut={typeof(TOut).Name}"
+            );
+        }
+
         using var doc = JsonDocument.ParseValue(ref reader);
         var root = doc.RootElement;
 
@@ -35,22 +41,32 @@ public sealed class JsonExpressionLinqSelectConverter<TIn, TSource, TResult> : J
             );
         }
 
-        var source = JsonSerializer.Deserialize<IJsonExpression<TIn, TSource[]>>(root[0], options) ??
-            throw new JsonException(
-                $"Expected: Valid expression for select source, Actual: null after deserialization"
-            );
+        // Infer source element type from the source array
+        var sourceArrayType = root[0].InferJsonExpressionType<TIn>();
+        var sourceElementType = sourceArrayType.IsArray
+            ? sourceArrayType.GetElementType()!
+            : throw new JsonException($"Expected array type for select source, Actual: {sourceArrayType.Name}");
 
-        var selector = JsonSerializer.Deserialize<IJsonExpression<TSource, TResult>>(root[1], options) ??
-            throw new JsonException(
-                $"Expected: Valid expression for select selector, Actual: null after deserialization"
-            );
+        // TOut should be TResult[] — get the result element type
+        var resultElementType = typeof(TOut).GetElementType()!;
 
-        return new JsonExpressionLinqSelect<TIn, TResult, TSource>(source, selector);
+        var sourceExprType = typeof(IJsonExpression<,>).MakeGenericType(typeof(TIn), sourceArrayType);
+        var selectorExprType = typeof(IJsonExpression<,>).MakeGenericType(sourceElementType, resultElementType);
+
+        var source = JsonSerializer.Deserialize(root[0], sourceExprType, options) ??
+            throw new JsonException("Expected: Valid expression for select source, Actual: null after deserialization");
+
+        var selector = JsonSerializer.Deserialize(root[1], selectorExprType, options) ??
+            throw new JsonException("Expected: Valid expression for select selector, Actual: null after deserialization");
+
+        var concreteType = typeof(JsonExpressionLinqSelect<,,>).MakeGenericType(typeof(TIn), resultElementType, sourceElementType);
+        var ctor = concreteType.GetConstructor([sourceExprType, selectorExprType])!;
+        return (IJsonExpressionLinqSelect<TIn, TOut>)ctor.Invoke([source, selector]);
     }
 
     public override void Write(
         Utf8JsonWriter writer,
-        IJsonExpressionLinqSelect<TIn, TResult[]> value,
+        IJsonExpressionLinqSelect<TIn, TOut> value,
         JsonSerializerOptions options
     )
     {

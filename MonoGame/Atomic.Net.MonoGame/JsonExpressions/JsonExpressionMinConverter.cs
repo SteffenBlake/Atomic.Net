@@ -16,6 +16,13 @@ public sealed class JsonExpressionMinConverter<TIn, TOut> : JsonConverter<IJsonE
         JsonSerializerOptions options
     )
     {
+        if (typeof(TOut) != typeof(float))
+        {
+            throw new JsonException(
+                $"'min' operator requires TOut=float, got TOut={typeof(TOut).Name}"
+            );
+        }
+
         using var doc = JsonDocument.ParseValue(ref reader);
         var root = doc.RootElement;
 

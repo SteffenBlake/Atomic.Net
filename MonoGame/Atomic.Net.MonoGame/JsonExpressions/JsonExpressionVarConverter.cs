@@ -29,7 +29,24 @@ public sealed class JsonExpressionVarConverter<TIn, TOut> : JsonConverter<IJsonE
         if (root.ValueKind == JsonValueKind.String)
         {
             // Simple string path: {"var": "A"} or {"var": ""} (identity)
-            return new JsonExpressionVar<TIn, TOut>(ParsePath(root.GetString()), null, null);
+            var simplePath = ParsePath(root.GetString());
+            if (simplePath is not null)
+            {
+                if (!typeof(TIn).TryResolvePropertyChain(simplePath, out var simpleChain))
+                {
+                    throw new JsonException(
+                        $"Property '{simplePath[0]}' not found on type {typeof(TIn).Name}"
+                    );
+                }
+                var propType = simpleChain[^1].PropertyType;
+                if (propType != typeof(TOut))
+                {
+                    throw new JsonException(
+                        $"Property '{simplePath[^1]}' is of type '{propType.Name}' but TOut is '{typeof(TOut).Name}'"
+                    );
+                }
+            }
+            return new JsonExpressionVar<TIn, TOut>(simplePath, null, null);
         }
 
         if (root.ValueKind != JsonValueKind.Array)
@@ -64,6 +81,25 @@ public sealed class JsonExpressionVarConverter<TIn, TOut> : JsonConverter<IJsonE
         }
 
         var properties = ParsePath(firstElement.GetString());
+
+        // Validate property exists and type matches TOut
+        if (properties is not null)
+        {
+            if (!typeof(TIn).TryResolvePropertyChain(properties, out var chain))
+            {
+                throw new JsonException(
+                    $"Property '{properties[0]}' not found on type {typeof(TIn).Name}"
+                );
+            }
+
+            var propType = chain[^1].PropertyType;
+            if (propType != typeof(TOut))
+            {
+                throw new JsonException(
+                    $"Property '{properties[^1]}' is of type '{propType.Name}' but TOut is '{typeof(TOut).Name}'"
+                );
+            }
+        }
 
         // Optional second element is the default value
         IJsonExpression<TIn, TOut>? defaultValue = null;

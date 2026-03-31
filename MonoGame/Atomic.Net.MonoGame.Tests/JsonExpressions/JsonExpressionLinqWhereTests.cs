@@ -12,7 +12,7 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 [Collection("NonParallel")]
 public sealed class JsonExpressionLinqWhereTests(ITestOutputHelper output) : IDisposable
 {
-    private readonly record struct TestInput(int[] Numbers);
+    private readonly record struct TestInput(float[] Numbers);
 
     private readonly ErrorEventLogger _errorLogger = new(output);
     private readonly FakeEventListener<ErrorEvent> _errorListener = new();
@@ -29,7 +29,7 @@ public sealed class JsonExpressionLinqWhereTests(ITestOutputHelper output) : IDi
         // Arrange - where predicate must return bool (modulo returns int, so wrap in equality check)
         var json = """{"where": [{"var": "Numbers"}, {"!=": [{"%": [{"var": ""}, 2]}, 0]}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput([1, 2, 3, 4, 5]);
 
@@ -37,7 +37,7 @@ public sealed class JsonExpressionLinqWhereTests(ITestOutputHelper output) : IDi
         var result = func(data);
 
         // Assert
-        Assert.Equal([1, 3, 5], result);
+        Assert.Equal([1f, 3f, 5f], result);
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public sealed class JsonExpressionLinqWhereTests(ITestOutputHelper output) : IDi
         // Arrange
         var json = """{"where": [{"var": "Numbers"}, {">": [{"var": ""}, 0]}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput([-2, -1, 0, 1, 2]);
 
@@ -54,7 +54,7 @@ public sealed class JsonExpressionLinqWhereTests(ITestOutputHelper output) : IDi
         var result = func(data);
 
         // Assert
-        Assert.Equal([1, 2], result);
+        Assert.Equal([1f, 2f], result);
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public sealed class JsonExpressionLinqWhereTests(ITestOutputHelper output) : IDi
         // Arrange
         var json = """{"where": [{"var": "Numbers"}, {">": [{"var": ""}, 100]}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput([1, 2, 3, 4, 5]);
 
@@ -80,7 +80,7 @@ public sealed class JsonExpressionLinqWhereTests(ITestOutputHelper output) : IDi
         // Arrange
         var json = """{"where": [{"var": "Numbers"}, {">": [{"var": ""}, 0]}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput([1, 2, 3, 4, 5]);
 
@@ -88,7 +88,7 @@ public sealed class JsonExpressionLinqWhereTests(ITestOutputHelper output) : IDi
         var result = func(data);
 
         // Assert
-        Assert.Equal([1, 2, 3, 4, 5], result);
+        Assert.Equal([1f, 2f, 3f, 4f, 5f], result);
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public sealed class JsonExpressionLinqWhereTests(ITestOutputHelper output) : IDi
         // Arrange
         var json = """{"where": [{"var": "Numbers"}, {">": [{"var": ""}, 0]}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int[]>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float[]>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput([]);
 

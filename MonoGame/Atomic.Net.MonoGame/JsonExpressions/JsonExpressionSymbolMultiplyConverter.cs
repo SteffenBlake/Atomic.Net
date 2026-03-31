@@ -16,6 +16,13 @@ public sealed class JsonExpressionSymbolMultiplyConverter<TIn, TOut> : JsonConve
         JsonSerializerOptions options
     )
     {
+        if (typeof(TOut) == typeof(bool) || typeof(TOut) == typeof(string) || typeof(TOut).IsArray)
+        {
+            throw new JsonException(
+                $"'*' operator requires a numeric TOut, got TOut={typeof(TOut).Name}"
+            );
+        }
+
         // Use the built-in fast path from Utf8JsonReader to JsonDocument
         using var doc = JsonDocument.ParseValue(ref reader);
         var root = doc.RootElement;

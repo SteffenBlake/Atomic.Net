@@ -57,8 +57,9 @@ public static class JsonElementExtensions
 
     /// <summary>
     /// Internal implementation that infers the output type without validation.
+    /// LINQ source converters use this directly to allow custom struct array element types.
     /// </summary>
-    private static Type InferJsonExpressionTypeInternal<TIn>(this JsonElement element)
+    internal static Type InferJsonExpressionTypeInternal<TIn>(this JsonElement element)
     {
         // Literals have direct type mappings
         if (element.ValueKind == JsonValueKind.Number)
@@ -134,7 +135,7 @@ public static class JsonElementExtensions
             "substring" => typeof(string),
             
             // Math operators - infer from first operand
-            "+" => InferMathOperatorType<TIn>(operatorValue),
+            "+" => InferAddOperatorType<TIn>(operatorValue),
             "-" => InferMathOperatorType<TIn>(operatorValue),
             "*" => InferMathOperatorType<TIn>(operatorValue),
             "/" => InferMathOperatorType<TIn>(operatorValue),
@@ -175,6 +176,32 @@ public static class JsonElementExtensions
         }
 
         return operatorValue[0].InferJsonExpressionTypeInternal<TIn>();
+    }
+
+    private static Type InferAddOperatorType<TIn>(JsonElement operatorValue)
+    {
+        // Unary form: {"+": number}
+        if (operatorValue.ValueKind == JsonValueKind.Number)
+        {
+            return typeof(float);
+        }
+
+        if (operatorValue.ValueKind != JsonValueKind.Array || operatorValue.GetArrayLength() == 0)
+        {
+            throw new JsonException("Cannot infer type from + operands");
+        }
+
+        // If any operand infers as string, the whole expression is string concatenation
+        for (var i = 0; i < operatorValue.GetArrayLength(); i++)
+        {
+            var operandType = operatorValue[i].InferJsonExpressionTypeInternal<TIn>();
+            if (operandType == typeof(string))
+            {
+                return typeof(string);
+            }
+        }
+
+        return typeof(float);
     }
 
     private static Type InferIfOperatorType<TIn>(JsonElement operatorValue)

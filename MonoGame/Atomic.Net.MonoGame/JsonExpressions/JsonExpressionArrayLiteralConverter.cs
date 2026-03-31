@@ -28,23 +28,29 @@ public sealed class JsonExpressionArrayLiteralConverter<TIn, TOut> : JsonConvert
             );
         }
 
-        // Deserialize all array elements
+        // TOut is the array type — derive TElement from it
+        var elementType = typeof(TOut).GetElementType() ??
+            throw new JsonException($"Expected array type for array literal TOut, Actual: {typeof(TOut).Name}");
+
+        var elementExprType = typeof(IJsonExpression<,>).MakeGenericType(typeof(TIn), elementType);
+        var elementExprArrayType = elementExprType.MakeArrayType();
+
+        // Deserialize all array elements as IJsonExpression<TIn, TElement>
         var arrayLength = root.GetArrayLength();
-        var elements = new IJsonExpression<TIn, TOut>[arrayLength];
-        
+        var elements = (Array)Activator.CreateInstance(elementExprArrayType, arrayLength)!;
+
         for (int i = 0; i < arrayLength; i++)
         {
-            var element = JsonSerializer.Deserialize<IJsonExpression<TIn, TOut>>(root[i], options);
-            if (element is null)
-            {
+            var element = JsonSerializer.Deserialize(root[i], elementExprType, options) ??
                 throw new JsonException(
                     $"Expected: Valid expression for element {i} of array literal, Actual: null after deserialization"
                 );
-            }
-            elements[i] = element;
+            elements.SetValue(element, i);
         }
 
-        return new JsonExpressionArrayLiteral<TIn, TOut>(elements);
+        var concreteType = typeof(JsonExpressionArrayLiteral<,,>).MakeGenericType(typeof(TIn), typeof(TOut), elementType);
+        var ctor = concreteType.GetConstructor([elementExprArrayType])!;
+        return (IJsonExpressionArrayLiteral<TIn, TOut>)ctor.Invoke([elements]);
     }
 
     public override void Write(

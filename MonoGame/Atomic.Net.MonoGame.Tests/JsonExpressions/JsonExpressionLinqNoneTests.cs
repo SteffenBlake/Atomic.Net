@@ -12,7 +12,7 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 [Collection("NonParallel")]
 public sealed class JsonExpressionLinqNoneTests(ITestOutputHelper output) : IDisposable
 {
-    private readonly record struct TestInput(int Unused);
+    private readonly record struct TestInput(float Unused);
 
     private readonly ErrorEventLogger _errorLogger = new(output);
     private readonly FakeEventListener<ErrorEvent> _errorListener = new();

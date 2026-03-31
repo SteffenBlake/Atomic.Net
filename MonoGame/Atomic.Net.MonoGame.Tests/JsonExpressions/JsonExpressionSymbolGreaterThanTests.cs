@@ -12,7 +12,7 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 [Collection("NonParallel")]
 public sealed class JsonExpressionSymbolGreaterThanTests(ITestOutputHelper output) : IDisposable
 {
-    private readonly record struct TestInput(int Value);
+    private readonly record struct TestInput(float Value);
 
     private readonly ErrorEventLogger _errorLogger = new(output);
     private readonly FakeEventListener<ErrorEvent> _errorListener = new();

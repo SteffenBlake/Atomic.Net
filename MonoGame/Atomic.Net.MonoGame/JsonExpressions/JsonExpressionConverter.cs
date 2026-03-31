@@ -27,18 +27,36 @@ public class JsonExpressionConverter<TIn, TOut> : JsonConverter<IJsonExpression<
         // Handle literals without operator keys
         if (root.ValueKind == JsonValueKind.Number)
         {
+            if (typeof(TOut).IsArray || typeof(TOut) == typeof(bool))
+            {
+                throw new JsonException(
+                    $"Number literal cannot produce type TOut={typeof(TOut).Name}"
+                );
+            }
             var value = root.GetSingle();
             return new JsonExpressionNumberLiteral<TIn, TOut>(value);
         }
 
         if (root.ValueKind == JsonValueKind.String)
         {
+            if (typeof(TOut) != typeof(string))
+            {
+                throw new JsonException(
+                    $"String literal requires TOut=string, got TOut={typeof(TOut).Name}"
+                );
+            }
             var value = root.GetString();
             return new JsonExpressionStringLiteral<TIn, TOut>(value);
         }
 
         if (root.ValueKind == JsonValueKind.True || root.ValueKind == JsonValueKind.False)
         {
+            if (typeof(TOut) != typeof(bool))
+            {
+                throw new JsonException(
+                    $"Bool literal requires TOut=bool, got TOut={typeof(TOut).Name}"
+                );
+            }
             var value = root.GetBoolean();
             return new JsonExpressionBoolLiteral<TIn, TOut>(value);
         }
@@ -97,20 +115,20 @@ public class JsonExpressionConverter<TIn, TOut> : JsonConverter<IJsonExpression<
             "max" => JsonSerializer.Deserialize<IJsonExpressionMax<TIn, TOut>>(operatorValue, options),
             "min" => JsonSerializer.Deserialize<IJsonExpressionMin<TIn, TOut>>(operatorValue, options),
             "addRange" => JsonSerializer.Deserialize<IJsonExpressionLinqAddRange<TIn, TOut>>(operatorValue, options),
-            "contains" => JsonSerializer.Deserialize<IJsonExpressionContains<TIn, TOut>>(operatorValue, options),
+            "in" => JsonSerializer.Deserialize<IJsonExpressionIn<TIn, TOut>>(operatorValue, options),
 
             // LINQ operators
             "all" => JsonSerializer.Deserialize<IJsonExpressionLinqAll<TIn, TOut>>(operatorValue, options),
             "any" => JsonSerializer.Deserialize<IJsonExpressionLinqAny<TIn, TOut>>(operatorValue, options),
             "none" => JsonSerializer.Deserialize<IJsonExpressionLinqNone<TIn, TOut>>(operatorValue, options),
             "where" => JsonSerializer.Deserialize<IJsonExpressionLinqWhere<TIn, TOut>>(operatorValue, options),
-            "select" => JsonSerializer.Deserialize<IJsonExpressionLinqSelect<TIn, TOut>>(operatorValue, options),
+            "select" or "map" => JsonSerializer.Deserialize<IJsonExpressionLinqSelect<TIn, TOut>>(operatorValue, options),
             "selectMany" => JsonSerializer.Deserialize<IJsonExpressionLinqSelectMany<TIn, TOut>>(operatorValue, options),
             "aggregate" => JsonSerializer.Deserialize<IJsonExpressionLinqAggregate<TIn, TOut>>(operatorValue, options),
             "add" => JsonSerializer.Deserialize<IJsonExpressionLinqAdd<TIn, TOut>>(operatorValue, options),
             
             // String operations
-            "stringContains" => JsonSerializer.Deserialize<IJsonExpressionStringContains<TIn, TOut>>(operatorValue, options),
+            "contains" => JsonSerializer.Deserialize<IJsonExpressionContains<TIn, TOut>>(operatorValue, options),
             "substring" => JsonSerializer.Deserialize<IJsonExpressionSubstring<TIn, TOut>>(operatorValue, options),
             
             // Logging

@@ -13,7 +13,7 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// <typeparam name="TInner">Source array element type</typeparam>
 public sealed class JsonExpressionLinqAggregate<TIn, TOut, TInner>(
     IJsonExpression<TIn, TInner[]>? source,
-    IJsonExpression<TInner, TOut>? accumulator,
+    IJsonExpression<JsonAggregateContext<TInner, TOut>, TOut>? accumulator,
     IJsonExpression<TIn, TOut>? initialValue
 ) : IJsonExpressionLinqAggregate<TIn, TOut>
 {
@@ -23,9 +23,9 @@ public sealed class JsonExpressionLinqAggregate<TIn, TOut, TInner>(
     public IJsonExpression<TIn, TInner[]>? Source { get; } = source;
 
     /// <summary>
-    /// Accumulator expression (combines current element with accumulator).
+    /// Accumulator expression — receives a JsonAggregateContext with current element and running accumulator.
     /// </summary>
-    public IJsonExpression<TInner, TOut>? Accumulator { get; } = accumulator;
+    public IJsonExpression<JsonAggregateContext<TInner, TOut>, TOut>? Accumulator { get; } = accumulator;
 
     /// <summary>
     /// Initial value for the accumulator.
@@ -47,30 +47,38 @@ public sealed class JsonExpressionLinqAggregate<TIn, TOut, TInner>(
 
         if (!Source.TryCompile(parameter, out var sourceExpr) || !InitialValue.TryCompile(parameter, out var initialValueExpr))
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent("Aggregate: Failed to compile Source, Accumulator, or InitialValue"));
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Aggregate: Failed to compile Source or InitialValue"));
             result = null;
             return false;
         }
 
-        var itemParam = Expression.Parameter(typeof(TInner), "item");
-        if (!Accumulator.TryCompile(itemParam, out var accumulatorBody))
+        // Compile the reducer to a delegate (load-time, not game-time)
+        var ctxType = typeof(JsonAggregateContext<TInner, TOut>);
+        var ctxParam = Expression.Parameter(ctxType, "ctx");
+        if (!Accumulator.TryCompile(ctxParam, out var accBody))
         {
-            EventBus<ErrorEvent>.Push(new ErrorEvent("Aggregate: Failed to compile Source, Accumulator, or InitialValue"));
+            EventBus<ErrorEvent>.Push(new ErrorEvent("Aggregate: Failed to compile Accumulator"));
             result = null;
             return false;
         }
 
-        var accumulatorFunc = Expression.Lambda<Func<TInner, TOut>>(accumulatorBody, itemParam);
-        
-        // Call Enumerable.Aggregate(source, seed, func)
+        var accDelegate = Expression.Lambda<Func<JsonAggregateContext<TInner, TOut>, TOut>>(accBody, ctxParam).Compile();
+
+        // Build aggregate wrapper: (acc, current) => accDelegate(new Context(current, acc))
+        var accParam = Expression.Parameter(typeof(TOut), "acc");
+        var curParam = Expression.Parameter(typeof(TInner), "cur");
+        var ctxCtor = ctxType.GetConstructors()[0];
+        var ctxNew = Expression.New(ctxCtor, curParam, accParam);
+        var delegateConst = Expression.Constant(accDelegate, typeof(Func<JsonAggregateContext<TInner, TOut>, TOut>));
+        var callDelegate = Expression.Invoke(delegateConst, ctxNew);
+        var wrapperLambda = Expression.Lambda<Func<TOut, TInner, TOut>>(callDelegate, accParam, curParam);
+
+        // Enumerable.Aggregate<TInner, TOut>(source, seed, func)
         var aggregateMethod = typeof(Enumerable).GetMethods()
             .First(m => m.Name == nameof(Enumerable.Aggregate) && m.GetParameters().Length == 3)
             .MakeGenericMethod(typeof(TInner), typeof(TOut));
-        
-        // Create accumulator lambda: (acc, current) => Accumulator(current)
-        // Note: Accumulator takes TSource as input, but we need to pass accumulator state through somehow
-        // For now, we'll use a simplified version that just calls the accumulator function
-        result = Expression.Call(aggregateMethod, sourceExpr, initialValueExpr, accumulatorFunc);
+
+        result = Expression.Call(aggregateMethod, sourceExpr, initialValueExpr, wrapperLambda);
         return true;
     }
 }

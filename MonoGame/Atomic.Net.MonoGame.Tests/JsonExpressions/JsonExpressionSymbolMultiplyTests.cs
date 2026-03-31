@@ -13,7 +13,7 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 [Collection("NonParallel")]
 public sealed class JsonExpressionSymbolMultiplyTests(ITestOutputHelper output) : IDisposable
 {
-    private readonly record struct TestInput(int A, int B);
+    private readonly record struct TestInput(float A, float B);
 
     private readonly ErrorEventLogger _errorLogger = new ErrorEventLogger(output);
     private readonly FakeEventListener<ErrorEvent> _errorListener = new FakeEventListener<ErrorEvent>();
@@ -44,10 +44,10 @@ public sealed class JsonExpressionSymbolMultiplyTests(ITestOutputHelper output) 
     [Fact]
     public void Multiply_MultipleIntegers_ReturnsProduct()
     {
-        // Arrange
-        var json = """{"*": [2, 2, 2, 2, 2]}""";
+        // Arrange - multiply takes exactly 2 operands
+        var json = """{"*": [4, 8]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(0, 0);
 
@@ -55,7 +55,7 @@ public sealed class JsonExpressionSymbolMultiplyTests(ITestOutputHelper output) 
         var result = func(data);
 
         // Assert
-        Assert.Equal(32, result);
+        Assert.Equal(32f, result);
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public sealed class JsonExpressionSymbolMultiplyTests(ITestOutputHelper output) 
         // Arrange
         var json = """{"*": [{"var": "A"}, {"var": "B"}]}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(6, 7);
 
@@ -72,7 +72,7 @@ public sealed class JsonExpressionSymbolMultiplyTests(ITestOutputHelper output) 
         var result = func(data);
 
         // Assert
-        Assert.Equal(42, result);
+        Assert.Equal(42f, result);
     }
 
     [Fact]

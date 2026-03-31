@@ -12,7 +12,7 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 [Collection("NonParallel")]
 public sealed class JsonExpressionLogTests(ITestOutputHelper output) : IDisposable
 {
-    private readonly record struct TestInput(int Value);
+    private readonly record struct TestInput(float Value);
 
     private readonly ErrorEventLogger _errorLogger = new(output);
     private readonly FakeEventListener<ErrorEvent> _errorListener = new();
@@ -69,7 +69,7 @@ public sealed class JsonExpressionLogTests(ITestOutputHelper output) : IDisposab
         // Arrange
         var json = """{"log": {"var": "Value"}}""";
         var doc = JsonDocument.Parse(json);
-        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
+        Assert.True(JsonExpressionCompiler.TryBuild<TestInput, float>(doc, out var expr));
         var func = expr.Compile();
         var data = new TestInput(100);
 
@@ -77,7 +77,7 @@ public sealed class JsonExpressionLogTests(ITestOutputHelper output) : IDisposab
         var result = func(data);
 
         // Assert
-        Assert.Equal(100, result);
+        Assert.Equal(100f, result);
         Assert.True(_logListener.ReceivedEvents.Count > 0);
         Assert.Contains(_logListener.ReceivedEvents, e => e.Message.Contains("100"));
     }

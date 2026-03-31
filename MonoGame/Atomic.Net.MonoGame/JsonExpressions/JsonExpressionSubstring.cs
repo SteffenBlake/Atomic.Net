@@ -1,7 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Atomic.Net.MonoGame.Core;
 
 namespace Atomic.Net.MonoGame.JsonExpressions;
@@ -13,8 +11,8 @@ namespace Atomic.Net.MonoGame.JsonExpressions;
 /// <typeparam name="TOut">Output type produced by this expression</typeparam>
 public sealed class JsonExpressionSubstring<TIn, TOut>(
     IJsonExpression<TIn, string>? @string,
-    IJsonExpression<TIn, int>? start,
-    IJsonExpression<TIn, int>? length
+    IJsonExpression<TIn, float>? start,
+    IJsonExpression<TIn, float>? length
 ) : IJsonExpressionSubstring<TIn, TOut>
 {
     /// <summary>
@@ -23,14 +21,14 @@ public sealed class JsonExpressionSubstring<TIn, TOut>(
     public IJsonExpression<TIn, string>? String { get; } = @string;
 
     /// <summary>
-    /// Start index expression.
+    /// Start index expression (stored as float, converted to int at compile time).
     /// </summary>
-    public IJsonExpression<TIn, int>? Start { get; } = start;
+    public IJsonExpression<TIn, float>? Start { get; } = start;
 
     /// <summary>
-    /// Optional length expression.
+    /// Optional length expression (stored as float, converted to int at compile time).
     /// </summary>
-    public IJsonExpression<TIn, int>? Length { get; } = length;
+    public IJsonExpression<TIn, float>? Length { get; } = length;
 
     public bool TryCompile(
         ParameterExpression parameter,
@@ -45,26 +43,28 @@ public sealed class JsonExpressionSubstring<TIn, TOut>(
             return false;
         }
 
-        if (!String.TryCompile(parameter, out var stringExpr) || !Start.TryCompile(parameter, out var startExpr))
+        if (!String.TryCompile(parameter, out var stringExpr) || !Start.TryCompile(parameter, out var startFloatExpr))
         {
             EventBus<ErrorEvent>.Push(new ErrorEvent("Substring: Failed to compile String or Start"));
             result = null;
             return false;
         }
 
+        var startExpr = Expression.Convert(startFloatExpr, typeof(int));
         Expression substringExpr;
         
-        if (Length is not null && Length.TryCompile(parameter, out var lengthExpr))
+        if (Length is not null && Length.TryCompile(parameter, out var lengthFloatExpr))
         {
-            // Use string.Substring(int startIndex, int length)
-            var substringMethod = typeof(string).GetMethod(nameof(string.Substring), [typeof(int), typeof(int)])!;
-            substringExpr = Expression.Call(stringExpr, substringMethod, startExpr, lengthExpr);
+            var lengthExpr = Expression.Convert(lengthFloatExpr, typeof(int));
+            var safeMethod = typeof(JsonExpressionSubstringHelpers)
+                .GetMethod(nameof(JsonExpressionSubstringHelpers.SafeSubstringWithLength))!;
+            substringExpr = Expression.Call(safeMethod, stringExpr, startExpr, lengthExpr);
         }
         else
         {
-            // Use string.Substring(int startIndex)
-            var substringMethod = typeof(string).GetMethod(nameof(string.Substring), [typeof(int)])!;
-            substringExpr = Expression.Call(stringExpr, substringMethod, startExpr);
+            var safeMethod = typeof(JsonExpressionSubstringHelpers)
+                .GetMethod(nameof(JsonExpressionSubstringHelpers.SafeSubstringFromStart))!;
+            substringExpr = Expression.Call(safeMethod, stringExpr, startExpr);
         }
         
         // Convert to TOut if needed
@@ -75,5 +75,24 @@ public sealed class JsonExpressionSubstring<TIn, TOut>(
 
         result = substringExpr;
         return true;
+    }
+}
+
+/// <summary>
+/// Static helpers for safe substring operations with bounds clamping.
+/// </summary>
+internal static class JsonExpressionSubstringHelpers
+{
+    public static string SafeSubstringFromStart(string s, int start)
+    {
+        start = Math.Clamp(start, 0, s.Length);
+        return s.Substring(start);
+    }
+
+    public static string SafeSubstringWithLength(string s, int start, int length)
+    {
+        start = Math.Clamp(start, 0, s.Length);
+        length = Math.Clamp(length, 0, s.Length - start);
+        return s.Substring(start, length);
     }
 }

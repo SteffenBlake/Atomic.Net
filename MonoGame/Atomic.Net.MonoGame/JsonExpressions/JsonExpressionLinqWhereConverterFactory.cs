@@ -31,9 +31,9 @@ public sealed class JsonExpressionLinqWhereConverterFactory : JsonConverterFacto
         }
 
         var tIn = typeArgs[0];
-        var tSource = typeArgs[1];
+        var tOut = typeArgs[1];
 
-        var converterType = typeof(JsonExpressionLinqWhereConverter<,>).MakeGenericType(tIn, tSource);
+        var converterType = typeof(JsonExpressionLinqWhereConverter<,>).MakeGenericType(tIn, tOut);
         return (JsonConverter?)Activator.CreateInstance(converterType);
     }
 }
