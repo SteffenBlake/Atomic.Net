@@ -325,6 +325,34 @@ Assert.True(TryGetBar(out var bar));
 
 ---
 
+## Post-Edit Diagnostic Checking
+
+**CRITICAL WORKFLOW:** After editing ANY file, you MUST run diagnostics to catch and fix IDE suggestions.
+
+### Required Steps After Every File Edit
+
+1. **CRITICAL - Open the file in editor FIRST:**
+   ```
+   mcp_vscode-mcp_vs_execute_command(command="vscode.open", args=["file:///full/path/to/file.cs"])
+   ```
+   **Diagnostics will NOT show up unless the file is opened in the editor first.**
+
+2. **Run diagnostics on the file:**
+   ```
+   mcp_vscode-mcp_vs_get_diagnostics(
+     workspace_path="/path/to/workspace",
+     __NOT_RECOMMEND__filePaths=["/path/to/file.cs"],
+     severities=["error", "warning", "info", "hint"]
+   )
+   ```
+
+3. **Fix ALL diagnostic suggestions** - errors, warnings, info, hints
+
+4. **Line numbers are 0-indexed in diagnostics, 1-indexed in files**
+   - Diagnostic at line 18 = line 19 when editing
+
+---
+
 ## Directives from the human are the ultimate source of truth
 - Whatever the human declares overrides test assertions, it overrides comments, it overrides existing logic
 - If an existing test conflicts with the human's directives, its likely the test was just written wrong

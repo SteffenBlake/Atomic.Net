@@ -1,4 +1,3 @@
-using System;
 using System.Text.Json;
 using Xunit;
 using Xunit.Abstractions;
@@ -11,18 +10,12 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 /// Tests for JSONLogic 'substr' operator (substring extraction).
 /// </summary>
 [Collection("NonParallel")]
-public sealed class JsonExpressionSubstringTests : IDisposable
+public sealed class JsonExpressionSubstringTests(ITestOutputHelper output) : IDisposable
 {
     private readonly record struct TestInput(string Text);
 
-    private readonly ErrorEventLogger _errorLogger;
-    private readonly FakeEventListener<ErrorEvent> _errorListener;
-
-    public JsonExpressionSubstringTests(ITestOutputHelper output)
-    {
-        _errorLogger = new ErrorEventLogger(output);
-        _errorListener = new FakeEventListener<ErrorEvent>();
-    }
+    private readonly ErrorEventLogger _errorLogger = new(output);
+    private readonly FakeEventListener<ErrorEvent> _errorListener = new();
 
     public void Dispose()
     {

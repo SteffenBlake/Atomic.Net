@@ -1,4 +1,3 @@
-using System;
 using System.Text.Json;
 using Xunit;
 using Xunit.Abstractions;
@@ -11,18 +10,12 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 /// Tests for JSONLogic 'reduce' operator (aggregate array elements).
 /// </summary>
 [Collection("NonParallel")]
-public sealed class JsonExpressionAggregateTests : IDisposable
+public sealed class JsonExpressionAggregateTests(ITestOutputHelper output) : IDisposable
 {
     private readonly record struct TestInput(int[] Numbers);
 
-    private readonly ErrorEventLogger _errorLogger;
-    private readonly FakeEventListener<ErrorEvent> _errorListener;
-
-    public JsonExpressionAggregateTests(ITestOutputHelper output)
-    {
-        _errorLogger = new ErrorEventLogger(output);
-        _errorListener = new FakeEventListener<ErrorEvent>();
-    }
+    private readonly ErrorEventLogger _errorLogger = new(output);
+    private readonly FakeEventListener<ErrorEvent> _errorListener = new();
 
     public void Dispose()
     {
@@ -38,7 +31,7 @@ public sealed class JsonExpressionAggregateTests : IDisposable
         var doc = JsonDocument.Parse(json);
         Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
-        var data = new TestInput(new[] { 1, 2, 3, 4, 5 });
+        var data = new TestInput([1, 2, 3, 4, 5]);
 
         // Act
         var result = func(data);
@@ -55,7 +48,7 @@ public sealed class JsonExpressionAggregateTests : IDisposable
         var doc = JsonDocument.Parse(json);
         Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
-        var data = new TestInput(new[] { 2, 3, 4 });
+        var data = new TestInput([2, 3, 4]);
 
         // Act
         var result = func(data);
@@ -72,7 +65,7 @@ public sealed class JsonExpressionAggregateTests : IDisposable
         var doc = JsonDocument.Parse(json);
         Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
-        var data = new TestInput(Array.Empty<int>());
+        var data = new TestInput([]);
 
         // Act
         var result = func(data);
@@ -89,7 +82,7 @@ public sealed class JsonExpressionAggregateTests : IDisposable
         var doc = JsonDocument.Parse(json);
         Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
-        var data = new TestInput(new[] { 5, 2, 8, 1, 9 });
+        var data = new TestInput([5, 2, 8, 1, 9]);
 
         // Act
         var result = func(data);
@@ -106,7 +99,7 @@ public sealed class JsonExpressionAggregateTests : IDisposable
         var doc = JsonDocument.Parse(json);
         Assert.True(JsonExpressionCompiler.TryBuild<TestInput, int>(doc, out var expr));
         var func = expr.Compile();
-        var data = new TestInput(new[] { 1, 2, 3 });
+        var data = new TestInput([1, 2, 3]);
 
         // Act
         var result = func(data);

@@ -11,18 +11,12 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 /// Tests for JSONLogic '*' operator (multiplication).
 /// </summary>
 [Collection("NonParallel")]
-public sealed class JsonExpressionMultiplyTests : IDisposable
+public sealed class JsonExpressionMultiplyTests(ITestOutputHelper output) : IDisposable
 {
     private readonly record struct TestInput(int A, int B);
 
-    private readonly ErrorEventLogger _errorLogger;
-    private readonly FakeEventListener<ErrorEvent> _errorListener;
-
-    public JsonExpressionMultiplyTests(ITestOutputHelper output)
-    {
-        _errorLogger = new ErrorEventLogger(output);
-        _errorListener = new FakeEventListener<ErrorEvent>();
-    }
+    private readonly ErrorEventLogger _errorLogger = new ErrorEventLogger(output);
+    private readonly FakeEventListener<ErrorEvent> _errorListener = new FakeEventListener<ErrorEvent>();
 
     public void Dispose()
     {

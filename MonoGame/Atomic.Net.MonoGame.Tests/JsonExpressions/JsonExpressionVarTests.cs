@@ -11,20 +11,14 @@ namespace Atomic.Net.MonoGame.Tests.JsonExpressions;
 /// Tests for JSONLogic 'var' operator (data access).
 /// </summary>
 [Collection("NonParallel")]
-public sealed class JsonExpressionVarTests : IDisposable
+public sealed class JsonExpressionVarTests(ITestOutputHelper output) : IDisposable
 {
     private readonly record struct TestInput(int A, int B, string Name);
     private readonly record struct NestedInput(string Name, ChildData Child);
     private readonly record struct ChildData(int Value, string Label);
 
-    private readonly ErrorEventLogger _errorLogger;
-    private readonly FakeEventListener<ErrorEvent> _errorListener;
-
-    public JsonExpressionVarTests(ITestOutputHelper output)
-    {
-        _errorLogger = new ErrorEventLogger(output);
-        _errorListener = new FakeEventListener<ErrorEvent>();
-    }
+    private readonly ErrorEventLogger _errorLogger = new ErrorEventLogger(output);
+    private readonly FakeEventListener<ErrorEvent> _errorListener = new FakeEventListener<ErrorEvent>();
 
     public void Dispose()
     {
